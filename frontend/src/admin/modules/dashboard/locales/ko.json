@@ -51,7 +51,8 @@
         "enableUrl": "배너 클릭 시 링크 활성화",
         "urlPlaceholder": "배너 클릭 시 이동할 URL을 입력하세요",
         "upload": "업로드",
-        "save": "저장"
+        "save": "저장",
+        "saveError": "저장에 실패했습니다. 다시 시도해주세요."
       },
       "popup": {
         "title": "팝업 관리",
@@ -65,7 +66,8 @@
         "link": "클릭 링크",
         "linkPlaceholder": "팝업 클릭 시 이동할 URL을 입력하세요",
         "upload": "이미지 업로드",
-        "save": "저장"
+        "save": "저장",
+        "saveError": "저장에 실패했습니다. 다시 시도해주세요."
       }
     }
   }

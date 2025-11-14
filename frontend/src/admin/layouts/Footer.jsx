@@ -13,11 +13,17 @@ export default function Footer() {
   return (
     <footer className="admin-footer">
       <div className="footer-content">
-        <div className="footer-section">
-          <p>&copy; {currentYear} {t('admin.footer.copyright')}</p>
+        <div className="footer-left">
+          <p className="footer-copyright">
+            &copy; {currentYear} {t('admin.footer.copyright')}
+          </p>
         </div>
-        <div className="footer-section">
-          <p>{t('admin.footer.version')}: 1.0.0</p>
+        <div className="footer-right">
+          <div className="footer-info">
+            <span className="footer-version">
+              {t('admin.footer.version')}: <strong>1.0.0</strong>
+            </span>
+          </div>
         </div>
       </div>
     </footer>

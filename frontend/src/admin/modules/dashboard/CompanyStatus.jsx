@@ -6,10 +6,13 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactECharts from 'echarts-for-react';
+
 import { Card, Select, Loading } from '@shared/components';
+import { BuildingIcon, CurrencyDollarIcon, UsersIcon, DocumentIcon } from '@shared/components/Icons';
 import { apiService } from '@shared/services';
 import { API_PREFIX } from '@shared/utils/constants';
 import { formatCurrencyCompact } from '@shared/utils/format';
+
 import './Dashboard.css';
 
 export default function CompanyStatus() {
@@ -293,7 +296,9 @@ export default function CompanyStatus() {
           {/* 统计卡片 */}
           <div className="stats-grid">
             <Card className="stat-card">
-              <div className="stat-icon">🏢</div>
+              <div className="stat-icon">
+                <BuildingIcon className="w-8 h-8" />
+              </div>
               <div className="stat-content">
                 <h3 className="stat-label">{t('admin.dashboard.stats.totalMembers')}</h3>
                 <p className="stat-value">{stats.totalMembers.toLocaleString()}</p>
@@ -301,11 +306,13 @@ export default function CompanyStatus() {
             </Card>
 
             <Card className="stat-card">
-              <div className="stat-icon">💰</div>
+              <div className="stat-icon">
+                <CurrencyDollarIcon className="w-8 h-8" />
+              </div>
               <div className="stat-content">
                 <h3 className="stat-label">
                   {t('admin.dashboard.stats.totalSales')} 
-                  <span style={{ fontSize: '0.9em', fontWeight: 'normal', color: '#666' }}>
+                  <span className="stat-unit">
                     {' '}({currentLanguage === 'ko' ? '단위' : '单位'}: {currentLanguage === 'ko' ? '만원' : '万元'})
                   </span>
                 </h3>
@@ -320,7 +327,9 @@ export default function CompanyStatus() {
             </Card>
 
             <Card className="stat-card">
-              <div className="stat-icon">👥</div>
+              <div className="stat-icon">
+                <UsersIcon className="w-8 h-8" />
+              </div>
               <div className="stat-content">
                 <h3 className="stat-label">{t('admin.dashboard.stats.totalEmployment')}</h3>
                 <p className="stat-value">{stats.totalEmployment.toLocaleString()}</p>
@@ -328,7 +337,9 @@ export default function CompanyStatus() {
             </Card>
 
             <Card className="stat-card">
-              <div className="stat-icon">📜</div>
+              <div className="stat-icon">
+                <DocumentIcon className="w-8 h-8" />
+              </div>
               <div className="stat-content">
                 <h3 className="stat-label">{t('admin.dashboard.stats.totalIP')}</h3>
                 <p className="stat-value">{stats.totalIntellectualProperty.toLocaleString()}</p>

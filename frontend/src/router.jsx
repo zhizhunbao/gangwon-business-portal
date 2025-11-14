@@ -12,7 +12,10 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
   const { isAuthenticated, user } = useAuth();
   
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Redirect to appropriate login page based on route
+    const isAdminRoute = window.location.pathname.startsWith('/admin');
+    const loginPath = isAdminRoute ? '/admin/login' : '/login';
+    return <Navigate to={loginPath} replace />;
   }
   
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
@@ -73,6 +76,7 @@ const MemberLayout = lazy(() => import('@member/layouts/MemberLayout').then(m =>
 // Lazy load auth modules
 const Login = lazy(() => import('@member/modules/auth/Login').then(m => ({ default: m.default })));
 const Register = lazy(() => import('@member/modules/auth/Register').then(m => ({ default: m.default })));
+const AdminLogin = lazy(() => import('@admin/modules/auth/Login').then(m => ({ default: m.default })));
 
 // Lazy load member modules
 const MemberHome = lazy(() => import('@member/modules/home/Home').then(m => ({ default: m.default })));
@@ -127,6 +131,16 @@ export const router = createBrowserRouter(
         <PublicRoute>
           <LazyRoute>
             <Register />
+          </LazyRoute>
+        </PublicRoute>
+      )
+    },
+    {
+      path: '/admin/login',
+      element: (
+        <PublicRoute>
+          <LazyRoute>
+            <AdminLogin />
           </LazyRoute>
         </PublicRoute>
       )

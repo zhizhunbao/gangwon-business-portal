@@ -5,20 +5,22 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { Card, Button, Input, Loading } from '@shared/components';
 import { apiService } from '@shared/services';
 import { API_PREFIX } from '@shared/utils/constants';
+
 import './Dashboard.css';
 
 export default function BannerManagement() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [banners, setBanners] = useState({
-    main: { image: null, url: '' },
-    systemIntro: { image: null, url: '' },
-    projects: { image: null, url: '' },
-    performance: { image: null, url: '' },
-    support: { image: null, url: '' }
+    main: { image: null, file: null, url: '' },
+    systemIntro: { image: null, file: null, url: '' },
+    projects: { image: null, file: null, url: '' },
+    performance: { image: null, file: null, url: '' },
+    support: { image: null, file: null, url: '' }
   });
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export default function BannerManagement() {
           const banner = response.banners[key] || {};
           normalizedBanners[key] = {
             image: banner.image || null,
+            file: null, // 从服务器加载的图片不需要文件对象
             url: banner.url || ''
           };
         });
@@ -50,13 +53,15 @@ export default function BannerManagement() {
 
   const handleImageChange = (bannerKey, file) => {
     if (file && file.type.startsWith('image/')) {
+      // 保存文件对象用于上传
       const reader = new FileReader();
       reader.onload = (e) => {
         setBanners(prev => ({
           ...prev,
           [bannerKey]: {
             ...prev[bannerKey],
-            image: e.target.result
+            image: e.target.result, // base64 预览
+            file: file // 保存原始文件对象用于上传
           }
         }));
       };
@@ -81,12 +86,46 @@ export default function BannerManagement() {
       const formData = new FormData();
       const banner = banners[bannerKey];
       
-      // TODO: 实现文件上传和URL保存
-      console.log('Saving banner:', bannerKey, banner);
+      // 如果有新文件，添加到 FormData
+      if (banner.file) {
+        formData.append('image', banner.file);
+      }
       
-      // await apiService.post(`${API_PREFIX}/admin/banners/${bannerKey}`, formData);
+      // 添加 URL（即使为空也发送，以便清除 URL）
+      formData.append('url', banner.url || '');
+      
+      // 发送请求
+      const response = await apiService.post(
+        `${API_PREFIX}/admin/banners/${bannerKey}`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      
+      // 更新本地状态（使用服务器返回的图片 URL）
+      if (response && response.banner) {
+        setBanners(prev => ({
+          ...prev,
+          [bannerKey]: {
+            ...prev[bannerKey],
+            // 如果有新图片 URL，使用新的；否则保留原有的
+            image: response.banner.image !== null && response.banner.image !== undefined 
+              ? response.banner.image 
+              : prev[bannerKey].image,
+            file: null, // 上传成功后清除文件对象
+            url: response.banner.url !== undefined ? response.banner.url : prev[bannerKey].url
+          }
+        }));
+      }
+      
+      // 显示成功消息（可以添加 toast 通知）
+      console.log('Banner saved successfully:', bannerKey);
     } catch (error) {
       console.error('Failed to save banner:', error);
+      alert(t('admin.dashboard.banner.saveError') || '保存失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -111,18 +150,18 @@ export default function BannerManagement() {
       ) : (
         <div className="banner-grid">
           {bannerConfig.map(({ key, label }) => (
-            <Card key={key} className="banner-card" style={{ padding: '1.5rem' }}>
+            <Card key={key} className="banner-card">
               <h3 className="section-title">{label}</h3>
               
               <div className="banner-form">
                 <div className="banner-item">
                   <label>{t('admin.dashboard.banner.image')}</label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className="banner-image-container">
                     {banners[key].image && (
                       <img 
                         src={banners[key].image} 
                         alt={label}
-                        style={{ maxWidth: '100%', maxHeight: '120px', objectFit: 'contain', borderRadius: '4px' }}
+                        className="banner-preview"
                       />
                     )}
                     <input
@@ -133,18 +172,18 @@ export default function BannerManagement() {
                           handleImageChange(key, e.target.files[0]);
                         }
                       }}
-                      style={{ display: 'none' }}
+                      className="file-input-hidden"
                       id={`banner-${key}-file`}
                     />
-                    <label htmlFor={`banner-${key}-file`} style={{ cursor: 'pointer' }}>
-                      <Button variant="outline" type="button" style={{ width: '100%' }}>
+                    <label htmlFor={`banner-${key}-file`} className="file-input-label">
+                      <Button variant="outline" type="button" className="full-width-button">
                         {t('admin.dashboard.banner.upload')}
                       </Button>
                     </label>
                   </div>
                 </div>
 
-                <div className="banner-item" style={{ marginTop: '1rem' }}>
+                <div className="banner-item banner-item-spaced">
                   <label>{t('admin.dashboard.banner.url')}</label>
                   <Input
                     type="text"
@@ -154,8 +193,8 @@ export default function BannerManagement() {
                   />
                 </div>
 
-                <div style={{ marginTop: '1rem' }}>
-                  <Button onClick={() => handleSave(key)} style={{ width: '100%' }}>
+                <div className="banner-actions">
+                  <Button onClick={() => handleSave(key)} className="full-width-button">
                     {t('admin.dashboard.banner.save')}
                   </Button>
                 </div>

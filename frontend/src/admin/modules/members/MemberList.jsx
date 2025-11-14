@@ -116,23 +116,31 @@ export default function MemberList() {
     },
     {
       key: 'actions',
-      label: t('admin.members.table.actions'),
+      label: '',
       render: (_, row) => (
-        <div className="action-buttons">
-          <Button 
-            size="small" 
-            variant="outline"
-            onClick={() => handleViewDetail(row.id)}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewDetail(row.id);
+            }}
+            className="text-primary-600 hover:text-primary-900 font-medium text-sm"
           >
             {t('common.view')}
-          </Button>
+          </button>
           {row.approvalStatus === 'pending' && (
-            <Button 
-              size="small"
-              onClick={() => handleApprove(row.id)}
-            >
-              {t('admin.members.approve')}
-            </Button>
+            <>
+              <span className="text-gray-300">|</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleApprove(row.id);
+                }}
+                className="text-green-600 hover:text-green-900 font-medium text-sm"
+              >
+                {t('admin.members.approve')}
+              </button>
+            </>
           )}
         </div>
       )
@@ -141,87 +149,65 @@ export default function MemberList() {
 
   return (
     <div className="admin-member-list">
-      <div className="page-header">
-        <h1 className="page-title">{t('admin.members.title')}</h1>
-        <Button onClick={handleExport}>
-          {t('admin.members.export')}
-        </Button>
-      </div>
-
-      <Card className="search-card">
-        <div className="search-form">
-          <Select
-            value={searchField}
-            onChange={(e) => setSearchField(e.target.value)}
-            options={[
-              { value: 'companyName', label: t('admin.members.search.companyName') },
-              { value: 'representative', label: t('admin.members.search.representative') },
-              { value: 'businessField', label: t('admin.members.search.businessField') }
-            ]}
-            style={{ width: '150px' }}
-          />
-          <Input
-            type="text"
-            placeholder={t('admin.members.search.placeholder')}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            style={{ flex: 1 }}
-          />
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            options={[
-              { value: 'all', label: t('common.all') },
-              { value: 'pending', label: t('admin.members.status.pending') },
-              { value: 'approved', label: t('admin.members.status.approved') },
-              { value: 'rejected', label: t('admin.members.status.rejected') }
-            ]}
-          />
-          <Button onClick={handleSearch}>
-            {t('common.search')}
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-4">{t('admin.members.title')}</h1>
+        
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                placeholder={t('admin.members.search.placeholder')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              />
+            </div>
+          </div>
+          <Button onClick={handleExport} className="ml-4">
+            {t('admin.members.export')}
           </Button>
         </div>
-      </Card>
+      </div>
 
-      <Card>
-        <div className="table-header">
-          <div className="table-info">
-            <span>{t('common.total')}: {totalCount} {t('common.items')}</span>
-            <Select
-              value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
-              options={[
-                { value: 10, label: '10' },
-                { value: 20, label: '20' },
-                { value: 30, label: '30' },
-                { value: 50, label: '50' }
-              ]}
-              style={{ width: '80px' }}
-            />
-          </div>
-        </div>
-
+      <div className="bg-white shadow-sm rounded-lg border border-gray-200">
         {loading ? (
-          <div className="loading-placeholder">{t('common.loading')}</div>
+          <div className="p-12 text-center text-gray-500">{t('common.loading')}</div>
         ) : (
           <>
             <Table 
               columns={columns} 
               data={members}
+              selectable={true}
+              selectedRows={[]}
+              onSelectRow={() => {}}
+              onSelectAll={() => {}}
               onRowClick={(row) => handleViewDetail(row.id)}
             />
             {totalCount > 0 && (
-              <Pagination
-                current={currentPage}
-                total={totalCount}
-                pageSize={pageSize}
-                onChange={setCurrentPage}
-              />
+              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                <div className="flex items-center text-sm text-gray-700">
+                  <span>
+                    {t('common.showing')} {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalCount)} {t('common.of')} {totalCount}
+                  </span>
+                </div>
+                <Pagination
+                  current={currentPage}
+                  total={totalCount}
+                  pageSize={pageSize}
+                  onChange={setCurrentPage}
+                />
+              </div>
             )}
           </>
         )}
-      </Card>
+      </div>
     </div>
   );
 }

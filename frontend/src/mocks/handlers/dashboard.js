@@ -286,15 +286,37 @@ async function updateAdminBanner(req) {
   
   const { bannerKey } = req.params;
   
+  // 从 FormData 中提取数据
+  const formData = await req.request.formData();
+  const imageFile = formData.get('image');
+  const url = formData.get('url') || '';
+  
+  // 如果有图片文件，转换为 base64 URL（模拟上传后的 URL）
+  let imageUrl = null;
+  if (imageFile && imageFile instanceof File) {
+    // 在真实环境中，这里应该上传到存储服务并返回 URL
+    // 在 mock 环境中，我们读取为 base64 data URL
+    try {
+      const arrayBuffer = await imageFile.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      imageUrl = `data:${imageFile.type};base64,${base64}`;
+    } catch (error) {
+      console.error('Failed to convert image to base64:', error);
+      // 如果转换失败，使用一个模拟的 URL
+      imageUrl = `https://example.com/banners/${bannerKey}.jpg`;
+    }
+  }
+  
   // In a real implementation, this would save to the database
-  // For now, just return success
+  // For now, return the updated banner data
+  // 注意：如果没有新图片，imageUrl 为 null，前端会保留原有图片
   return HttpResponse.json({
     success: true,
     message: 'Banner updated successfully',
     banner: {
       key: bannerKey,
-      image: null,
-      url: ''
+      image: imageUrl, // 如果有新图片返回新 URL，否则为 null（前端会保留原有图片）
+      url: url
     }
   });
 }

@@ -1,33 +1,8 @@
 /**
- * Project List Styles
+ * Project List Styles - Windster Style
  */
 
 .admin-project-list {
   padding: 0;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.page-title {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.loading-placeholder {
-  padding: 3rem;
-  text-align: center;
-  color: #999;
 }
 

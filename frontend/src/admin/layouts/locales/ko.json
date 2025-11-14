@@ -5,7 +5,8 @@
       "admin": "관리자",
       "profile": "프로필",
       "logout": "로그아웃",
-      "notifications": "알림"
+      "notifications": "알림",
+      "searchPlaceholder": "검색..."
     },
     "menu": {
       "dashboard": "대시보드",

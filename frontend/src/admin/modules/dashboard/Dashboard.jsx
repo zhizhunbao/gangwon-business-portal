@@ -5,10 +5,13 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
 import { Tabs } from '@shared/components';
+
 import CompanyStatus from './CompanyStatus';
 import BannerManagement from './BannerManagement';
 import PopupManagement from './PopupManagement';
+
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -45,8 +48,8 @@ export default function Dashboard() {
 
   return (
     <div className="admin-dashboard">
-      <div className="dashboard-header">
-        <h1 className="page-title">{t('admin.dashboard.title')}</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-4">{t('admin.dashboard.title')}</h1>
       </div>
 
       <Tabs

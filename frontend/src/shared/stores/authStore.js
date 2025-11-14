@@ -22,6 +22,11 @@ export const useAuthStore = create(
       clearAuth: () => {
         authService.clearAuth();
         set({ user: null, isAuthenticated: false });
+      },
+      
+      logout: async () => {
+        await authService.logout();
+        set({ user: null, isAuthenticated: false });
       }
     }),
     { name: 'AuthStore' }

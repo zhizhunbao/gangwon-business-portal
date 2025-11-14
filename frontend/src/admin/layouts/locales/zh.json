@@ -5,7 +5,8 @@
       "admin": "管理员",
       "profile": "个人资料",
       "logout": "退出登录",
-      "notifications": "通知"
+      "notifications": "通知",
+      "searchPlaceholder": "搜索..."
     },
     "menu": {
       "dashboard": "仪表盘",

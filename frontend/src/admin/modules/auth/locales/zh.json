@@ -1,0 +1,20 @@
+{
+  "admin": {
+    "auth": {
+      "login": "登录",
+      "loginTitle": "管理员登录",
+      "loginSubtitle": "请使用管理员账号登录系统",
+      "loginFailed": "登录失败，请检查您的账号和密码",
+      "email": "邮箱",
+      "emailPlaceholder": "请输入管理员邮箱",
+      "password": "密码",
+      "passwordPlaceholder": "请输入密码",
+      "rememberMe": "记住我",
+      "forgotPassword": "忘记密码？",
+      "notAdmin": "非管理员账号",
+      "notAdminUser": "不是管理员？",
+      "goToMemberLogin": "前往会员登录"
+    }
+  }
+}
+

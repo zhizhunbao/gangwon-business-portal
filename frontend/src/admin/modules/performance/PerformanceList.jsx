@@ -113,41 +113,51 @@ export default function PerformanceList() {
     },
     {
       key: 'actions',
-      label: t('admin.performance.table.actions'),
+      label: '',
       render: (_, row) => (
-        <div className="action-buttons">
-          <Button 
-            size="small" 
-            variant="outline"
-            onClick={() => handleViewDetail(row.id)}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewDetail(row.id);
+            }}
+            className="text-primary-600 hover:text-primary-900 font-medium text-sm"
           >
             {t('common.view')}
-          </Button>
-          <Button 
-            size="small" 
-            variant="outline"
-            onClick={() => handleDownload(row.id)}
+          </button>
+          <span className="text-gray-300">|</span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDownload(row.id);
+            }}
+            className="text-primary-600 hover:text-primary-900 font-medium text-sm"
           >
             {t('common.download')}
-          </Button>
+          </button>
           {row.status === 'pending' && (
             <>
-              <Button 
-                size="small"
-                variant="outline"
-                onClick={() => {
+              <span className="text-gray-300">|</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
                   setSelectedRecord(row);
                   setShowReviewModal(true);
                 }}
+                className="text-yellow-600 hover:text-yellow-900 font-medium text-sm"
               >
                 {t('admin.performance.requestRevision')}
-              </Button>
-              <Button 
-                size="small"
-                onClick={() => handleApprove(row)}
+              </button>
+              <span className="text-gray-300">|</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleApprove(row);
+                }}
+                className="text-green-600 hover:text-green-900 font-medium text-sm"
               >
                 {t('admin.performance.approve')}
-              </Button>
+              </button>
             </>
           )}
         </div>
@@ -157,32 +167,39 @@ export default function PerformanceList() {
 
   return (
     <div className="admin-performance-list">
-      <div className="page-header">
-        <h1 className="page-title">{t('admin.performance.title')}</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-4">{t('admin.performance.title')}</h1>
+        
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex-1 max-w-md">
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              options={[
+                { value: 'all', label: t('common.all') },
+                { value: 'pending', label: t('admin.performance.status.pending') },
+                { value: 'revision', label: t('admin.performance.status.revision') },
+                { value: 'approved', label: t('admin.performance.status.approved') }
+              ]}
+            />
+          </div>
+        </div>
       </div>
 
-      <Card className="filter-card">
-        <div className="filter-form">
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            options={[
-              { value: 'all', label: t('common.all') },
-              { value: 'pending', label: t('admin.performance.status.pending') },
-              { value: 'revision', label: t('admin.performance.status.revision') },
-              { value: 'approved', label: t('admin.performance.status.approved') }
-            ]}
-          />
-        </div>
-      </Card>
-
-      <Card>
+      <div className="bg-white shadow-sm rounded-lg border border-gray-200">
         {loading ? (
-          <div className="loading-placeholder">{t('common.loading')}</div>
+          <div className="p-12 text-center text-gray-500">{t('common.loading')}</div>
         ) : (
-          <Table columns={columns} data={records} />
+          <Table 
+            columns={columns} 
+            data={records}
+            selectable={true}
+            selectedRows={[]}
+            onSelectRow={() => {}}
+            onSelectAll={() => {}}
+          />
         )}
-      </Card>
+      </div>
 
       {/* 补正请求模态框 */}
       <Modal
