@@ -11,6 +11,8 @@ import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import Textarea from '@shared/components/Textarea';
 import Select from '@shared/components/Select';
+import { EyeIcon, CheckCircleIcon, WarningIcon, MegaphoneIcon } from '@shared/components/Icons';
+import './Support.css';
 
 export default function Support() {
   const { t } = useTranslation();
@@ -287,7 +289,10 @@ export default function Support() {
                       <p>A: {faq.answer}</p>
                     </div>
                     <div className="faq-meta">
-                      <span>👁 {faq.views} {t('support.views')}</span>
+                      <span>
+                        <EyeIcon className="w-4 h-4" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.25rem' }} />
+                        {faq.views} {t('support.views')}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -314,9 +319,9 @@ export default function Support() {
                     className={`notification-item ${!notification.read ? 'unread' : ''}`}
                   >
                     <div className="notification-icon">
-                      {notification.type === 'approval' && '✅'}
-                      {notification.type === 'supplement' && '⚠️'}
-                      {notification.type === 'notice' && '📢'}
+                      {notification.type === 'approval' && <CheckCircleIcon className="w-5 h-5" />}
+                      {notification.type === 'supplement' && <WarningIcon className="w-5 h-5" />}
+                      {notification.type === 'notice' && <MegaphoneIcon className="w-5 h-5" />}
                     </div>
                     <div className="notification-content">
                       <h3>{notification.title}</h3>

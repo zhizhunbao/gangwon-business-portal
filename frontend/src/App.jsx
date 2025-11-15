@@ -11,6 +11,7 @@ import i18n from '@shared/i18n';
 import { router } from './router';
 import { useAuth } from '@shared/hooks';
 import { LoadingOverlay } from '@shared/components';
+import { useUIStore } from '@shared/stores/uiStore';
 
 // Create a QueryClient instance
 const queryClient = new QueryClient({
@@ -25,7 +26,18 @@ const queryClient = new QueryClient({
 
 export default function App() {
   const { isAuthenticated, getCurrentUser, isLoading } = useAuth();
+  const { theme } = useUIStore();
   
+  // Apply theme to HTML element
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [theme]);
+
   // Initialize authentication state on app load
   useEffect(() => {
     if (isAuthenticated) {
@@ -48,7 +60,7 @@ export default function App() {
             v7_startTransition: true,
           }}
         />
-        <ReactQueryDevtools initialIsOpen={false} />
+        {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
       </I18nextProvider>
     </QueryClientProvider>
   );

@@ -4,6 +4,7 @@
     "subtitle": "지원 사업 공고 확인 및 신청",
     "searchPlaceholder": "사업명 또는 키워드로 검색",
     "resultsCount": "총 {{count}}개의 사업",
+    "perPage": "개씩",
     "apply": "신청하기",
     "status": {
       "recruiting": "모집중",
@@ -55,8 +56,13 @@
         "title": "첨부 서류",
         "description": "사업자등록증, 사업계획서 등 필요한 서류를 첨부해주세요.",
         "hint": "파일 형식: PDF, DOC, XLS / 최대 10MB",
-        "uploaded": "업로드된 파일"
-      }
+        "uploaded": "업로드된 파일",
+        "maxFiles": "최대 {{max}}개까지 첨부 가능",
+        "required": "최소 1개 이상의 파일을 첨부해주세요.",
+        "fileTooLarge": "파일 {{fileName}}의 크기가 너무 큽니다. (최대 10MB)"
+      },
+      "submitSuccess": "신청이 완료되었습니다.",
+      "submitFailed": "신청 제출에 실패했습니다."
     }
   }
 }

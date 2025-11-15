@@ -153,15 +153,13 @@ export const router = createBrowserRouter(
       path: '/404',
       element: <NotFound />
     },
-    // Member routes
+    // Member routes with layout
     {
       path: '/member',
       element: (
-        <ProtectedRoute allowedRoles={['member']}>
-          <LazyRoute>
-            <MemberLayout />
-          </LazyRoute>
-        </ProtectedRoute>
+        <LazyRoute>
+          <MemberLayout />
+        </LazyRoute>
       ),
       children: [
         {
@@ -177,59 +175,82 @@ export const router = createBrowserRouter(
           element: <Navigate to="/member" replace />
         },
         {
-          path: 'projects',
+          path: 'about',
           element: (
             <LazyRoute>
-              <MemberProjects />
+              <MemberAbout />
             </LazyRoute>
+          )
+        },
+        // Protected routes - require authentication
+        {
+          path: 'projects',
+          element: (
+            <ProtectedRoute allowedRoles={['member']}>
+              <LazyRoute>
+                <MemberProjects />
+              </LazyRoute>
+            </ProtectedRoute>
           )
         },
         {
           path: 'projects/:id',
           element: (
-            <LazyRoute>
-              <MemberProjectDetail />
-            </LazyRoute>
+            <ProtectedRoute allowedRoles={['member']}>
+              <LazyRoute>
+                <MemberProjectDetail />
+              </LazyRoute>
+            </ProtectedRoute>
           )
         },
         {
           path: 'projects/:id/apply',
           element: (
-            <LazyRoute>
-              <MemberProjectApplication />
-            </LazyRoute>
+            <ProtectedRoute allowedRoles={['member']}>
+              <LazyRoute>
+                <MemberProjectApplication />
+              </LazyRoute>
+            </ProtectedRoute>
           )
         },
         {
           path: 'performance',
           element: (
-            <LazyRoute>
-              <MemberPerformanceList />
-            </LazyRoute>
+            <ProtectedRoute allowedRoles={['member']}>
+              <LazyRoute>
+                <MemberPerformanceList />
+              </LazyRoute>
+            </ProtectedRoute>
           )
         },
         {
           path: 'performance/new',
           element: (
-            <LazyRoute>
-              <MemberPerformanceForm />
-            </LazyRoute>
+            <ProtectedRoute allowedRoles={['member']}>
+              <LazyRoute>
+                <MemberPerformanceForm />
+              </LazyRoute>
+            </ProtectedRoute>
           )
         },
         {
           path: 'performance/:id',
           element: (
-            <LazyRoute>
-              <MemberPerformanceDetail />
-            </LazyRoute>
+            <ProtectedRoute allowedRoles={['member']}>
+              <LazyRoute>
+                <MemberPerformanceDetail />
+              </LazyRoute>
+            </ProtectedRoute>
           )
         },
         {
           path: 'performance/:id/edit',
           element: (
-            <LazyRoute>
-              <MemberPerformanceForm />
-            </LazyRoute>
+            <ProtectedRoute allowedRoles={['member']}>
+              <LazyRoute>
+                <MemberPerformanceForm />
+              </LazyRoute>
+            </ProtectedRoute>
           )
         },
         {
@@ -243,17 +264,11 @@ export const router = createBrowserRouter(
         {
           path: 'support',
           element: (
-            <LazyRoute>
-              <MemberSupport />
-            </LazyRoute>
-          )
-        },
-        {
-          path: 'about',
-          element: (
-            <LazyRoute>
-              <MemberAbout />
-            </LazyRoute>
+            <ProtectedRoute allowedRoles={['member']}>
+              <LazyRoute>
+                <MemberSupport />
+              </LazyRoute>
+            </ProtectedRoute>
           )
         },
         {

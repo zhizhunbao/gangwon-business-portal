@@ -4,9 +4,9 @@
 
 // Mock delay (in milliseconds)
 export const MOCK_DELAY = {
-  FAST: 100,      // 快速响应
-  NORMAL: 300,    // 正常响应
-  SLOW: 800,      // 慢响应
+  FAST: 50,       // 快速响应（优化开发体验）
+  NORMAL: 100,    // 正常响应（减少到100ms）
+  SLOW: 500,      // 慢响应
   VERY_SLOW: 2000 // 非常慢响应
 };
 
@@ -26,9 +26,15 @@ export const ERROR_CONFIG = {
 };
 
 // Get current language from storage or default
+// i18next-browser-languagedetector uses 'i18nextLng' as the default localStorage key
 export function getCurrentLanguage() {
   try {
-    return localStorage.getItem('language') || 'ko';
+    const lang = localStorage.getItem('i18nextLng') || 'ko';
+    // Normalize language code: extract base language (e.g., 'ko-KR' -> 'ko', 'zh-CN' -> 'zh')
+    const baseLang = lang.split('-')[0];
+    // Only return supported languages
+    const supportedLanguages = ['ko', 'zh'];
+    return supportedLanguages.includes(baseLang) ? baseLang : 'ko';
   } catch {
     return 'ko';
   }
@@ -70,7 +76,8 @@ export async function loadMockData(dataPath) {
 }
 
 // Simulate delay
-export function delay(ms = MOCK_DELAY.NORMAL) {
+// 在开发环境中，可以使用更短的延迟来提高响应速度
+export function delay(ms = MOCK_DELAY.FAST) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 

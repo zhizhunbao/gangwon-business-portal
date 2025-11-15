@@ -4,27 +4,23 @@
 
 import { http, HttpResponse } from 'msw';
 import { API_PREFIX, API_BASE_URL } from '@shared/utils/constants';
-import { delay, loadMockData, shouldSimulateError, getErrorStatus } from '../config.js';
+import { delay, loadMockData, shouldSimulateError, getErrorStatus, getCurrentLanguage } from '../config.js';
 
 // Base URL for content API (use absolute paths - MSW best practice)
 const BASE_URL = `${API_BASE_URL}${API_PREFIX}/content`;
 const ADMIN_BASE_URL = `${API_BASE_URL}${API_PREFIX}/admin/content`;
 
-// In-memory storage for content (simulates database)
-let contentData = null;
-
-// Initialize data on first load
+// Initialize data based on current language (no cache - always load fresh)
 async function initializeData() {
-  if (!contentData) {
-    const data = await loadMockData('content');
-    contentData = {
-      banners: [...(data.banners || [])],
-      popups: [...(data.popups || [])],
-      news: [...(data.news || [])],
-      faqs: [...(data.faqs || [])],
-      about: data.about || null
-    };
-  }
+  const data = await loadMockData('content');
+  
+  return {
+    banners: [...(data.banners || [])],
+    popups: [...(data.popups || [])],
+    news: [...(data.news || [])],
+    faqs: [...(data.faqs || [])],
+    about: data.about || null
+  };
 }
 
 // Get active banners (member)
@@ -38,20 +34,38 @@ async function getActiveBanners(req) {
     );
   }
   
-  await initializeData();
+  const contentData = await initializeData();
+  
+  console.log('[MSW Content] Loading banners, total:', contentData.banners.length);
   
   const now = new Date();
   const activeBanners = contentData.banners.filter(banner => {
-    if (!banner.isActive) return false;
+    if (!banner.isActive) {
+      console.log('[MSW Content] Banner', banner.id, 'is not active');
+      return false;
+    }
     
+    // In development/mock environment, skip date filtering for easier testing
+    // Uncomment the following lines if you want to enable date filtering
+    /*
     const startDate = new Date(banner.startDate);
     const endDate = new Date(banner.endDate);
     
-    return now >= startDate && now <= endDate;
+    if (now < startDate || now > endDate) {
+      console.log('[MSW Content] Banner', banner.id, 'is outside date range:', startDate, 'to', endDate);
+      return false;
+    }
+    */
+    
+    return true;
   });
+  
+  console.log('[MSW Content] Active banners after filtering:', activeBanners.length);
   
   // Sort by order
   activeBanners.sort((a, b) => (a.order || 0) - (b.order || 0));
+  
+  console.log('[MSW Content] Returning banners:', activeBanners.map(b => ({ id: b.id, type: b.type, title: b.title })));
   
   return HttpResponse.json({ banners: activeBanners });
 }
@@ -60,16 +74,22 @@ async function getActiveBanners(req) {
 async function getLatestNotices(req) {
   await delay();
   
-  await initializeData();
+  const contentData = await initializeData();
   
   const url = new URL(req.request.url);
   const limit = parseInt(url.searchParams.get('limit') || '5', 10);
+  
+  console.log('[MSW Content] Loading notices, limit:', limit);
+  console.log('[MSW Content] Total news:', contentData.news.length);
   
   // Get published news/notices
   const publishedNews = contentData.news
     .filter(n => n.isPublished)
     .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
     .slice(0, limit);
+  
+  console.log('[MSW Content] Published news after filtering:', publishedNews.length);
+  console.log('[MSW Content] Returning notices:', publishedNews.map(n => ({ id: n.id, title: n.title })));
   
   return HttpResponse.json({ notices: publishedNews });
 }
@@ -78,7 +98,7 @@ async function getLatestNotices(req) {
 async function getAllBanners(req) {
   await delay();
   
-  await initializeData();
+  const contentData = await initializeData();
   
   return HttpResponse.json({ banners: contentData.banners });
 }
@@ -87,7 +107,7 @@ async function getAllBanners(req) {
 async function getAllNews(req) {
   await delay();
   
-  await initializeData();
+  const contentData = await initializeData();
   
   return HttpResponse.json({ news: contentData.news });
 }
@@ -96,7 +116,7 @@ async function getAllNews(req) {
 async function getNewsById(req) {
   await delay();
   
-  await initializeData();
+  const contentData = await initializeData();
   
   const { id } = req.params;
   const news = contentData.news.find(n => n.id === parseInt(id, 10));
@@ -115,7 +135,7 @@ async function getNewsById(req) {
 async function getAboutContent(req) {
   await delay();
   
-  await initializeData();
+  const contentData = await initializeData();
   
   return HttpResponse.json({ about: contentData.about });
 }
@@ -124,7 +144,7 @@ async function getAboutContent(req) {
 async function getFAQs(req) {
   await delay();
   
-  await initializeData();
+  const contentData = await initializeData();
   
   const url = new URL(req.request.url);
   const category = url.searchParams.get('category');
@@ -139,6 +159,43 @@ async function getFAQs(req) {
   faqs.sort((a, b) => (a.order || 0) - (b.order || 0));
   
   return HttpResponse.json({ faqs });
+}
+
+// Initialize settings data based on current language
+async function initializeSettingsData() {
+  const settingsData = await loadMockData('settings');
+  
+  return {
+    terms: [...(settingsData.terms || [])]
+  };
+}
+
+// Get terms by type (terms_of_service or privacy_policy)
+async function getTermByType(req) {
+  await delay();
+  
+  const settingsData = await initializeSettingsData();
+  
+  const url = new URL(req.request.url);
+  const type = url.searchParams.get('type');
+  
+  if (!type) {
+    return HttpResponse.json(
+      { message: 'Type parameter is required', code: 'INVALID_PARAMETER' },
+      { status: 400 }
+    );
+  }
+  
+  const term = settingsData.terms.find(t => t.type === type && t.isActive);
+  
+  if (!term) {
+    return HttpResponse.json(
+      { message: 'Term not found', code: 'NOT_FOUND_ERROR' },
+      { status: 404 }
+    );
+  }
+  
+  return HttpResponse.json({ term });
 }
 
 // Export handlers
@@ -165,6 +222,10 @@ export const contentHandlers = [
   // Member: Get FAQs
   http.get(`${BASE_URL}/faqs`, getFAQs),
   http.get(`${API_BASE_URL}${API_PREFIX}/member/faqs`, getFAQs),
+  
+  // Member: Get terms by type (terms_of_service or privacy_policy)
+  http.get(`${BASE_URL}/terms`, getTermByType),
+  http.get(`${API_BASE_URL}${API_PREFIX}/member/terms`, getTermByType),
   
   // Admin: Get all banners
   http.get(`${ADMIN_BASE_URL}/banners`, getAllBanners),

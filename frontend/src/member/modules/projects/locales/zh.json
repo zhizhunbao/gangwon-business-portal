@@ -4,6 +4,7 @@
     "subtitle": "查看支持项目公告并申请",
     "searchPlaceholder": "按项目名称或关键词搜索",
     "resultsCount": "共{{count}}个项目",
+    "perPage": "条/页",
     "apply": "申请",
     "status": {
       "recruiting": "招募中",
@@ -55,8 +56,13 @@
         "title": "附件文件",
         "description": "请上传营业执照、项目计划书等必要文件。",
         "hint": "文件格式: PDF, DOC, XLS / 最大 10MB",
-        "uploaded": "已上传文件"
-      }
+        "uploaded": "已上传文件",
+        "maxFiles": "最多可上传{{max}}个文件",
+        "required": "请至少上传1个文件。",
+        "fileTooLarge": "文件{{fileName}}的大小超过限制。 (最大 10MB)"
+      },
+      "submitSuccess": "申请已提交成功。",
+      "submitFailed": "申请提交失败。"
     }
   }
 }

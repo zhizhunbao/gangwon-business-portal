@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
+import { CalendarIcon, CheckCircleIcon, PaperclipIcon } from '@shared/components/Icons';
+import './Performance.css';
 
 export default function PerformanceDetail() {
   const { t } = useTranslation();
@@ -113,10 +115,16 @@ export default function PerformanceDetail() {
         </div>
         <div className="meta-info">
           {performance.submittedDate && (
-            <span>📅 {t('performance.submittedDate')}: {performance.submittedDate}</span>
+            <span>
+              <CalendarIcon className="w-4 h-4" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.25rem' }} />
+              {t('performance.submittedDate')}: {performance.submittedDate}
+            </span>
           )}
           {performance.approvedDate && (
-            <span>✅ {t('performance.approvedDate')}: {performance.approvedDate}</span>
+            <span>
+              <CheckCircleIcon className="w-4 h-4" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.25rem' }} />
+              {t('performance.approvedDate')}: {performance.approvedDate}
+            </span>
           )}
         </div>
       </div>
@@ -202,7 +210,9 @@ export default function PerformanceDetail() {
             {performance.proofDocuments.map((doc) => (
               <div key={doc.id} className="attachment-item">
                 <div className="attachment-info">
-                  <span className="attachment-icon">📎</span>
+                  <span className="attachment-icon">
+                    <PaperclipIcon className="w-4 h-4" />
+                  </span>
                   <span className="attachment-name">{doc.name}</span>
                   <span className="attachment-size">({doc.size})</span>
                 </div>

@@ -11,6 +11,8 @@ import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import Textarea from '@shared/components/Textarea';
 import Select from '@shared/components/Select';
+import { PaperclipIcon, DocumentIcon, XIcon } from '@shared/components/Icons';
+import './Performance.css';
 
 export default function PerformanceForm() {
   const { t } = useTranslation();
@@ -275,7 +277,8 @@ export default function PerformanceForm() {
             onClick={() => document.getElementById('file-upload').click()}
             variant="secondary"
           >
-            📎 {t('common.upload')}
+            <PaperclipIcon className="w-4 h-4" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.5rem' }} />
+            {t('common.upload')}
           </Button>
           <small className="form-hint">
             {t('performance.fileUploadHint')}
@@ -287,7 +290,10 @@ export default function PerformanceForm() {
             <h3>{t('performance.uploadedFiles')}</h3>
             {formData.proofDocuments.map((file, index) => (
               <div key={index} className="file-item">
-                <span className="file-name">📄 {file.name}</span>
+                <span className="file-name">
+                  <DocumentIcon className="w-4 h-4" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.5rem' }} />
+                  {file.name}
+                </span>
                 <span className="file-size">
                   ({(file.size / 1024).toFixed(1)} KB)
                 </span>
@@ -296,7 +302,7 @@ export default function PerformanceForm() {
                   variant="text"
                   size="small"
                 >
-                  ✕
+                  <XIcon className="w-4 h-4" />
                 </Button>
               </div>
             ))}

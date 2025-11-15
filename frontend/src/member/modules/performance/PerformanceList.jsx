@@ -12,6 +12,7 @@ import Input from '@shared/components/Input';
 import Select from '@shared/components/Select';
 import { apiService } from '@shared/services';
 import { API_PREFIX } from '@shared/utils/constants';
+import './Performance.css';
 
 export default function PerformanceList() {
   const { t } = useTranslation();

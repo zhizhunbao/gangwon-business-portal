@@ -1,0 +1,45 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "admin@gwstartup.kr",
+      "businessLicense": null,
+      "password": "admin123",
+      "role": "admin",
+      "name": "系统管理员",
+      "companyName": null,
+      "memberId": null
+    },
+    {
+      "id": 2,
+      "email": "company1@gwstartup.kr",
+      "businessLicense": "1208800767",
+      "password": "password123",
+      "role": "member",
+      "name": "金哲洙",
+      "companyName": "江原技术株式会社",
+      "memberId": 1
+    },
+    {
+      "id": 3,
+      "email": "company2@gwstartup.kr",
+      "businessLicense": "2208800123",
+      "password": "password123",
+      "role": "member",
+      "name": "李英姬",
+      "companyName": "江原生物株式会社",
+      "memberId": 2
+    },
+    {
+      "id": 4,
+      "email": "company3@gwstartup.kr",
+      "businessLicense": "3208800456",
+      "password": "password123",
+      "role": "member",
+      "name": "朴民洙",
+      "companyName": "江原绿色能源",
+      "memberId": 3
+    }
+  ]
+}
+

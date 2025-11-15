@@ -1,12 +1,16 @@
 /**
  * Login Page - Member Portal
+ * Minimalist Style
  */
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@shared/hooks';
-import { Button, Input, Alert, LanguageSwitcher } from '@shared/components';
+import { LanguageSwitcher } from '@shared/components';
+import { EyeIcon, EyeOffIcon } from '@shared/components/Icons';
+import { formatBusinessLicense } from '@shared/utils/format';
+import './Auth.css';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -14,17 +18,23 @@ export default function Login() {
   const { login, isLoading } = useAuth();
   
   const [formData, setFormData] = useState({
-    email: '',
+    businessLicense: '',
     password: ''
   });
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
     try {
-      const response = await login(formData);
+      // Remove dashes from business license for API call
+      const businessLicenseClean = formData.businessLicense.replace(/-/g, '');
+      const response = await login({
+        businessLicense: businessLicenseClean,
+        password: formData.password
+      });
       // Redirect based on role
       const redirectPath = response.user.role === 'admin' ? '/admin' : '/member';
       navigate(redirectPath);
@@ -33,92 +43,132 @@ export default function Login() {
     }
   };
   
-  const handleChange = (e) => {
+  const handleBusinessLicenseChange = (e) => {
+    const value = e.target.value;
+    const formatted = formatBusinessLicense(value);
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      businessLicense: formatted
     }));
   };
   
+  const handlePasswordChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      password: e.target.value
+    }));
+  };
+  
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev);
+  };
+  
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="absolute top-4 right-4">
+    <div className="auth-container">
+      <div className="auth-language-switcher">
         <LanguageSwitcher />
       </div>
       
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-3xl font-extrabold text-gray-900">
-          {t('common.appName')}
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          {t('common.welcome')}
-        </p>
-      </div>
-      
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <Alert variant="error" onClose={() => setError('')}>
-                {error}
-              </Alert>
-            )}
-            
-            <Input
-              label={t('auth.email')}
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
+      <div className="auth-card">
+        <div className="auth-brand">
+          <h2 className="auth-app-name">{t('common.appName')}</h2>
+        </div>
+        
+        {error && (
+          <div className="auth-alert auth-alert-error">
+            {error}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="auth-form-group">
+            <label htmlFor="businessLicense">
+              {t('auth.businessLicense')}
+            </label>
+            <input
+              id="businessLicense"
+              name="businessLicense"
+              type="text"
+              className="auth-input"
+              value={formData.businessLicense}
+              onChange={handleBusinessLicenseChange}
               required
-              autoComplete="email"
+              maxLength={12}
+              placeholder={t('auth.businessLicensePlaceholder')}
             />
-            
-            <Input
-              label={t('auth.password')}
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              autoComplete="current-password"
-            />
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  {t('auth.rememberMe')}
-                </label>
-              </div>
-              
-              <div className="text-sm">
-                <Link to="/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
+            <span className="auth-help-text">
+              {t('auth.businessLicenseHelp')}
+            </span>
+          </div>
+          
+          <div className="auth-form-group">
+            <div className="auth-links">
+              <label htmlFor="password">
+                {t('auth.password')}
+              </label>
+              <div className="auth-link-group">
+                <Link to="/find-id" className="auth-link">
+                  {t('auth.findId')}
+                </Link>
+                <span className="auth-link-separator">|</span>
+                <Link to="/forgot-password" className="auth-link">
                   {t('auth.forgotPassword')}
                 </Link>
               </div>
             </div>
-            
-            <Button
-              type="submit"
-              className="w-full"
-              loading={isLoading}
-            >
-              {t('common.login')}
-            </Button>
-            
-            <div className="text-center text-sm">
-              <span className="text-gray-600">{t('auth.noAccount')} </span>
-              <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500">
-                {t('common.register')}
-              </Link>
+            <div className="auth-password-input-wrapper">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                className="auth-input"
+                value={formData.password}
+                onChange={handlePasswordChange}
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="auth-password-toggle"
+                onClick={togglePasswordVisibility}
+                aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+              >
+                {showPassword ? (
+                  <EyeOffIcon className="w-5 h-5" />
+                ) : (
+                  <EyeIcon className="w-5 h-5" />
+                )}
+              </button>
             </div>
-          </form>
+          </div>
+          
+          <div className="auth-checkbox-group">
+            <input
+              id="remember-me"
+              name="remember-me"
+              type="checkbox"
+              className="auth-checkbox"
+            />
+            <label htmlFor="remember-me" className="auth-checkbox-label">
+              {t('auth.rememberMe')}
+            </label>
+          </div>
+          
+          <button
+            type="submit"
+            className={`auth-button auth-button-primary ${isLoading ? 'auth-button-loading' : ''}`}
+            disabled={isLoading}
+          >
+            {!isLoading && t('common.login')}
+          </button>
+        </form>
+        
+        <div className="auth-footer">
+          {t('auth.noAccount')}{' '}
+          <Link to="/register" className="auth-link">
+            {t('common.register')}
+          </Link>
+          .
         </div>
       </div>
     </div>

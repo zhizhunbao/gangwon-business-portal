@@ -1,0 +1,706 @@
+/**
+ * Performance Module Styles - Member Portal
+ * 绩效模块样式
+ */
+
+/* Card Content Padding - Fix layout issues */
+.performance-list .card,
+.performance-detail .card,
+.performance-form .card {
+  padding: 1.5rem;
+}
+
+.performance-list .card h2,
+.performance-detail .card h2,
+.performance-form .card h2,
+.performance-form .card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.performance-list .card h2:first-child,
+.performance-detail .card h2:first-child,
+.performance-form .card h2:first-child,
+.performance-form .card h3:first-child {
+  margin-top: 0;
+}
+
+.performance-list .card p,
+.performance-detail .card p,
+.performance-form .card p {
+  margin: 0 0 1rem 0;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.performance-list .card p:last-child,
+.performance-detail .card p:last-child,
+.performance-form .card p:last-child {
+  margin-bottom: 0;
+}
+
+/* Common Page Header */
+.performance-list .page-header,
+.performance-detail .page-header,
+.performance-form .page-header {
+  margin-bottom: 2rem;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.performance-list .page-header h1,
+.performance-detail .page-header h1,
+.performance-form .page-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.performance-list .page-header .subtitle,
+.performance-detail .page-header .subtitle,
+.performance-form .page-header .subtitle {
+  font-size: 1rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.performance-list .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.performance-list .header-actions {
+  flex-shrink: 0;
+}
+
+/* Breadcrumb */
+.performance-detail .breadcrumb {
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.performance-detail .breadcrumb a {
+  color: #2563eb;
+  text-decoration: none;
+  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.performance-detail .breadcrumb a:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.performance-detail .breadcrumb span {
+  margin: 0 0.5rem;
+}
+
+/* Badge Styles */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-info {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-secondary {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+/* Performance List Page */
+.performance-list {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Filter Card */
+.performance-list .filter-card {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+}
+
+.performance-list .filter-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.performance-list .search-box {
+  flex: 1;
+  min-width: 200px;
+}
+
+.performance-list .filter-group {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Performances Container */
+.performance-list .performances-container {
+  margin-bottom: 2rem;
+}
+
+.performance-list .results-info {
+  margin-bottom: 1rem;
+}
+
+.performance-list .results-info p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.performance-list .no-data {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.performance-list .card .no-data {
+  padding: 3rem 1rem;
+}
+
+.performance-list .no-data p {
+  font-size: 1rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Performances List */
+.performance-list .performances-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.performance-list .performance-card {
+  padding: 1.5rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.performance-list .performance-card:hover {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.performance-list .performance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.performance-list .performance-title-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.performance-list .performance-title-section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.performance-list .performance-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.performance-list .performance-meta span {
+  display: flex;
+  align-items: center;
+}
+
+.performance-list .performance-body {
+  margin-bottom: 1rem;
+}
+
+.performance-list .performance-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.performance-list .stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.performance-list .stat-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.performance-list .stat-value {
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.performance-list .performance-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.performance-list .performance-footer a {
+  text-decoration: none;
+}
+
+/* Performance Detail Page */
+.performance-detail {
+  width: 100%;
+  max-width: 100%;
+}
+
+.performance-detail .title-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.performance-detail .title-section h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.performance-detail .meta-info {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.performance-detail .meta-info span {
+  display: flex;
+  align-items: center;
+}
+
+/* Info Grid */
+.performance-detail .info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.performance-detail .card .info-grid {
+  margin-top: 1rem;
+}
+
+.performance-detail .card h2 + .info-grid {
+  margin-top: 0;
+}
+
+.performance-detail .info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.performance-detail .info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.performance-detail .info-item .label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.performance-detail .info-item .value {
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 500;
+}
+
+.performance-detail .info-item .value.highlight {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* IP Summary */
+.performance-detail .ip-summary,
+.performance-form .ip-summary {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.performance-detail .card .ip-summary,
+.performance-form .card .ip-summary {
+  margin-top: 1.5rem;
+}
+
+.performance-detail .card h2 + .ip-summary,
+.performance-form .card h2 + .ip-summary {
+  margin-top: 1.5rem;
+}
+
+/* Attachments */
+.performance-detail .attachments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.performance-detail .card .attachments-list {
+  margin-top: 1rem;
+}
+
+.performance-detail .card h2 + .attachments-list {
+  margin-top: 0;
+}
+
+.performance-detail .attachment-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.performance-detail .attachment-item:hover {
+  background-color: #f3f4f6;
+}
+
+.performance-detail .attachment-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.performance-detail .attachment-icon {
+  display: flex;
+  align-items: center;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.performance-detail .attachment-name {
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.performance-detail .attachment-size {
+  font-size: 0.75rem;
+  color: #6b7280;
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+
+/* Action Buttons */
+.performance-detail .action-buttons,
+.performance-form .action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Performance Form Page */
+.performance-form {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Form Styles */
+.performance-form .form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.performance-form .card .form-grid {
+  margin-top: 1rem;
+}
+
+.performance-form .card h2 + .form-grid {
+  margin-top: 0;
+}
+
+.performance-form .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.performance-form .form-grid .form-group {
+  margin-bottom: 0;
+}
+
+.performance-form .form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.performance-form .form-hint {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.performance-form .section-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 1rem 0;
+  line-height: 1.6;
+}
+
+.performance-form .card .section-description {
+  margin: 0 0 1rem 0;
+}
+
+.performance-form .card h2 + .section-description {
+  margin-top: 0;
+}
+
+/* File Upload */
+.performance-form .file-upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  margin-top: 1rem;
+}
+
+.performance-form .card .file-upload-area {
+  margin-top: 1rem;
+}
+
+.performance-form .card h2 + .file-upload-area {
+  margin-top: 0;
+}
+
+.performance-form .uploaded-files {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.performance-form .card .uploaded-files {
+  margin-top: 1.5rem;
+}
+
+.performance-form .uploaded-files h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1rem 0;
+}
+
+.performance-form .file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.performance-form .file-item:hover {
+  background-color: #f3f4f6;
+}
+
+.performance-form .file-item:last-child {
+  margin-bottom: 0;
+}
+
+.performance-form .file-name {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #374151;
+  flex: 1;
+  min-width: 0;
+  margin-right: 0.5rem;
+}
+
+.performance-form .file-size {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-right: 0.75rem;
+}
+
+/* Loading and Error States */
+.performance-detail .loading-container,
+.performance-detail .error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+}
+
+.performance-detail .loading-container p,
+.performance-detail .error-container p {
+  font-size: 1rem;
+  color: #6b7280;
+  margin: 0 0 1rem 0;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .performance-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-detail .info-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .performance-list .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .performance-list .filter-group {
+    width: 100%;
+  }
+
+  .performance-list .filter-group > * {
+    flex: 1;
+  }
+
+  .performance-list .performance-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .performance-list .page-header h1,
+  .performance-detail .page-header h1,
+  .performance-form .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .performance-list .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .performance-detail .title-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .performance-detail .title-section h1 {
+    font-size: 1.5rem;
+  }
+
+  .performance-detail .meta-info {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .performance-detail .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-list .performance-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .performance-list .performance-meta {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .performance-list .performance-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-list .performance-footer {
+    flex-direction: column;
+  }
+
+  .performance-list .performance-footer a {
+    width: 100%;
+  }
+
+  .performance-detail .action-buttons,
+  .performance-form .action-buttons {
+    flex-direction: column-reverse;
+  }
+
+  .performance-detail .action-buttons > *,
+  .performance-form .action-buttons > * {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .performance-list .filter-group {
+    flex-direction: column;
+  }
+
+  .performance-list .filter-group > * {
+    width: 100%;
+  }
+}
+

@@ -1,6 +1,10 @@
 {
   "header": {
+    "title": "江原创业门户",
+    "searchPlaceholder": "搜索...",
+    "toggleSidebar": "切换侧边栏",
     "notifications": "通知",
+    "noNotifications": "暂无通知",
     "profile": "个人资料",
     "support": "客户支持",
     "logout": "退出登录"
@@ -9,8 +13,7 @@
     "home": "首页",
     "projects": "项目",
     "performance": "业绩管理",
-    "profile": "企业信息",
-    "support": "客户支持",
+    "support": "一站式支持",
     "about": "系统介绍"
   },
   "footer": {
@@ -24,7 +27,8 @@
     "legal": "法律声明",
     "termsOfService": "服务条款",
     "privacyPolicy": "隐私政策",
-    "copyright": "江原创业门户. 版权所有."
+    "copyright": "江原创业门户. 版权所有.",
+    "version": "版本"
   }
 }
 

@@ -291,19 +291,63 @@ async function updateAdminBanner(req) {
   const imageFile = formData.get('image');
   const url = formData.get('url') || '';
   
-  // 如果有图片文件，转换为 base64 URL（模拟上传后的 URL）
+  // 图片验证配置（模拟真实环境）
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  
+  // 如果有图片文件，进行验证和处理
   let imageUrl = null;
   if (imageFile && imageFile instanceof File) {
+    // 验证图片类型
+    if (!ALLOWED_IMAGE_TYPES.includes(imageFile.type)) {
+      return HttpResponse.json(
+        { 
+          message: `不支持的图片格式。支持的格式: ${ALLOWED_IMAGE_TYPES.join(', ')}`, 
+          code: 'INVALID_IMAGE_TYPE' 
+        },
+        { status: 400 }
+      );
+    }
+    
+    // 验证图片大小
+    if (imageFile.size > MAX_IMAGE_SIZE) {
+      return HttpResponse.json(
+        { 
+          message: `图片大小超过限制。最大允许: ${MAX_IMAGE_SIZE / 1024 / 1024}MB`, 
+          code: 'IMAGE_TOO_LARGE' 
+        },
+        { status: 400 }
+      );
+    }
+    
     // 在真实环境中，这里应该上传到存储服务并返回 URL
     // 在 mock 环境中，我们读取为 base64 data URL
     try {
+      // 使用更可靠的方法转换 base64（支持大文件）
       const arrayBuffer = await imageFile.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      // 分块处理，避免大文件导致的问题
+      let binaryString = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < uint8Array.length; i += chunkSize) {
+        const chunk = uint8Array.subarray(i, i + chunkSize);
+        binaryString += String.fromCharCode.apply(null, chunk);
+      }
+      
+      const base64 = btoa(binaryString);
       imageUrl = `data:${imageFile.type};base64,${base64}`;
+      
+      console.log(`[MSW] Banner image uploaded: ${bannerKey}, size: ${imageFile.size} bytes, type: ${imageFile.type}`);
     } catch (error) {
-      console.error('Failed to convert image to base64:', error);
-      // 如果转换失败，使用一个模拟的 URL
-      imageUrl = `https://example.com/banners/${bannerKey}.jpg`;
+      console.error('[MSW] Failed to convert image to base64:', error);
+      return HttpResponse.json(
+        { 
+          message: '图片处理失败，请重试', 
+          code: 'IMAGE_PROCESSING_ERROR' 
+        },
+        { status: 500 }
+      );
     }
   }
   

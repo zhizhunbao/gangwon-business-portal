@@ -17,7 +17,11 @@
     },
     "notices": {
       "title": "最新公告",
-      "important": "重要"
+      "important": "重要",
+      "empty": "暂无公告"
+    },
+    "news": {
+      "title": "新闻资料"
     },
     "stats": {
       "title": "我的概况",

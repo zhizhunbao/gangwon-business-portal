@@ -17,7 +17,11 @@
     },
     "notices": {
       "title": "최신 공고",
-      "important": "중요"
+      "important": "중요",
+      "empty": "공고가 없습니다"
+    },
+    "news": {
+      "title": "뉴스 자료"
     },
     "stats": {
       "title": "나의 현황",

@@ -5,6 +5,8 @@
 
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@shared/hooks';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
@@ -12,9 +14,11 @@ import Textarea from '@shared/components/Textarea';
 import Select from '@shared/components/Select';
 import { apiService } from '@shared/services';
 import { API_PREFIX } from '@shared/utils/constants';
+import { UserIcon } from '@shared/components/Icons';
 
 export default function Profile() {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [companyData, setCompanyData] = useState({
@@ -34,10 +38,14 @@ export default function Profile() {
   });
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    if (isAuthenticated) {
+      loadProfile();
+    }
+  }, [isAuthenticated]);
 
   const loadProfile = async () => {
+    if (!isAuthenticated) return;
+    
     setLoading(true);
     try {
       const response = await apiService.get(`${API_PREFIX}/member/profile`);
@@ -125,6 +133,43 @@ export default function Profile() {
     { value: 'finance', label: t('profile.industries.finance') },
     { value: 'other', label: t('profile.industries.other') }
   ];
+
+  // 未登录用户显示提示信息
+  if (!isAuthenticated) {
+    return (
+      <div className="profile">
+        <div className="page-header">
+          <h1>{t('profile.title')}</h1>
+        </div>
+        
+        <Card>
+          <div style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+              <UserIcon className="w-16 h-16" style={{ color: '#6b7280' }} />
+            </div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#1f2937' }}>
+              {t('profile.loginRequired') || '로그인이 필요합니다'}
+            </h2>
+            <p style={{ color: '#6b7280', marginBottom: '2rem', fontSize: '1rem' }}>
+              {t('profile.loginRequiredDesc') || '기업 정보를 확인하고 관리하려면 로그인해주세요.'}
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <Link to="/login">
+                <Button variant="primary" style={{ padding: '0.75rem 2rem' }}>
+                  {t('common.login') || '로그인'}
+                </Button>
+              </Link>
+              <Link to="/register">
+                <Button variant="secondary" style={{ padding: '0.75rem 2rem' }}>
+                  {t('common.register') || '회원가입'}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="profile">

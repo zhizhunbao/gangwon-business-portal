@@ -66,8 +66,18 @@ frontend/.cache/
 # Project data
 backend/data/
 data/
+
+# Uploaded files (production)
+backend/uploads/
+uploads/
+
 # Exception: allow frontend mocks data
 !frontend/src/mocks/data/
+
+# Exception: allow frontend public uploads for development (but ignore actual uploaded files)
+frontend/public/uploads/**/*
+!frontend/public/uploads/.gitkeep
+!frontend/public/uploads/banners/.gitkeep
 
 # Temporary files
 *.tmp

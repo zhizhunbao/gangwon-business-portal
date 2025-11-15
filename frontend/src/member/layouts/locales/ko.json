@@ -1,6 +1,10 @@
 {
   "header": {
+    "title": "강원창업포털",
+    "searchPlaceholder": "검색...",
+    "toggleSidebar": "사이드바 토글",
     "notifications": "알림",
+    "noNotifications": "알림이 없습니다",
     "profile": "프로필",
     "support": "고객지원",
     "logout": "로그아웃"
@@ -9,8 +13,7 @@
     "home": "홈",
     "projects": "프로젝트",
     "performance": "실적 관리",
-    "profile": "기업 정보",
-    "support": "고객지원",
+    "support": "원스톱 지원",
     "about": "시스템 소개"
   },
   "footer": {
@@ -24,7 +27,8 @@
     "legal": "법적 고지",
     "termsOfService": "이용약관",
     "privacyPolicy": "개인정보처리방침",
-    "copyright": "강원창업포털. All rights reserved."
+    "copyright": "강원창업포털. All rights reserved.",
+    "version": "버전"
   }
 }
 

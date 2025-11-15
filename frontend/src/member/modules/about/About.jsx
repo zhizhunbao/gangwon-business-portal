@@ -5,28 +5,30 @@
 
 import { useTranslation } from 'react-i18next';
 import Card from '@shared/components/Card';
+import { ChartIcon, ClipboardDocumentCheckIcon, BuildingIcon, ChatBubbleLeftRightIcon, PhoneIcon, EnvelopeIcon, LocationIcon } from '@shared/components/Icons';
+import './About.css';
 
 export default function About() {
   const { t } = useTranslation();
 
   const features = [
     {
-      icon: '📊',
+      icon: ChartIcon,
       title: t('about.features.performance.title'),
       description: t('about.features.performance.description')
     },
     {
-      icon: '📋',
+      icon: ClipboardDocumentCheckIcon,
       title: t('about.features.project.title'),
       description: t('about.features.project.description')
     },
     {
-      icon: '🏢',
+      icon: BuildingIcon,
       title: t('about.features.management.title'),
       description: t('about.features.management.description')
     },
     {
-      icon: '💬',
+      icon: ChatBubbleLeftRightIcon,
       title: t('about.features.support.title'),
       description: t('about.features.support.description')
     }
@@ -53,13 +55,18 @@ export default function About() {
       <section className="features-section">
         <h2>{t('about.features.title')}</h2>
         <div className="features-grid">
-          {features.map((feature, index) => (
-            <Card key={index} className="feature-card">
-              <div className="feature-icon">{feature.icon}</div>
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
-            </Card>
-          ))}
+          {features.map((feature, index) => {
+            const IconComponent = feature.icon;
+            return (
+              <Card key={index} className="feature-card">
+                <div className="feature-icon">
+                  <IconComponent className="w-10 h-10" />
+                </div>
+                <h3>{feature.title}</h3>
+                <p>{feature.description}</p>
+              </Card>
+            );
+          })}
         </div>
       </section>
 
@@ -114,21 +121,27 @@ export default function About() {
         <h2>{t('about.contact.title')}</h2>
         <div className="contact-grid">
           <Card className="contact-card">
-            <div className="contact-icon">📞</div>
+            <div className="contact-icon">
+              <PhoneIcon className="w-8 h-8" />
+            </div>
             <h3>{t('about.contact.phone.title')}</h3>
             <p>{t('about.contact.phone.value')}</p>
             <small>{t('about.contact.phone.hours')}</small>
           </Card>
 
           <Card className="contact-card">
-            <div className="contact-icon">✉️</div>
+            <div className="contact-icon">
+              <EnvelopeIcon className="w-8 h-8" />
+            </div>
             <h3>{t('about.contact.email.title')}</h3>
             <p>{t('about.contact.email.value')}</p>
             <small>{t('about.contact.email.note')}</small>
           </Card>
 
           <Card className="contact-card">
-            <div className="contact-icon">📍</div>
+            <div className="contact-icon">
+              <LocationIcon className="w-8 h-8" />
+            </div>
             <h3>{t('about.contact.address.title')}</h3>
             <p>{t('about.contact.address.value')}</p>
             <small>{t('about.contact.address.note')}</small>

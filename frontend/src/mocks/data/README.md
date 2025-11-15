@@ -6,6 +6,9 @@
 
 ```
 data/
+├── auth/             # 认证用户数据
+│   ├── ko.json       # 韩文版本
+│   └── zh.json       # 中文版本
 ├── projects/          # 项目数据
 │   ├── ko.json       # 韩文版本
 │   └── zh.json       # 中文版本
@@ -28,7 +31,28 @@ data/
 
 ## 数据模块说明
 
-### 1. Projects (项目)
+### 1. Auth (认证)
+
+包含系统用户认证数据，用于登录和注册功能。
+
+**主要字段：**
+- `users`: 用户列表
+
+**用户角色：**
+- `admin`: 管理员（通过邮箱登录）
+- `member`: 普通会员（通过营业执照号码登录）
+
+**用户字段：**
+- `id`: 用户ID
+- `email`: 邮箱（管理员必填）
+- `businessLicense`: 营业执照号码（会员必填，管理员为 null）
+- `password`: 密码
+- `role`: 用户角色
+- `name`: 用户姓名
+- `companyName`: 公司名称（会员必填，管理员为 null）
+- `memberId`: 会员ID（关联到 members 数据）
+
+### 2. Projects (项目)
 
 包含项目列表和项目申请数据。
 
@@ -38,7 +62,7 @@ data/
 
 详细说明请参考 `projects/README.md`
 
-### 2. Members (会员)
+### 3. Members (会员)
 
 包含企业会员信息和会员档案数据。
 
@@ -51,7 +75,7 @@ data/
 - `pending`: 待审批
 - `rejected`: 已拒绝
 
-### 3. Performance (绩效)
+### 4. Performance (绩效)
 
 包含绩效记录和审核记录数据。
 
@@ -72,7 +96,7 @@ data/
 - 政府支持：支援类型、金额、提供方
 - 知识产权：专利、商标、设计、著作权
 
-### 4. Content (内容)
+### 5. Content (内容)
 
 包含横幅、弹窗、新闻、FAQ 和关于页面数据。
 
@@ -97,7 +121,7 @@ data/
 - `performance`: 绩效相关
 - `support`: 支持相关
 
-### 5. Support (支持)
+### 6. Support (支持)
 
 包含咨询和通知数据。
 
@@ -119,7 +143,7 @@ data/
 - `performance`: 绩效通知
 - `system`: 系统通知
 
-### 6. Settings (设置)
+### 7. Settings (设置)
 
 包含系统配置、业务领域、合作领域、知识产权分类和条款数据。
 
@@ -149,6 +173,10 @@ data/
 
 ```javascript
 import { loadMockData } from '../config.js';
+
+// 加载认证用户数据
+const authData = await loadMockData('auth');
+const users = authData.users;
 
 // 加载项目数据
 const data = await loadMockData('projects');

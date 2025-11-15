@@ -1,0 +1,45 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "admin@gwstartup.kr",
+      "businessLicense": null,
+      "password": "admin123",
+      "role": "admin",
+      "name": "시스템 관리자",
+      "companyName": null,
+      "memberId": null
+    },
+    {
+      "id": 2,
+      "email": "company1@gwstartup.kr",
+      "businessLicense": "1208800767",
+      "password": "password123",
+      "role": "member",
+      "name": "김철수",
+      "companyName": "강원기술주식회사",
+      "memberId": 1
+    },
+    {
+      "id": 3,
+      "email": "company2@gwstartup.kr",
+      "businessLicense": "2208800123",
+      "password": "password123",
+      "role": "member",
+      "name": "이영희",
+      "companyName": "강원바이오주식회사",
+      "memberId": 2
+    },
+    {
+      "id": 4,
+      "email": "company3@gwstartup.kr",
+      "businessLicense": "3208800456",
+      "password": "password123",
+      "role": "member",
+      "name": "박민수",
+      "companyName": "강원그린에너지",
+      "memberId": 3
+    }
+  ]
+}
+

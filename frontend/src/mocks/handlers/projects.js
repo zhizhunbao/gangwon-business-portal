@@ -141,6 +141,7 @@ async function getPublishedProjects(req) {
   
   return HttpResponse.json({
     projects: paginatedProjects,
+    totalCount: total,
     pagination: {
       page,
       pageSize,
@@ -350,7 +351,6 @@ async function submitProjectApplication(req) {
   await initializeData();
   
   const { id } = req.params;
-  const body = await req.request.json();
   
   // Check if project exists and is published
   const project = projectsData.find(p => p.id === parseInt(id, 10));
@@ -381,6 +381,43 @@ async function submitProjectApplication(req) {
     );
   }
   
+  // Handle FormData (file uploads)
+  let attachments = [];
+  const contentType = req.request.headers.get('content-type') || '';
+  
+  if (contentType.includes('multipart/form-data')) {
+    // In MSW, we can't directly parse FormData, but we can simulate it
+    // In a real implementation, files would be uploaded and saved to /upload/企业ID/公告板/
+    const formData = await req.request.formData();
+    const files = formData.getAll('attachments');
+    attachments = files.map((file, index) => ({
+      id: index + 1,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      url: `/upload/mock/member_1/公告板/${Date.now()}_${file.name}` // Mock path
+    }));
+  } else {
+    // Handle JSON body (for backward compatibility)
+    const body = await req.request.json();
+    attachments = body.attachments || [];
+  }
+  
+  // Validate attachments (max 5)
+  if (attachments.length === 0) {
+    return HttpResponse.json(
+      { message: 'At least one attachment is required', code: 'VALIDATION_ERROR' },
+      { status: 400 }
+    );
+  }
+  
+  if (attachments.length > 5) {
+    return HttpResponse.json(
+      { message: 'Maximum 5 attachments allowed', code: 'VALIDATION_ERROR' },
+      { status: 400 }
+    );
+  }
+  
   // Generate new application ID
   const newAppId = Math.max(...applicationsData.map(a => a.id), 0) + 1;
   
@@ -388,9 +425,9 @@ async function submitProjectApplication(req) {
     id: newAppId,
     projectId: parseInt(id, 10),
     memberId: 1, // Mock member ID (should come from auth token)
-    status: 'submitted',
+    status: 'pending', // 受理状态：待审核
     applicationDate: new Date().toISOString(),
-    ...body,
+    attachments: attachments,
     reviewer: null,
     reviewedAt: null,
     reviewComment: null,
@@ -407,7 +444,11 @@ async function submitProjectApplication(req) {
   }
   
   return HttpResponse.json(
-    { application: newApplication },
+    { 
+      success: true,
+      application: newApplication,
+      message: 'Application submitted successfully'
+    },
     { status: 201 }
   );
 }

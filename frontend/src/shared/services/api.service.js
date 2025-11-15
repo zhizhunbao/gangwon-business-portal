@@ -29,6 +29,12 @@ apiClient.interceptors.request.use(
     const language = getStorage('language') || 'ko';
     config.headers['Accept-Language'] = language;
     
+    // If data is FormData, let axios handle Content-Type automatically
+    // Don't override Content-Type for FormData to allow proper boundary setting
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    
     return config;
   },
   (error) => {
@@ -64,11 +70,26 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
-        // Refresh token failed, redirect to login
+        // Refresh token failed
         removeStorage(ACCESS_TOKEN_KEY);
         removeStorage('refresh_token');
         removeStorage('user_info');
-        window.location.href = '/login';
+        
+        // Only redirect to login if not on a public page
+        // Public pages: /member (home), /member/about, /login, /register
+        const currentPath = window.location.pathname;
+        const isPublicPage = 
+          currentPath === '/member' || 
+          currentPath === '/member/about' ||
+          currentPath === '/login' ||
+          currentPath === '/register' ||
+          currentPath.startsWith('/login') ||
+          currentPath.startsWith('/register');
+        
+        if (!isPublicPage) {
+          window.location.href = '/login';
+        }
+        
         return Promise.reject(refreshError);
       }
     }

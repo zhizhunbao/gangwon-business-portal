@@ -3,6 +3,7 @@
  * 项目详情
  */
 
+import './Projects.css';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -10,6 +11,8 @@ import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
 import { apiService } from '@shared/services';
 import { API_PREFIX } from '@shared/utils/constants';
+import { EyeIcon, CalendarIcon, PaperclipIcon } from '@shared/components/Icons';
+import ProjectApplicationModal from './ProjectApplicationModal';
 
 export default function ProjectDetail() {
   const { t } = useTranslation();
@@ -17,6 +20,7 @@ export default function ProjectDetail() {
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [applicationModalOpen, setApplicationModalOpen] = useState(false);
 
   useEffect(() => {
     loadProjectDetail();
@@ -111,8 +115,14 @@ export default function ProjectDetail() {
           </span>
         </div>
         <div className="meta-info">
-          <span>👁 {project.views} {t('support.views')}</span>
-          <span>📅 {project.updatedAt}</span>
+          <span>
+            <EyeIcon className="w-4 h-4" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.25rem' }} />
+            {project.views} {t('support.views')}
+          </span>
+          <span>
+            <CalendarIcon className="w-4 h-4" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.25rem' }} />
+            {project.updatedAt}
+          </span>
         </div>
       </div>
 
@@ -192,7 +202,9 @@ export default function ProjectDetail() {
           {project.attachments.map((attachment) => (
             <div key={attachment.id} className="attachment-item">
               <div className="attachment-info">
-                <span className="attachment-icon">📎</span>
+                <span className="attachment-icon">
+                  <PaperclipIcon className="w-4 h-4" />
+                </span>
                 <span className="attachment-name">{attachment.name}</span>
                 <span className="attachment-size">({attachment.size})</span>
               </div>
@@ -225,13 +237,26 @@ export default function ProjectDetail() {
         
         {project.status === 'recruiting' && (
           <Button 
-            onClick={() => navigate(`/member/projects/${project.id}/apply`)}
+            onClick={() => setApplicationModalOpen(true)}
             variant="primary"
           >
             {t('projects.apply')}
           </Button>
         )}
       </div>
+
+      {/* 申请弹窗 */}
+      {project && (
+        <ProjectApplicationModal
+          isOpen={applicationModalOpen}
+          onClose={() => setApplicationModalOpen(false)}
+          projectId={project.id}
+          onSuccess={() => {
+            setApplicationModalOpen(false);
+            loadProjectDetail(); // 重新加载项目详情
+          }}
+        />
+      )}
     </div>
   );
 }

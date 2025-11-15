@@ -3,6 +3,7 @@
  * 项目申请
  */
 
+import './Projects.css';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -11,6 +12,7 @@ import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import Textarea from '@shared/components/Textarea';
 import Select from '@shared/components/Select';
+import { WarningIcon, PaperclipIcon, DocumentIcon, XIcon } from '@shared/components/Icons';
 
 export default function ProjectApplication() {
   const { t } = useTranslation();
@@ -83,7 +85,10 @@ export default function ProjectApplication() {
 
       {/* 注意事项 */}
       <Card className="notice-card">
-        <h3>⚠️ {t('projects.application.notice.title')}</h3>
+        <h3>
+          <WarningIcon className="w-5 h-5" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.5rem' }} />
+          {t('projects.application.notice.title')}
+        </h3>
         <ul>
           <li>{t('projects.application.notice.item1')}</li>
           <li>{t('projects.application.notice.item2')}</li>
@@ -193,7 +198,8 @@ export default function ProjectApplication() {
             onClick={() => document.getElementById('file-upload').click()}
             variant="secondary"
           >
-            📎 {t('common.upload')}
+            <PaperclipIcon className="w-4 h-4" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.5rem' }} />
+            {t('common.upload')}
           </Button>
           <small className="form-hint">
             {t('projects.application.attachments.hint')}
@@ -205,7 +211,10 @@ export default function ProjectApplication() {
             <h3>{t('projects.application.attachments.uploaded')}</h3>
             {formData.attachments.map((file, index) => (
               <div key={index} className="file-item">
-                <span className="file-name">📄 {file.name}</span>
+                <span className="file-name">
+                  <DocumentIcon className="w-4 h-4" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.5rem' }} />
+                  {file.name}
+                </span>
                 <span className="file-size">
                   ({(file.size / 1024).toFixed(1)} KB)
                 </span>
@@ -214,7 +223,7 @@ export default function ProjectApplication() {
                   variant="text"
                   size="small"
                 >
-                  ✕
+                  <XIcon className="w-4 h-4" />
                 </Button>
               </div>
             ))}

@@ -3,7 +3,7 @@
  * 管理主横幅和4个主菜单的下级横幅图片
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Card, Button, Input, Loading } from '@shared/components';
@@ -15,6 +15,7 @@ import './Dashboard.css';
 export default function BannerManagement() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const fileInputRefs = useRef({});
   const [banners, setBanners] = useState({
     main: { image: null, file: null, url: '' },
     systemIntro: { image: null, file: null, url: '' },
@@ -94,15 +95,10 @@ export default function BannerManagement() {
       // 添加 URL（即使为空也发送，以便清除 URL）
       formData.append('url', banner.url || '');
       
-      // 发送请求
+      // 发送请求（不手动设置 Content-Type，让 axios 自动处理 FormData 和 boundary）
       const response = await apiService.post(
         `${API_PREFIX}/admin/banners/${bannerKey}`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
+        formData
       );
       
       // 更新本地状态（使用服务器返回的图片 URL）
@@ -167,6 +163,7 @@ export default function BannerManagement() {
                     <input
                       type="file"
                       accept="image/*"
+                      ref={(el) => (fileInputRefs.current[key] = el)}
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
                           handleImageChange(key, e.target.files[0]);
@@ -175,11 +172,16 @@ export default function BannerManagement() {
                       className="file-input-hidden"
                       id={`banner-${key}-file`}
                     />
-                    <label htmlFor={`banner-${key}-file`} className="file-input-label">
-                      <Button variant="outline" type="button" className="full-width-button">
-                        {t('admin.dashboard.banner.upload')}
-                      </Button>
-                    </label>
+                    <Button 
+                      variant="outline" 
+                      type="button" 
+                      className="full-width-button"
+                      onClick={() => {
+                        fileInputRefs.current[key]?.click();
+                      }}
+                    >
+                      {t('admin.dashboard.banner.upload')}
+                    </Button>
                   </div>
                 </div>
 

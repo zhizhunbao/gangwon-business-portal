@@ -4,50 +4,42 @@
 
 import { http, HttpResponse } from 'msw';
 import { API_PREFIX, API_BASE_URL } from '@shared/utils/constants';
-import { delay, shouldSimulateError, getErrorStatus } from '../config.js';
+import { delay, shouldSimulateError, getErrorStatus, loadMockData } from '../config.js';
 
 const BASE_URL = `${API_PREFIX}/auth`;
 const FULL_BASE_URL = `${API_BASE_URL}${API_PREFIX}/auth`;
 
-// Mock users database
-const mockUsers = [
-  {
-    id: 1,
-    email: 'admin@gwstartup.kr',
-    password: 'admin123',
-    role: 'admin',
-    name: '系统管理员',
-    companyName: null,
-    memberId: null
-  },
-  {
-    id: 2,
-    email: 'company1@gwstartup.kr',
-    password: 'password123',
-    role: 'member',
-    name: '金哲洙',
-    companyName: '江原技术株式会社',
-    memberId: 1
-  },
-  {
-    id: 3,
-    email: 'company2@gwstartup.kr',
-    password: 'password123',
-    role: 'member',
-    name: '李英姬',
-    companyName: '江原生物株式会社',
-    memberId: 2
-  },
-  {
-    id: 4,
-    email: 'company3@gwstartup.kr',
-    password: 'password123',
-    role: 'member',
-    name: '朴民洙',
-    companyName: '江原绿色能源',
-    memberId: 3
+// Mock users database (loaded from data file, can be modified at runtime)
+let mockUsers = [];
+let usersInitialized = false;
+
+// Initialize users from data file
+async function initializeUsers() {
+  if (usersInitialized) {
+    return mockUsers;
   }
-];
+  
+  try {
+    const data = await loadMockData('auth');
+    mockUsers = [...(data.users || [])];
+    usersInitialized = true;
+  } catch (error) {
+    console.error('Failed to load auth users data:', error);
+    // Fallback to empty array if data file not found
+    mockUsers = [];
+    usersInitialized = true;
+  }
+  
+  return mockUsers;
+}
+
+// Get users (lazy initialization)
+async function getUsers() {
+  if (!usersInitialized) {
+    await initializeUsers();
+  }
+  return mockUsers;
+}
 
 // Generate JWT-like token (simplified)
 function generateToken(user) {
@@ -71,15 +63,29 @@ async function login(req) {
     );
   }
   
+  const users = await getUsers();
   const body = await req.request.json();
-  const { email, password } = body;
+  const { email, businessLicense, password } = body;
   
-  // Find user
-  const user = mockUsers.find(u => u.email === email && u.password === password);
+  // Find user: admin by email, member by businessLicense
+  let user = null;
+  
+  if (email) {
+    // Try to find admin by email
+    user = users.find(u => u.email === email && u.password === password);
+  } else if (businessLicense) {
+    // Try to find member by businessLicense (support both with and without dashes)
+    const businessLicenseClean = businessLicense.replace(/-/g, '');
+    user = users.find(u => {
+      if (!u.businessLicense) return false;
+      const userLicense = u.businessLicense.replace(/-/g, '');
+      return userLicense === businessLicenseClean && u.password === password;
+    });
+  }
   
   if (!user) {
     return HttpResponse.json(
-      { message: 'Invalid email or password', code: 'INVALID_CREDENTIALS' },
+      { message: 'Invalid credentials', code: 'INVALID_CREDENTIALS' },
       { status: 401 }
     );
   }
@@ -116,11 +122,26 @@ async function register(req) {
     );
   }
   
+  const users = await getUsers();
   const body = await req.request.json();
   const { email, password, companyName, businessLicense } = body;
   
-  // Check if email already exists
-  if (mockUsers.find(u => u.email === email)) {
+  // Remove dashes from business license for storage
+  const businessLicenseClean = businessLicense ? businessLicense.replace(/-/g, '') : '';
+  
+  // Check if business license already exists
+  if (businessLicenseClean && users.find(u => {
+    const userLicense = u.businessLicense ? u.businessLicense.replace(/-/g, '') : '';
+    return userLicense === businessLicenseClean;
+  })) {
+    return HttpResponse.json(
+      { message: 'Business license already registered', code: 'BUSINESS_LICENSE_EXISTS' },
+      { status: 400 }
+    );
+  }
+  
+  // Check if email already exists (if provided)
+  if (email && users.find(u => u.email === email)) {
     return HttpResponse.json(
       { message: 'Email already registered', code: 'EMAIL_EXISTS' },
       { status: 400 }
@@ -129,16 +150,17 @@ async function register(req) {
   
   // Create new user
   const newUser = {
-    id: mockUsers.length + 1,
-    email,
+    id: users.length + 1,
+    email: email || null,
+    businessLicense: businessLicenseClean,
     password,
     role: 'member',
     name: body.representativeName || '新用户',
     companyName,
-    memberId: mockUsers.length
+    memberId: users.length
   };
   
-  mockUsers.push(newUser);
+  users.push(newUser);
   
   // Generate tokens
   const accessToken = generateToken(newUser);
@@ -176,8 +198,9 @@ async function getCurrentUser(req) {
   
   const token = authHeader.replace('Bearer ', '');
   try {
+    const users = await getUsers();
     const payload = JSON.parse(atob(token));
-    const user = mockUsers.find(u => u.id === payload.sub);
+    const user = users.find(u => u.id === payload.sub);
     
     if (!user) {
       return HttpResponse.json(
@@ -216,8 +239,9 @@ async function refreshToken(req) {
   const { refresh_token } = body;
   
   try {
+    const users = await getUsers();
     const payload = JSON.parse(atob(refresh_token));
-    const user = mockUsers.find(u => u.id === payload.sub);
+    const user = users.find(u => u.id === payload.sub);
     
     if (!user) {
       return HttpResponse.json(
