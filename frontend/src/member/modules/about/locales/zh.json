@@ -2,6 +2,12 @@
   "about": {
     "title": "系统介绍",
     "subtitle": "江原创业门户 - 为创业企业提供一站式支持系统",
+    "tabs": {
+      "overview": "系统概述",
+      "features": "主要功能",
+      "workflow": "使用流程",
+      "contact": "联系我们"
+    },
     "overview": {
       "title": "系统概述",
       "description1": "江原创业门户是为江原特别自治道内的创业企业提供项目参与、业绩管理、资料提交等服务的综合平台。",

@@ -78,20 +78,44 @@ async function getLatestNotices(req) {
   
   const url = new URL(req.request.url);
   const limit = parseInt(url.searchParams.get('limit') || '5', 10);
+  const page = parseInt(url.searchParams.get('page') || '1', 10);
+  const pageSize = parseInt(url.searchParams.get('page_size') || limit.toString(), 10);
+  const category = url.searchParams.get('category'); // 'announcement' or 'news' or null
   
-  console.log('[MSW Content] Loading notices, limit:', limit);
+  console.log('[MSW Content] Loading notices, page:', page, 'pageSize:', pageSize, 'category:', category);
   console.log('[MSW Content] Total news:', contentData.news.length);
   
   // Get published news/notices
-  const publishedNews = contentData.news
-    .filter(n => n.isPublished)
-    .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
-    .slice(0, limit);
+  let publishedNews = contentData.news.filter(n => n.isPublished);
   
-  console.log('[MSW Content] Published news after filtering:', publishedNews.length);
-  console.log('[MSW Content] Returning notices:', publishedNews.map(n => ({ id: n.id, title: n.title })));
+  // Filter by category if provided
+  if (category) {
+    publishedNews = publishedNews.filter(n => n.category === category);
+    console.log('[MSW Content] After category filter:', publishedNews.length);
+  }
   
-  return HttpResponse.json({ notices: publishedNews });
+  // Sort by published date (newest first)
+  publishedNews.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+  
+  // Calculate pagination
+  const totalCount = publishedNews.length;
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedNews = publishedNews.slice(startIndex, endIndex);
+  
+  console.log('[MSW Content] Published news after filtering:', paginatedNews.length, 'of', totalCount);
+  console.log('[MSW Content] Returning notices:', paginatedNews.map(n => ({ id: n.id, title: n.title, category: n.category })));
+  
+  return HttpResponse.json({ 
+    notices: paginatedNews,
+    totalCount: totalCount,
+    pagination: {
+      page: page,
+      pageSize: pageSize,
+      total: totalCount,
+      totalPages: Math.ceil(totalCount / pageSize)
+    }
+  });
 }
 
 // Get all banners (admin)
@@ -129,6 +153,11 @@ async function getNewsById(req) {
   }
   
   return HttpResponse.json({ news });
+}
+
+// Get single notice by ID (alias for getNewsById)
+async function getNoticeById(req) {
+  return getNewsById(req);
 }
 
 // Get about page content
@@ -214,6 +243,12 @@ export const contentHandlers = [
   // Member: Get single news/notice
   http.get(`${BASE_URL}/news/:id`, getNewsById),
   http.get(`${API_BASE_URL}${API_PREFIX}/member/news/:id`, getNewsById),
+  http.get(`${API_BASE_URL}${API_PREFIX}/content/news/:id`, getNewsById),
+  
+  // Member: Get single notice by ID
+  http.get(`${BASE_URL}/notices/:id`, getNoticeById),
+  http.get(`${API_BASE_URL}${API_PREFIX}/member/notices/:id`, getNoticeById),
+  http.get(`${API_BASE_URL}${API_PREFIX}/content/notices/:id`, getNoticeById),
   
   // Member: Get about content
   http.get(`${BASE_URL}/about`, getAboutContent),

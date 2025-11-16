@@ -3,20 +3,39 @@
  * 支持中心模块样式
  */
 
-/* Main Container */
+
+/* Support Container */
 .support {
   width: 100%;
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  overflow-x: hidden; /* 防止横向滚动 */
+  /* 确保 banner 在最前面 */
+  position: relative;
 }
 
+/* 确保 banner 是第一个元素 */
+.support > .member-banner-section,
+.support > .banner-section {
+  order: 1 !important;
+  margin-top: var(--header-height, 70px) !important;
+}
+
+/* Banner Section */
+/* Banner styles are now in @shared/components/Banner.css */
+
 /* Page Header */
-.support .page-header {
+.page-header {
   margin-bottom: 2rem;
   background: none !important;
   box-shadow: none !important;
 }
 
-.support .page-header h1 {
+.page-header h1 {
+  display: none; /* 标题已在 PageTitle 中显示 */
   font-size: 2rem;
   font-weight: 700;
   color: #111827;
@@ -24,7 +43,7 @@
 }
 
 /* Tabs */
-.support .tabs {
+.tabs {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 2rem;
@@ -32,7 +51,7 @@
   padding-bottom: 0;
 }
 
-.support .tab {
+.tab {
   position: relative;
   padding: 0.75rem 1.5rem;
   background: none;
@@ -49,18 +68,18 @@
   gap: 0.5rem;
 }
 
-.support .tab:hover {
+.tab:hover {
   color: #2563eb;
   background-color: #f3f4f6;
 }
 
-.support .tab.active {
+.tab.active {
   color: #2563eb;
   border-bottom-color: #2563eb;
   font-weight: 600;
 }
 
-.support .tab .badge {
+.tab .badge {
   font-size: 0.75rem;
   padding: 0.125rem 0.5rem;
   border-radius: 9999px;
@@ -68,7 +87,7 @@
 }
 
 /* Tab Content */
-.support .tab-content {
+.tab-content {
   animation: fadeIn 0.3s ease-in-out;
 }
 
@@ -84,97 +103,161 @@
 }
 
 /* Support Grid */
-.support .support-grid {
+.support-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
 }
 
 /* Card Content Padding */
-.support .card {
+.card {
   padding: 1.5rem;
 }
 
-.support .card h2 {
+.card h2 {
   margin: 0 0 1.5rem 0;
   font-size: 1.25rem;
   font-weight: 600;
   color: #111827;
 }
 
-.support .card h3 {
+.card h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
   font-weight: 600;
   color: #111827;
 }
 
-.support .card p {
+.card p {
   margin: 0 0 1rem 0;
   line-height: 1.6;
   color: #374151;
 }
 
-.support .card p:last-child {
+.card p:last-child {
   margin-bottom: 0;
 }
 
 /* Form Section */
-.support .form-section {
+.form-section {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
-.support .form-group {
+.form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.support .form-group label {
+.form-group label {
   font-size: 0.875rem;
   font-weight: 500;
   color: #374151;
 }
 
 /* Inquiry List */
-.support .inquiries-list {
+.inquiries-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
+}
+
+.inquiry-item.ac-card {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-}
-
-.support .inquiry-item {
-  padding: 1rem;
+  background-color: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
-  background-color: #ffffff;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
-.support .inquiry-item:hover {
+.inquiry-item.ac-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   border-color: #2563eb;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  text-decoration: none;
+  color: inherit;
 }
 
-.support .inquiry-header {
+.inquiry-item .ac-card-img {
+  width: 100%;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.inquiry-item.ac-card:hover .ac-card-img {
+  transform: scale(1.05);
+}
+
+.inquiry-item .ac-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* AC Card Button Styles */
+.ac-btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 0.25rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.ac-btn.bg-light-grey {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.ac-card:hover .ac-btn.bg-light-grey {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.ac-btn.arrow::after {
+  content: ' →';
+  margin-left: 0.25rem;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+}
+
+.ac-card:hover .ac-btn.arrow::after {
+  transform: translateX(4px);
+}
+
+.inquiry-item .ac-card-body .inquiry-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
-.support .inquiry-header h3 {
+.inquiry-item .ac-card-body .inquiry-header h2 {
   flex: 1;
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #111827;
+  line-height: 1.3;
 }
 
-.support .inquiry-meta {
+.inquiry-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -183,14 +266,14 @@
   color: #6b7280;
 }
 
-.support .inquiry-meta span {
+.inquiry-meta span {
   display: flex;
   align-items: center;
   gap: 0.25rem;
 }
 
 /* FAQ Styles */
-.support .faq-header {
+.faq-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -199,43 +282,66 @@
   flex-wrap: wrap;
 }
 
-.support .faq-header h2 {
+.faq-header h2 {
   margin: 0;
 }
 
-.support .search-box {
-  flex: 1;
-  min-width: 200px;
-  max-width: 400px;
+
+.faq-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
 }
 
-.support .faq-list {
+.faq-item.ac-card {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-}
-
-.support .faq-item {
-  padding: 1.25rem;
+  background-color: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
-  background-color: #ffffff;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
-.support .faq-item:hover {
+.faq-item.ac-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   border-color: #2563eb;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  text-decoration: none;
+  color: inherit;
 }
 
-.support .faq-question {
+.faq-item .ac-card-img {
+  width: 100%;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.faq-item.ac-card:hover .ac-card-img {
+  transform: scale(1.05);
+}
+
+.faq-item .ac-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.faq-question {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
 
-.support .faq-category {
+.faq-category {
   flex-shrink: 0;
   padding: 0.25rem 0.75rem;
   background-color: #eff6ff;
@@ -245,27 +351,34 @@
   font-weight: 500;
 }
 
-.support .faq-question h3 {
-  flex: 1;
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
+.faq-item .ac-card-body h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #111827;
-  line-height: 1.5;
+  margin: 0.5rem 0 1rem 0;
+  line-height: 1.3;
 }
 
-.support .faq-answer {
+.faq-item .ac-card-body p {
+  font-size: 1rem;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+  flex: 1;
+}
+
+.faq-answer {
   margin-bottom: 0.75rem;
   padding-left: 1.5rem;
 }
 
-.support .faq-answer p {
+.faq-answer p {
   margin: 0;
   color: #374151;
   line-height: 1.6;
 }
 
-.support .faq-meta {
+.faq-meta {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -274,20 +387,20 @@
   color: #6b7280;
 }
 
-.support .faq-meta span {
+.faq-meta span {
   display: flex;
   align-items: center;
   gap: 0.25rem;
 }
 
 /* Notifications List */
-.support .notifications-list {
+.notifications-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.support .notification-item {
+.notification-item {
   position: relative;
   display: flex;
   gap: 1rem;
@@ -299,17 +412,17 @@
   cursor: pointer;
 }
 
-.support .notification-item:hover {
+.notification-item:hover {
   border-color: #2563eb;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-.support .notification-item.unread {
+.notification-item.unread {
   background-color: #eff6ff;
   border-color: #93c5fd;
 }
 
-.support .notification-icon {
+.notification-icon {
   flex-shrink: 0;
   width: 2.5rem;
   height: 2.5rem;
@@ -321,36 +434,36 @@
   color: #6b7280;
 }
 
-.support .notification-item.unread .notification-icon {
+.notification-item.unread .notification-icon {
   background-color: #dbeafe;
   color: #2563eb;
 }
 
-.support .notification-content {
+.notification-content {
   flex: 1;
   min-width: 0;
 }
 
-.support .notification-content h3 {
+.notification-content h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
   font-weight: 600;
   color: #111827;
 }
 
-.support .notification-content p {
+.notification-content p {
   margin: 0 0 0.5rem 0;
   font-size: 0.875rem;
   color: #6b7280;
   line-height: 1.5;
 }
 
-.support .notification-date {
+.notification-date {
   font-size: 0.75rem;
   color: #9ca3af;
 }
 
-.support .unread-dot {
+.unread-dot {
   position: absolute;
   top: 1rem;
   right: 1rem;
@@ -361,7 +474,7 @@
 }
 
 /* Badge Styles */
-.support .badge {
+.badge {
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.75rem;
@@ -371,103 +484,109 @@
   white-space: nowrap;
 }
 
-.support .badge-success {
+.badge-success {
   background-color: #d1fae5;
   color: #065f46;
 }
 
-.support .badge-warning {
+.badge-warning {
   background-color: #fef3c7;
   color: #92400e;
 }
 
-.support .badge-danger {
+.badge-danger {
   background-color: #fee2e2;
   color: #991b1b;
 }
 
 /* No Data */
-.support .no-data {
+.no-data {
   padding: 3rem 1rem;
   text-align: center;
   color: #6b7280;
 }
 
-.support .no-data p {
+.no-data p {
   margin: 0;
   font-size: 1rem;
 }
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-  .support .support-grid {
+  .support-grid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
-  .support .page-header h1 {
-    font-size: 1.5rem;
+  .page-header h1 {
+    display: none; /* 标题已在 PageTitle 中显示 */
   }
 
-  .support .tabs {
+  .tabs {
     flex-wrap: wrap;
     gap: 0.25rem;
   }
 
-  .support .tab {
+  .tab {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
   }
 
-  .support .faq-header {
+  .faq-header {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .support .search-box {
-    max-width: 100%;
-  }
-
-  .support .inquiry-header {
+  .inquiry-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.5rem;
   }
 
-  .support .inquiry-meta {
+  .inquiry-meta {
     flex-direction: column;
     gap: 0.5rem;
   }
 
-  .support .faq-question {
+  .faq-question {
     flex-direction: column;
     gap: 0.5rem;
   }
 
-  .support .faq-answer,
-  .support .faq-meta {
+  .faq-list,
+  .inquiries-list {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .faq-answer,
+  .faq-meta {
     padding-left: 0;
   }
 
-  .support .notification-item {
+  .notification-item {
     flex-direction: column;
     gap: 0.75rem;
   }
 
-  .support .notification-icon {
+  .notification-icon {
     align-self: flex-start;
   }
 }
 
 @media (max-width: 640px) {
-  .support .card {
+  .card {
     padding: 1rem;
   }
 
-  .support .inquiry-item,
-  .support .faq-item,
-  .support .notification-item {
+  .inquiry-item.large-card,
+  .faq-item.large-card {
+    padding: 1.5rem 1rem;
+    min-height: auto;
+  }
+
+  .notification-item {
     padding: 0.75rem;
   }
 }

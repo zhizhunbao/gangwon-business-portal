@@ -11,15 +11,15 @@ import { Loading } from '@shared/components';
 
 // Lazy load modules for code splitting
 const Home = lazy(() => import('./modules/home/Home'));
-const Projects = lazy(() => import('./modules/projects/ProjectList'));
-const ProjectDetail = lazy(() => import('./modules/projects/ProjectDetail'));
-const ProjectApplication = lazy(() => import('./modules/projects/ProjectApplication'));
+const Projects = lazy(() => import('./modules/projects/Projects'));
 const Profile = lazy(() => import('./modules/profile/Profile'));
 const About = lazy(() => import('./modules/about/About'));
-const PerformanceList = lazy(() => import('./modules/performance/PerformanceList'));
-const PerformanceForm = lazy(() => import('./modules/performance/PerformanceForm'));
-const PerformanceDetail = lazy(() => import('./modules/performance/PerformanceDetail'));
+const Performance = lazy(() => import('./modules/performance'));
 const Support = lazy(() => import('./modules/support/Support'));
+const NoticesList = lazy(() => import('./modules/home/NoticesList'));
+const NewsList = lazy(() => import('./modules/home/NewsList'));
+const QuickLinks = lazy(() => import('./modules/home/QuickLinks'));
+const Stats = lazy(() => import('./modules/home/Stats'));
 
 // Wrapper component for lazy-loaded routes with Suspense
 function LazyRoute({ children }) {
@@ -34,16 +34,59 @@ export default function MemberRoutes() {
   return (
     <Routes>
       <Route element={<MemberLayout />}>
-        {/* 首页 */}
+        {/* 首页 - 默认重定向到 home */}
         <Route 
           index 
+          element={<Navigate to="/member/home" replace />}
+        />
+        <Route 
+          path="home" 
           element={
             <LazyRoute>
               <Home />
             </LazyRoute>
           } 
         />
-        <Route path="home" element={<Navigate to="/member" replace />} />
+        
+        {/* 公告列表 */}
+        <Route 
+          path="notices" 
+          element={
+            <LazyRoute>
+              <NoticesList />
+            </LazyRoute>
+          } 
+        />
+        
+        {/* 新闻资料列表 */}
+        <Route 
+          path="news" 
+          element={
+            <LazyRoute>
+              <NewsList />
+            </LazyRoute>
+          } 
+        />
+        
+        {/* 快捷入口 */}
+        <Route 
+          path="quick-links" 
+          element={
+            <LazyRoute>
+              <QuickLinks />
+            </LazyRoute>
+          } 
+        />
+        
+        {/* 我的概览 */}
+        <Route 
+          path="stats" 
+          element={
+            <LazyRoute>
+              <Stats />
+            </LazyRoute>
+          } 
+        />
         
         {/* 项目相关 */}
         <Route 
@@ -54,53 +97,13 @@ export default function MemberRoutes() {
             </LazyRoute>
           } 
         />
-        <Route 
-          path="projects/:id" 
-          element={
-            <LazyRoute>
-              <ProjectDetail />
-            </LazyRoute>
-          } 
-        />
-        <Route 
-          path="projects/:id/apply" 
-          element={
-            <LazyRoute>
-              <ProjectApplication />
-            </LazyRoute>
-          } 
-        />
         
         {/* 绩效数据 */}
         <Route 
           path="performance" 
           element={
             <LazyRoute>
-              <PerformanceList />
-            </LazyRoute>
-          } 
-        />
-        <Route 
-          path="performance/new" 
-          element={
-            <LazyRoute>
-              <PerformanceForm />
-            </LazyRoute>
-          } 
-        />
-        <Route 
-          path="performance/:id" 
-          element={
-            <LazyRoute>
-              <PerformanceDetail />
-            </LazyRoute>
-          } 
-        />
-        <Route 
-          path="performance/:id/edit" 
-          element={
-            <LazyRoute>
-              <PerformanceForm />
+              <Performance />
             </LazyRoute>
           } 
         />

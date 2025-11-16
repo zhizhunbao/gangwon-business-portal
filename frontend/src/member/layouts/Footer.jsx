@@ -89,6 +89,7 @@ export default function Footer() {
                 {t('footer.privacyPolicy')}
               </a>
             </div>
+            <span className="footer-link-separator">|</span>
             <div className="footer-info">
               <span className="footer-version">
                 {t('footer.version')}: <strong>1.0.0</strong>

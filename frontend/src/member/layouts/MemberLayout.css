@@ -1,49 +1,134 @@
 /**
- * Member Layout Styles - Windster Style
+ * Member Layout Styles - Korean Government Style
+ * 会员端布局样式 - 韩国政府风格
  */
+
+:root {
+  --page-title-height: 60px;
+  --header-height: 70px;
+  --submenu-height: 50px;
+  
+  /* 韩国政府标准配色 - 更亮的蓝色以确保可读性 */
+  --gov-blue: #0066cc;
+  --gov-blue-dark: #004c97;
+  --gov-blue-light: #1e88e5;
+  --gov-blue-lighter: #42a5f5;
+  --gov-blue-bg: #e3f2fd;
+  --gov-blue-hover: #0052a3;
+  --gov-accent: #d32f2f;
+  
+  /* 中性色 */
+  --gov-gray-50: #fafafa;
+  --gov-gray-100: #f5f5f5;
+  --gov-gray-200: #eeeeee;
+  --gov-gray-300: #e0e0e0;
+  --gov-gray-400: #bdbdbd;
+  --gov-gray-500: #9e9e9e;
+  --gov-gray-600: #757575;
+  --gov-gray-700: #616161;
+  --gov-gray-800: #424242;
+  --gov-gray-900: #212121;
+  
+  /* 文字颜色 */
+  --text-primary: #212121;
+  --text-secondary: #616161;
+  --text-disabled: #9e9e9e;
+  
+  /* 边框 */
+  --border-color: #e0e0e0;
+  --border-color-light: #eeeeee;
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
 
 .member-layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f9fafb;
+  background-color: var(--gov-gray-50);
+  font-family: 'Noto Sans SC', 'Noto Sans KR', 'PingFang SC', 'Microsoft YaHei', 'SimHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+  /* 优化渲染性能 */
+  will-change: auto;
+  /* 防止布局闪烁 */
+  contain: layout style paint;
 }
 
 .layout-body {
   display: flex;
   flex: 1;
-  padding-top: var(--header-height, 64px);
+  /* padding-top 由 banner 或内容区域处理 */
 }
 
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: var(--sidebar-width, 256px);
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: #f9fafb;
-}
-
-.sidebar-collapsed .main-content {
-  margin-left: var(--sidebar-collapsed-width, 64px);
+  width: 100%;
+  background-color: var(--gov-gray-50);
 }
 
 .content-wrapper {
   flex: 1;
-  padding: 1.5rem;
+  padding: 0;
   max-width: 100%;
   width: 100%;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  /* 优化渲染性能，减少重排 */
+  contain: layout style;
+  /* 防止内容闪烁 */
+  min-height: 0;
+}
+
+/* 让 Outlet 的内容直接参与布局，这样 banner 和 submenu 可以正确排序 */
+.content-wrapper > *:not(.member-submenu) {
+  display: contents; /* Outlet 的内容直接参与父布局 */
+}
+
+/* Submenu 显示在 banner 之后 */
+.content-wrapper > .member-submenu {
+  order: 2;
+}
+
+/* 所有模块的 banner-section 显示在最前面 */
+.home .banner-section,
+.home .member-banner-section,
+.about .banner-section,
+.about .member-banner-section,
+.projects .banner-section,
+.projects .member-banner-section,
+.performance .banner-section,
+.performance .member-banner-section,
+.support .banner-section,
+.support .member-banner-section,
+.profile .banner-section,
+.profile .member-banner-section {
+  order: 1 !important;
+}
+
+/* 所有模块的其他内容在 submenu 之后 */
+.home > *:not(.banner-section):not(.member-banner-section),
+.about > *:not(.banner-section):not(.member-banner-section),
+.projects > *:not(.banner-section):not(.member-banner-section),
+.performance > *:not(.banner-section):not(.member-banner-section),
+.support > *:not(.banner-section):not(.member-banner-section),
+.profile > *:not(.banner-section):not(.member-banner-section) {
+  order: 3;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-  .content-wrapper {
-    padding: 1rem;
+  :root {
+    --page-title-height: 50px;
+    --header-height: 60px;
   }
-
-  .main-content {
-    margin-left: 0;
+  
+  .content-wrapper {
+    padding: 0;
   }
 }
 

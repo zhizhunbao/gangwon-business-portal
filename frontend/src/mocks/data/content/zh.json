@@ -2,11 +2,11 @@
   "banners": [
     {
       "id": 1,
-      "type": "main",
+      "type": "main_primary",
       "title": "2025年创业企业支援事业招募",
-      "description": "面向江原道创业企业的综合支援项目",
+      "subtitle": "面向江原道创业企业的综合支援项目",
       "imageUrl": "/uploads/banners/main_2025.jpg",
-      "linkUrl": "/projects/1",
+      "linkUrl": "/member/projects",
       "order": 1,
       "isActive": true,
       "startDate": "2024-12-01",
@@ -16,11 +16,11 @@
     },
     {
       "id": 2,
-      "type": "main",
+      "type": "main_primary",
       "title": "R&D技术开发支援事业指南",
-      "description": "面向技术创新的研发项目支援",
+      "subtitle": "面向技术创新的研发项目支援",
       "imageUrl": "/uploads/banners/rd_2025.jpg",
-      "linkUrl": "/projects/2",
+      "linkUrl": "/member/projects",
       "order": 2,
       "isActive": true,
       "startDate": "2024-12-15",
@@ -40,6 +40,104 @@
       "endDate": "2024-12-25",
       "createdAt": "2024-12-20T09:00:00Z",
       "updatedAt": "2024-12-20T09:00:00Z"
+    },
+    {
+      "id": 4,
+      "type": "about",
+      "title": "江原道创业企业门户介绍",
+      "subtitle": "综合支援平台，与您共同成长",
+      "imageUrl": "/uploads/banners/about.png",
+      "linkUrl": null,
+      "order": 1,
+      "isActive": true,
+      "startDate": "2024-01-01",
+      "endDate": "2025-12-31",
+      "createdAt": "2024-12-20T10:00:00Z",
+      "updatedAt": "2024-12-20T10:00:00Z"
+    },
+    {
+      "id": 5,
+      "type": "projects",
+      "title": "创业企业支援事业",
+      "subtitle": "参与各种支援事业，抓住成长机会",
+      "imageUrl": "/uploads/banners/projects.png",
+      "linkUrl": null,
+      "order": 1,
+      "isActive": true,
+      "startDate": "2024-01-01",
+      "endDate": "2025-12-31",
+      "createdAt": "2024-12-20T10:00:00Z",
+      "updatedAt": "2024-12-20T10:00:00Z"
+    },
+    {
+      "id": 6,
+      "type": "performance",
+      "title": "绩效数据管理",
+      "subtitle": "系统管理并报告企业的成长与绩效",
+      "imageUrl": "/uploads/banners/performance.png",
+      "linkUrl": null,
+      "order": 1,
+      "isActive": true,
+      "startDate": "2024-01-01",
+      "endDate": "2025-12-31",
+      "createdAt": "2024-12-20T10:00:00Z",
+      "updatedAt": "2024-12-20T10:00:00Z"
+    },
+    {
+      "id": 7,
+      "type": "support",
+      "title": "一站式支援中心",
+      "subtitle": "咨询疑问事项，获得快速回复",
+      "imageUrl": "/uploads/banners/support.png",
+      "linkUrl": null,
+      "order": 1,
+      "isActive": true,
+      "startDate": "2024-01-01",
+      "endDate": "2025-12-31",
+      "createdAt": "2024-12-20T10:00:00Z",
+      "updatedAt": "2024-12-20T10:00:00Z"
+    },
+    {
+      "id": 8,
+      "type": "profile",
+      "title": "企业信息管理",
+      "subtitle": "管理并更新企业的基本信息和资料",
+      "imageUrl": "/uploads/banners/profile.png",
+      "linkUrl": null,
+      "order": 1,
+      "isActive": true,
+      "startDate": "2024-01-01",
+      "endDate": "2025-12-31",
+      "createdAt": "2024-12-20T10:00:00Z",
+      "updatedAt": "2024-12-20T10:00:00Z"
+    },
+    {
+      "id": 9,
+      "type": "notices",
+      "title": "公告",
+      "subtitle": "查看重要公告和通知",
+      "imageUrl": "/uploads/banners/notices.png",
+      "linkUrl": null,
+      "order": 1,
+      "isActive": true,
+      "startDate": "2024-01-01",
+      "endDate": "2025-12-31",
+      "createdAt": "2024-12-20T10:00:00Z",
+      "updatedAt": "2024-12-20T10:00:00Z"
+    },
+    {
+      "id": 10,
+      "type": "news",
+      "title": "新闻资料",
+      "subtitle": "查看最新新闻和资料并加以利用",
+      "imageUrl": "/uploads/banners/news.png",
+      "linkUrl": null,
+      "order": 1,
+      "isActive": true,
+      "startDate": "2024-01-01",
+      "endDate": "2025-12-31",
+      "createdAt": "2024-12-20T10:00:00Z",
+      "updatedAt": "2024-12-20T10:00:00Z"
     }
   ],
   "popups": [
@@ -111,6 +209,107 @@
       "attachments": [],
       "createdAt": "2024-12-01T08:00:00Z",
       "updatedAt": "2024-12-01T08:00:00Z"
+    },
+    {
+      "id": 4,
+      "title": "2025年度创新创业激励政策公告",
+      "content": "为支持江原道地区的创新创业企业，现公布2025年度激励政策，包括税收优惠、资金支持等多方面措施。",
+      "category": "announcement",
+      "isPublished": true,
+      "publishedAt": "2024-12-20T10:00:00Z",
+      "views": 567,
+      "attachments": [
+        {
+          "id": 4,
+          "name": "2025创新创业激励政策.pdf",
+          "url": "/uploads/news/4/2025创新创业激励政策.pdf",
+          "type": "document",
+          "size": 3150000
+        }
+      ],
+      "createdAt": "2024-12-20T09:00:00Z",
+      "updatedAt": "2024-12-20T10:00:00Z"
+    },
+    {
+      "id": 5,
+      "title": "知识产权申请支援事业招募公告",
+      "content": "为促进企业知识产权保护，现招募有意向申请专利、商标等知识产权的企业参与支援项目。",
+      "category": "announcement",
+      "isPublished": true,
+      "publishedAt": "2024-12-18T14:30:00Z",
+      "views": 321,
+      "attachments": [
+        {
+          "id": 5,
+          "name": "知识产权申请支援公告.pdf",
+          "url": "/uploads/news/5/知识产权申请支援公告.pdf",
+          "type": "document",
+          "size": 1890000
+        }
+      ],
+      "createdAt": "2024-12-18T13:00:00Z",
+      "updatedAt": "2024-12-18T14:30:00Z"
+    },
+    {
+      "id": 6,
+      "title": "市场拓展支援事业公告",
+      "content": "为帮助江原道创业企业拓展市场，现启动市场拓展支援项目，提供市场调研、营销推广等全方位支持。",
+      "category": "announcement",
+      "isPublished": true,
+      "publishedAt": "2024-12-10T11:00:00Z",
+      "views": 289,
+      "attachments": [
+        {
+          "id": 6,
+          "name": "市场拓展支援公告.pdf",
+          "url": "/uploads/news/6/市场拓展支援公告.pdf",
+          "type": "document",
+          "size": 2250000
+        }
+      ],
+      "createdAt": "2024-12-10T10:00:00Z",
+      "updatedAt": "2024-12-10T11:00:00Z"
+    },
+    {
+      "id": 7,
+      "title": "人才招聘支援计划公告",
+      "content": "为支持创业企业的人才招聘，现推出人才招聘支援计划，提供招聘补贴、培训支持等服务。",
+      "category": "announcement",
+      "isPublished": true,
+      "publishedAt": "2024-12-05T09:30:00Z",
+      "views": 445,
+      "attachments": [
+        {
+          "id": 7,
+          "name": "人才招聘支援计划.pdf",
+          "url": "/uploads/news/7/人才招聘支援计划.pdf",
+          "type": "document",
+          "size": 1680000
+        }
+      ],
+      "createdAt": "2024-12-05T08:00:00Z",
+      "updatedAt": "2024-12-05T09:30:00Z"
+    },
+    {
+      "id": 8,
+      "title": "年度绩效报告提交通知",
+      "content": "请各企业于2025年1月31日前提交2024年度绩效报告。报告内容应包括销售情况、雇佣情况、政府支持情况等。",
+      "category": "announcement",
+      "isPublished": true,
+      "publishedAt": "2024-11-30T10:00:00Z",
+      "views": 678,
+      "isImportant": true,
+      "attachments": [
+        {
+          "id": 8,
+          "name": "年度绩效报告提交指南.pdf",
+          "url": "/uploads/news/8/年度绩效报告提交指南.pdf",
+          "type": "document",
+          "size": 2780000
+        }
+      ],
+      "createdAt": "2024-11-30T09:00:00Z",
+      "updatedAt": "2024-11-30T10:00:00Z"
     }
   ],
   "faqs": [

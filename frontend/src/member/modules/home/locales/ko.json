@@ -6,6 +6,7 @@
     },
     "quickLinks": {
       "title": "바로가기",
+      "description": "자주 사용하는 기능 빠른 접근",
       "projectApplication": "사업 신청",
       "projectApplicationDesc": "지원 사업 공고 확인 및 신청",
       "performance": "실적 관리",
@@ -17,14 +18,20 @@
     },
     "notices": {
       "title": "최신 공고",
+      "description": "최신 공고 및 중요 알림 확인",
       "important": "중요",
-      "empty": "공고가 없습니다"
+      "empty": "공고가 없습니다",
+      "noContent": "내용이 없습니다"
     },
     "news": {
-      "title": "뉴스 자료"
+      "title": "뉴스 자료",
+      "description": "최신 뉴스 자료 및 정보 확인",
+      "empty": "뉴스 자료가 없습니다",
+      "noContent": "내용이 없습니다"
     },
     "stats": {
       "title": "나의 현황",
+      "description": "귀하의 비즈니스 데이터 통계 확인",
       "projectsParticipated": "참여 사업",
       "performanceSubmitted": "제출 실적",
       "pendingReview": "심사 대기",

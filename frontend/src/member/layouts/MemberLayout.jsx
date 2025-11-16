@@ -4,26 +4,17 @@
  */
 
 import { Outlet } from 'react-router-dom';
-import { useState } from 'react';
+import { memo } from 'react';
 import Header from './Header';
-import Sidebar from './Sidebar';
 import Footer from './Footer';
 import './MemberLayout.css';
 
-export default function MemberLayout() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-
+function MemberLayout() {
   return (
-    <div className={`member-layout ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-      <Header onToggleSidebar={toggleSidebar} />
+    <div className="member-layout">
+      <Header />
       
       <div className="layout-body">
-        <Sidebar collapsed={sidebarCollapsed} />
-        
         <main className="main-content">
           <div className="content-wrapper">
             <Outlet />
@@ -34,4 +25,7 @@ export default function MemberLayout() {
     </div>
   );
 }
+
+// 使用 memo 包装，避免不必要的重渲染
+export default memo(MemberLayout);
 

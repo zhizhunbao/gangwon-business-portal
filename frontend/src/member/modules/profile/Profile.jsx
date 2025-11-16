@@ -12,9 +12,11 @@ import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import Textarea from '@shared/components/Textarea';
 import Select from '@shared/components/Select';
+import { Banner } from '@shared/components';
 import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { API_PREFIX, BANNER_TYPES } from '@shared/utils/constants';
 import { UserIcon } from '@shared/components/Icons';
+import './Profile.css';
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -36,6 +38,7 @@ export default function Profile() {
     website: '',
     logo: null
   });
+
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -138,8 +141,12 @@ export default function Profile() {
   if (!isAuthenticated) {
     return (
       <div className="profile">
+        <Banner
+          bannerType={BANNER_TYPES.PROFILE}
+          sectionClassName="member-banner-section"
+        />
+
         <div className="page-header">
-          <h1>{t('profile.title')}</h1>
         </div>
         
         <Card>
@@ -173,6 +180,13 @@ export default function Profile() {
 
   return (
     <div className="profile">
+      <Banner
+        bannerType={BANNER_TYPES.PROFILE}
+        routeToBannerTypeMap={EXTENDED_ROUTE_TO_BANNER_TYPE}
+        defaultBannerImages={DEFAULT_BANNER_IMAGES}
+        sectionClassName="member-banner-section"
+      />
+
       <div className="page-header">
         <h1>{t('profile.title')}</h1>
         {!isEditing ? (

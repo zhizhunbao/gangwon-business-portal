@@ -4,30 +4,77 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useRef, useEffect, useMemo, memo } from 'react';
 import useAuthStore from '@shared/stores/authStore';
 import LanguageSwitcher from '@shared/components/LanguageSwitcher';
 import {
-  MenuIcon,
   BellIcon,
-  SearchIcon,
   UserIcon,
   LogoutIcon,
   ChevronDownIcon,
-  SupportIcon
+  SupportIcon,
+  DashboardIcon,
+  FolderIcon,
+  ChartIcon,
+  DocumentIcon
 } from '@shared/components';
 import './Header.css';
 
-export default function Header({ onToggleSidebar }) {
+function Header() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const userMenuRef = useRef(null);
   const notificationsRef = useRef(null);
+
+  // 一级导航菜单 - 使用 useMemo 缓存，避免每次渲染都重新创建
+  const mainMenuItems = useMemo(() => [
+    {
+      key: 'home',
+      path: '/member/home',
+      icon: DashboardIcon,
+      label: t('menu.home'),
+      exact: true
+    },
+    {
+      key: 'about',
+      path: '/member/about',
+      icon: DocumentIcon,
+      label: t('menu.about')
+    },
+    {
+      key: 'projects',
+      path: '/member/projects',
+      icon: FolderIcon,
+      label: t('menu.projects')
+    },
+    {
+      key: 'performance',
+      path: '/member/performance',
+      icon: ChartIcon,
+      label: t('menu.performance')
+    },
+    {
+      key: 'support',
+      path: '/member/support',
+      icon: SupportIcon,
+      label: t('menu.support')
+    }
+  ], [t]);
+
+  // 使用 useMemo 缓存菜单激活状态计算
+  const isMenuActive = useMemo(() => {
+    return (item) => {
+      if (item.exact) {
+        return location.pathname === item.path;
+      }
+      return location.pathname.startsWith(item.path);
+    };
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -64,35 +111,40 @@ export default function Header({ onToggleSidebar }) {
   return (
     <header className="member-header">
       <div className="header-left">
-        <button 
-          className="sidebar-toggle"
-          onClick={onToggleSidebar}
-          aria-label={t('header.toggleSidebar')}
-        >
-          <MenuIcon />
-        </button>
-        
-        <Link to="/member" className="header-logo">
+        <Link to="/member/home" className="header-logo">
           <span className="logo-text">{t('header.title')}</span>
         </Link>
       </div>
 
       <div className="header-center">
-        <div className="header-search">
-          <SearchIcon className="search-icon" />
-          <input
-            type="text"
-            placeholder={t('header.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
-          />
-        </div>
+        <nav className="header-nav">
+          <ul className="header-nav-list">
+            {mainMenuItems.map((item) => {
+              const Icon = item.icon;
+              const active = isMenuActive(item);
+              
+              return (
+                <li key={item.key} className="header-nav-item">
+                  <NavLink
+                    to={item.path}
+                    end={item.exact}
+                    className={({ isActive }) =>
+                      `header-nav-link ${isActive || active ? 'active' : ''}`
+                    }
+                  >
+                    <Icon className="header-nav-icon" />
+                    <span className="header-nav-label">{item.label}</span>
+                  </NavLink>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
       </div>
 
       <div className="header-right">
         {/* 语言切换 */}
-        <LanguageSwitcher />
+        <LanguageSwitcher variant="light" />
 
         {/* 通知 */}
         <div className="notification-menu" ref={notificationsRef}>
@@ -193,4 +245,7 @@ export default function Header({ onToggleSidebar }) {
     </header>
   );
 }
+
+// 使用 memo 包装组件，避免不必要的重渲染
+export default memo(Header);
 

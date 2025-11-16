@@ -112,6 +112,9 @@ export const BANNER_TYPES = {
   PROJECTS: 'projects',               // 项目页横幅
   PERFORMANCE: 'performance',         // 业绩管理页横幅
   SUPPORT: 'support',                 // 一站式支持页横幅
+  PROFILE: 'profile',                 // 企业资料页横幅
+  NOTICES: 'notices',                 // 公告列表页横幅
+  NEWS: 'news',                       // 新闻资料页横幅
   SCROLL: 'scroll'                    // 滚动横幅
 };
 
@@ -195,6 +198,8 @@ export const ROUTES = {
   MEMBER_PROJECTS: '/member/projects',
   MEMBER_PERFORMANCE: '/member/performance',
   MEMBER_SUPPORT: '/member/support',
+  MEMBER_NOTICES: '/member/notices',
+  MEMBER_NEWS: '/member/news',
   
   // Admin
   ADMIN_HOME: '/admin',

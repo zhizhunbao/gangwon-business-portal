@@ -1,24 +1,23 @@
 /**
- * Performance Form Page - Member Portal
- * 绩效数据录入表单
+ * Performance Form Content - Member Portal
+ * 绩效数据录入表单内容组件
  */
 
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import Textarea from '@shared/components/Textarea';
 import Select from '@shared/components/Select';
+import { apiService } from '@shared/services';
+import { API_PREFIX } from '@shared/utils/constants';
 import { PaperclipIcon, DocumentIcon, XIcon } from '@shared/components/Icons';
 import './Performance.css';
 
-export default function PerformanceForm() {
+export default function PerformanceFormContent() {
   const { t } = useTranslation();
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const isEdit = !!id;
+  const isEdit = false; // 编辑功能可通过 hash 参数实现，如 #edit-${id}
   
   const [formData, setFormData] = useState({
     year: new Date().getFullYear(),
@@ -37,7 +36,10 @@ export default function PerformanceForm() {
   });
 
   useEffect(() => {
+    // 编辑功能可通过 hash 参数实现，如 #edit-${id}
+    // 当前仅支持新建功能
     if (isEdit) {
+      // TODO: 从 hash 中解析 id，如 window.location.hash === '#edit-123'
       // TODO: 从 API 获取绩效数据
       // Mock data for development
       setFormData({
@@ -56,7 +58,7 @@ export default function PerformanceForm() {
         notes: ''
       });
     }
-  }, [id, isEdit]);
+  }, [isEdit]);
 
   const handleChange = (field, value) => {
     if (field.startsWith('intellectualProperty.')) {
@@ -97,7 +99,8 @@ export default function PerformanceForm() {
       // TODO: API 调用提交绩效数据
       console.log('Submitting performance:', formData);
       alert(t('message.submitSuccess'));
-      navigate('/member/performance');
+      window.location.hash = 'list';
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
     } catch (error) {
       console.error('Failed to submit:', error);
       alert(t('message.submitFailed'));
@@ -133,9 +136,9 @@ export default function PerformanceForm() {
   );
 
   return (
-    <div className="performance-form">
+    <div className="performance-form-content">
       <div className="page-header">
-        <h1>{isEdit ? t('performance.edit') : t('performance.createNew')}</h1>
+        <h1>{isEdit ? t('performance.edit', '编辑绩效') : t('performance.createNew', '新增绩效')}</h1>
       </div>
 
       {/* 基本信息 */}
@@ -326,7 +329,10 @@ export default function PerformanceForm() {
       {/* 操作按钮 */}
       <div className="action-buttons">
         <Button
-          onClick={() => navigate('/member/performance')}
+          onClick={() => {
+            window.location.hash = 'list';
+            window.dispatchEvent(new HashChangeEvent('hashchange'));
+          }}
           variant="secondary"
         >
           {t('common.cancel')}

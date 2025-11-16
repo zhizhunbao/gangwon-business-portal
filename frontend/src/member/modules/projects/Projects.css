@@ -3,6 +3,28 @@
  * 项目模块样式
  */
 
+/* Projects Container */
+.projects {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  overflow-x: hidden; /* 防止横向滚动 */
+  /* 确保 banner 在最前面 */
+  position: relative;
+}
+
+/* 确保 banner 是第一个元素 */
+.projects > .member-banner-section,
+.projects > .banner-section {
+  order: 1 !important;
+  margin-top: var(--header-height, 70px) !important;
+}
+
+/* Banner styles are now in @shared/components/Banner.css */
+
 /* Card Content Padding - Fix layout issues */
 .project-detail .card,
 .project-application .card {
@@ -37,20 +59,24 @@
 }
 
 /* Common Page Header */
-.page-header {
-  margin-bottom: 2rem;
+.project-list .page-header,
+.project-detail .page-header,
+.project-application .page-header {
+  margin: 0;
+  padding: 1.5rem;
   background: none !important;
   box-shadow: none !important;
 }
 
-.page-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #111827;
-  margin: 0 0 0.5rem 0;
+.project-list .page-header h1,
+.project-detail .page-header h1,
+.project-application .page-header h1 {
+  display: none; /* 标题已在 Banner 或 PageTitle 中显示 */
 }
 
-.page-header .subtitle {
+.project-list .page-header .subtitle,
+.project-detail .page-header .subtitle,
+.project-application .page-header .subtitle {
   font-size: 1rem;
   color: #6b7280;
   margin: 0;
@@ -499,38 +525,13 @@
 .project-list {
   width: 100%;
   max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-/* Project Banner */
-.project-banner {
-  width: 100%;
-  height: 200px;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  border-radius: 0.5rem;
-  margin-bottom: 2rem;
-  position: relative;
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.project-banner:hover {
-  transform: scale(1.01);
-}
-
-.project-banner .banner-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 0.5rem;
-  transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.project-banner:hover .banner-overlay {
-  background: rgba(0, 0, 0, 0.2);
+.project-list > * {
+  order: 0;
 }
 
 /* Pagination Container */
@@ -554,11 +555,6 @@
   flex-wrap: wrap;
 }
 
-.search-box {
-  flex: 1;
-  min-width: 200px;
-}
-
 .filter-group {
   display: flex;
   gap: 1rem;
@@ -567,6 +563,7 @@
 /* Projects Container */
 .projects-container {
   margin-bottom: 2rem;
+  padding: 0 1.5rem 0 1.5rem;
 }
 
 .results-info {
@@ -595,23 +592,90 @@
   margin: 0;
 }
 
-/* Projects List */
+/* Projects List - Algonquin College Style */
 .projects-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
+}
+
+.project-card.ac-card {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
-.project-card {
-  padding: 1.5rem;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.project-card:hover {
+.project-card.ac-card:hover {
+  transform: translateY(-4px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border-color: #2563eb;
+  text-decoration: none;
+  color: inherit;
 }
 
-.project-header {
+.project-card .ac-card-img {
+  width: 100%;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-card.ac-card:hover .ac-card-img {
+  transform: scale(1.05);
+}
+
+.project-card .ac-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* AC Card Button Styles */
+.project-card .ac-btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 0.25rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.project-card .ac-btn.bg-light-grey {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.project-card.ac-card:hover .ac-btn.bg-light-grey {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.project-card .ac-btn.arrow::after {
+  content: ' →';
+  margin-left: 0.25rem;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+}
+
+.project-card.ac-card:hover .ac-btn.arrow::after {
+  transform: translateX(4px);
+}
+
+.project-card .ac-card-body .project-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -619,21 +683,14 @@
   gap: 1rem;
 }
 
-.project-title-section {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 1;
-  min-width: 0;
-}
-
-.project-title-section h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
+.project-card .ac-card-body .project-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #111827;
   margin: 0;
   flex: 1;
   min-width: 0;
+  line-height: 1.3;
 }
 
 .project-title-section h3 a {
@@ -646,21 +703,29 @@
   color: #2563eb;
 }
 
-.project-meta {
+.project-card .ac-card-body .project-meta {
   display: flex;
   gap: 1rem;
   font-size: 0.875rem;
   color: #6b7280;
-  flex-shrink: 0;
+  margin-bottom: 1.5rem;
 }
 
-.project-meta span {
+.project-card .ac-card-body .project-meta span {
   display: flex;
   align-items: center;
 }
 
-.project-body {
-  margin-bottom: 1rem;
+.project-card .ac-card-body .project-description {
+  font-size: 1rem;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .project-description {
@@ -672,6 +737,14 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.project-card.large-card .project-description {
+  font-size: 1rem;
+  color: #374151;
+  line-height: 1.7;
+  -webkit-line-clamp: 3;
+  margin-bottom: 1.5rem;
 }
 
 .project-details {
@@ -703,6 +776,11 @@
   gap: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e5e7eb;
+  margin-top: auto;
+}
+
+.project-card.large-card .project-footer {
+  padding-top: 1.5rem;
 }
 
 .project-footer a {
@@ -734,7 +812,19 @@
 }
 
 @media (max-width: 768px) {
-  .page-header h1 {
+  .projects-list {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .project-list .page-header h1,
+  .project-application .page-header h1 {
+    display: none; /* 标题已在 PageTitle 中显示 */
+  }
+  
+  /* 详情页的 h1 保留作为内容标题 */
+  .project-detail .page-header h1 {
+    display: block;
     font-size: 1.5rem;
   }
 

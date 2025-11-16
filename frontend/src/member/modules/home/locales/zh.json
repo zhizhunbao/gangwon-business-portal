@@ -6,6 +6,7 @@
     },
     "quickLinks": {
       "title": "快捷入口",
+      "description": "快速访问常用功能",
       "projectApplication": "项目申请",
       "projectApplicationDesc": "查看支持项目公告并申请",
       "performance": "业绩管理",
@@ -17,14 +18,20 @@
     },
     "notices": {
       "title": "最新公告",
+      "description": "查看最新公告和重要通知",
       "important": "重要",
-      "empty": "暂无公告"
+      "empty": "暂无公告",
+      "noContent": "暂无内容"
     },
     "news": {
-      "title": "新闻资料"
+      "title": "新闻资料",
+      "description": "查看最新新闻资料和资讯",
+      "empty": "暂无新闻资料",
+      "noContent": "暂无内容"
     },
     "stats": {
       "title": "我的概况",
+      "description": "查看您的业务数据统计",
       "projectsParticipated": "参与项目",
       "performanceSubmitted": "已提交业绩",
       "pendingReview": "待审核",

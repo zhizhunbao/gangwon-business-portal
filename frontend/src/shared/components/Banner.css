@@ -1,0 +1,315 @@
+/**
+ * Banner Component Styles - Generic
+ * 横幅组件样式 - 通用版本
+ */
+
+/* 通用横幅容器 - 同时支持 .banner-section 和 .member-banner-section */
+/* 适用于所有模块：.about, .home, .performance, .support, .profile, .projects */
+.banner-section,
+.member-banner-section,
+.about .banner-section,
+.about .member-banner-section,
+.home .banner-section,
+.home .member-banner-section,
+.performance .banner-section,
+.performance .member-banner-section,
+.support .banner-section,
+.support .member-banner-section,
+.profile .banner-section,
+.profile .member-banner-section,
+.projects .banner-section,
+.projects .member-banner-section {
+  margin-top: var(--header-height, 70px) !important; /* 为固定 header 留出空间 */
+  margin-bottom: 0 !important; /* submenu 会处理间距 */
+  order: 1 !important; /* banner 在最前面 */
+  width: 100vw !important;
+  max-width: 100vw !important;
+  padding: 0 !important;
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  overflow: hidden !important;
+  position: relative;
+  box-sizing: border-box;
+  line-height: 0; /* 防止 inline 元素之间的空白字符导致缝隙 */
+  font-size: 0; /* 防止字体大小导致缝隙 */
+  /* 确保 banner 在所有元素之前 */
+  z-index: 1;
+}
+
+.banner-section > *,
+.member-banner-section > *,
+.about .banner-section > *,
+.about .member-banner-section > *,
+.home .banner-section > *,
+.home .member-banner-section > *,
+.performance .banner-section > *,
+.performance .member-banner-section > *,
+.support .banner-section > *,
+.support .member-banner-section > *,
+.profile .banner-section > *,
+.profile .member-banner-section > *,
+.projects .banner-section > *,
+.projects .member-banner-section > * {
+  line-height: normal;
+  font-size: initial;
+}
+
+.banner-carousel,
+.about .banner-carousel,
+.home .banner-carousel,
+.performance .banner-carousel,
+.support .banner-carousel,
+.profile .banner-carousel,
+.projects .banner-carousel {
+  position: relative;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+  line-height: 0; /* 防止 inline 元素之间的空白字符导致缝隙 */
+  font-size: 0; /* 防止字体大小导致缝隙 */
+}
+
+.banner-carousel > *,
+.about .banner-carousel > *,
+.home .banner-carousel > *,
+.performance .banner-carousel > *,
+.support .banner-carousel > *,
+.profile .banner-carousel > *,
+.projects .banner-carousel > * {
+  line-height: normal;
+  font-size: initial;
+}
+
+.banner-image,
+.about .banner-image,
+.home .banner-image,
+.performance .banner-image,
+.support .banner-image,
+.profile .banner-image,
+.projects .banner-image {
+  position: relative;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease-in-out, background-image 0.3s ease-in-out;
+  min-height: 400px;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-sizing: border-box;
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  line-height: normal;
+  font-size: initial;
+  will-change: opacity, background-image; /* 优化渲染性能 */
+}
+
+.banner-image.banner-loading {
+  opacity: 0.9;
+}
+
+.banner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  padding: 2rem;
+  text-align: center;
+}
+
+.banner-overlay h1,
+.banner-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.banner-overlay p,
+.banner-subtitle {
+  font-size: 1.125rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 文字切换动画 */
+.banner-text-transition {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.banner-subtitle.banner-text-transition {
+  animation: fadeInUp 0.6s ease-out 0.2s forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.banner-indicators {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  z-index: 10;
+}
+
+.indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+}
+
+.indicator:hover {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.indicator.active {
+  background-color: white;
+  width: 24px;
+  border-radius: 5px;
+}
+
+.banner-clickable {
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.banner-clickable:hover {
+  opacity: 0.9;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .banner-overlay h1 {
+    font-size: 2rem;
+  }
+
+  .banner-overlay p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .banner-section,
+  .member-banner-section,
+  .about .banner-section,
+  .about .member-banner-section,
+  .home .banner-section,
+  .home .member-banner-section,
+  .performance .banner-section,
+  .performance .member-banner-section,
+  .support .banner-section,
+  .support .member-banner-section,
+  .profile .banner-section,
+  .profile .member-banner-section,
+  .projects .banner-section,
+  .projects .member-banner-section {
+    padding: 0;
+  }
+
+  .banner-image,
+  .about .banner-image,
+  .home .banner-image,
+  .performance .banner-image,
+  .support .banner-image,
+  .profile .banner-image,
+  .projects .banner-image {
+    height: 300px !important;
+    min-height: 300px;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+  }
+
+  .banner-overlay {
+    padding: 1.5rem;
+  }
+
+  .banner-overlay h1 {
+    font-size: 1.5rem;
+  }
+
+  .banner-overlay p {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .banner-image,
+  .about .banner-image,
+  .home .banner-image,
+  .performance .banner-image,
+  .support .banner-image,
+  .profile .banner-image,
+  .projects .banner-image {
+    height: 250px !important;
+    min-height: 250px;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+  }
+}
+
+/* Banner Type Background Colors */
+/* 为每个 banner 类型添加背景颜色，当图片加载失败或不存在时显示 */
+.banner-type-main_primary .banner-image {
+  background-color: #1e40af; /* 蓝色 - 主页 */
+}
+
+.banner-type-about .banner-image {
+  background-color: #059669; /* 绿色 - 系统介绍 */
+}
+
+.banner-type-projects .banner-image {
+  background-color: #dc2626; /* 红色 - 项目 */
+}
+
+.banner-type-performance .banner-image {
+  background-color: #7c3aed; /* 紫色 - 绩效 */
+}
+
+.banner-type-support .banner-image {
+  background-color: #ea580c; /* 橙色 - 支持 */
+}
+
+.banner-type-profile .banner-image {
+  background-color: #0891b2; /* 青色 - 企业资料 */
+}
+
+.banner-type-notices .banner-image {
+  background-color: #be185d; /* 粉色 - 公告 */
+}
+
+.banner-type-news .banner-image {
+  background-color: #b45309; /* 棕色 - 新闻 */
+}
+

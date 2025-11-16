@@ -80,14 +80,10 @@ const AdminLogin = lazy(() => import('@admin/modules/auth/Login').then(m => ({ d
 
 // Lazy load member modules
 const MemberHome = lazy(() => import('@member/modules/home/Home').then(m => ({ default: m.default })));
-const MemberProjects = lazy(() => import('@member/modules/projects/ProjectList').then(m => ({ default: m.default })));
-const MemberProjectDetail = lazy(() => import('@member/modules/projects/ProjectDetail').then(m => ({ default: m.default })));
-const MemberProjectApplication = lazy(() => import('@member/modules/projects/ProjectApplication').then(m => ({ default: m.default })));
+const MemberProjects = lazy(() => import('@member/modules/projects/Projects').then(m => ({ default: m.default })));
 const MemberProfile = lazy(() => import('@member/modules/profile/Profile').then(m => ({ default: m.default })));
 const MemberAbout = lazy(() => import('@member/modules/about/About').then(m => ({ default: m.default })));
-const MemberPerformanceList = lazy(() => import('@member/modules/performance/PerformanceList').then(m => ({ default: m.default })));
-const MemberPerformanceForm = lazy(() => import('@member/modules/performance/PerformanceForm').then(m => ({ default: m.default })));
-const MemberPerformanceDetail = lazy(() => import('@member/modules/performance/PerformanceDetail').then(m => ({ default: m.default })));
+const MemberPerformance = lazy(() => import('@member/modules/performance').then(m => ({ default: m.default })));
 const MemberSupport = lazy(() => import('@member/modules/support/Support').then(m => ({ default: m.default })));
 
 // Lazy load admin modules
@@ -164,15 +160,15 @@ export const router = createBrowserRouter(
       children: [
         {
           index: true,
+          element: <Navigate to="/member/home" replace />
+        },
+        {
+          path: 'home',
           element: (
             <LazyRoute>
               <MemberHome />
             </LazyRoute>
           )
-        },
-        {
-          path: 'home',
-          element: <Navigate to="/member" replace />
         },
         {
           path: 'about',
@@ -194,61 +190,11 @@ export const router = createBrowserRouter(
           )
         },
         {
-          path: 'projects/:id',
-          element: (
-            <ProtectedRoute allowedRoles={['member']}>
-              <LazyRoute>
-                <MemberProjectDetail />
-              </LazyRoute>
-            </ProtectedRoute>
-          )
-        },
-        {
-          path: 'projects/:id/apply',
-          element: (
-            <ProtectedRoute allowedRoles={['member']}>
-              <LazyRoute>
-                <MemberProjectApplication />
-              </LazyRoute>
-            </ProtectedRoute>
-          )
-        },
-        {
           path: 'performance',
           element: (
             <ProtectedRoute allowedRoles={['member']}>
               <LazyRoute>
-                <MemberPerformanceList />
-              </LazyRoute>
-            </ProtectedRoute>
-          )
-        },
-        {
-          path: 'performance/new',
-          element: (
-            <ProtectedRoute allowedRoles={['member']}>
-              <LazyRoute>
-                <MemberPerformanceForm />
-              </LazyRoute>
-            </ProtectedRoute>
-          )
-        },
-        {
-          path: 'performance/:id',
-          element: (
-            <ProtectedRoute allowedRoles={['member']}>
-              <LazyRoute>
-                <MemberPerformanceDetail />
-              </LazyRoute>
-            </ProtectedRoute>
-          )
-        },
-        {
-          path: 'performance/:id/edit',
-          element: (
-            <ProtectedRoute allowedRoles={['member']}>
-              <LazyRoute>
-                <MemberPerformanceForm />
+                <MemberPerformance />
               </LazyRoute>
             </ProtectedRoute>
           )

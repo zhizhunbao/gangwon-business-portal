@@ -4,23 +4,60 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import Textarea from '@shared/components/Textarea';
 import Select from '@shared/components/Select';
+import { Banner, Submenu } from '@shared/components';
+import { BANNER_TYPES } from '@shared/utils/constants';
 import { EyeIcon, CheckCircleIcon, WarningIcon, MegaphoneIcon } from '@shared/components/Icons';
 import './Support.css';
 
+// 选项卡类型
+const TAB_TYPES = {
+  INQUIRY: 'inquiry',
+  FAQ: 'faq',
+  NOTIFICATIONS: 'notifications'
+};
+
 export default function Support() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('inquiry');
+  
+  // 从 URL hash 获取当前激活的选项卡
+  const getActiveTabFromHash = useCallback(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash && Object.values(TAB_TYPES).includes(hash)) {
+      return hash;
+    }
+    // 默认显示第一个选项卡
+    return TAB_TYPES.INQUIRY;
+  }, []);
+
+  const [activeTab, setActiveTab] = useState(getActiveTabFromHash);
   const [inquiries, setInquiries] = useState([]);
   const [faqs, setFaqs] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+
+  // 监听 URL hash 变化，更新激活的选项卡
+  useEffect(() => {
+    const handleHashChange = () => {
+      const newTab = getActiveTabFromHash();
+      setActiveTab(newTab);
+    };
+
+    // 初始设置
+    handleHashChange();
+
+    // 监听 hash 变化
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [getActiveTabFromHash]);
 
   // Mock data
   useEffect(() => {
@@ -134,44 +171,71 @@ export default function Support() {
     { value: 'other', label: t('support.categories.other') }
   ];
 
-  const filteredFaqs = faqs.filter(faq =>
-    faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    faq.answer.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // 获取 submenu 配置
+  const getSubmenuItems = () => {
+    return [
+      {
+        key: 'support-inquiry',
+        hash: 'inquiry',
+        label: t('support.inquiry', '1:1 咨询'),
+        isTab: true,
+        basePath: '/member/support'
+      },
+      {
+        key: 'support-faq',
+        hash: 'faq',
+        label: t('support.faq', '常见问题'),
+        isTab: true,
+        basePath: '/member/support'
+      },
+      {
+        key: 'support-notifications',
+        hash: 'notifications',
+        label: t('support.notifications', '通知中心'),
+        isTab: true,
+        basePath: '/member/support',
+        render: ({ item, currentHash }) => {
+          const defaultHash = TAB_TYPES.INQUIRY;
+          const active = currentHash === item.hash || 
+            (currentHash === '' && item.hash === defaultHash);
+          return (
+            <a
+              href={`${item.basePath}#${item.hash}`}
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.hash = item.hash;
+                window.dispatchEvent(new HashChangeEvent('hashchange'));
+              }}
+              className={`submenu-link ${active ? 'active' : ''}`}
+            >
+              <span className="submenu-label">{item.label}</span>
+              {unreadCount > 0 && <span className="badge badge-danger" style={{ marginLeft: '0.5rem' }}>{unreadCount}</span>}
+            </a>
+          );
+        }
+      }
+    ];
+  };
 
   return (
     <div className="support">
-      <div className="page-header">
-        <h1>{t('support.title')}</h1>
-      </div>
+      <Banner
+        bannerType={BANNER_TYPES.SUPPORT}
+        sectionClassName="member-banner-section"
+      />
+      <Submenu
+        items={getSubmenuItems()}
+        className="support-submenu"
+        headerSelector=".member-header"
+      />
 
-      {/* 标签页 */}
-      <div className="tabs">
-        <button
-          className={`tab ${activeTab === 'inquiry' ? 'active' : ''}`}
-          onClick={() => setActiveTab('inquiry')}
-        >
-          {t('support.inquiry')}
-        </button>
-        <button
-          className={`tab ${activeTab === 'faq' ? 'active' : ''}`}
-          onClick={() => setActiveTab('faq')}
-        >
-          {t('support.faq')}
-        </button>
-        <button
-          className={`tab ${activeTab === 'notifications' ? 'active' : ''}`}
-          onClick={() => setActiveTab('notifications')}
-        >
-          {t('support.notifications')}
-          {unreadCount > 0 && <span className="badge badge-danger">{unreadCount}</span>}
-        </button>
+      <div className="page-header">
       </div>
 
       {/* 1:1 咨询 */}
-      {activeTab === 'inquiry' && (
+      {activeTab === TAB_TYPES.INQUIRY && (
         <div className="tab-content">
           <div className="support-grid">
             {/* 咨询表单 */}
@@ -229,26 +293,30 @@ export default function Support() {
               ) : (
                 <div className="inquiries-list">
                   {inquiries.map((inquiry) => (
-                    <div key={inquiry.id} className="inquiry-item">
-                      <div className="inquiry-header">
-                        <h3>{inquiry.subject}</h3>
-                        <span className={`badge ${inquiry.status === 'answered' ? 'badge-success' : 'badge-warning'}`}>
-                          {t(`support.status.${inquiry.status}`)}
-                        </span>
+                    <Link key={inquiry.id} to={`/member/support/inquiry/${inquiry.id}`} className="ac-card inquiry-item">
+                      <div 
+                        className="ac-card-img" 
+                        style={{ 
+                          backgroundImage: `url('/uploads/banners/support.png')` 
+                        }}
+                      />
+                      <div className="ac-card-body">
+                        <div className="inquiry-header">
+                          <h2>{inquiry.subject}</h2>
+                          <span className={`badge ${inquiry.status === 'answered' ? 'badge-success' : 'badge-warning'}`}>
+                            {t(`support.status.${inquiry.status}`)}
+                          </span>
+                        </div>
+                        <div className="inquiry-meta" style={{ marginBottom: '1.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                          <span>{t(`support.categories.${inquiry.category}`)}</span>
+                          <span>{t('support.createdDate')}: {inquiry.createdAt}</span>
+                          {inquiry.answeredAt && (
+                            <span>{t('support.answeredDate')}: {inquiry.answeredAt}</span>
+                          )}
+                        </div>
+                        <span className="ac-btn bg-light-grey arrow">{t('common.details')}</span>
                       </div>
-                      <div className="inquiry-meta">
-                        <span>{t(`support.categories.${inquiry.category}`)}</span>
-                        <span>{t('support.createdDate')}: {inquiry.createdAt}</span>
-                        {inquiry.answeredAt && (
-                          <span>{t('support.answeredDate')}: {inquiry.answeredAt}</span>
-                        )}
-                      </div>
-                      <Link to={`/member/support/inquiry/${inquiry.id}`}>
-                        <Button variant="secondary" size="small">
-                          {t('common.details')}
-                        </Button>
-                      </Link>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -258,41 +326,37 @@ export default function Support() {
       )}
 
       {/* FAQ */}
-      {activeTab === 'faq' && (
+      {activeTab === TAB_TYPES.FAQ && (
         <div className="tab-content">
           <Card>
             <div className="faq-header">
               <h2>{t('support.faq')}</h2>
-              <div className="search-box">
-                <Input
-                  type="search"
-                  placeholder={t('support.searchFAQ')}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
             </div>
 
-            {filteredFaqs.length === 0 ? (
+            {faqs.length === 0 ? (
               <div className="no-data">
                 <p>{t('common.noData')}</p>
               </div>
             ) : (
               <div className="faq-list">
-                {filteredFaqs.map((faq) => (
-                  <div key={faq.id} className="faq-item">
-                    <div className="faq-question">
+                {faqs.map((faq) => (
+                  <div key={faq.id} className="ac-card faq-item">
+                    <div 
+                      className="ac-card-img" 
+                      style={{ 
+                        backgroundImage: `url('/uploads/banners/support.png')` 
+                      }}
+                    />
+                    <div className="ac-card-body">
                       <span className="faq-category">{t(`support.categories.${faq.category}`)}</span>
-                      <h3>Q: {faq.question}</h3>
-                    </div>
-                    <div className="faq-answer">
+                      <h2>Q: {faq.question}</h2>
                       <p>A: {faq.answer}</p>
-                    </div>
-                    <div className="faq-meta">
-                      <span>
-                        <EyeIcon className="w-4 h-4" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.25rem' }} />
-                        {faq.views} {t('support.views')}
-                      </span>
+                      <div className="faq-meta" style={{ marginBottom: '1.5rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                        <span>
+                          <EyeIcon className="w-4 h-4" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: '0.25rem' }} />
+                          {faq.views} {t('support.views')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -303,7 +367,7 @@ export default function Support() {
       )}
 
       {/* 通知中心 */}
-      {activeTab === 'notifications' && (
+      {activeTab === TAB_TYPES.NOTIFICATIONS && (
         <div className="tab-content">
           <Card>
             <h2>{t('support.notifications')}</h2>
