@@ -290,6 +290,9 @@ root
 - 헤더, 메인 배너 full width
 - 서브메뉴 바 없음
 - main content container 내에 관리자 작성 HTML 콘텐츠 표시
+- max width 1200~1280px, 중앙 정렬 (desktop 기준)
+- 관리자페이지의 시스템 소개 관리 페이지에서 입력한 textarea와 파일로 첨부된 이미지의 정보를 여기에 보여준다.
+- 관리자가 직접 입력하면 이 페이지는 보여주면 된다.
 
 ### Program
 
