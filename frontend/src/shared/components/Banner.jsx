@@ -69,7 +69,7 @@ function BannerText({ text, isTitle }) {
  * @param {string} props.className - 额外的 CSS 类名
  * @param {string} props.sectionClassName - 外层 section 的 CSS 类名（默认: 'banner-section'）
  * @param {number} props.autoSwitchInterval - 自动切换间隔（毫秒，默认: 5000）
- * @param {number} props.height - 横幅高度（默认: '500px'）
+ * @param {number} props.height - 横幅高度（默认: '400px'）
  */
 export default function Banner({
   bannerType: propBannerType = null,
@@ -78,7 +78,7 @@ export default function Banner({
   className = '',
   sectionClassName = 'banner-section',
   autoSwitchInterval = 5000,
-  height = '500px'
+  height = '400px'
 }) {
   // 使用传入的配置或默认配置
   const finalRouteToBannerTypeMap = routeToBannerTypeMap ?? EXTENDED_ROUTE_TO_BANNER_TYPE;

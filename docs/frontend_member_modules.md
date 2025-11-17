@@ -6,8 +6,6 @@ All shared components are located in the `frontend/src/shared/components/` direc
 
 | Component Name | Type | Description |
 |----------------|------|-------------|
-| Header | Layout | Top navigation bar for member portal, includes main menu, user menu, notification center, language switcher |
-| Footer | Layout | Footer component, includes organization information, contact details, terms links |
 | Banner | Layout | Main banner carousel component, supports left/right navigation and click-through |
 | Submenu | Layout | Secondary navigation bar component (displayed on 성과관리, 원스톱지원 pages) |
 | Pagination | Layout | Pagination component |
@@ -28,22 +26,30 @@ All shared components are located in the `frontend/src/shared/components/` direc
 
 ---
 
+# 0.1. member Layouts
+
+Layout components specific to the member portal are located in the `frontend/src/member/layouts/` directory.
+
+| Component Name | Type | Description |
+|----------------|------|-------------|
+| MemberLayout | Layout | Main layout wrapper for member portal pages |
+| Header | Layout | Top navigation bar for member portal, includes main menu, user menu, notification center, language switcher |
+| Footer | Layout | Footer component, includes organization information, contact details, terms links |
+| PageContainer | Layout | Page container component, controls page margins and max-width, supports different sizes (default, large, small) and full-width mode |
+
+---
+
 # 1. about
 
 ## Container Components
 
 | Component Name | Description |
 |----------------|-------------|
-| About.jsx | About page container component |
+| About.jsx | About page container component (fetches HTML content from API and renders it) |
 
 ## Other Components
 
-| Component Name | Description |
-|----------------|-------------|
-| Overview.jsx | System overview component |
-| Features.jsx | Main features component |
-| Workflow.jsx | Usage workflow component |
-| Contact.jsx | Contact information component |
+None
 
 # 2. auth
 

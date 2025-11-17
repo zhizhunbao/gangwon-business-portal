@@ -74,7 +74,11 @@
       "title": "还有其他疑问？",
       "description": "在常见问题中查找答案。",
       "button": "前往FAQ"
-    }
+    },
+    "loading": "加载中...",
+    "error": "加载失败",
+    "errorMessage": "加载失败: {{message}}",
+    "fetchError": "获取内容失败"
   }
 }
 

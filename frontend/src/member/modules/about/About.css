@@ -13,14 +13,92 @@
   overflow-x: hidden; /* 防止横向滚动 */
 }
 
-/* About Tab Content - 选项卡内容区域 */
-.about-tab-content {
-  min-height: auto; /* 根据内容自适应高度 */
+/* About Content - 所有子组件内容区域 */
+.about-content {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 2rem;
   animation: fadeIn 0.3s ease-in-out;
-  margin-top: 1rem; /* 与 Submenu 的间距 */
-  order: 3 !important; /* 确保内容在 Submenu (order: 2) 之后显示 */
-  position: relative;
-  z-index: 1; /* 确保在 Submenu (z-index: 10) 下方 */
+}
+
+/* HTML Content Wrapper */
+.about-html-content-wrapper {
+  width: 100%;
+  max-width: 100%;
+  padding: 2rem 0;
+}
+
+/* HTML Content Styles */
+.about-html-content {
+  width: 100%;
+  max-width: 100%;
+  line-height: 1.8;
+  color: #374151;
+}
+
+.about-html-content h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 2rem 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.about-html-content h2:first-child {
+  margin-top: 0;
+}
+
+.about-html-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 1.5rem 0 1rem 0;
+}
+
+.about-html-content p {
+  font-size: 1rem;
+  color: #374151;
+  line-height: 1.8;
+  margin: 0 0 1rem 0;
+}
+
+.about-html-content ul,
+.about-html-content ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.about-html-content li {
+  font-size: 1rem;
+  color: #374151;
+  line-height: 1.8;
+  margin: 0.5rem 0;
+}
+
+.about-html-content strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+.about-html-content br {
+  line-height: 1.8;
+}
+
+/* Loading and Error States */
+.about-loading,
+.about-error {
+  text-align: center;
+  padding: 3rem 2rem;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+.about-error {
+  color: #dc2626;
 }
 
 @keyframes fadeIn {
@@ -141,18 +219,17 @@
   opacity: 0.9;
 }
 
-/* 在选项卡内容中，移除子组件的 page-header，因为已经在 Submenu 中显示了 */
-.about-tab-content .page-header,
+/* 子组件的 page-header 正常显示 */
 .overview-section .page-header,
 .features-section .page-header,
 .workflow-section .page-header,
 .contact-section .page-header {
-  display: none;
+  display: block;
 }
 
 /* Overview Section */
 .overview-section {
-  margin-bottom: 0;
+  margin-bottom: 3rem;
   padding-top: 0;
 }
 
@@ -510,9 +587,8 @@
     margin-bottom: 1.5rem !important;
   }
 
-  .about-tab-content {
-    min-height: auto;
-    margin-top: 0.75rem;
+  .about-content {
+    margin-top: 1.5rem;
   }
 
   /* Banner responsive styles are in @shared/components/Banner.css */

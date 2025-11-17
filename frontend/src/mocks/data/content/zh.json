@@ -500,6 +500,7 @@
     "id": 1,
     "title": "江原道创业企业门户介绍",
     "content": "江原道创业企业门户是面向江原道内创业企业的综合支援平台。提供项目申请、绩效管理、信息共享等多种服务。",
+    "htmlContent": "<div class=\"about-html-content\"><h2>系统概述</h2><p>江原道创业企业门户是面向江原道内创业企业的综合支援平台。我们致力于为创业企业提供全方位的服务和支持。</p><h3>主要功能</h3><ul><li><strong>项目申请</strong>：在线申报各类支援项目，实时跟踪审批进度</li><li><strong>绩效管理</strong>：便捷录入和管理企业绩效数据，支持数据导出</li><li><strong>信息共享</strong>：及时获取最新公告、新闻和政策信息</li><li><strong>咨询服务</strong>：1:1 咨询服务和常见问题解答</li></ul><h3>使用流程</h3><ol><li>企业注册并提交营业执照信息</li><li>等待管理员审批</li><li>登录系统开始使用各项功能</li><li>申报项目、录入绩效数据、查看公告</li></ol><h3>联系方式</h3><p>如有任何疑问，请通过以下方式联系我们：</p><p><strong>电话</strong>：033-123-4567<br><strong>邮箱</strong>：support@gwstartup.kr<br><strong>地址</strong>：江原道春川市中央路123<br><strong>办公时间</strong>：平日 09:00 ~ 18:00</p></div>",
     "contact": {
       "phone": "033-123-4567",
       "email": "support@gwstartup.kr",

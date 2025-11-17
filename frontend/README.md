@@ -74,25 +74,80 @@ frontend/
 │   │   │   ├── MemberLayout.css
 │   │   │   ├── Header.jsx
 │   │   │   ├── Header.css
-│   │   │   ├── Sidebar.jsx
-│   │   │   ├── Sidebar.css
 │   │   │   ├── Footer.jsx
 │   │   │   ├── Footer.css
+│   │   │   ├── PageContainer.jsx
+│   │   │   ├── PageContainer.css
+│   │   │   ├── locales/
 │   │   │   └── index.js
 │   │   ├── modules/     # 功能模块
 │   │   │   ├── auth/   # 认证模块
 │   │   │   │   ├── Login.jsx
 │   │   │   │   ├── Register.jsx
+│   │   │   │   ├── ForgotPassword.jsx
+│   │   │   │   ├── ResetPassword.jsx
+│   │   │   │   ├── Auth.css
 │   │   │   │   ├── locales/
 │   │   │   │   └── index.js
 │   │   │   ├── home/   # 首页模块
+│   │   │   │   ├── Home.jsx
+│   │   │   │   ├── Home.css
+│   │   │   │   ├── NoticesPreview.jsx
+│   │   │   │   ├── NoticesList.jsx
+│   │   │   │   ├── PressPreview.jsx
+│   │   │   │   ├── PressList.jsx
+│   │   │   │   ├── RollingBannerCard.jsx
+│   │   │   │   └── locales/
 │   │   │   ├── projects/ # 项目模块
+│   │   │   │   ├── Projects.jsx
+│   │   │   │   ├── Projects.css
+│   │   │   │   ├── ProjectList.jsx
+│   │   │   │   ├── ProjectDetail.jsx
+│   │   │   │   ├── locales/
+│   │   │   │   └── index.js
 │   │   │   ├── performance/ # 绩效模块
-│   │   │   ├── profile/ # 个人资料模块
+│   │   │   │   ├── Performance.jsx
+│   │   │   │   ├── Performance.css
+│   │   │   │   ├── PerformanceCompanyInfo.jsx
+│   │   │   │   ├── PerformanceListContent.jsx
+│   │   │   │   ├── PerformanceFormContent.jsx
+│   │   │   │   ├── locales/
+│   │   │   │   └── index.js
 │   │   │   ├── support/ # 支持模块
+│   │   │   │   ├── Support.jsx
+│   │   │   │   ├── Support.css
+│   │   │   │   ├── ConsultationForm.jsx
+│   │   │   │   ├── ConsultationHistory.jsx
+│   │   │   │   ├── FAQList.jsx
+│   │   │   │   ├── locales/
+│   │   │   │   └── index.js
 │   │   │   └── about/  # 关于模块
+│   │   │       ├── About.jsx
+│   │   │       ├── About.css
+│   │   │       ├── locales/
+│   │   │       └── index.js
 │   │   └── routes.jsx  # 会员端路由
 │   ├── admin/          # 管理员端模块
+│   │   ├── layouts/    # 布局组件
+│   │   │   ├── AdminLayout.jsx
+│   │   │   ├── AdminLayout.css
+│   │   │   ├── Header.jsx
+│   │   │   ├── Header.css
+│   │   │   ├── Sidebar.jsx
+│   │   │   ├── Sidebar.css
+│   │   │   ├── Footer.jsx
+│   │   │   ├── Footer.css
+│   │   │   ├── locales/
+│   │   │   └── index.js
+│   │   ├── modules/     # 功能模块
+│   │   │   ├── auth/   # 认证模块
+│   │   │   ├── dashboard/ # 仪表板模块
+│   │   │   ├── members/ # 会员管理模块
+│   │   │   ├── projects/ # 项目管理模块
+│   │   │   ├── performance/ # 绩效管理模块
+│   │   │   ├── content/ # 内容管理模块
+│   │   │   ├── reports/ # 报告模块
+│   │   │   └── settings/ # 设置模块
 │   │   └── routes.jsx  # 管理员端路由
 │   ├── App.jsx         # 根组件
 │   ├── main.jsx        # 入口文件
@@ -251,7 +306,17 @@ server: {
 
 通过 `VITE_USE_MOCK` 环境变量控制是否使用 Mock 数据。
 
-> **注意**: Mock 数据目录 (`src/mocks/`) 目前尚未创建，可根据需要添加。
+Mock 数据目录位于 `src/mocks/`，包含：
+- `browser.js`: 浏览器端 MSW 初始化
+- `server.js`: Node.js 端 MSW 初始化
+- `handlers/`: API 请求处理器
+  - `auth.js`: 认证相关 API
+  - `content.js`: 内容管理 API
+  - `dashboard.js`: 仪表板 API
+  - `members.js`: 会员管理 API
+  - `performance.js`: 绩效管理 API
+  - `projects.js`: 项目管理 API
+- `data/`: Mock 数据文件（JSON 格式，按模块和语言组织）
 
 ## 国际化
 
@@ -334,17 +399,23 @@ server {
 
 ### 会员端 (Member)
 
-- **认证**: 登录、注册
-- **首页**: 仪表板、概览信息
+- **认证**: 登录、注册、忘记密码、重置密码
+- **首页**: 主横幅、公告事项预览、新闻稿预览
 - **项目管理**: 项目列表、详情、申请
-- **绩效管理**: 绩效列表、详情、表单
-- **个人资料**: 用户信息管理
-- **支持**: 帮助和支持
-- **关于**: 关于页面
+- **绩效管理**: 公司信息、绩效查询、绩效输入表单（销售额/就业、政府支持历史、知识产权）
+- **支持**: 1:1 咨询表单、咨询历史、FAQ 列表
+- **关于**: 系统介绍页面（从 API 获取 HTML 内容并渲染）
 
 ### 管理员端 (Admin)
 
-- 管理员功能（待开发）
+- **认证**: 管理员登录
+- **仪表板**: 横幅管理、弹窗管理、公司状态统计
+- **会员管理**: 会员列表、会员详情
+- **项目管理**: 项目列表管理
+- **绩效管理**: 绩效列表管理
+- **内容管理**: 内容管理功能
+- **报告**: 报告功能
+- **设置**: 系统设置
 
 ## 状态管理
 

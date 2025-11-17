@@ -74,7 +74,11 @@
       "title": "더 궁금하신 사항이 있으신가요?",
       "description": "자주 묻는 질문에서 답변을 찾아보세요.",
       "button": "FAQ 바로가기"
-    }
+    },
+    "loading": "로딩 중...",
+    "error": "로딩 실패",
+    "errorMessage": "로딩 실패: {{message}}",
+    "fetchError": "콘텐츠를 불러오는데 실패했습니다"
   }
 }
 
