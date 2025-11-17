@@ -38,6 +38,7 @@ Cursor가 이 문서를 읽고 React 기반 관리자 대시보드를 구현할 
   - Notice 공지사항
   - Press 보도자료
   - Rolling banner 롤링배너
+  - System info 시스템 소개
 - Company members 기업회원
 
 메인 컨텐츠 영역 admin main content
@@ -283,6 +284,7 @@ OperationManagementPage
 - Notice board 공지사항 관리
 - Press board 보도자료 관리
 - Rolling banner 롤링배너 관리
+- System info 시스템 소개 관리
 
 ### 5 1 Notice board 공지사항 관리
 
@@ -459,6 +461,68 @@ RollingBannerAdminPage
   - Pause 일시 정지
   - Play 다시 재생
 
+### 5 4 System info 시스템 소개 관리
+
+페이지 이름
+SystemInfoAdminPage
+
+역할
+
+- 기업 포털의 시스템 소개 페이지에 표시될 컨텐츠를 관리한다.
+- 관리자가 입력한 HTML 내용과 이미지 파일을 기업용 홈페이지의 시스템 소개 페이지에 그대로 표시한다.
+
+입력 항목
+
+- 내용 content
+  - WYSIWYG 에디터 사용
+  - 예 Quill, TinyMCE, Toast UI Editor 등
+  - HTML 형식으로 저장
+  - 필수 기능
+    - 글꼴 크기, 굵게, 밑줄, 색상
+    - 번호 목록, 불릿 목록
+    - 링크 삽입
+    - 이미지 삽입 버튼
+    - 드래그 앤 드롭 이미지 업로드
+- 이미지 파일 image
+  - 별도의 이미지 파일 업로드 영역
+  - 최대 1개
+  - 기업용 홈페이지 시스템 소개 페이지에 표시
+
+저장 경로 규칙
+
+- 시스템 소개 이미지 파일 저장 경로 패턴
+  - /upload/common/system-info
+- 서버는 multipart 업로드를 받아 위 경로에 유니크 파일명으로 저장하고
+  fileUrl 을 응답한다.
+- 에디터 내 이미지도 동일 경로에 저장한다.
+
+데이터 구조
+
+- id
+- content HTML 내용
+- imageUrl 이미지 파일 URL optional
+- updatedAt 최종 수정일
+- updatedBy 수정자 관리자 계정
+
+행위
+
+- 시스템 소개 컨텐츠는 단일 레코드로 관리한다.
+- 등록, 수정 기능 제공
+- 삭제는 비활성화 처리로 대체 가능
+- 기업용 홈페이지 시스템 소개 페이지에서
+  - content 필드의 HTML을 그대로 렌더링
+  - imageUrl 이 있으면 이미지도 함께 표시
+
+기업용 홈페이지 연동 규칙
+
+- 기업용 홈페이지의 시스템 소개 페이지 경로 intro
+- GET /api/system-info API를 통해 컨텐츠 조회
+- 반환 값
+  - content HTML
+  - imageUrl optional
+- 프런트에서는 content를 dangerouslySetInnerHTML 또는 동등한 방식으로 렌더링
+- imageUrl이 있으면 content 상단 또는 하단에 이미지 표시
+
 ## 6 Company members 기업회원 관리
 
 페이지 이름
@@ -517,6 +581,7 @@ CompanyMemberAdminPage
   - 프로그램 program/upload/{businessId}/program
   - 성과자료 performance
     /upload/{businessId}/performance
+  - 시스템 소개 system-info/upload/common/system-info
 
 공지사항 파일 업로드 공통 규칙
 
