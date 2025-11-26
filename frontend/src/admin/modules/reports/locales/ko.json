@@ -9,9 +9,63 @@
         "Q3": "3분기",
         "Q4": "4분기"
       },
-      "exportExcel": "엑셀 내보내기",
-      "exportCSV": "CSV 내보내기",
-      "placeholder": "통계 리포트 기능 개발 예정"
+      "fields": {
+        "companyName": "기업명",
+        "businessNumber": "사업자등록번호",
+        "industry": "업종",
+        "region": "지역",
+        "year": "년도",
+        "quarter": "분기"
+      },
+      "search": {
+        "title": "기업 검색",
+        "description": "기업 정보를 입력하면 Nice D&B 데이터와 내부 통계를 함께 조회할 수 있습니다.",
+        "button": "검색"
+      },
+      "messages": {
+        "searchSuccess": "{{count}}건의 결과를 찾았습니다.",
+        "searchFailed": "검색에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        "dnbFailed": "Nice D&B 데이터를 불러오지 못했습니다. {{error}}",
+        "dnbSuccess": "Nice D&B 데이터를 성공적으로 불러왔습니다.",
+        "dnbNoBusinessNumber": "사업자등록번호가 없어 Nice D&B 데이터를 불러올 수 없습니다."
+      },
+      "table": {
+        "companyName": "기업명",
+        "businessNumber": "사업자등록번호",
+        "industry": "업종",
+        "region": "지역",
+        "revenue": "연 매출",
+        "employees": "직원 수",
+        "status": "승인 상태"
+      },
+      "status": {
+        "approved": "승인 완료",
+        "pending": "승인 대기",
+        "rejected": "반려"
+      },
+      "detail": {
+        "niceTitle": "Nice D&B 기업 분석",
+        "creditGrade": "신용등급",
+        "riskLevel": "위험도",
+        "summary": "요약",
+        "revenue": "매출",
+        "profit": "이익",
+        "year": "년",
+        "financialHistory": "재무 이력",
+        "insights": "기업 인사이트",
+        "loadingDnb": "Nice D&B 데이터를 불러오는 중...",
+        "selectHint": "기업을 선택하면 Nice D&B 분석 데이터를 확인할 수 있습니다."
+      },
+      "riskLevel": {
+        "low": "낮음",
+        "moderate": "보통",
+        "caution": "주의",
+        "high": "높음"
+      },
+      "table": {
+        "count": "총 {{count}}건"
+      },
+      "placeholder": "검색 조건을 입력한 뒤 기업 목록을 확인해주세요."
     }
   }
 }

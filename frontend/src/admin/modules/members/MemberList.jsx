@@ -3,12 +3,11 @@
  * 企业会员列表
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Input, Select, Badge, Pagination } from '@shared/components';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { Table, Button, Badge, Pagination } from '@shared/components';
+import { adminService } from '@shared/services';
 import './MemberList.css';
 
 export default function MemberList() {
@@ -23,63 +22,64 @@ export default function MemberList() {
   const [members, setMembers] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
-    loadMembers();
-  }, [currentPage, pageSize, statusFilter, searchTerm, searchField]);
-
-  const loadMembers = async () => {
+  const loadMembers = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
         page: currentPage,
-        page_size: pageSize,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        search: searchTerm || undefined,
-        search_field: searchField
+        pageSize: pageSize,
+        approvalStatus: statusFilter !== 'all' ? statusFilter : undefined,
+        search: searchTerm || undefined
       };
-      const response = await apiService.get(`${API_PREFIX}/admin/members`, params);
+      const response = await adminService.listMembers(params);
       if (response.members) {
         setMembers(response.members);
-        setTotalCount(response.pagination?.total || 0);
+        setTotalCount(response.pagination?.total || response.total || 0);
       }
     } catch (error) {
       console.error('Failed to load members:', error);
+      const errorMessage = error.response?.data?.detail || error.message || t('admin.members.loadFailed', '加载会员列表失败');
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, pageSize, statusFilter, searchTerm, t]);
 
-  const handleSearch = () => {
-    setCurrentPage(1);
+  useEffect(() => {
     loadMembers();
-  };
+  }, [loadMembers]);
 
-  const handleExport = () => {
+  const handleSearch = useCallback(() => {
+    setCurrentPage(1);
+  }, []);
+
+  const handleExport = useCallback(() => {
     // TODO: 实现 Excel 导出
     console.log('Exporting members...');
-  };
+  }, []);
 
-  const handleApprove = async (memberId) => {
+  const handleApprove = useCallback(async (memberId) => {
     try {
-      await apiService.patch(`${API_PREFIX}/admin/members/${memberId}/status`, {
-        approvalStatus: 'approved'
-      });
+      await adminService.approveMember(memberId);
       loadMembers();
+      alert(t('admin.members.approveSuccess', '批准成功') || '批准成功');
     } catch (error) {
       console.error('Failed to approve member:', error);
-      alert(t('admin.members.approveFailed'));
+      const errorMessage = error.response?.data?.detail || error.message || t('admin.members.approveFailed', '批准失败');
+      alert(errorMessage);
     }
-  };
+  }, [loadMembers, t]);
 
-  const handleViewDetail = (memberId) => {
+  const handleViewDetail = useCallback((memberId) => {
     navigate(`/admin/members/${memberId}`);
-  };
+  }, [navigate]);
 
-  const handleViewPerformance = (memberId) => {
+  const handleViewPerformance = useCallback((memberId) => {
     navigate(`/admin/performance?memberId=${memberId}`);
-  };
+  }, [navigate]);
 
-  const columns = [
+  // 使用 useMemo 缓存 columns 配置，避免每次渲染都重新创建
+  const columns = useMemo(() => [
     {
       key: 'companyName',
       label: t('admin.members.table.companyName'),
@@ -145,7 +145,7 @@ export default function MemberList() {
         </div>
       )
     }
-  ];
+  ], [t, handleViewDetail, handleApprove]);
 
   return (
     <div className="admin-member-list">

@@ -7,15 +7,17 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, Table, Button, Select, Badge, Modal, Textarea } from '@shared/components';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { adminService } from '@shared/services';
 import './PerformanceList.css';
 
 export default function PerformanceList() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const memberId = searchParams.get('memberId');
+  
+  // Get current language for number formatting
+  const currentLanguage = i18n.language === 'zh' ? 'zh' : 'ko';
   
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -33,14 +35,18 @@ export default function PerformanceList() {
     try {
       const params = {
         status: statusFilter !== 'all' ? statusFilter : undefined,
-        memberId: memberId || undefined
+        memberId: memberId || undefined,
+        page: 1,
+        pageSize: 100 // Load all records for now
       };
-      const response = await apiService.get(`${API_PREFIX}/admin/performance`, params);
+      const response = await adminService.listPerformanceRecords(params);
       if (response.records) {
         setRecords(response.records);
       }
     } catch (error) {
       console.error('Failed to load performance records:', error);
+      const errorMessage = error.response?.data?.detail || error.message || t('message.loadFailed', '加载失败');
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -48,25 +54,32 @@ export default function PerformanceList() {
 
   const handleApprove = async (record) => {
     try {
-      await apiService.post(`${API_PREFIX}/admin/performance/${record.id}/approve`);
+      await adminService.approvePerformance(record.id);
+      alert(t('admin.performance.approveSuccess', '批准成功') || '批准成功');
       loadPerformanceRecords();
     } catch (error) {
       console.error('Failed to approve record:', error);
-      alert(t('admin.performance.approveFailed'));
+      const errorMessage = error.response?.data?.detail || error.message || t('admin.performance.approveFailed', '批准失败');
+      alert(errorMessage);
     }
   };
 
   const handleRequestRevision = async () => {
+    if (!reviewComment.trim()) {
+      alert(t('admin.performance.revisionCommentRequired', '请输入修改意见') || '请输入修改意见');
+      return;
+    }
+
     try {
-      await apiService.post(`${API_PREFIX}/admin/performance/${selectedRecord.id}/revision`, {
-        comment: reviewComment
-      });
+      await adminService.requestPerformanceRevision(selectedRecord.id, reviewComment);
+      alert(t('admin.performance.revisionSuccess', '修改请求已发送') || '修改请求已发送');
       setShowReviewModal(false);
       setReviewComment('');
       loadPerformanceRecords();
     } catch (error) {
       console.error('Failed to request revision:', error);
-      alert(t('admin.performance.revisionFailed'));
+      const errorMessage = error.response?.data?.detail || error.message || t('admin.performance.revisionFailed', '请求修改失败');
+      alert(errorMessage);
     }
   };
 
@@ -92,7 +105,10 @@ export default function PerformanceList() {
     {
       key: 'salesRevenue',
       label: t('admin.performance.table.salesRevenue'),
-      render: (value) => new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(value || 0)
+      render: (value) => {
+        const locale = currentLanguage === 'zh' ? 'zh-CN' : 'ko-KR';
+        return new Intl.NumberFormat(locale, { style: 'currency', currency: 'KRW' }).format(value || 0);
+      }
     },
     {
       key: 'status',
@@ -100,13 +116,25 @@ export default function PerformanceList() {
       render: (value) => {
         const variantMap = {
           approved: 'success',
-          pending: 'warning',
-          revision_required: 'warning',
-          draft: 'secondary'
+          submitted: 'info',
+          pending: 'warning', // Legacy support
+          revision_requested: 'warning',
+          revision_required: 'warning', // Legacy support
+          draft: 'secondary',
+          rejected: 'danger'
+        };
+        const statusLabelMap = {
+          approved: t('performance.status.approved', '已批准'),
+          submitted: t('performance.status.submitted', '已提交'),
+          pending: t('performance.status.submitted', '已提交'), // Legacy support
+          revision_requested: t('performance.status.revisionRequested', '需修改'),
+          revision_required: t('performance.status.revisionRequested', '需修改'), // Legacy support
+          draft: t('performance.status.draft', '草稿'),
+          rejected: t('performance.status.rejected', '已驳回')
         };
         return (
           <Badge variant={variantMap[value] || 'default'}>
-            {t(`performance.status.${value}`)}
+            {statusLabelMap[value] || value}
           </Badge>
         );
       }
@@ -135,7 +163,7 @@ export default function PerformanceList() {
           >
             {t('common.download')}
           </button>
-          {row.status === 'pending' && (
+          {(row.status === 'submitted' || row.status === 'pending') && (
             <>
               <span className="text-gray-300">|</span>
               <button

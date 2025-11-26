@@ -29,7 +29,7 @@ export const ERROR_CONFIG = {
 // i18next-browser-languagedetector uses 'i18nextLng' as the default localStorage key
 export function getCurrentLanguage() {
   try {
-    const lang = localStorage.getItem('i18nextLng') || 'ko';
+    const lang = localStorage.getItem('language') || localStorage.getItem('i18nextLng') || 'ko';
     // Normalize language code: extract base language (e.g., 'ko-KR' -> 'ko', 'zh-CN' -> 'zh')
     const baseLang = lang.split('-')[0];
     // Only return supported languages

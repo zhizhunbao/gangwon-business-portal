@@ -19,4 +19,5 @@ export { default as LanguageSwitcher } from './LanguageSwitcher';
 export { default as ThemeSwitcher } from './ThemeSwitcher';
 export { default as Submenu } from './Submenu';
 export { default as Banner } from './Banner';
+export { default as LazyImage } from './LazyImage';
 

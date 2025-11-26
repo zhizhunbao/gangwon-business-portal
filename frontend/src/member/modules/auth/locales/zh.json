@@ -24,7 +24,9 @@
     "createAccount": "创建新账号",
     "redirectToLogin": "正在跳转到登录页面...",
     "companyInfo": "企业信息",
-    "accountInfo": "账号信息"
+    "accountInfo": "账号信息",
+    "approvalPending": "您的注册申请已提交，目前处于“审批进行中”状态，请等待管理员审核通过后再尝试登录。",
+    "accountSuspended": "您的账号已被停用，如有疑问请联系平台管理员。"
   },
   "validation": {
     "required": "此项为必填项",

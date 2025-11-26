@@ -5,51 +5,45 @@
 
 import './NoticesPreview.css';
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '@shared/components/Card';
-import { apiService } from '@shared/services';
-import { API_PREFIX, ROUTES } from '@shared/utils/constants';
+import { contentService } from '@shared/services';
+import { ROUTES } from '@shared/utils/constants';
 
 function NoticesPreview() {
   const { t, i18n } = useTranslation();
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const loadNotices = async () => {
-      setLoading(true);
-      try {
-        const params = {
-          page: 1,
-          page_size: 4, // 只加载最近4条
-          category: 'announcement' // 只加载公告，不包括新闻
-        };
-        const response = await apiService.get(`${API_PREFIX}/content/notices`, params);
-        
-        // 处理不同的响应格式
-        const noticesData = response.notices || response.data || [];
-        if (Array.isArray(noticesData)) {
-          const formattedNotices = noticesData.slice(0, 4).map(n => ({
-            id: n.id,
-            title: n.title,
-            date: n.publishedAt ? new Date(n.publishedAt).toISOString().split('T')[0] : (n.date || ''),
-            important: n.category === 'announcement' && (n.isImportant || false)
-          }));
-          setNotices(formattedNotices);
-        } else {
-          setNotices([]);
-        }
-      } catch (error) {
-        console.error('Failed to load notices:', error);
+  const loadNotices = useCallback(async () => {
+    setLoading(true);
+    try {
+      // 使用 contentService 获取最新5条公告，然后取前4条
+      const noticesData = await contentService.getLatestNotices();
+      
+      if (Array.isArray(noticesData) && noticesData.length > 0) {
+        const formattedNotices = noticesData.slice(0, 4).map(n => ({
+          id: n.id,
+          title: n.title,
+          date: n.createdAt ? new Date(n.createdAt).toISOString().split('T')[0] : '',
+          important: n.boardType === 'notice' // 可以根据需要调整判断逻辑
+        }));
+        setNotices(formattedNotices);
+      } else {
         setNotices([]);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    loadNotices();
+    } catch (error) {
+      console.error('Failed to load notices:', error);
+      setNotices([]);
+    } finally {
+      setLoading(false);
+    }
   }, [i18n.language]);
+
+  useEffect(() => {
+    loadNotices();
+  }, [loadNotices]);
 
   return (
     <section className="notices-section">

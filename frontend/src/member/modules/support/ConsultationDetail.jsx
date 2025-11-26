@@ -12,18 +12,20 @@ import { PageContainer } from '@member/layouts';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
 import { ArrowLeftIcon, DocumentIcon, DownloadIcon } from '@shared/components/Icons';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { supportService } from '@shared/services';
 import './ConsultationDetail.css';
 import './Support.css';
 
 export default function ConsultationDetail() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [consultation, setConsultation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Get current language locale for date formatting
+  const currentLocale = i18n.language === 'zh' ? 'zh-CN' : 'ko-KR';
 
   useEffect(() => {
     const loadConsultation = async () => {
@@ -37,7 +39,7 @@ export default function ConsultationDetail() {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiService.get(`${API_PREFIX}/member/consultations/${id}`);
+        const response = await supportService.getInquiry(id);
         if (response) {
           setConsultation(response);
         } else {
@@ -45,14 +47,15 @@ export default function ConsultationDetail() {
         }
       } catch (error) {
         console.error('Failed to load consultation:', error);
-        setError(error.message || t('support.loadFailed'));
+        const errorMessage = error?.response?.data?.detail || error?.message || t('support.loadFailed');
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
     };
 
     loadConsultation();
-  }, [id]);
+  }, [id, t]);
 
   const handleDownload = (fileUrl, fileName) => {
     // 创建临时链接下载文件
@@ -129,11 +132,11 @@ export default function ConsultationDetail() {
               <ArrowLeftIcon className="icon" />
               <span>{t('common.back', '返回')}</span>
             </Button>
-            <div className="header-content">
+              <div className="header-content">
               <div className="header-title-section">
                 <h1 className="consultation-title">{consultation.subject || consultation.title}</h1>
-                <span className={`status-badge ${consultation.status === 'answered' ? 'status-answered' : 'status-pending'}`}>
-                  {consultation.status === 'answered' ? '✓' : '⏳'}
+                <span className={`status-badge ${consultation.status === 'answered' || consultation.status === 'replied' ? 'status-answered' : 'status-pending'}`}>
+                  {consultation.status === 'answered' || consultation.status === 'replied' ? '✓' : '⏳'}
                   <span className="badge-text">
                     {t(`support.status.${consultation.status}`)}
                   </span>
@@ -145,7 +148,7 @@ export default function ConsultationDetail() {
                   <div className="info-cell">
                     <span className="info-label">{t('support.createdDate')}</span>
                     <span className="info-value">
-                      {consultation.createdAt ? new Date(consultation.createdAt).toLocaleString('ko-KR', {
+                      {consultation.createdAt ? new Date(consultation.createdAt).toLocaleString(currentLocale, {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
@@ -158,7 +161,7 @@ export default function ConsultationDetail() {
                     <div className="info-cell">
                       <span className="info-label">{t('support.answeredDate')}</span>
                       <span className="info-value">
-                        {new Date(consultation.answeredAt).toLocaleString('ko-KR', {
+                        {new Date(consultation.answeredAt).toLocaleString(currentLocale, {
                           year: 'numeric',
                           month: '2-digit',
                           day: '2-digit',
@@ -169,26 +172,12 @@ export default function ConsultationDetail() {
                     </div>
                   )}
                 </div>
-                {(consultation.name || consultation.email || consultation.phone) && (
+                {consultation.memberName && (
                   <div className="info-row">
-                    {consultation.name && (
-                      <div className="info-cell">
-                        <span className="info-label">{t('support.name')}</span>
-                        <span className="info-value">{consultation.name}</span>
-                      </div>
-                    )}
-                    {consultation.email && (
-                      <div className="info-cell">
-                        <span className="info-label">{t('support.email')}</span>
-                        <span className="info-value">{consultation.email}</span>
-                      </div>
-                    )}
-                    {consultation.phone && (
-                      <div className="info-cell">
-                        <span className="info-label">{t('support.phone')}</span>
-                        <span className="info-value">{consultation.phone}</span>
-                      </div>
-                    )}
+                    <div className="info-cell">
+                      <span className="info-label">{t('support.companyName')}</span>
+                      <span className="info-value">{consultation.memberName}</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -205,7 +194,7 @@ export default function ConsultationDetail() {
                   <span className="sender-name">{t('support.user')}</span>
                 </div>
                 <span className="message-time">
-                  {consultation.createdAt ? new Date(consultation.createdAt).toLocaleString('ko-KR', {
+                  {consultation.createdAt ? new Date(consultation.createdAt).toLocaleString(currentLocale, {
                     year: 'numeric',
                     month: '2-digit',
                     day: '2-digit',
@@ -218,40 +207,6 @@ export default function ConsultationDetail() {
                 <div className="message-text">
                   {consultation.content || consultation.message || t('support.noContent')}
                 </div>
-                {/* 附件列表 */}
-                {consultation.attachments && consultation.attachments.length > 0 && (
-                  <div className="message-attachments">
-                    <div className="attachments-header">
-                      <DocumentIcon className="attachment-header-icon" />
-                      <span className="attachments-title">
-                        {t('support.attachments')} ({consultation.attachments.length})
-                      </span>
-                    </div>
-                    <div className="attachments-grid">
-                      {consultation.attachments.map((attachment, index) => (
-                        <div key={index} className="attachment-card">
-                          <DocumentIcon className="attachment-card-icon" />
-                          <div className="attachment-card-info">
-                            <span className="attachment-card-name">
-                              {attachment.fileName || attachment.name || t('support.attachmentNumber', { number: index + 1 })}
-                            </span>
-                            {attachment.fileUrl || attachment.url ? (
-                              <Button
-                                variant="text"
-                                size="small"
-                                onClick={() => handleDownload(attachment.fileUrl || attachment.url, attachment.fileName || attachment.name)}
-                                className="attachment-download-btn"
-                              >
-                                <DownloadIcon className="icon" />
-                                {t('common.download')}
-                              </Button>
-                            ) : null}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </Card>
 
@@ -264,7 +219,7 @@ export default function ConsultationDetail() {
                     <span className="sender-name">{t('support.admin')}</span>
                   </div>
                   <span className="message-time">
-                    {consultation.answeredAt ? new Date(consultation.answeredAt).toLocaleString('ko-KR', {
+                    {consultation.answeredAt ? new Date(consultation.answeredAt).toLocaleString(currentLocale, {
                       year: 'numeric',
                       month: '2-digit',
                       day: '2-digit',

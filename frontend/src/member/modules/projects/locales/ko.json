@@ -53,17 +53,23 @@
       },
       "form": {
         "title": "신청서 작성",
+        "description": "아래 항목을 빠짐없이 입력하면 심사가 원활해집니다.",
         "projectTitle": "사업명",
         "projectTitlePlaceholder": "사업의 제목을 입력하세요",
         "budget": "신청 예산 (원)",
+        "budgetHelp": "숫자만 입력해주세요. 천 단위 구분 기호는 생략합니다.",
         "duration": "사업 기간",
+        "durationPlaceholder": "2025.01 ~ 2025.12",
         "objectives": "사업 목표",
         "objectivesHint": "사업을 통해 달성하고자 하는 구체적인 목표를 작성하세요.",
         "scope": "사업 범위",
+        "scopePlaceholder": "사업이 적용되는 범위를 입력하세요",
         "expectedResults": "기대 효과",
+        "expectedResultsPlaceholder": "정량 지표 혹은 사업 종료 후 성과를 입력하세요",
         "teamMembers": "참여 인력",
         "teamMembersPlaceholder": "이름, 역할, 경력 등을 입력하세요"
       },
+      "validationError": "필수 항목을 확인한 뒤 다시 시도해주세요.",
       "attachments": {
         "title": "첨부 서류",
         "description": "사업자등록증, 사업계획서 등 필요한 서류를 첨부해주세요.",

@@ -7,8 +7,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Card from '@shared/components/Card';
 import { EyeIcon, ChevronDownIcon, ChevronUpIcon } from '@shared/components/Icons';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { supportService } from '@shared/services';
 import './FAQList.css';
 
 export default function FAQList() {
@@ -21,14 +20,11 @@ export default function FAQList() {
     const loadFAQs = async () => {
       setLoading(true);
       try {
-        const response = await apiService.get(`${API_PREFIX}/content/faqs`);
-        if (response.records) {
-          setFaqs(response.records);
-        } else if (response.faqs) {
-          setFaqs(response.faqs);
-        }
+        const items = await supportService.listFAQs();
+        setFaqs(items || []);
       } catch (error) {
         console.error('Failed to load FAQs:', error);
+        setFaqs([]);
       } finally {
         setLoading(false);
       }

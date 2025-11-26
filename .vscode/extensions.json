@@ -4,7 +4,8 @@
     "Vue.vscode-typescript-vue-plugin",
     "bradlc.vscode-tailwindcss",
     "esbenp.prettier-vscode",
-    "ms-vscode.vscode-json"
+    "ms-vscode.vscode-json",
+    "jg.cursor-free"
   ],
   "unwantedRecommendations": [
     "ms-vscode.vscode-typescript-next"

@@ -254,18 +254,115 @@ async function searchNiceDnb(req) {
   const url = new URL(req.request.url);
   const businessNumber = url.searchParams.get('business_number');
   
-  // Mock Nice D&B response
+  const mockMetrics = generateCompanyMetrics(businessNumber || '0000000000');
+  
   return HttpResponse.json({
     success: true,
     data: {
       businessNumber,
       companyName: 'Mock Company Name',
       representative: 'Mock Representative',
-      address: 'Mock Address',
-      industry: 'Mock Industry',
-      establishedDate: '2020-01-01'
-    }
+      address: '강원특별자치도 춘천시 중앙로 1',
+      industry: '제조업',
+      establishedDate: '2018-05-10',
+      creditGrade: mockMetrics.creditGrade,
+      riskLevel: mockMetrics.riskLevel,
+      summary: mockMetrics.summary
+    },
+    financials: mockMetrics.financials,
+    insights: mockMetrics.insights
   });
+}
+
+async function searchCompanies(req) {
+  await delay(400);
+  await initializeData();
+  
+  const body = await req.request.json();
+  const { companyName, businessNumber, industry, region, status } = body || {};
+  
+  let results = [...membersData];
+  
+  if (companyName) {
+    const keyword = companyName.toLowerCase();
+    results = results.filter(member =>
+      member.companyName?.toLowerCase().includes(keyword)
+    );
+  }
+  
+  if (businessNumber) {
+    results = results.filter(member =>
+      member.businessLicense?.includes(businessNumber)
+    );
+  }
+  
+  if (industry) {
+    results = results.filter(member =>
+      (member.industry || '').toLowerCase().includes(industry.toLowerCase())
+    );
+  }
+  
+  if (region) {
+    results = results.filter(member =>
+      (member.region || '').toLowerCase().includes(region.toLowerCase())
+    );
+  }
+  
+  if (status && status !== 'all') {
+    results = results.filter(member => member.approvalStatus === status);
+  }
+  
+  const mappedResults = results.slice(0, 50).map(member => ({
+    id: member.id,
+    companyName: member.companyName,
+    businessNumber: member.businessLicense,
+    representative: member.representativeName,
+    industry: member.industry || '제조업',
+    region: member.region || '강원특별자치도',
+    status: member.approvalStatus,
+    revenue: member.sales || generateEstimate(member.id, 500_000_000, 5_000_000_000),
+    employees: member.employeeCount || generateEstimate(member.id, 5, 120),
+    foundedAt: member.establishedDate || '2019-01-01',
+    updatedAt: member.updatedAt
+  }));
+  
+  return HttpResponse.json({
+    total: results.length,
+    results: mappedResults
+  });
+}
+
+function generateEstimate(seed, min, max) {
+  const normalized = (seed * 9301 + 49297) % 233280;
+  const ratio = normalized / 233280;
+  return Math.round(min + ratio * (max - min));
+}
+
+function generateCompanyMetrics(seed) {
+  const revenue = generateEstimate(seed.length, 800_000_000, 4_500_000_000);
+  const profit = Math.round(revenue * 0.12);
+  const employees = generateEstimate(seed.length + 3, 20, 220);
+  const exportRatio = Math.round(((seed.length * 13) % 50) + 10);
+  const creditGrades = ['A+', 'A', 'A-', 'B+'];
+  const creditGrade = creditGrades[seed.length % creditGrades.length];
+  const riskLevels = ['low', 'moderate', 'caution'];
+  const riskLevel = riskLevels[seed.length % riskLevels.length];
+  
+  return {
+    creditGrade,
+    riskLevel,
+    summary: '최근 3년 연속 매출 성장을 기록한 안정적인 기업으로 평가되었습니다.',
+    financials: [
+      { year: 2022, revenue, profit, employees },
+      { year: 2023, revenue: Math.round(revenue * 1.08), profit: Math.round(profit * 1.05), employees: employees + 8 },
+      { year: 2024, revenue: Math.round(revenue * 1.15), profit: Math.round(profit * 1.12), employees: employees + 15 }
+    ],
+    insights: [
+      { label: '수출 비중', value: `${exportRatio}%`, trend: 'up' },
+      { label: 'R&D 투자', value: '매출 대비 12%', trend: 'steady' },
+      { label: '신규 고용', value: `${Math.round(employees * 0.1)}명`, trend: 'up' }
+    ]
+  };
 }
 
 // Export handlers
@@ -283,6 +380,7 @@ export const membersHandlers = [
   
   // Admin: Search Nice D&B
   http.get(`${ADMIN_BASE_URL}/nice-dnb`, searchNiceDnb),
+  http.post(`${API_BASE_URL}${API_PREFIX}/admin/company/search`, searchCompanies),
   
   // Member: Get current profile
   http.get(`${BASE_URL}/profile`, getCurrentMemberProfile),

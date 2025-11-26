@@ -1,0 +1,70 @@
+{
+  "module": "content_management",
+  "total_tests": 10,
+  "passed": 10,
+  "failed": 0,
+  "success_rate": 100.0,
+  "timestamp": "2025-11-26T12:38:27.317524",
+  "results": [
+    {
+      "test": "TC5.1: List Notices (Public)",
+      "status": "pass",
+      "details": "Status: 200, Total: 10, Items: 10",
+      "timestamp": "2025-11-26T12:38:26.520050"
+    },
+    {
+      "test": "TC5.2: Get Latest Notices",
+      "status": "pass",
+      "details": "Status: 200, Count: 5 (max 5)",
+      "timestamp": "2025-11-26T12:38:26.589300"
+    },
+    {
+      "test": "TC5.5: Admin Create Notice",
+      "status": "pass",
+      "details": "Status: 201, ID: f503c21e-a044-4b78-875d-3450ad1b2349",
+      "timestamp": "2025-11-26T12:38:26.736229"
+    },
+    {
+      "test": "TC5.5b: Admin Update Notice",
+      "status": "pass",
+      "details": "Status: 200, Updated successfully",
+      "timestamp": "2025-11-26T12:38:26.878698"
+    },
+    {
+      "test": "TC5.3: List Press Releases (Public)",
+      "status": "pass",
+      "details": "Status: 200, Total: 0, Items: 0",
+      "timestamp": "2025-11-26T12:38:26.957645"
+    },
+    {
+      "test": "TC5.3b: Get Latest Press Release",
+      "status": "pass",
+      "details": "Status: 200",
+      "timestamp": "2025-11-26T12:38:27.007433"
+    },
+    {
+      "test": "TC5.4: Get Banners (Public)",
+      "status": "pass",
+      "details": "Status: 200, Count: 1",
+      "timestamp": "2025-11-26T12:38:27.057529"
+    },
+    {
+      "test": "TC5.6: Admin Create Banner",
+      "status": "pass",
+      "details": "Status: 201, ID: 252ebc11-49b6-414e-9a49-de85ed035b58",
+      "timestamp": "2025-11-26T12:38:27.189387"
+    },
+    {
+      "test": "TC5.6b: Admin Get All Banners",
+      "status": "pass",
+      "details": "Status: 200, Total: 2",
+      "timestamp": "2025-11-26T12:38:27.249812"
+    },
+    {
+      "test": "TC5.7: Get System Info (Public)",
+      "status": "pass",
+      "details": "Status: 200",
+      "timestamp": "2025-11-26T12:38:27.316448"
+    }
+  ]
+}

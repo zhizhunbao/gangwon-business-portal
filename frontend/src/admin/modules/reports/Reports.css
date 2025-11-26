@@ -35,6 +35,250 @@
   color: #999;
 }
 
+.reports-card {
+  margin-bottom: 1.5rem;
+}
+
+.reports-search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.reports-form-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.reports-form-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.reports-form-header p {
+  margin: 0.25rem 0 0 0;
+  color: #6b7280;
+}
+
+.reports-form-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .filters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reports-form-header {
+    flex-direction: column;
+  }
+
+  .reports-form-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+.reports-alert {
+  margin-bottom: 1.5rem;
+}
+
+.reports-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.reports-detail-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.reports-detail-header p {
+  margin: 0.25rem 0 0 0;
+  color: #6b7280;
+}
+
+.reports-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.reports-detail-grid span {
+  display: block;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.reports-detail-grid strong {
+  display: block;
+  font-size: 1rem;
+  color: #111827;
+}
+
+.reports-dnb-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.25rem;
+}
+
+.reports-dnb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.reports-dnb-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.reports-dnb-loading {
+  font-size: 0.85rem;
+  color: #2563eb;
+}
+
+.reports-financials {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.reports-financial-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.85rem;
+  background: #fafafa;
+}
+
+.reports-financial-card h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #111827;
+}
+.reports-financial-card h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.reports-financial-card p {
+  margin: 0.25rem 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reports-financial-card p span {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.reports-financial-card p strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+.reports-financials-title,
+.reports-insights-title {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.reports-table-header {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reports-table-count {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+.reports-insights {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.reports-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.reports-insight-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.reports-insight-label {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.reports-insight-value {
+  font-size: 1.1rem;
+  color: #111827;
+  font-weight: 600;
+}
+
+.reports-insight-trend {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.reports-insight-trend-up {
+  color: #10b981;
+}
+
+.reports-insight-trend-down {
+  color: #ef4444;
+}
+
+.reports-insight-trend-steady {
+  color: #6b7280;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .page-header {

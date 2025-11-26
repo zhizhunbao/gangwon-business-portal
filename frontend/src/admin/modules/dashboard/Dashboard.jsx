@@ -3,7 +3,7 @@
  * 管理员仪表盘 - 包含三个子页面：企业现状、横幅管理、弹窗管理
  */
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Tabs } from '@shared/components';
@@ -18,7 +18,8 @@ export default function Dashboard() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('companyStatus');
 
-  const tabs = [
+  // 使用 useMemo 缓存 tabs 配置，避免每次渲染都重新创建
+  const tabs = useMemo(() => [
     {
       key: 'companyStatus',
       label: t('admin.dashboard.tabs.companyStatus')
@@ -31,9 +32,10 @@ export default function Dashboard() {
       key: 'popupManagement',
       label: t('admin.dashboard.tabs.popupManagement')
     }
-  ];
+  ], [t]);
 
-  const renderTabContent = () => {
+  // 使用 useCallback 缓存渲染函数
+  const renderTabContent = useCallback(() => {
     switch (activeTab) {
       case 'companyStatus':
         return <CompanyStatus />;
@@ -44,7 +46,7 @@ export default function Dashboard() {
       default:
         return <CompanyStatus />;
     }
-  };
+  }, [activeTab]);
 
   return (
     <div className="admin-dashboard">

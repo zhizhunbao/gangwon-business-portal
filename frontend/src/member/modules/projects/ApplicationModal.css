@@ -92,6 +92,35 @@
   @apply text-red-500 ml-1;
 }
 
+/* 申请表单 */
+.application-form-card {
+  @apply bg-white border border-gray-200 rounded-lg p-4 sm:p-5 lg:p-6 shadow-sm;
+}
+
+.form-header {
+  @apply mb-4 sm:mb-5 lg:mb-6;
+}
+
+.form-header-title {
+  @apply text-lg font-semibold text-gray-900 mb-1;
+}
+
+.form-header-description {
+  @apply text-sm text-gray-500 m-0;
+}
+
+.application-form-alert {
+  @apply mb-4;
+}
+
+.application-form-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5;
+}
+
+.application-form-grid-full {
+  @apply grid-cols-1;
+}
+
 /* 文件上传容器 */
 .file-upload-container {
   @apply mt-3 sm:mt-4 lg:mt-5;

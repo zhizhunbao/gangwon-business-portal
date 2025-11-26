@@ -12,8 +12,7 @@ import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import Textarea from '@shared/components/Textarea';
 import Select from '@shared/components/Select';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { memberService } from '@shared/services';
 import { 
   UserIcon, 
   BuildingIcon, 
@@ -72,31 +71,30 @@ export default function PerformanceCompanyInfo() {
     
     setLoading(true);
     try {
-      const response = await apiService.get(`${API_PREFIX}/member/profile`);
-      if (response.member) {
-        const m = response.member;
+      const profile = await memberService.getProfile();
+      if (profile) {
         setCompanyData({
-          companyName: m.companyName || '',
-          businessLicense: m.businessLicense || '',
-          corporationNumber: m.corporationNumber || '',
-          establishedDate: m.establishedDate || '',
-          representativeName: m.representativeName || '',
-          phone: m.phone || '',
-          address: m.address || '',
-          region: m.region || '',
-          category: m.category || '',
-          industry: m.industry || '',
-          description: m.description || '',
-          website: m.website || m.websiteUrl || '',
-          logo: m.logo || null,
-          // 业务信息字段（从profile或member获取）
-          businessField: m.businessField || m.profile?.businessArea || '',
-          sales: (m.sales || m.profile?.annualRevenue) ? formatNumber(m.sales || m.profile?.annualRevenue) : '',
-          employeeCount: (m.employeeCount || m.profile?.employeeCount) ? formatNumber(m.employeeCount || m.profile?.employeeCount) : '',
-          mainBusiness: m.mainBusiness || m.profile?.mainBusiness || '',
-          cooperationFields: m.cooperationFields || (m.profile?.cooperationArea ? [m.profile.cooperationArea] : []),
+          companyName: profile.companyName || '',
+          businessLicense: profile.businessLicense || profile.businessNumber || '',
+          corporationNumber: profile.corporationNumber || '',
+          establishedDate: profile.establishedDate || profile.foundingDate || '',
+          representativeName: profile.representativeName || '',
+          phone: profile.phone || '',
+          address: profile.address || '',
+          region: profile.region || '',
+          category: profile.category || '',
+          industry: profile.industry || '',
+          description: profile.description || '',
+          website: profile.website || profile.websiteUrl || '',
+          logo: profile.logo || profile.logoUrl || null,
+          // 业务信息字段
+          businessField: profile.businessField || '',
+          sales: profile.sales || profile.revenue ? formatNumber(profile.sales || profile.revenue) : '',
+          employeeCount: profile.employeeCount ? formatNumber(profile.employeeCount) : '',
+          mainBusiness: profile.mainBusiness || '',
+          cooperationFields: profile.cooperationFields || [],
           // 审批状态
-          approvalStatus: m.approvalStatus || 'pending'
+          approvalStatus: profile.approvalStatus || 'pending'
         });
       }
     } catch (error) {
@@ -144,19 +142,25 @@ export default function PerformanceCompanyInfo() {
     try {
       // 准备保存数据，将格式化的数字转换为原始数字
       const saveData = {
-        ...companyData,
-        sales: companyData.sales ? parseFormattedNumber(companyData.sales) : null,
-        employeeCount: companyData.employeeCount ? parseFormattedNumber(companyData.employeeCount) : null,
-        websiteUrl: companyData.website || companyData.websiteUrl || ''
+        companyName: companyData.companyName,
+        email: companyData.email || undefined,
+        industry: companyData.industry || undefined,
+        revenue: companyData.sales ? parseFormattedNumber(companyData.sales) : undefined,
+        employeeCount: companyData.employeeCount ? parseFormattedNumber(companyData.employeeCount) : undefined,
+        foundingDate: companyData.establishedDate || undefined,
+        region: companyData.region || undefined,
+        address: companyData.address || undefined,
+        website: companyData.website || companyData.websiteUrl || undefined
       };
       
-      await apiService.put(`${API_PREFIX}/member/profile`, saveData);
+      await memberService.updateProfile(saveData);
       setIsEditing(false);
       alert(t('message.saveSuccess') || '保存成功');
       loadProfile();
     } catch (error) {
       console.error('Failed to save:', error);
-      alert(t('message.saveFailed') || '保存失败');
+      const errorMessage = error.response?.data?.detail || error.message || t('message.saveFailed') || '保存失败';
+      alert(errorMessage);
     }
   };
 

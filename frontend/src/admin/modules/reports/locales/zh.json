@@ -9,9 +9,63 @@
         "Q3": "第三季度",
         "Q4": "第四季度"
       },
-      "exportExcel": "导出 Excel",
-      "exportCSV": "导出 CSV",
-      "placeholder": "统计报表功能开发中"
+      "fields": {
+        "companyName": "企业名称",
+        "businessNumber": "营业执照号",
+        "industry": "行业",
+        "region": "地区",
+        "year": "年份",
+        "quarter": "季度"
+      },
+      "search": {
+        "title": "企业检索",
+        "description": "输入企业信息或条件，即可快速检索 Nice D&B 数据与内部统计。",
+        "button": "检索"
+      },
+      "messages": {
+        "searchSuccess": "已找到 {{count}} 条记录。",
+        "searchFailed": "检索失败，请稍后重试。",
+        "dnbFailed": "获取 Nice D&B 数据失败。{{error}}",
+        "dnbSuccess": "成功获取 Nice D&B 数据。",
+        "dnbNoBusinessNumber": "缺少营业执照号，无法获取 Nice D&B 数据。"
+      },
+      "table": {
+        "companyName": "企业名称",
+        "businessNumber": "营业执照号",
+        "industry": "行业",
+        "region": "地区",
+        "revenue": "年营业额",
+        "employees": "员工数",
+        "status": "审批状态"
+      },
+      "status": {
+        "approved": "已批准",
+        "pending": "待审核",
+        "rejected": "已拒绝"
+      },
+      "detail": {
+        "niceTitle": "Nice D&B 企业分析",
+        "creditGrade": "信用等级",
+        "riskLevel": "风险等级",
+        "summary": "摘要",
+        "revenue": "营业额",
+        "profit": "利润",
+        "year": "年",
+        "financialHistory": "财务历史",
+        "insights": "企业洞察",
+        "loadingDnb": "正在加载 Nice D&B 数据...",
+        "selectHint": "请选择企业以查看 Nice D&B 分析数据。"
+      },
+      "riskLevel": {
+        "low": "低",
+        "moderate": "中等",
+        "caution": "注意",
+        "high": "高"
+      },
+      "table": {
+        "count": "共 {{count}} 条"
+      },
+      "placeholder": "请先完成检索以查看企业列表。"
     }
   }
 }

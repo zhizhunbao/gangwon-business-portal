@@ -9,25 +9,142 @@ import { setStorage, getStorage, removeStorage } from '@shared/utils/storage';
 class AuthService {
   /**
    * Login
+   * 
+   * @param {Object} credentials - Login credentials
+   * @param {string} credentials.businessLicense - Business license number (will be converted to business_number)
+   * @param {string} credentials.password - Password
    */
   async login(credentials) {
-    const response = await apiService.post(`${API_PREFIX}/auth/login`, credentials);
+    // Convert businessLicense to business_number for backend API
+    const requestData = {
+      business_number: credentials.businessLicense || credentials.business_number,
+      password: credentials.password
+    };
+    
+    const response = await apiService.post(`${API_PREFIX}/auth/login`, requestData);
     
     if (response.access_token) {
       setStorage(ACCESS_TOKEN_KEY, response.access_token);
-      setStorage('refresh_token', response.refresh_token);
-      setStorage('user_info', response.user);
-      setStorage('token_expiry', response.expires_at);
+      // Backend doesn't return refresh_token or expires_at yet
+      // Store user info with role from response
+      setStorage('user_info', {
+        ...response.user,
+        role: response.user.role || 'member' // Default to member if not provided
+      });
     }
     
     return response;
   }
   
   /**
+   * Admin Login
+   * 
+   * @param {Object} credentials - Admin login credentials
+   * @param {string} credentials.username - Admin username (business_number)
+   * @param {string} credentials.password - Password
+   */
+  async adminLogin(credentials) {
+    const requestData = {
+      username: credentials.username || credentials.email, // Support both username and email
+      password: credentials.password
+    };
+    
+    const response = await apiService.post(`${API_PREFIX}/auth/admin-login`, requestData);
+    
+    if (response.access_token) {
+      setStorage(ACCESS_TOKEN_KEY, response.access_token);
+      setStorage('user_info', {
+        ...response.user,
+        role: 'admin' // Ensure role is set to admin
+      });
+    }
+    
+    return response;
+  }
+
+  /**
    * Register
+   * 
+   * @param {FormData|Object} userData - Registration data (FormData or plain object)
+   * @returns {Promise<Object>} Registration response
    */
   async register(userData) {
-    const response = await apiService.post(`${API_PREFIX}/auth/register`, userData);
+    // If userData is FormData, we need to extract and process it
+    // Otherwise, assume it's already processed
+    let registrationData;
+    
+    if (userData instanceof FormData) {
+      // Extract data from FormData
+      const data = {};
+      const files = {};
+      
+      for (const [key, value] of userData.entries()) {
+        // Check if value is a File object
+        if (value instanceof File) {
+          files[key] = value;
+        } else if (key.endsWith('[]')) {
+          // Handle array fields like cooperationFields[]
+          const fieldName = key.replace('[]', '');
+          if (!data[fieldName]) {
+            data[fieldName] = [];
+          }
+          data[fieldName].push(value);
+        } else {
+          data[key] = value;
+        }
+      }
+      
+      // Upload files first if they exist
+      // Note: Currently, file upload requires authentication, so we skip file uploads during registration
+      // TODO: Backend needs to support file upload during registration (either by creating
+      // a special registration upload endpoint or making the upload endpoint support optional auth)
+      // For now, files can be uploaded later after user logs in and updates their profile
+      let logoFileId = null;
+      let certificateFileId = null;
+      
+      // Skip file uploads during registration (requires authentication)
+      // Users can upload files after registration when they log in
+      if (files.logo || files.businessLicenseFile) {
+        console.info('File uploads will be skipped during registration. Users can upload files after login.');
+      }
+      
+      // Map frontend fields to backend fields
+      registrationData = {
+        // Step 1: Account information
+        business_number: data.businessLicense?.replace(/-/g, '') || data.business_number,
+        company_name: data.companyName,
+        password: data.password,
+        email: data.email,
+        
+        // Step 2: Company information
+        region: data.region || null,
+        company_type: data.category || null,
+        corporate_number: data.corporationNumber?.replace(/-/g, '') || null,
+        address: data.address || null,
+        contact_person: data.representativeName || data.contactPersonName || null,
+        
+        // Step 3: Business information
+        industry: data.businessField || null,
+        revenue: data.sales ? parseFloat(data.sales.replace(/,/g, '')) : null,
+        employee_count: data.employeeCount ? parseInt(data.employeeCount.replace(/,/g, ''), 10) : null,
+        founding_date: data.establishedDate || null,
+        website: data.websiteUrl || null,
+        main_business: data.mainBusiness || null,
+        
+        // Step 4: File uploads (file IDs from upload endpoint)
+        logo_file_id: logoFileId,
+        certificate_file_id: certificateFileId,
+        
+        // Step 5: Terms agreement
+        terms_agreed: !!(data.termsOfService && data.privacyPolicy && data.thirdPartySharing)
+      };
+    } else {
+      // Already processed data
+      registrationData = userData;
+    }
+    
+    // Send registration request as JSON
+    const response = await apiService.post(`${API_PREFIX}/auth/register`, registrationData);
     return response;
   }
   
@@ -91,17 +208,30 @@ class AuthService {
   }
   
   /**
-   * Forgot password
+   * Forgot password (Request password reset)
+   * 
+   * @param {Object} data - Password reset request data
+   * @param {string} data.businessLicense - Business license number (will be converted to business_number)
+   * @param {string} data.email - Email address
    */
-  async forgotPassword(email) {
-    return await apiService.post(`${API_PREFIX}/auth/forgot-password`, { email });
+  async forgotPassword(data) {
+    // Convert businessLicense to business_number for backend API
+    const requestData = {
+      business_number: data.businessLicense?.replace(/-/g, '') || data.business_number,
+      email: data.email
+    };
+    
+    return await apiService.post(`${API_PREFIX}/auth/password-reset-request`, requestData);
   }
   
   /**
-   * Reset password
+   * Reset password (Complete password reset with token)
+   * 
+   * @param {string} token - Reset token from email
+   * @param {string} newPassword - New password
    */
   async resetPassword(token, newPassword) {
-    return await apiService.post(`${API_PREFIX}/auth/reset-password`, {
+    return await apiService.post(`${API_PREFIX}/auth/password-reset`, {
       token,
       new_password: newPassword
     });

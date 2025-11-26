@@ -365,6 +365,36 @@ async function updateAdminBanner(req) {
   });
 }
 
+// Export dashboard metrics (CSV)
+async function exportAdminDashboard(req) {
+  await delay();
+  await initializeData();
+  
+  const totalMembers = membersData.filter(m => m.approvalStatus === 'approved').length;
+  const approvedPerformance = performanceData.filter(p => p.status === 'approved');
+  const totalSales = approvedPerformance.reduce((sum, p) => sum + (p.salesRevenue || 0), 0);
+  const totalEmployment = approvedPerformance.reduce((sum, p) => sum + (p.newHires || 0), 0);
+  const totalIp = approvedPerformance.reduce((sum, p) => sum + (p.intellectualProperty?.length || 0), 0);
+  
+  const csvRows = [
+    'metric,value',
+    `total_members,${totalMembers}`,
+    `total_sales,${totalSales}`,
+    `total_employment,${totalEmployment}`,
+    `total_ip,${totalIp}`
+  ];
+  
+  const csvContent = csvRows.join('\n');
+  
+  return new HttpResponse(csvContent, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="dashboard_metrics.csv"'
+    }
+  });
+}
+
 // Export handlers
 // Use absolute paths (MSW best practice)
 export const dashboardHandlers = [
@@ -372,6 +402,8 @@ export const dashboardHandlers = [
   http.get(`${ADMIN_BASE_URL}`, getAdminDashboardStats),
   http.get(`${ADMIN_BASE_URL}/stats`, getAdminDashboardStats),
   http.get(`${API_BASE_URL}${API_PREFIX}/admin/dashboard`, getAdminDashboardStats),
+  http.get(`${ADMIN_BASE_URL}/export`, exportAdminDashboard),
+  http.get(`${API_BASE_URL}${API_PREFIX}/admin/dashboard/export`, exportAdminDashboard),
   
   // Admin: Get banners (for banner management)
   http.get(`${API_BASE_URL}${API_PREFIX}/admin/banners`, getAdminBanners),

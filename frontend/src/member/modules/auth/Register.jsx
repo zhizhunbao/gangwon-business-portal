@@ -322,16 +322,21 @@ export default function Register() {
         }
       });
       
-      // Clean business license for API
-      submitData.set('businessLicense', formData.businessLicense.replace(/-/g, ''));
+      // Clean business license for API (keep formatted for display, but backend will handle cleaning)
+      submitData.set('businessLicense', formData.businessLicense);
       
-      await register(submitData);
+      // Call register - it will handle file uploads and field mapping
+      const response = await register(submitData);
+      
+      // Show success message
       setSuccess(true);
       setTimeout(() => {
         navigate('/login');
       }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || t('auth.registerFailed'));
+      // Handle error response
+      const errorMessage = err.message || err.detail || err.response?.data?.detail || err.response?.data?.message || t('auth.registerFailed');
+      setError(errorMessage);
     }
   };
   

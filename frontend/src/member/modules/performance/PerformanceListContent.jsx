@@ -11,8 +11,7 @@ import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import Select from '@shared/components/Select';
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@shared/components/Table';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { performanceService } from '@shared/services';
 import { DownloadIcon, EditIcon, TrashIcon, SearchIcon } from '@shared/components/Icons';
 import './PerformanceListContent.css';
 
@@ -39,7 +38,14 @@ export default function PerformanceListContent() {
   const loadPerformances = async () => {
     setLoading(true);
     try {
-      const response = await apiService.get(`${API_PREFIX}/member/performance`);
+      const response = await performanceService.listRecords({
+        year: searchFilters.year || undefined,
+        quarter: searchFilters.quarter || undefined,
+        status: searchFilters.status || undefined,
+        page: 1,
+        pageSize: 100 // Load all records for now
+      });
+      
       if (response.records) {
         const formatted = response.records.map(r => ({
           id: r.id,
@@ -48,17 +54,19 @@ export default function PerformanceListContent() {
           type: r.quarter ? 'quarterly' : 'annual',
           status: r.status,
           submittedDate: r.submittedAt ? new Date(r.submittedAt).toISOString().split('T')[0] : null,
-          approvedDate: r.reviewedAt ? new Date(r.reviewedAt).toISOString().split('T')[0] : null,
+          approvedDate: null, // Will be populated from reviews if needed
           documentType: r.type || '成果报告',
-          fileName: r.fileName || `成果报告_${r.year}_${r.quarter || '年度'}.pdf`,
-          fileUrl: r.fileUrl || null,
-          isOwnUpload: r.isOwnUpload !== false, // 默认true，表示该企业直接上传的
-          attachments: r.attachments || []
+          fileName: `成果报告_${r.year}_${r.quarter || '年度'}.pdf`,
+          fileUrl: null, // File download will be handled separately
+          isOwnUpload: true, // All records are owned by current user
+          attachments: []
         }));
         setPerformances(formatted);
       }
     } catch (error) {
       console.error('Failed to load performances:', error);
+      const errorMessage = error.response?.data?.detail || error.message || t('message.loadFailed', '加载失败');
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -95,12 +103,13 @@ export default function PerformanceListContent() {
     }
 
     try {
-      await apiService.delete(`${API_PREFIX}/member/performance/${id}`);
+      await performanceService.deleteRecord(id);
       alert(t('message.deleteSuccess', '删除成功'));
       loadPerformances();
     } catch (error) {
       console.error('Failed to delete:', error);
-      alert(t('message.deleteFailed', '删除失败'));
+      const errorMessage = error.response?.data?.detail || error.message || t('message.deleteFailed', '删除失败');
+      alert(errorMessage);
     }
   };
 
@@ -128,23 +137,29 @@ export default function PerformanceListContent() {
   };
 
   const getStatusBadgeClass = (status) => {
-    const classes = {
+    // Map backend status to frontend classes
+    const statusMap = {
       draft: 'badge-secondary',
       submitted: 'badge-info',
-      needSupplement: 'badge-warning',
-      approved: 'badge-success'
+      revision_requested: 'badge-warning',
+      needSupplement: 'badge-warning', // Legacy support
+      approved: 'badge-success',
+      rejected: 'badge-danger'
     };
-    return `badge ${classes[status] || ''}`;
+    return `badge ${statusMap[status] || 'badge-secondary'}`;
   };
 
   const getStatusLabel = (status) => {
-    const labels = {
+    // Map backend status to frontend labels
+    const statusMap = {
       draft: t('performance.status.draft', '草稿'),
       submitted: t('performance.status.submitted', '已提交'),
-      needSupplement: t('performance.status.needSupplement', '需补充'),
-      approved: t('performance.status.approved', '已批准')
+      revision_requested: t('performance.status.revisionRequested', '需修改'),
+      needSupplement: t('performance.status.needSupplement', '需补充'), // Legacy support
+      approved: t('performance.status.approved', '已批准'),
+      rejected: t('performance.status.rejected', '已驳回')
     };
-    return labels[status] || status;
+    return statusMap[status] || status;
   };
 
   // 生成年度选项
@@ -272,7 +287,8 @@ export default function PerformanceListContent() {
                     </TableCell>
                     <TableCell>
                       <div className="action-buttons">
-                        {perf.isOwnUpload && perf.status !== 'approved' && (
+                        {/* Allow edit for draft and revision_requested status */}
+                        {(perf.status === 'draft' || perf.status === 'revision_requested') && (
                           <>
                             <Button
                               onClick={() => handleEdit(perf.id)}
@@ -282,14 +298,17 @@ export default function PerformanceListContent() {
                             >
                               <EditIcon className="w-4 h-4" />
                             </Button>
-                            <Button
-                              onClick={() => handleDelete(perf.id)}
-                              variant="text"
-                              size="small"
-                              title={t('performance.delete', '删除')}
-                            >
-                              <TrashIcon className="w-4 h-4" />
-                            </Button>
+                            {/* Only allow delete for draft status */}
+                            {perf.status === 'draft' && (
+                              <Button
+                                onClick={() => handleDelete(perf.id)}
+                                variant="text"
+                                size="small"
+                                title={t('performance.delete', '删除')}
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>

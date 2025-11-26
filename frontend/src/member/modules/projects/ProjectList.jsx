@@ -4,7 +4,7 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@shared/components';
 import Card from '@shared/components/Card';
@@ -12,8 +12,7 @@ import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import Select from '@shared/components/Select';
 import { Pagination } from '@shared/components';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { projectService } from '@shared/services';
 import { SearchIcon } from '@shared/components/Icons';
 import ApplicationModal from './ApplicationModal';
 import './ProjectList.css';
@@ -21,88 +20,83 @@ import './ProjectList.css';
 export default function ProjectList() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [announcements, setAnnouncements] = useState([]);
-  const [filteredAnnouncements, setFilteredAnnouncements] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('');
   const [showApplicationModal, setShowApplicationModal] = useState(false);
-  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [selectedProject, setSelectedProject] = useState(null);
 
-  useEffect(() => {
-    loadAnnouncements();
-  }, [i18n.language]); // Reload data when language changes
-
-  useEffect(() => {
-    filterAndPaginate();
-  }, [announcements, searchKeyword, currentPage, pageSize]);
-
-  const loadAnnouncements = async () => {
+  const loadProjects = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await apiService.get(`${API_PREFIX}/member/announcements`);
-      if (response.records) {
-        setAnnouncements(response.records);
+      const params = {
+        page: currentPage,
+        pageSize: pageSize,
+        search: searchKeyword || undefined,
+        status: statusFilter || undefined,
+      };
+      
+      const response = await projectService.listProjects(params);
+      if (response && response.records) {
+        setProjects(response.records);
+        setTotalPages(response.totalPages || 0);
+        setTotal(response.total || 0);
       }
     } catch (error) {
-      console.error('Failed to load announcements:', error);
+      console.error('Failed to load projects:', error);
+      setProjects([]);
+      setTotalPages(0);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, pageSize, searchKeyword, statusFilter, i18n.language]);
 
-  const filterAndPaginate = () => {
-    let filtered = [...announcements];
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
 
-    // 搜索过滤
-    if (searchKeyword) {
-      const keyword = searchKeyword.toLowerCase();
-      filtered = filtered.filter(ann => 
-        ann.title?.toLowerCase().includes(keyword) ||
-        ann.content?.toLowerCase().includes(keyword)
-      );
-    }
-
-    setFilteredAnnouncements(filtered);
-  };
-
-  const handleSearch = (e) => {
+  const handleSearch = useCallback((e) => {
     e.preventDefault();
     setCurrentPage(1);
-    filterAndPaginate();
-  };
+  }, []);
 
-  const handlePageChange = (page) => {
+  const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
 
-  const handlePageSizeChange = (e) => {
+  const handlePageSizeChange = useCallback((e) => {
     setPageSize(parseInt(e.target.value));
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleApply = (announcement) => {
-    setSelectedAnnouncement(announcement);
+  const handleStatusFilterChange = useCallback((e) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1);
+  }, []);
+
+  const handleApply = useCallback((project) => {
+    setSelectedProject(project);
     setShowApplicationModal(true);
-  };
+  }, []);
 
-  const handleApplicationSuccess = () => {
-    setSelectedAnnouncement(null);
-    // 可以在这里刷新列表或其他操作
-  };
+  const handleApplicationSuccess = useCallback(() => {
+    setSelectedProject(null);
+    setShowApplicationModal(false);
+    // 刷新列表
+    loadProjects();
+  }, [loadProjects]);
 
   // 处理查看详情的回调
-  const handleViewDetail = (announcement) => {
-    navigate(`/member/programs/${announcement.id}`);
-  };
-
-  // 计算分页
-  const totalPages = Math.ceil(filteredAnnouncements.length / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedAnnouncements = filteredAnnouncements.slice(startIndex, endIndex);
+  const handleViewDetail = useCallback((project) => {
+    navigate(`/member/programs/${project.id}`);
+  }, [navigate]);
 
   const pageSizeOptions = [
     { value: '10', label: '10' },
@@ -111,9 +105,22 @@ export default function ProjectList() {
     { value: '50', label: '50' }
   ];
 
-  // 获取状态显示文本和样式
-  const getStatusInfo = (status) => {
+  // 获取状态显示文本和样式 - 映射后端状态到前端显示
+  const getStatusInfo = useCallback((status) => {
     const statusMap = {
+      active: {
+        label: t('projects.status.active', '进行中'),
+        variant: 'success'
+      },
+      inactive: {
+        label: t('projects.status.inactive', '未激活'),
+        variant: 'gray'
+      },
+      archived: {
+        label: t('projects.status.archived', '已归档'),
+        variant: 'gray'
+      },
+      // 兼容旧的状态值
       recruiting: {
         label: t('projects.status.recruiting', '모집중'),
         variant: 'success'
@@ -128,18 +135,7 @@ export default function ProjectList() {
       }
     };
     return statusMap[status] || { label: status, variant: 'gray' };
-  };
-
-  // 获取类型显示文本
-  const getTypeLabel = (type) => {
-    const typeMap = {
-      startup: t('projects.types.startup', '창업 지원'),
-      rd: t('projects.types.rd', 'R&D 지원'),
-      export: t('projects.types.export', '수출 지원'),
-      investment: t('projects.types.investment', '투자 유치')
-    };
-    return typeMap[type] || type;
-  };
+  }, [t]);
 
   // 显示列表
   return (
@@ -166,25 +162,40 @@ export default function ProjectList() {
                 </Button>
               </div>
             </form>
-            <div className="page-size-selector">
-              <label>{t('projects.itemsPerPage', '每页显示')}:</label>
-              <Select
-                value={pageSize.toString()}
-                onChange={handlePageSizeChange}
-                options={pageSizeOptions}
-              />
+            <div className="filter-group">
+              <div className="status-filter">
+                <label>{t('projects.statusFilter', '状态筛选')}:</label>
+                <Select
+                  value={statusFilter}
+                  onChange={handleStatusFilterChange}
+                  options={[
+                    { value: '', label: t('common.all', '全部') },
+                    { value: 'active', label: t('projects.status.active', '进行中') },
+                    { value: 'inactive', label: t('projects.status.inactive', '未激活') },
+                    { value: 'archived', label: t('projects.status.archived', '已归档') },
+                  ]}
+                />
+              </div>
+              <div className="page-size-selector">
+                <label>{t('projects.itemsPerPage', '每页显示')}:</label>
+                <Select
+                  value={pageSize.toString()}
+                  onChange={handlePageSizeChange}
+                  options={pageSizeOptions}
+                />
+              </div>
             </div>
           </div>
         </Card>
 
-        {/* 公告列表 */}
+        {/* 项目列表 */}
         {loading ? (
           <Card>
             <div className="loading">
               <p>{t('common.loading', '加载中...')}</p>
             </div>
           </Card>
-        ) : paginatedAnnouncements.length === 0 ? (
+        ) : projects.length === 0 ? (
           <Card>
             <div className="no-data">
               <p>{t('common.noData', '暂无数据')}</p>
@@ -193,46 +204,57 @@ export default function ProjectList() {
         ) : (
           <>
             <div className="announcements-list">
-              {paginatedAnnouncements.map((announcement) => {
-                const statusInfo = announcement.status ? getStatusInfo(announcement.status) : null;
-                const typeLabel = announcement.type ? getTypeLabel(announcement.type) : null;
+              {projects.map((project) => {
+                const statusInfo = project.status ? getStatusInfo(project.status) : null;
                 
                 return (
-                  <Card key={announcement.id} className="announcement-card">
+                  <Card key={project.id} className="announcement-card">
                     <div className="announcement-header">
                       <div className="announcement-title-section">
                         <h2 
                           className="announcement-title"
-                          onClick={() => handleViewDetail(announcement)}
+                          onClick={() => handleViewDetail(project)}
                         >
-                          {announcement.title}
+                          {project.title}
                         </h2>
                         <div className="announcement-meta">
-                          {typeLabel && (
-                            <Badge variant="primary" className="announcement-type">
-                              {typeLabel}
-                            </Badge>
-                          )}
                           {statusInfo && (
                             <Badge variant={statusInfo.variant} className="announcement-status">
                               {statusInfo.label}
                             </Badge>
                           )}
+                          {project.applicationsCount > 0 && (
+                            <Badge variant="info" className="announcement-applications">
+                              {t('projects.applicationsCount', '申请数')}: {project.applicationsCount}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                       <span className="announcement-date">
-                        {announcement.createdAt ? new Date(announcement.createdAt).toLocaleDateString() : ''}
+                        {project.startDate && project.endDate 
+                          ? `${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()}`
+                          : project.createdAt 
+                            ? new Date(project.createdAt).toLocaleDateString() 
+                            : ''}
                       </span>
                     </div>
                     <div className="announcement-content">
-                      <p>{announcement.summary || announcement.content?.substring(0, 200)}...</p>
+                      <p>{project.description?.substring(0, 200) || ''}...</p>
+                      {project.targetAudience && (
+                        <p className="target-audience">
+                          <strong>{t('projects.targetAudience', '目标对象')}:</strong> {project.targetAudience}
+                        </p>
+                      )}
                     </div>
                     <div className="announcement-footer">
                       <Button
-                        onClick={() => handleApply(announcement)}
+                        onClick={() => handleApply(project)}
                         variant="primary"
+                        disabled={project.status !== 'active'}
                       >
-                        {t('projects.apply', '程序申请')}
+                        {project.status === 'active' 
+                          ? t('projects.apply', '程序申请')
+                          : t('projects.notAvailable', '不可申请')}
                       </Button>
                     </div>
                   </Card>
@@ -257,7 +279,7 @@ export default function ProjectList() {
       <ApplicationModal
         isOpen={showApplicationModal}
         onClose={() => setShowApplicationModal(false)}
-        announcement={selectedAnnouncement}
+        project={selectedProject}
         onSuccess={handleApplicationSuccess}
       />
     </>

@@ -3,7 +3,7 @@
  */
 
 import { format, parseISO } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { ko, zhCN } from 'date-fns/locale';
 
 /**
  * Format business license number: 0000000000 -> 000-00-00000
@@ -41,12 +41,15 @@ export function formatPhoneNumber(value) {
 
 /**
  * Format currency (KRW) with thousand separators
+ * @param {number|string} value - The value to format
+ * @param {string} language - Language code ('ko' or 'zh'), defaults to 'ko'
  */
-export function formatCurrency(value) {
+export function formatCurrency(value, language = 'ko') {
   if (value === null || value === undefined || value === '') return '';
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '';
-  return num.toLocaleString('ko-KR');
+  const locale = language === 'zh' ? 'zh-CN' : 'ko-KR';
+  return num.toLocaleString(locale);
 }
 
 /**
@@ -129,12 +132,15 @@ export function formatCurrencyCompact(value, options = {}) {
 
 /**
  * Format number with thousand separators
+ * @param {number|string} value - The value to format
+ * @param {string} language - Language code ('ko' or 'zh'), defaults to 'ko'
  */
-export function formatNumber(value) {
+export function formatNumber(value, language = 'ko') {
   if (value === null || value === undefined || value === '') return '';
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '';
-  return num.toLocaleString('ko-KR');
+  const locale = language === 'zh' ? 'zh-CN' : 'ko-KR';
+  return num.toLocaleString(locale);
 }
 
 /**
@@ -147,12 +153,16 @@ export function parseFormattedNumber(value) {
 
 /**
  * Format date string or Date object
+ * @param {Date|string} date - The date to format
+ * @param {string} formatStr - Format string (default: 'yyyy-MM-dd')
+ * @param {string} language - Language code ('ko' or 'zh'), defaults to 'ko'
  */
-export function formatDate(date, formatStr = 'yyyy-MM-dd') {
+export function formatDate(date, formatStr = 'yyyy-MM-dd', language = 'ko') {
   if (!date) return '';
   try {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
-    return format(dateObj, formatStr, { locale: ko });
+    const locale = language === 'zh' ? zhCN : ko;
+    return format(dateObj, formatStr, { locale });
   } catch (error) {
     console.error('Date formatting error:', error);
     return '';
@@ -161,9 +171,12 @@ export function formatDate(date, formatStr = 'yyyy-MM-dd') {
 
 /**
  * Format datetime string or Date object
+ * @param {Date|string} date - The date to format
+ * @param {string} formatStr - Format string (default: 'yyyy-MM-dd HH:mm:ss')
+ * @param {string} language - Language code ('ko' or 'zh'), defaults to 'ko'
  */
-export function formatDateTime(date, formatStr = 'yyyy-MM-dd HH:mm:ss') {
-  return formatDate(date, formatStr);
+export function formatDateTime(date, formatStr = 'yyyy-MM-dd HH:mm:ss', language = 'ko') {
+  return formatDate(date, formatStr, language);
 }
 
 /**

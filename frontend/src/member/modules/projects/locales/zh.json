@@ -53,17 +53,23 @@
       },
       "form": {
         "title": "填写申请书",
+        "description": "请详细填写以下字段，提交后由管理员审核。",
         "projectTitle": "项目名称",
         "projectTitlePlaceholder": "请输入项目标题",
         "budget": "申请预算 (韩元)",
+        "budgetHelp": "请输入整数金额，不需要加千位分隔符。",
         "duration": "项目期间",
+        "durationPlaceholder": "2025.01 ~ 2025.12",
         "objectives": "项目目标",
         "objectivesHint": "请描述通过项目要达成的具体目标。",
         "scope": "项目范围",
+        "scopePlaceholder": "请输入项目适用范围",
         "expectedResults": "预期效果",
+        "expectedResultsPlaceholder": "请描述量化指标或业务成果",
         "teamMembers": "参与人员",
         "teamMembersPlaceholder": "请输入姓名、职责、经历等"
       },
+      "validationError": "请检查表单必填项并修正后再试。",
       "attachments": {
         "title": "附件文件",
         "description": "请上传营业执照、项目计划书等必要文件。",

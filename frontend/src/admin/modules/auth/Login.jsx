@@ -12,10 +12,10 @@ import { Button, Input, Alert, LanguageSwitcher } from '@shared/components';
 export default function AdminLogin() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { adminLogin, isLoading } = useAuth();
   
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: ''
   });
   const [error, setError] = useState('');
@@ -25,16 +25,11 @@ export default function AdminLogin() {
     setError('');
     
     try {
-      const response = await login(formData);
-      // Verify user is admin
-      if (response.user.role !== 'admin') {
-        setError(t('admin.auth.notAdmin'));
-        return;
-      }
+      await adminLogin(formData);
       // Redirect to admin dashboard
       navigate('/admin');
     } catch (err) {
-      setError(err.response?.data?.message || t('admin.auth.loginFailed'));
+      setError(err.message || err.response?.data?.detail || t('admin.auth.loginFailed'));
     }
   };
   
@@ -72,14 +67,14 @@ export default function AdminLogin() {
             )}
             
             <Input
-              label={t('admin.auth.email')}
-              type="email"
-              name="email"
-              value={formData.email}
+              label={t('admin.auth.username') || 'Username'}
+              type="text"
+              name="username"
+              value={formData.username}
               onChange={handleChange}
               required
-              autoComplete="email"
-              placeholder={t('admin.auth.emailPlaceholder')}
+              autoComplete="username"
+              placeholder={t('admin.auth.usernamePlaceholder') || 'Enter admin username'}
             />
             
             <Input

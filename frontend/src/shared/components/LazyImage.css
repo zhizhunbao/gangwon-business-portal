@@ -1,0 +1,15 @@
+/**
+ * LazyImage Component Styles
+ * 懒加载图片组件样式
+ */
+
+.lazy-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.lazy-image-loaded {
+  opacity: 1;
+}
+

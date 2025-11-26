@@ -109,7 +109,7 @@
 }
 
 .announcement-title {
-  @apply text-xl font-semibold text-gray-900 m-0 cursor-pointer transition-colors duration-200 ease-in-out leading-snug mb-2 sm:mb-3 lg:mb-4;
+  @apply text-xl font-semibold text-gray-900 m-0 cursor-pointer transition-colors duration-200 ease-in-out leading-snug mb-2 sm:mb-3 lg:mb-4 break-words;
   /* 符合设计指南：tight 等级间距（移动端: 8px, 平板: 12px, 桌面端: 16px） */
 }
 

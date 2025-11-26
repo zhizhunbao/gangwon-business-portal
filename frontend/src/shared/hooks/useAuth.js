@@ -30,6 +30,20 @@ export function useAuth() {
     }
   };
   
+  const adminLogin = async (credentials) => {
+    try {
+      setLoading(true);
+      const response = await authService.adminLogin(credentials);
+      setUser(response.user);
+      setAuthenticated(true);
+      return response;
+    } catch (error) {
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const register = async (userData) => {
     try {
       setLoading(true);
@@ -100,6 +114,7 @@ export function useAuth() {
     isAuthenticated,
     isLoading,
     login,
+    adminLogin,
     register,
     logout,
     getCurrentUser,

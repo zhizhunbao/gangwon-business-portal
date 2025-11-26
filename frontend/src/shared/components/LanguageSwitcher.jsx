@@ -3,8 +3,10 @@
  * 语言切换组件
  */
 
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GlobeIcon } from './Icons';
+import { setStorage } from '@shared/utils/storage';
 import './LanguageSwitcher.css';
 
 /**
@@ -24,10 +26,25 @@ export default function LanguageSwitcher({ variant = 'dark' }) {
   const currentLanguage = languages.find(lang => lang.code === currentLangCode) || languages[0];
   const nextLanguage = languages.find(lang => lang.code !== currentLangCode) || languages[1];
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('lang', currentLangCode);
+    }
+  }, [currentLangCode]);
+
+  const persistLanguagePreference = (code) => {
+    setStorage('language', code);
+    try {
+      localStorage.setItem('i18nextLng', code);
+    } catch (error) {
+      console.warn('Unable to persist language preference:', error);
+    }
+  };
+
   const toggleLanguage = () => {
-    // 立即切换语言，不等待异步操作完成
-    // i18n.changeLanguage 会立即更新 i18n.language，触发组件重新渲染
-    i18n.changeLanguage(nextLanguage.code).catch(error => {
+    const targetCode = nextLanguage.code;
+    persistLanguagePreference(targetCode);
+    i18n.changeLanguage(targetCode).catch(error => {
       console.error('Failed to change language:', error);
     });
   };

@@ -4,28 +4,42 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
-import { Modal, Badge, Button } from '@shared/components';
-import { PaperclipIcon, XIcon, DocumentIcon } from '@shared/components/Icons';
+import { useState, useEffect } from 'react';
+import { Modal, Badge, Button, Textarea, Alert } from '@shared/components';
+import { DocumentIcon } from '@shared/components/Icons';
 import useAuthStore from '@shared/stores/authStore';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { projectService } from '@shared/services';
 import './ApplicationModal.css';
 
 export default function ApplicationModal({ 
   isOpen, 
   onClose, 
-  announcement,
+  project,
   onSuccess 
 }) {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const [applicationFiles, setApplicationFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [applicationReason, setApplicationReason] = useState('');
+  const [formError, setFormError] = useState('');
+  const [formMessage, setFormMessage] = useState(null);
 
   // 获取状态显示文本和样式
   const getStatusInfo = (status) => {
     const statusMap = {
+      active: {
+        label: t('projects.status.active', '进行中'),
+        variant: 'success'
+      },
+      inactive: {
+        label: t('projects.status.inactive', '未激活'),
+        variant: 'gray'
+      },
+      archived: {
+        label: t('projects.status.archived', '已归档'),
+        variant: 'gray'
+      },
+      // 兼容旧的状态值
       recruiting: {
         label: t('projects.status.recruiting', '모집중'),
         variant: 'success'
@@ -42,81 +56,50 @@ export default function ApplicationModal({
     return statusMap[status] || { label: status, variant: 'gray' };
   };
 
-  // 获取类型显示文本
-  const getTypeLabel = (type) => {
-    const typeMap = {
-      startup: t('projects.types.startup', '창업 지원'),
-      rd: t('projects.types.rd', 'R&D 지원'),
-      export: t('projects.types.export', '수출 지원'),
-      investment: t('projects.types.investment', '투자 유치')
-    };
-    return typeMap[type] || type;
-  };
-
-  // 处理文件上传
-  const handleFileUpload = (e) => {
-    const files = Array.from(e.target.files);
-    const remainingSlots = 5 - applicationFiles.length;
-    if (remainingSlots > 0) {
-      const filesToAdd = files.slice(0, remainingSlots);
-      setApplicationFiles(prev => [...prev, ...filesToAdd]);
+  const handleApplicationReasonChange = (e) => {
+    const value = e.target.value;
+    setApplicationReason(value);
+    if (formError) {
+      setFormError('');
     }
-    // 重置 input，允许重复选择同一文件
-    e.target.value = '';
-  };
-
-  // 处理拖拽上传
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (applicationFiles.length < 5 && e.dataTransfer.files.length > 0) {
-      const files = Array.from(e.dataTransfer.files).slice(0, 5 - applicationFiles.length);
-      setApplicationFiles(prev => [...prev, ...files]);
+    if (formMessage) {
+      setFormMessage(null);
     }
-  };
-
-  // 处理拖拽悬停
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  // 移除文件
-  const handleRemoveFile = (index) => {
-    setApplicationFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   // 提交申请
   const handleSubmitApplication = async () => {
     if (!user?.id) {
-      alert(t('common.loginRequired', '请先登录'));
+      setFormMessage(t('common.loginRequired', '请先登录'));
       return;
     }
 
-    if (applicationFiles.length === 0) {
-      alert(t('projects.uploadAtLeastOneFile', '请至少上传一个附件'));
+    if (!project?.id) {
+      setFormMessage(t('projects.projectNotFound', '项目不存在'));
       return;
     }
 
+    // 验证申请理由（至少10个字符）
+    const trimmedReason = applicationReason.trim();
+    if (!trimmedReason || trimmedReason.length < 10) {
+      setFormError(t('projects.application.reasonMinLength', '申请理由至少需要10个字符'));
+      setFormMessage(t('projects.application.validationError', '请补全必填信息后再试'));
+      return;
+    }
+
+    setFormError('');
+    setFormMessage(null);
     setSubmitting(true);
+    
     try {
-      const formData = new FormData();
-      formData.append('announcementId', announcement.id);
-      formData.append('memberId', user.id);
-      applicationFiles.forEach((file) => {
-        formData.append('files', file);
+      await projectService.applyToProject(project.id, {
+        applicationReason: trimmedReason
       });
 
-      await apiService.post(`${API_PREFIX}/member/project-applications`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      alert(t('message.submitSuccess', '提交成功'));
-      
-      // 清空文件列表
-      setApplicationFiles([]);
+      // 清空表单
+      setApplicationReason('');
+      setFormError('');
+      setFormMessage(null);
       
       // 调用成功回调
       if (onSuccess) {
@@ -127,19 +110,22 @@ export default function ApplicationModal({
       onClose();
     } catch (error) {
       console.error('Failed to submit application:', error);
-      alert(t('message.submitFailed', '提交失败'));
+      const errorMessage = error?.response?.data?.detail || error?.message || t('message.submitFailed', '提交失败');
+      setFormMessage(errorMessage);
     } finally {
       setSubmitting(false);
     }
   };
 
-  // 关闭时清空文件
+  // 关闭时清空表单
   const handleClose = () => {
-    setApplicationFiles([]);
+    setApplicationReason('');
+    setFormError('');
+    setFormMessage(null);
     onClose();
   };
 
-  if (!announcement) {
+  if (!project) {
     return null;
   }
 
@@ -157,19 +143,19 @@ export default function ApplicationModal({
               <DocumentIcon className="project-icon-document-large" />
             </div>
             <div className="announcement-info-content">
-              <h3 className="announcement-info-title">{announcement.title}</h3>
+              <h3 className="announcement-info-title">{project.title}</h3>
               <div className="announcement-info-badges">
-                {announcement.type && (
-                  <Badge variant="primary" className="announcement-type">
-                    {getTypeLabel(announcement.type)}
-                  </Badge>
-                )}
-                {announcement.status && (
+                {project.status && (
                   <Badge 
-                    variant={getStatusInfo(announcement.status).variant} 
+                    variant={getStatusInfo(project.status).variant} 
                     className="announcement-status"
                   >
-                    {getStatusInfo(announcement.status).label}
+                    {getStatusInfo(project.status).label}
+                  </Badge>
+                )}
+                {project.applicationsCount > 0 && (
+                  <Badge variant="info" className="announcement-applications">
+                    {t('projects.applicationsCount', '申请数')}: {project.applicationsCount}
                   </Badge>
                 )}
               </div>
@@ -191,84 +177,49 @@ export default function ApplicationModal({
             <div className="company-info-grid">
               <div className="info-item">
                 <label className="info-label">{t('projects.companyId', '企业ID')}</label>
-                <span className="info-value">{user.businessLicense || user.id}</span>
+                <span className="info-value">{user.business_number || user.businessLicense || user.id}</span>
               </div>
               <div className="info-item">
                 <label className="info-label">{t('projects.companyName', '企业名')}</label>
-                <span className="info-value">{user.companyName || t('common.notSet', '未设置')}</span>
+                <span className="info-value">{user.company_name || user.companyName || t('common.notSet', '未设置')}</span>
               </div>
               <div className="info-item">
                 <label className="info-label">{t('projects.contactPerson', '负责人')}</label>
-                <span className="info-value">{user.name || t('common.notSet', '未设置')}</span>
+                <span className="info-value">{user.contact_person || user.name || t('common.notSet', '未设置')}</span>
               </div>
             </div>
           </div>
         )}
 
-        {/* 文件上传区域 */}
-        <div className="form-section">
-          <label className="form-label">
-            {t('projects.uploadFiles', '上传附件')}
-            <span className="form-required">*</span>
-          </label>
-          <div className="file-upload-container">
-            <input
-              type="file"
-              id="application-files"
-              multiple
-              onChange={handleFileUpload}
-              disabled={applicationFiles.length >= 5}
-              style={{ display: 'none' }}
-            />
-            <div 
-              className={`file-upload-dropzone ${applicationFiles.length >= 5 ? 'disabled' : ''}`}
-              onClick={() => !(applicationFiles.length >= 5) && document.getElementById('application-files').click()}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              <div className="file-upload-icon">
-                <PaperclipIcon className="project-icon-attach-large" />
-              </div>
-              <div className="file-upload-text">
-                <p className="file-upload-primary">
-                  {t('projects.clickOrDrag', '点击或拖拽文件到此处上传')}
-                </p>
-                <p className="file-upload-hint">
-                  {t('projects.maxFiles', '最多可上传5个文件')} ({applicationFiles.length}/5)
-                </p>
-              </div>
-            </div>
+        {/* 申请表单 */}
+        <div className="application-form-card">
+          <div className="form-header">
+            <h4 className="form-header-title">
+              {t('projects.application.form.title', '填写申请书')}
+            </h4>
+            <p className="form-header-description">
+              {t('projects.application.form.description', '请完整填写以下申请内容')}
+            </p>
           </div>
 
-          {/* 已上传文件列表 */}
-          {applicationFiles.length > 0 && (
-            <div className="uploaded-files-list">
-              <h5 className="uploaded-files-title">{t('projects.uploadedFiles', '已上传文件')}</h5>
-              <div className="uploaded-files-grid">
-                {applicationFiles.map((file, index) => (
-                  <div key={index} className="file-item-card">
-                    <div className="file-item-icon">
-                      <DocumentIcon className="project-icon-document" />
-                    </div>
-                    <div className="file-item-info">
-                      <span className="file-name" title={file.name}>{file.name}</span>
-                      <span className="file-size">
-                        {(file.size / 1024).toFixed(1)} KB
-                      </span>
-                    </div>
-                    <button
-                      className="file-item-remove"
-                      onClick={() => handleRemoveFile(index)}
-                      type="button"
-                      aria-label={t('common.remove', '删除')}
-                    >
-                      <XIcon className="project-icon-close" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
+          {formMessage && (
+            <Alert variant={formError ? "error" : "info"} className="application-form-alert">
+              {formMessage}
+            </Alert>
           )}
+
+          <div className="application-form-grid application-form-grid-full">
+            <Textarea
+              label={t('projects.application.form.reason', '申请理由')}
+              value={applicationReason}
+              onChange={handleApplicationReasonChange}
+              placeholder={t('projects.application.form.reasonPlaceholder', '请详细说明申请此项目的原因，包括项目目标、预期效果、参与人员等信息（至少10个字符）')}
+              rows={8}
+              required
+              error={formError}
+              help={t('projects.application.form.reasonHelp', `当前 ${applicationReason.length} 个字符，至少需要 10 个字符`)}
+            />
+          </div>
         </div>
 
         {/* 操作按钮 */}
@@ -283,7 +234,7 @@ export default function ApplicationModal({
           <Button
             onClick={handleSubmitApplication}
             variant="primary"
-            disabled={applicationFiles.length === 0 || submitting}
+            disabled={!applicationReason.trim() || applicationReason.trim().length < 10 || submitting}
           >
             {submitting ? t('common.submitting', '提交中...') : t('common.submit', '提交')}
           </Button>
@@ -292,4 +243,5 @@ export default function ApplicationModal({
     </Modal>
   );
 }
+
 

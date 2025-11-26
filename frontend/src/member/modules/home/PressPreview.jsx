@@ -1,48 +1,44 @@
 import './PressPreview.css';
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '@shared/components/Card';
-import { apiService } from '@shared/services';
-import { API_PREFIX, ROUTES } from '@shared/utils/constants';
+import LazyImage from '@shared/components/LazyImage';
+import { contentService } from '@shared/services';
+import { ROUTES } from '@shared/utils/constants';
 
 function PressPreview() {
   const { t, i18n } = useTranslation();
   const [news, setNews] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const loadNews = async () => {
-      setLoading(true);
-      try {
-        const params = {
-          page: 1,
-          page_size: 1,
-          category: 'news'
-        };
-        const response = await apiService.get(`${API_PREFIX}/content/notices`, params);
-        
-        if (response.notices && response.notices.length > 0) {
-          const newsItem = response.notices[0];
-          setNews({
-            id: newsItem.id,
-            title: newsItem.title,
-            thumbnailUrl: newsItem.thumbnailUrl,
-            publishedAt: new Date(newsItem.publishedAt).toISOString().split('T')[0]
-          });
-        } else {
-          setNews(null);
-        }
-      } catch (error) {
-        console.error('Failed to load news:', error);
+  const loadNews = useCallback(async () => {
+    setLoading(true);
+    try {
+      // 使用 contentService 获取最新1条新闻稿
+      const newsItem = await contentService.getLatestPressRelease();
+      
+      if (newsItem) {
+        setNews({
+          id: newsItem.id,
+          title: newsItem.title,
+          thumbnailUrl: newsItem.imageUrl, // 后端返回的是 imageUrl
+          publishedAt: newsItem.createdAt ? new Date(newsItem.createdAt).toISOString().split('T')[0] : ''
+        });
+      } else {
         setNews(null);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    loadNews();
+    } catch (error) {
+      console.error('Failed to load news:', error);
+      setNews(null);
+    } finally {
+      setLoading(false);
+    }
   }, [i18n.language]);
+
+  useEffect(() => {
+    loadNews();
+  }, [loadNews]);
 
   return (
     <section className="news-section">
@@ -61,17 +57,10 @@ function PressPreview() {
         <Card className="news-card">
           <Link to={ROUTES.MEMBER_PRESS} className="news-card-link">
             <div className="news-card-thumbnail">
-              <img 
+              <LazyImage 
                 src={news.thumbnailUrl || '/uploads/banners/news.png'} 
                 alt={news.title}
-                loading="lazy"
-                decoding="async"
-                onError={(e) => {
-                  // 如果图片加载失败，使用默认占位图
-                  if (e.target.src !== '/uploads/banners/news.png') {
-                    e.target.src = '/uploads/banners/news.png';
-                  }
-                }}
+                placeholder="/uploads/banners/news.png"
               />
             </div>
             <div className="news-card-content">

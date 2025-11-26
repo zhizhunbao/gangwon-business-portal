@@ -1,0 +1,58 @@
+{
+  "module": "authentication",
+  "total_tests": 8,
+  "passed": 8,
+  "failed": 0,
+  "success_rate": 100.0,
+  "timestamp": "2025-11-26T12:38:22.373374",
+  "results": [
+    {
+      "test": "TC1.1: Member Login",
+      "status": "pass",
+      "details": "Status: 200, Token received: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...",
+      "timestamp": "2025-11-26T12:38:21.066361"
+    },
+    {
+      "test": "TC1.2: Member Login (Wrong Password)",
+      "status": "pass",
+      "details": "Status: 401, Correctly rejected invalid credentials",
+      "timestamp": "2025-11-26T12:38:21.290812"
+    },
+    {
+      "test": "TC1.3: Admin Login",
+      "status": "pass",
+      "details": "Status: 200, Token received: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...",
+      "timestamp": "2025-11-26T12:38:21.527242"
+    },
+    {
+      "test": "TC1.4: Member Registration",
+      "status": "pass",
+      "details": "Status: 201, New member ID: None, Status: pending",
+      "timestamp": "2025-11-26T12:38:21.916310"
+    },
+    {
+      "test": "TC1.5: Password Reset Request",
+      "status": "pass",
+      "details": "Status: 200, Message: If your email is registered, you will receive a password reset link.",
+      "timestamp": "2025-11-26T12:38:22.038169"
+    },
+    {
+      "test": "TC1.6: Get Current User",
+      "status": "pass",
+      "details": "Status: 200, Company: 강원테크(주), BN: 123-45-67890",
+      "timestamp": "2025-11-26T12:38:22.192475"
+    },
+    {
+      "test": "ERR1.1: Access Without Token",
+      "status": "pass",
+      "details": "Status: 401, Correctly rejected unauthenticated request",
+      "timestamp": "2025-11-26T12:38:22.215391"
+    },
+    {
+      "test": "TC1.7: Token Refresh",
+      "status": "pass",
+      "details": "Status: 200, New token received: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...",
+      "timestamp": "2025-11-26T12:38:22.373374"
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "module": "project_management",
+  "total_tests": 8,
+  "passed": 8,
+  "failed": 0,
+  "success_rate": 100.0,
+  "timestamp": "2025-11-26T12:38:26.207636",
+  "results": [
+    {
+      "test": "TC4.1: List Projects (Public)",
+      "status": "pass",
+      "details": "Status: 200, Total: 9, Items: 9",
+      "timestamp": "2025-11-26T12:38:25.504022"
+    },
+    {
+      "test": "TC4.2: Get Project Detail (Public)",
+      "status": "pass",
+      "details": "Status: 200, Title: Test Project 123651..., Status: active",
+      "timestamp": "2025-11-26T12:38:25.568529"
+    },
+    {
+      "test": "TC4.5: Admin Create Project",
+      "status": "pass",
+      "details": "Status: 201, ID: 1f802d8a-b581-44d7-bbcd-5d957e172aee, Title: Test Project 123825",
+      "timestamp": "2025-11-26T12:38:25.698991"
+    },
+    {
+      "test": "TC4.3: Apply to Project",
+      "status": "pass",
+      "details": "Status: 201, Application ID: 00b0c901-8a2c-4a9a-a668-c691f6a995b3",
+      "timestamp": "2025-11-26T12:38:25.820134"
+    },
+    {
+      "test": "TC4.4: Get My Applications",
+      "status": "pass",
+      "details": "Status: 200, Applications count: 6",
+      "timestamp": "2025-11-26T12:38:25.914080"
+    },
+    {
+      "test": "TC4.6: Admin Get Project Applications",
+      "status": "pass",
+      "details": "Status: 200, Applications: 1",
+      "timestamp": "2025-11-26T12:38:26.006091"
+    },
+    {
+      "test": "TC4.7: Admin Update Project",
+      "status": "pass",
+      "details": "Status: 200, Updated description starts with: Updated description - 2025-11-...",
+      "timestamp": "2025-11-26T12:38:26.130996"
+    },
+    {
+      "test": "TC4.8: List Projects (Filter)",
+      "status": "pass",
+      "details": "Status: 200, Active projects: 10",
+      "timestamp": "2025-11-26T12:38:26.207636"
+    }
+  ]
+}

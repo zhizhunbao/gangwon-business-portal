@@ -14,7 +14,64 @@
       },
       "popups": {
         "title": "팝업 관리",
-        "placeholder": "팝업 관리 기능 개발 예정"
+        "list": {
+          "title": "팝업 목록",
+          "description": "작성된 팝업을 선택해 수정하거나 삭제할 수 있습니다.",
+          "empty": "등록된 팝업이 없습니다."
+        },
+        "status": {
+          "active": "사용 중",
+          "inactive": "중지"
+        },
+        "labels": {
+          "noEndDate": "종료일 없음"
+        },
+        "positions": {
+          "center": "중앙",
+          "left": "좌측 하단",
+          "right": "우측 하단"
+        },
+        "actions": {
+          "new": "새 팝업 만들기",
+          "create": "팝업 생성",
+          "update": "변경사항 저장",
+          "confirmDelete": "해당 팝업을 삭제하시겠습니까?",
+          "selectImage": "이미지 선택",
+          "changeImage": "이미지 변경"
+        },
+        "form": {
+          "newTitle": "새로운 팝업 생성",
+          "editTitle": "팝업 수정",
+          "fields": {
+            "title": "제목",
+            "content": "내용",
+            "linkUrl": "클릭 시 이동 URL",
+            "startDate": "시작일",
+            "endDate": "종료일",
+            "width": "가로 크기 (px)",
+            "height": "세로 크기 (px)",
+            "position": "표시 위치",
+            "image": "팝업 이미지",
+            "isActive": "팝업 활성화"
+          }
+        },
+        "messages": {
+          "saved": "팝업이 저장되었습니다.",
+          "saveFailed": "팝업 저장에 실패했습니다.",
+          "deleted": "팝업이 삭제되었습니다.",
+          "deleteFailed": "팝업 삭제에 실패했습니다.",
+          "loadFailed": "팝업 목록을 불러오지 못했습니다.",
+          "validationError": "필수 항목을 확인한 후 다시 시도해주세요.",
+          "imageUploaded": "이미지가 업로드되었습니다.",
+          "imageUploadFailed": "이미지 업로드에 실패했습니다.",
+          "invalidImageType": "이미지 파일만 업로드할 수 있습니다.",
+          "imageTooLarge": "이미지 크기는 5MB를 초과할 수 없습니다."
+        },
+        "validation": {
+          "minWidth": "가로 크기는 최소 200px 이상이어야 합니다.",
+          "minHeight": "세로 크기는 최소 200px 이상이어야 합니다.",
+          "endDateBeforeStart": "종료일은 시작일보다 늦어야 합니다."
+        }
       },
       "notices": {
         "title": "공지사항 관리",

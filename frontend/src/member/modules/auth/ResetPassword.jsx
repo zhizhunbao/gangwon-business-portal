@@ -8,8 +8,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@shared/components';
 import { EyeIcon, EyeOffIcon } from '@shared/components/Icons';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import authService from '@shared/services/auth.service';
 import './Auth.css';
 
 export default function ResetPassword() {
@@ -56,17 +55,14 @@ export default function ResetPassword() {
     setIsLoading(true);
     
     try {
-      await apiService.post(`${API_PREFIX}/auth/reset-password`, {
-        token,
-        password: formData.password
-      });
+      await authService.resetPassword(token, formData.password);
       
       setIsSuccess(true);
       setTimeout(() => {
         navigate('/login');
       }, 3000);
     } catch (err) {
-      setError(err.response?.data?.message || t('auth.passwordResetFailed', '密码重置失败'));
+      setError(err.response?.data?.detail || err.response?.data?.message || t('auth.passwordResetFailed', '密码重置失败'));
     } finally {
       setIsLoading(false);
     }

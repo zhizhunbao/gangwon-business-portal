@@ -10,6 +10,7 @@
     "clean": "rm -rf dist node_modules/.vite"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.11",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",

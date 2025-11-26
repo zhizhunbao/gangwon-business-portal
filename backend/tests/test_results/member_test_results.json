@@ -1,0 +1,52 @@
+{
+  "module": "member_management",
+  "total_tests": 7,
+  "passed": 7,
+  "failed": 0,
+  "success_rate": 100.0,
+  "timestamp": "2025-11-26T12:38:23.663266",
+  "results": [
+    {
+      "test": "TC2.1: Get Member Profile",
+      "status": "pass",
+      "details": "Status: 200, Company: 강원테크(주), Industry: Software Development",
+      "timestamp": "2025-11-26T12:38:23.068778"
+    },
+    {
+      "test": "TC2.2: Update Member Profile",
+      "status": "pass",
+      "details": "Status: 200, Updated industry: Software Development, employees: 60",
+      "timestamp": "2025-11-26T12:38:23.222691"
+    },
+    {
+      "test": "TC2.3: Admin List Members",
+      "status": "pass",
+      "details": "Status: 200, Total: 10, Items: 10",
+      "timestamp": "2025-11-26T12:38:23.320059"
+    },
+    {
+      "test": "TC2.3b: Admin List Members (Filter)",
+      "status": "pass",
+      "details": "Status: 200, Total approved: 4",
+      "timestamp": "2025-11-26T12:38:23.438499"
+    },
+    {
+      "test": "TC2.4: Admin Get Member Detail",
+      "status": "pass",
+      "details": "Status: 200, Company: Test New Company, Status: pending",
+      "timestamp": "2025-11-26T12:38:23.530647"
+    },
+    {
+      "test": "ERR2.1: Member Access Admin Endpoint",
+      "status": "pass",
+      "details": "Status: 403, Correctly denied access to admin endpoint",
+      "timestamp": "2025-11-26T12:38:23.585369"
+    },
+    {
+      "test": "ERR3.1: Get Non-existent Member",
+      "status": "pass",
+      "details": "Status: 404, Correctly returned Not Found",
+      "timestamp": "2025-11-26T12:38:23.661713"
+    }
+  ]
+}

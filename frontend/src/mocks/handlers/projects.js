@@ -342,6 +342,44 @@ async function getProjectApplications(req) {
   });
 }
 
+// Get project applications for current member
+async function getMemberProjectApplications(req) {
+  await delay();
+  
+  await initializeData();
+  
+  const { id } = req.params;
+  const url = new URL(req.request.url);
+  const page = parseInt(url.searchParams.get('page') || '1', 10);
+  const pageSize = parseInt(url.searchParams.get('page_size') || '10', 10);
+  const status = url.searchParams.get('status');
+  const memberId = 1; // Mock authenticated member
+  
+  let memberApplications = applicationsData.filter(
+    app => app.projectId === parseInt(id, 10) && app.memberId === memberId
+  );
+  
+  if (status && status !== 'all') {
+    memberApplications = memberApplications.filter(app => app.status === status);
+  }
+  
+  const total = memberApplications.length;
+  const totalPages = Math.ceil(total / pageSize);
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  const paginatedApplications = memberApplications.slice(start, end);
+  
+  return HttpResponse.json({
+    applications: paginatedApplications,
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages
+    }
+  });
+}
+
 // Convert project to announcement format
 function projectToAnnouncement(project) {
   // Get current language for labels
@@ -643,6 +681,10 @@ export const projectsHandlers = [
   // Admin: Get project applications
   http.get(`${ADMIN_BASE_URL}/:id/applications`, getProjectApplications),
   
+  // Member: Get own applications for a project
+  http.get(`${BASE_URL}/:id/applications`, getMemberProjectApplications),
+  http.get(`${API_BASE_URL}${API_PREFIX}/projects/:id/applications`, getMemberProjectApplications),
+  
   // Member: Get published projects
   http.get(`${BASE_URL}`, getPublishedProjects),
   http.get(`${API_BASE_URL}${API_PREFIX}/member/projects`, getPublishedProjects),
@@ -654,6 +696,8 @@ export const projectsHandlers = [
   // Member: Submit project application
   http.post(`${BASE_URL}/:id/applications`, submitProjectApplication),
   http.post(`${API_BASE_URL}${API_PREFIX}/member/projects/:id/applications`, submitProjectApplication),
+  http.post(`${BASE_URL}/:id/apply`, submitProjectApplication),
+  http.post(`${API_BASE_URL}${API_PREFIX}/projects/:id/apply`, submitProjectApplication),
   
   // Member: Get announcements (alias for projects)
   http.get(`${API_BASE_URL}${API_PREFIX}/member/announcements`, getAnnouncements),

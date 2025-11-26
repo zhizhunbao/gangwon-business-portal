@@ -144,13 +144,16 @@ i18n
   .init({
     resources,
     fallbackLng: 'ko', // 默认语言
+    supportedLngs: ['ko', 'zh'],
     debug: import.meta.env.DEV,
     interpolation: {
       escapeValue: false // React 已经安全处理
     },
     detection: {
       order: ['localStorage', 'navigator'],
-      caches: ['localStorage']
+      lookupLocalStorage: 'language',
+      caches: ['localStorage'],
+      excludeCacheFor: ['cimode']
     }
   });
 

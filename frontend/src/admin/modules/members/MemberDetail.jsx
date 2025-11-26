@@ -7,8 +7,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Button, Badge, Loading } from '@shared/components';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { adminService } from '@shared/services';
 import './MemberDetail.css';
 
 export default function MemberDetail() {
@@ -25,12 +24,14 @@ export default function MemberDetail() {
   const loadMemberDetail = async () => {
     setLoading(true);
     try {
-      const response = await apiService.get(`${API_PREFIX}/admin/members/${id}`);
-      if (response.member) {
-        setMember(response.member);
+      const memberData = await adminService.getMemberDetail(id);
+      if (memberData) {
+        setMember(memberData);
       }
     } catch (error) {
       console.error('Failed to load member detail:', error);
+      const errorMessage = error.response?.data?.detail || error.message || t('admin.members.detail.loadFailed', '加载会员详情失败');
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -38,25 +39,26 @@ export default function MemberDetail() {
 
   const handleApprove = async () => {
     try {
-      await apiService.patch(`${API_PREFIX}/admin/members/${id}/status`, {
-        approvalStatus: 'approved'
-      });
+      await adminService.approveMember(id);
       loadMemberDetail();
+      alert(t('admin.members.approveSuccess', '批准成功') || '批准成功');
     } catch (error) {
       console.error('Failed to approve member:', error);
-      alert(t('admin.members.approveFailed'));
+      const errorMessage = error.response?.data?.detail || error.message || t('admin.members.approveFailed', '批准失败');
+      alert(errorMessage);
     }
   };
 
   const handleReject = async () => {
+    const reason = prompt(t('admin.members.rejectReason', '请输入拒绝原因（可选）') || '请输入拒绝原因（可选）');
     try {
-      await apiService.patch(`${API_PREFIX}/admin/members/${id}/status`, {
-        approvalStatus: 'rejected'
-      });
+      await adminService.rejectMember(id, reason || null);
       loadMemberDetail();
+      alert(t('admin.members.rejectSuccess', '拒绝成功') || '拒绝成功');
     } catch (error) {
       console.error('Failed to reject member:', error);
-      alert(t('admin.members.rejectFailed'));
+      const errorMessage = error.response?.data?.detail || error.message || t('admin.members.rejectFailed', '拒绝失败');
+      alert(errorMessage);
     }
   };
 
@@ -117,35 +119,35 @@ export default function MemberDetail() {
         <div className="info-grid">
           <div className="info-item">
             <label>{t('admin.members.detail.businessNumber')}</label>
-            <span>{member.businessLicense}</span>
+            <span>{member.businessLicense || member.businessNumber || '-'}</span>
           </div>
           <div className="info-item">
             <label>{t('admin.members.detail.companyName')}</label>
-            <span>{member.companyName}</span>
+            <span>{member.companyName || '-'}</span>
           </div>
           <div className="info-item">
             <label>{t('admin.members.detail.representative')}</label>
-            <span>{member.representative}</span>
+            <span>{member.representative || member.representativeName || '-'}</span>
           </div>
           <div className="info-item">
             <label>{t('admin.members.detail.legalNumber')}</label>
-            <span>{member.legalNumber}</span>
+            <span>{member.legalNumber || '-'}</span>
           </div>
           <div className="info-item">
             <label>{t('admin.members.detail.address')}</label>
-            <span>{member.address}</span>
+            <span>{member.address || '-'}</span>
           </div>
           <div className="info-item">
             <label>{t('admin.members.detail.industry')}</label>
-            <span>{member.industry}</span>
+            <span>{member.industry || '-'}</span>
           </div>
           <div className="info-item">
             <label>{t('admin.members.detail.phone')}</label>
-            <span>{member.phone}</span>
+            <span>{member.phone || '-'}</span>
           </div>
           <div className="info-item">
             <label>{t('admin.members.detail.email')}</label>
-            <span>{member.email}</span>
+            <span>{member.email || '-'}</span>
           </div>
         </div>
 

@@ -7,8 +7,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import Card from '@shared/components/Card';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { supportService } from '@shared/services';
 import './ConsultationHistory.css';
 
 export default function ConsultationHistory() {
@@ -20,12 +19,14 @@ export default function ConsultationHistory() {
     const loadInquiries = async () => {
       setLoading(true);
       try {
-        const response = await apiService.get(`${API_PREFIX}/member/consultations`);
-        if (response.records) {
-          setInquiries(response.records);
-        }
+        const response = await supportService.listMyInquiries({
+          page: 1,
+          pageSize: 100 // 获取所有咨询记录
+        });
+        setInquiries(response.items || []);
       } catch (error) {
         console.error('Failed to load inquiries:', error);
+        setInquiries([]);
       } finally {
         setLoading(false);
       }

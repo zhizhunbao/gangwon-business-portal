@@ -10,17 +10,23 @@ import { delay, loadMockData, shouldSimulateError, getErrorStatus, getCurrentLan
 const BASE_URL = `${API_BASE_URL}${API_PREFIX}/content`;
 const ADMIN_BASE_URL = `${API_BASE_URL}${API_PREFIX}/admin/content`;
 
-// Initialize data based on current language (no cache - always load fresh)
-async function initializeData() {
-  const data = await loadMockData('content');
-  
-  return {
-    banners: [...(data.banners || [])],
-    popups: [...(data.popups || [])],
-    news: [...(data.news || [])],
-    faqs: [...(data.faqs || [])],
-    about: data.about || null
-  };
+let cachedContentData = null;
+let cachedContentLanguage = null;
+
+async function ensureContentData() {
+  const language = getCurrentLanguage();
+  if (!cachedContentData || cachedContentLanguage !== language) {
+    const data = await loadMockData('content');
+    cachedContentData = {
+      banners: [...(data.banners || [])],
+      popups: [...(data.popups || [])],
+      news: [...(data.news || [])],
+      faqs: [...(data.faqs || [])],
+      about: data.about || null
+    };
+    cachedContentLanguage = language;
+  }
+  return cachedContentData;
 }
 
 // Get active banners (member)
@@ -34,7 +40,7 @@ async function getActiveBanners(req) {
     );
   }
   
-  const contentData = await initializeData();
+  const contentData = await ensureContentData();
   
   console.log('[MSW Content] Loading banners, total:', contentData.banners.length);
   
@@ -70,11 +76,28 @@ async function getActiveBanners(req) {
   return HttpResponse.json({ banners: activeBanners });
 }
 
+// Get active popups (member)
+async function getActivePopups(req) {
+  await delay();
+  
+  const contentData = await ensureContentData();
+  const now = new Date();
+  
+  const activePopups = contentData.popups.filter((popup) => {
+    if (!popup.isActive) return false;
+    if (popup.startDate && now < new Date(popup.startDate)) return false;
+    if (popup.endDate && now > new Date(popup.endDate)) return false;
+    return true;
+  });
+  
+  return HttpResponse.json({ popups: activePopups });
+}
+
 // Get latest notices/news (member)
 async function getLatestNotices(req) {
   await delay();
   
-  const contentData = await initializeData();
+  const contentData = await ensureContentData();
   
   const url = new URL(req.request.url);
   const limit = parseInt(url.searchParams.get('limit') || '5', 10);
@@ -122,16 +145,98 @@ async function getLatestNotices(req) {
 async function getAllBanners(req) {
   await delay();
   
-  const contentData = await initializeData();
+  const contentData = await ensureContentData();
   
   return HttpResponse.json({ banners: contentData.banners });
+}
+
+// Admin: Get all popups
+async function getAllPopups(req) {
+  await delay();
+  
+  const contentData = await ensureContentData();
+  return HttpResponse.json({ popups: contentData.popups });
+}
+
+async function createPopup(req) {
+  await delay(200);
+  
+  const contentData = await ensureContentData();
+  const body = await req.request.json();
+  
+  const now = new Date().toISOString();
+  const nextId = contentData.popups.length > 0
+    ? Math.max(...contentData.popups.map(p => p.id)) + 1
+    : 1;
+  
+  const newPopup = {
+    id: nextId,
+    title: body.title,
+    content: body.content,
+    imageUrl: body.imageUrl || null,
+    linkUrl: body.linkUrl || null,
+    width: body.width || 600,
+    height: body.height || 400,
+    position: body.position || 'center',
+    isActive: body.isActive ?? true,
+    startDate: body.startDate || new Date().toISOString(),
+    endDate: body.endDate || null,
+    createdAt: now,
+    updatedAt: now
+  };
+  
+  contentData.popups.push(newPopup);
+  return HttpResponse.json({ popup: newPopup }, { status: 201 });
+}
+
+async function updatePopup(req) {
+  await delay(200);
+  
+  const contentData = await ensureContentData();
+  const { id } = req.params;
+  const body = await req.request.json();
+  
+  const index = contentData.popups.findIndex(p => p.id === parseInt(id, 10));
+  if (index === -1) {
+    return HttpResponse.json(
+      { message: 'Popup not found', code: 'NOT_FOUND' },
+      { status: 404 }
+    );
+  }
+  
+  const updatedPopup = {
+    ...contentData.popups[index],
+    ...body,
+    updatedAt: new Date().toISOString()
+  };
+  
+  contentData.popups[index] = updatedPopup;
+  return HttpResponse.json({ popup: updatedPopup });
+}
+
+async function deletePopup(req) {
+  await delay(150);
+  
+  const contentData = await ensureContentData();
+  const { id } = req.params;
+  const index = contentData.popups.findIndex(p => p.id === parseInt(id, 10));
+  
+  if (index === -1) {
+    return HttpResponse.json(
+      { message: 'Popup not found', code: 'NOT_FOUND' },
+      { status: 404 }
+    );
+  }
+  
+  const [removed] = contentData.popups.splice(index, 1);
+  return HttpResponse.json({ success: true, popup: removed });
 }
 
 // Get all news/notices (admin)
 async function getAllNews(req) {
   await delay();
   
-  const contentData = await initializeData();
+  const contentData = await ensureContentData();
   
   return HttpResponse.json({ news: contentData.news });
 }
@@ -140,7 +245,7 @@ async function getAllNews(req) {
 async function getNewsById(req) {
   await delay();
   
-  const contentData = await initializeData();
+  const contentData = await ensureContentData();
   
   const { id } = req.params;
   const news = contentData.news.find(n => n.id === parseInt(id, 10));
@@ -164,7 +269,7 @@ async function getNoticeById(req) {
 async function getAboutContent(req) {
   await delay();
   
-  const contentData = await initializeData();
+  const contentData = await ensureContentData();
   
   return HttpResponse.json({ about: contentData.about });
 }
@@ -173,7 +278,7 @@ async function getAboutContent(req) {
 async function getFAQs(req) {
   await delay();
   
-  const contentData = await initializeData();
+  const contentData = await ensureContentData();
   
   const url = new URL(req.request.url);
   const category = url.searchParams.get('category');
@@ -238,6 +343,10 @@ export const contentHandlers = [
   http.get(`${API_BASE_URL}${API_PREFIX}/member/banners`, getActiveBanners),
   http.get(`${API_BASE_URL}${API_PREFIX}/content/banners`, getActiveBanners),
   
+  // Member: Get active popups
+  http.get(`${BASE_URL}/popups`, getActivePopups),
+  http.get(`${API_BASE_URL}${API_PREFIX}/member/popups`, getActivePopups),
+  
   // Member: Get latest notices
   http.get(`${BASE_URL}/notices`, getLatestNotices),
   http.get(`${API_BASE_URL}${API_PREFIX}/member/notices`, getLatestNotices),
@@ -267,6 +376,13 @@ export const contentHandlers = [
   
   // Admin: Get all banners
   http.get(`${ADMIN_BASE_URL}/banners`, getAllBanners),
+  
+  // Admin: Manage popups
+  http.get(`${ADMIN_BASE_URL}/popups`, getAllPopups),
+  http.post(`${ADMIN_BASE_URL}/popups`, createPopup),
+  http.put(`${ADMIN_BASE_URL}/popups/:id`, updatePopup),
+  http.patch(`${ADMIN_BASE_URL}/popups/:id`, updatePopup),
+  http.delete(`${ADMIN_BASE_URL}/popups/:id`, deletePopup),
   
   // Admin: Get all news
   http.get(`${ADMIN_BASE_URL}/news`, getAllNews)

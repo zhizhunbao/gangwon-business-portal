@@ -4,12 +4,11 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { projectService } from '@shared/services';
 import { ArrowLeftIcon } from '@shared/components/Icons';
 import ApplicationModal from './ApplicationModal';
 import './ProjectDetail.css';
@@ -18,37 +17,37 @@ export default function ProjectDetail() {
   const { t, i18n } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
-  const [announcement, setAnnouncement] = useState(null);
+  const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      loadAnnouncementDetail();
-    }
-  }, [id, i18n.language]); // Reload data when language changes
-
-  const loadAnnouncementDetail = async () => {
+  const loadProjectDetail = useCallback(async () => {
+    if (!id) return;
+    
     setLoading(true);
     try {
-      const response = await apiService.get(`${API_PREFIX}/member/announcements/${id}`);
-      if (response.record) {
-        setAnnouncement(response.record);
+      const projectData = await projectService.getProject(id);
+      if (projectData) {
+        setProject(projectData);
       }
     } catch (error) {
-      console.error('Failed to load announcement detail:', error);
+      console.error('Failed to load project detail:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, i18n.language]);
 
-  const handleApply = () => {
+  useEffect(() => {
+    loadProjectDetail();
+  }, [loadProjectDetail]);
+
+  const handleApply = useCallback(() => {
     setShowApplicationModal(true);
-  };
+  }, []);
 
-  const handleApplicationSuccess = () => {
+  const handleApplicationSuccess = useCallback(() => {
     // 可以在这里执行成功后的操作，比如刷新数据
-  };
+  }, []);
 
   return (
     <>
@@ -70,34 +69,49 @@ export default function ProjectDetail() {
               <p>{t('common.loading', '加载中...')}</p>
             </div>
           </Card>
-        ) : announcement ? (
+        ) : project ? (
           <Card className="announcement-detail-card">
             <div className="announcement-detail-header">
-              <h2>{announcement.title}</h2>
-              <span className="announcement-date">
-                {announcement.createdAt ? new Date(announcement.createdAt).toLocaleDateString() : ''}
-              </span>
+              <h2>{project.title}</h2>
+              <div className="project-meta">
+                {project.startDate && project.endDate && (
+                  <span className="project-period">
+                    {t('projects.period', '项目期间')}: {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
+                  </span>
+                )}
+                <span className="announcement-date">
+                  {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : ''}
+                </span>
+              </div>
             </div>
-            <div className="announcement-detail-content">
-              <div dangerouslySetInnerHTML={{ __html: announcement.content || '' }} />
-            </div>
-            {announcement.attachments && announcement.attachments.length > 0 && (
-              <div className="announcement-attachments">
-                <h3>{t('projects.attachments', '附件')}</h3>
-                <ul>
-                  {announcement.attachments.map((attachment, index) => (
-                    <li key={index}>
-                      <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-                        {attachment.name}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+            {project.imageUrl && (
+              <div className="project-image">
+                <img src={project.imageUrl} alt={project.title} />
               </div>
             )}
+            <div className="announcement-detail-content">
+              {project.description && (
+                <div className="project-description">
+                  <h3>{t('projects.description', '项目描述')}</h3>
+                  <p>{project.description}</p>
+                </div>
+              )}
+              {project.targetAudience && (
+                <div className="project-target-audience">
+                  <h3>{t('projects.targetAudience', '目标对象')}</h3>
+                  <p>{project.targetAudience}</p>
+                </div>
+              )}
+            </div>
             <div className="announcement-detail-footer">
-              <Button onClick={handleApply} variant="primary">
-                {t('projects.apply', '程序申请')}
+              <Button 
+                onClick={handleApply} 
+                variant="primary"
+                disabled={project.status !== 'active'}
+              >
+                {project.status === 'active' 
+                  ? t('projects.apply', '程序申请')
+                  : t('projects.notAvailable', '不可申请')}
               </Button>
             </div>
           </Card>
@@ -113,7 +127,7 @@ export default function ProjectDetail() {
       <ApplicationModal
         isOpen={showApplicationModal}
         onClose={() => setShowApplicationModal(false)}
-        announcement={announcement}
+        project={project}
         onSuccess={handleApplicationSuccess}
       />
     </>

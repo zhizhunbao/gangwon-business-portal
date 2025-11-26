@@ -8,8 +8,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@shared/components';
 import { formatBusinessLicense } from '@shared/utils/format';
-import { apiService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import authService from '@shared/services/auth.service';
 import './Auth.css';
 
 export default function ForgotPassword() {
@@ -29,15 +28,14 @@ export default function ForgotPassword() {
     setIsLoading(true);
     
     try {
-      const businessLicenseClean = formData.businessLicense.replace(/-/g, '');
-      await apiService.post(`${API_PREFIX}/auth/forgot-password`, {
-        businessLicense: businessLicenseClean,
+      await authService.forgotPassword({
+        businessLicense: formData.businessLicense,
         email: formData.email
       });
       
       setIsSubmitted(true);
     } catch (err) {
-      setError(err.response?.data?.message || t('auth.passwordResetFailed', '密码重置请求失败'));
+      setError(err.response?.data?.detail || err.response?.data?.message || t('auth.passwordResetFailed', '密码重置请求失败'));
     } finally {
       setIsLoading(false);
     }

@@ -1,0 +1,29 @@
+# FastAPI Core
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+
+# Database
+sqlalchemy==2.0.25
+asyncpg==0.29.0
+alembic==1.13.0
+
+# Data Validation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# File Upload
+python-multipart==0.0.6
+
+# Supabase Integration
+supabase==2.3.0
+
+# Development
+pytest==7.4.3
+pytest-asyncio==0.21.1
+requests==2.31.0
+# httpx is a dependency of supabase, will be installed automatically
+

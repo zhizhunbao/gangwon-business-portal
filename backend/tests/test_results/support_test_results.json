@@ -1,0 +1,70 @@
+{
+  "module": "support",
+  "total_tests": 10,
+  "passed": 10,
+  "failed": 0,
+  "success_rate": 100.0,
+  "timestamp": "2025-11-26T12:38:28.793089",
+  "results": [
+    {
+      "test": "TC6.1: List FAQs (Public)",
+      "status": "pass",
+      "details": "Status: 200, Count: 15",
+      "timestamp": "2025-11-26T12:38:27.818530"
+    },
+    {
+      "test": "TC6.1b: List FAQs (Category Filter)",
+      "status": "pass",
+      "details": "Status: 200",
+      "timestamp": "2025-11-26T12:38:27.900413"
+    },
+    {
+      "test": "TC6.1c: Admin Create FAQ",
+      "status": "pass",
+      "details": "Status: 201, ID: 42ed4bba-a8e7-45bf-a5cd-4daeb1fd826d",
+      "timestamp": "2025-11-26T12:38:28.037309"
+    },
+    {
+      "test": "TC6.1d: Admin Update FAQ",
+      "status": "pass",
+      "details": "Status: 200",
+      "timestamp": "2025-11-26T12:38:28.162879"
+    },
+    {
+      "test": "TC6.2: Create Inquiry",
+      "status": "pass",
+      "details": "Status: 201, ID: 802c3a2c-7292-4cb3-b240-a43fcd6fc9ae",
+      "timestamp": "2025-11-26T12:38:28.300963"
+    },
+    {
+      "test": "TC6.3: List My Inquiries",
+      "status": "pass",
+      "details": "Status: 200, Count: 5",
+      "timestamp": "2025-11-26T12:38:28.384933"
+    },
+    {
+      "test": "TC6.4: Get Inquiry Detail",
+      "status": "pass",
+      "details": "Status: 200, Title: , Status: pending",
+      "timestamp": "2025-11-26T12:38:28.452955"
+    },
+    {
+      "test": "TC6.5: Admin List All Inquiries",
+      "status": "pass",
+      "details": "Status: 200, Total: 5",
+      "timestamp": "2025-11-26T12:38:28.584500"
+    },
+    {
+      "test": "TC6.5b: Admin Reply Inquiry",
+      "status": "pass",
+      "details": "Status: 200, New Status: replied",
+      "timestamp": "2025-11-26T12:38:28.716454"
+    },
+    {
+      "test": "TC6.6: View Replied Inquiry",
+      "status": "pass",
+      "details": "Status: 200, Has Reply: True, Status: replied",
+      "timestamp": "2025-11-26T12:38:28.793089"
+    }
+  ]
+}
