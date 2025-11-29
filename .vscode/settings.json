@@ -4,7 +4,6 @@
   "typescript.validate.enable": false,
   "javascript.validate.enable": false,
   "typescript.disableAutomaticTypeAcquisition": true,
-  "typescript.preferences.includePackageJsonAutoImports": "off",
   "typescript.surveys.enabled": false,
   "typescript.suggest.includeCompletionsForImportStatements": false,
   "typescript.suggest.includeCompletionsWithSnippetText": false,

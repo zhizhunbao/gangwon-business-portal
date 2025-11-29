@@ -559,3 +559,57 @@ class AuthService:
 
         return member
 
+    async def change_password(
+        self, member: Member, current_password: str, new_password: str, db: AsyncSession
+    ) -> Member:
+        """
+        Change password for authenticated user.
+
+        Args:
+            member: Current member object
+            current_password: Current password
+            new_password: New password
+            db: Database session
+
+        Returns:
+            Updated member object
+
+        Raises:
+            UnauthorizedError: If current password is incorrect
+            ValidationError: If new password is invalid
+        """
+        logger.info(
+            "Password change request received",
+            extra={
+                "module_name": __name__,
+                "member_id": str(member.id),
+            },
+        )
+
+        # Verify current password
+        if not self.verify_password(current_password, member.password_hash):
+            logger.warning(
+                "Password change failed: incorrect current password",
+                extra={
+                    "module_name": __name__,
+                    "member_id": str(member.id),
+                },
+            )
+            raise UnauthorizedError("Current password is incorrect")
+
+        # Update password
+        member.password_hash = self.get_password_hash(new_password)
+        await db.commit()
+        await db.refresh(member)
+
+        logger.info(
+            "Password changed successfully",
+            extra={
+                "module_name": __name__,
+                "member_id": str(member.id),
+                "business_number": member.business_number,
+            },
+        )
+
+        return member
+

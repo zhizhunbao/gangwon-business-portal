@@ -9,6 +9,3 @@ import { handlers } from './handlers/index.js';
 // Setup MSW server for Node.js environment
 export const server = setupServer(...handlers);
 
-// Log when MSW server is active
-console.log('[MSW] Mock Server is active');
-

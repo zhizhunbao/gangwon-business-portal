@@ -82,17 +82,20 @@ class EmailService:
         message.set_content(text_body)
         message.add_alternative(html_body, subtype="html")
 
-        send_kwargs: Dict[str, Any] = {
-            "hostname": self._settings.EMAIL_SMTP_HOST,
-            "port": self._settings.EMAIL_SMTP_PORT,
-        }
-        if self._settings.EMAIL_SMTP_USER:
-            send_kwargs["username"] = self._settings.EMAIL_SMTP_USER
-            send_kwargs["password"] = self._settings.EMAIL_SMTP_PASSWORD
-        send_kwargs["start_tls"] = bool(self._settings.EMAIL_SMTP_USE_TLS)
-
         try:
-            await aiosmtplib.send(message, **send_kwargs)
+            smtp = aiosmtplib.SMTP(
+                hostname=self._settings.EMAIL_SMTP_HOST,
+                port=self._settings.EMAIL_SMTP_PORT,
+                use_tls=bool(self._settings.EMAIL_SMTP_USE_TLS),
+            )
+            await smtp.connect()
+            if self._settings.EMAIL_SMTP_USER:
+                await smtp.login(
+                    self._settings.EMAIL_SMTP_USER,
+                    self._settings.EMAIL_SMTP_PASSWORD,
+                )
+            await smtp.send_message(message)
+            await smtp.quit()
             logger.info(
                 "Email sent successfully",
                 extra={

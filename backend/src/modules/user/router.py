@@ -18,6 +18,8 @@ from .schemas import (
     PasswordReset,
     TokenResponse,
     UserInfo,
+    ChangePasswordRequest,
+    ProfileUpdateRequest,
 )
 from .service import AuthService
 from .dependencies import get_current_active_user
@@ -314,4 +316,117 @@ async def refresh_token(
             "approval_status": current_user.approval_status,
         },
     )
+
+
+@router.put("/profile", response_model=UserInfo)
+async def update_profile(
+    data: ProfileUpdateRequest,
+    request: Request,
+    current_user: Member = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update current user's profile.
+
+    Updates the authenticated user's profile information.
+    """
+    from ..member.service import MemberService
+    from ..member.schemas import MemberProfileUpdate
+    
+    member_service = MemberService()
+    
+    # Convert ProfileUpdateRequest to MemberProfileUpdate
+    profile_update = MemberProfileUpdate(
+        company_name=data.company_name,
+        email=data.email,
+        industry=data.industry,
+        revenue=data.revenue,
+        employee_count=data.employee_count,
+        founding_date=data.founding_date,
+        region=data.region,
+        address=data.address,
+        website=data.website,
+    )
+    
+    try:
+        member, profile = await member_service.update_member_profile(
+            current_user.id, profile_update, db
+        )
+
+        # Record audit log
+        try:
+            ip_address, user_agent = get_client_info(request)
+            await audit_log_service.create_audit_log(
+                db=db,
+                action="update",
+                user_id=current_user.id,
+                resource_type="member",
+                resource_id=member.id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+        except Exception as e:
+            from ...common.modules.logger import logger
+            logger.error(f"Failed to create audit log: {str(e)}", exc_info=True)
+
+        return UserInfo(
+            id=member.id,
+            business_number=member.business_number,
+            company_name=member.company_name,
+            email=member.email,
+            status=member.status,
+            approval_status=member.approval_status,
+            created_at=member.created_at,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.post("/change-password", response_model=dict)
+async def change_password(
+    data: ChangePasswordRequest,
+    request: Request,
+    current_user: Member = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Change password.
+
+    Changes the authenticated user's password.
+    """
+    try:
+        await auth_service.change_password(
+            current_user, data.current_password, data.new_password, db
+        )
+
+        # Record audit log
+        try:
+            ip_address, user_agent = get_client_info(request)
+            await audit_log_service.create_audit_log(
+                db=db,
+                action="change_password",
+                user_id=current_user.id,
+                resource_type="member",
+                resource_id=current_user.id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+        except Exception as e:
+            from ...common.modules.logger import logger
+            logger.error(f"Failed to create audit log: {str(e)}", exc_info=True)
+
+        return {"message": "Password changed successfully"}
+    except UnauthorizedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
 

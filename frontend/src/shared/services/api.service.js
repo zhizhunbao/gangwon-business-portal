@@ -5,6 +5,8 @@
 import axios from 'axios';
 import { API_BASE_URL, API_PREFIX, ACCESS_TOKEN_KEY, HTTP_STATUS } from '@shared/utils/constants';
 import { getStorage, setStorage, removeStorage } from '@shared/utils/storage';
+import loggerService from './logger.service';
+import exceptionService from './exception.service';
 
 // Create axios instance
 const apiClient = axios.create({
@@ -35,9 +37,27 @@ apiClient.interceptors.request.use(
       delete config.headers['Content-Type'];
     }
     
+    // Record request start time for duration calculation
+    config._startTime = Date.now();
+    
+    // Log request (skip logging endpoint to avoid recursion)
+    if (!config.url?.includes('/logging/') && !config.url?.includes('/exceptions/')) {
+      loggerService.debug(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+        request_method: config.method,
+        request_path: config.url,
+        request_data: config.data,
+      });
+    }
+    
     return config;
   },
   (error) => {
+    // Log request error
+    loggerService.error('API Request Error', {
+      request_method: error.config?.method,
+      request_path: error.config?.url,
+      error: error.message,
+    });
     return Promise.reject(error);
   }
 );
@@ -45,6 +65,20 @@ apiClient.interceptors.request.use(
 // Response interceptor
 apiClient.interceptors.response.use(
   (response) => {
+    // Calculate duration
+    const duration = response.config._startTime ? Date.now() - response.config._startTime : null;
+    
+    // Log successful response (skip logging endpoint to avoid recursion)
+    if (!response.config.url?.includes('/logging/') && !response.config.url?.includes('/exceptions/')) {
+      const level = response.status >= 400 ? 'WARNING' : 'INFO';
+      loggerService.log(level, `API Response: ${response.config.method?.toUpperCase()} ${response.config.url} -> ${response.status}`, {
+        request_method: response.config.method,
+        request_path: response.config.url,
+        response_status: response.status,
+        duration_ms: duration,
+      });
+    }
+    
     // For blob responses, return the response object directly
     if (response.config.responseType === 'blob') {
       return response;
@@ -53,6 +87,7 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    const duration = originalRequest?._startTime ? Date.now() - originalRequest._startTime : null;
     
     // Handle 401 Unauthorized
     if (error.response?.status === HTTP_STATUS.UNAUTHORIZED && !originalRequest._retry) {
@@ -79,6 +114,14 @@ apiClient.interceptors.response.use(
         removeStorage('refresh_token');
         removeStorage('user_info');
         
+        // Log refresh error
+        exceptionService.recordException(refreshError, {
+          request_method: 'POST',
+          request_path: `${API_PREFIX}/auth/refresh`,
+          error_code: 'TOKEN_REFRESH_FAILED',
+          status_code: refreshError.response?.status,
+        });
+        
         // Only redirect to login if not on a public page
         // Public pages: /member (home), /member/about, /login, /register
         const currentPath = window.location.pathname;
@@ -95,6 +138,37 @@ apiClient.interceptors.response.use(
         }
         
         return Promise.reject(refreshError);
+      }
+    }
+    
+    // Log API errors (skip logging endpoint to avoid recursion)
+    if (!originalRequest?.url?.includes('/logging/') && !originalRequest?.url?.includes('/exceptions/')) {
+      const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
+      const errorCode = error.response?.data?.code || 'API_ERROR';
+      
+      // Record as exception for 5xx errors, as warning for 4xx errors
+      if (error.response?.status >= 500) {
+        exceptionService.recordException(
+          new Error(errorMessage),
+          {
+            request_method: originalRequest?.method,
+            request_path: originalRequest?.url,
+            request_data: originalRequest?.data,
+            error_code: errorCode,
+            status_code: error.response?.status,
+            duration_ms: duration,
+          }
+        );
+      } else {
+        loggerService.warn(`API Error: ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url} -> ${error.response?.status}`, {
+          request_method: originalRequest?.method,
+          request_path: originalRequest?.url,
+          request_data: originalRequest?.data,
+          response_status: error.response?.status,
+          error_code: errorCode,
+          error_message: errorMessage,
+          duration_ms: duration,
+        });
       }
     }
     

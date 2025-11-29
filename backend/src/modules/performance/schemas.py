@@ -119,5 +119,4 @@ class PerformanceListResponsePaginated(BaseModel):
 class PerformanceApprovalRequest(BaseModel):
     """Admin approval/rejection request schema."""
 
-    status: str = Field(..., pattern="^(approved|rejected|revision_requested)$", description="Approval status")
     comments: Optional[str] = Field(None, max_length=1000, description="Review comments")

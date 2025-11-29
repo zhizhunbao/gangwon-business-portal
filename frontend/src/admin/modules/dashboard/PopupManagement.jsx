@@ -102,8 +102,6 @@ export default function PopupManagement() {
           ...response.popup
         }));
       }
-      
-      console.log('Popup saved successfully');
     } catch (error) {
       console.error('Failed to save popup:', error);
       alert(t('admin.dashboard.popup.saveError') || '保存失败，请重试');

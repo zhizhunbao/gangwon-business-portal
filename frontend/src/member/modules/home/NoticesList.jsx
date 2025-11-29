@@ -34,7 +34,6 @@ function NoticesList() {
           category: 'announcement' // 只加载公告，不包括新闻
         };
         const response = await apiService.get(`${API_PREFIX}/content/notices`, params);
-        console.log('Notices API response:', response); // 调试信息
         
         // 处理不同的响应格式
         const noticesData = response.notices || response.data || [];

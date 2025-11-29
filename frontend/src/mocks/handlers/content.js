@@ -42,12 +42,9 @@ async function getActiveBanners(req) {
   
   const contentData = await ensureContentData();
   
-  console.log('[MSW Content] Loading banners, total:', contentData.banners.length);
-  
   const now = new Date();
   const activeBanners = contentData.banners.filter(banner => {
     if (!banner.isActive) {
-      console.log('[MSW Content] Banner', banner.id, 'is not active');
       return false;
     }
     
@@ -58,7 +55,6 @@ async function getActiveBanners(req) {
     const endDate = new Date(banner.endDate);
     
     if (now < startDate || now > endDate) {
-      console.log('[MSW Content] Banner', banner.id, 'is outside date range:', startDate, 'to', endDate);
       return false;
     }
     */
@@ -66,12 +62,8 @@ async function getActiveBanners(req) {
     return true;
   });
   
-  console.log('[MSW Content] Active banners after filtering:', activeBanners.length);
-  
   // Sort by order
   activeBanners.sort((a, b) => (a.order || 0) - (b.order || 0));
-  
-  console.log('[MSW Content] Returning banners:', activeBanners.map(b => ({ id: b.id, type: b.type, title: b.title })));
   
   return HttpResponse.json({ banners: activeBanners });
 }
@@ -105,16 +97,12 @@ async function getLatestNotices(req) {
   const pageSize = parseInt(url.searchParams.get('page_size') || limit.toString(), 10);
   const category = url.searchParams.get('category'); // 'announcement' or 'news' or null
   
-  console.log('[MSW Content] Loading notices, page:', page, 'pageSize:', pageSize, 'category:', category);
-  console.log('[MSW Content] Total news:', contentData.news.length);
-  
   // Get published news/notices
   let publishedNews = contentData.news.filter(n => n.isPublished);
   
   // Filter by category if provided
   if (category) {
     publishedNews = publishedNews.filter(n => n.category === category);
-    console.log('[MSW Content] After category filter:', publishedNews.length);
   }
   
   // Sort by published date (newest first)
@@ -125,9 +113,6 @@ async function getLatestNotices(req) {
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const paginatedNews = publishedNews.slice(startIndex, endIndex);
-  
-  console.log('[MSW Content] Published news after filtering:', paginatedNews.length, 'of', totalCount);
-  console.log('[MSW Content] Returning notices:', paginatedNews.map(n => ({ id: n.id, title: n.title, category: n.category })));
   
   return HttpResponse.json({ 
     notices: paginatedNews,

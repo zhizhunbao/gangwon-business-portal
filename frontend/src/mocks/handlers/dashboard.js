@@ -46,10 +46,6 @@ async function getAdminDashboardStats(req) {
   const quarter = quarterParam || 'all';
   const businessLicense = url.searchParams.get('businessLicense');
   
-  console.log('[MSW Dashboard] Request params:', { year, quarter, businessLicense, url: req.request.url });
-  console.log('[MSW Dashboard] Members data count:', membersData?.length || 0);
-  console.log('[MSW Dashboard] Performance data count:', performanceData?.length || 0);
-  
   // Calculate stats - only count approved members
   const totalMembers = membersData.filter(m => m.approvalStatus === 'approved').length;
   
@@ -81,8 +77,6 @@ async function getAdminDashboardStats(req) {
     }
   }
   
-  console.log('[MSW Dashboard] Filtered performance count:', filteredPerformance.length);
-  
   // Calculate stats
   const totalSales = filteredPerformance.reduce((sum, p) => sum + (p.salesRevenue || 0), 0);
   // 雇佣合计使用新雇佣基准 (newHires)
@@ -100,8 +94,6 @@ async function getAdminDashboardStats(req) {
     totalEmployment,
     totalIntellectualProperty
   };
-  
-  console.log('[MSW Dashboard] Calculated stats:', stats);
   
   return HttpResponse.json({
     stats,
@@ -338,7 +330,6 @@ async function updateAdminBanner(req) {
       const base64 = btoa(binaryString);
       imageUrl = `data:${imageFile.type};base64,${base64}`;
       
-      console.log(`[MSW] Banner image uploaded: ${bannerKey}, size: ${imageFile.size} bytes, type: ${imageFile.type}`);
     } catch (error) {
       console.error('[MSW] Failed to convert image to base64:', error);
       return HttpResponse.json(

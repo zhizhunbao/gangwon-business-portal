@@ -88,8 +88,8 @@ export default function PerformanceList() {
   };
 
   const handleDownload = (recordId) => {
-    // TODO: 实现文件下载
-    console.log('Downloading record:', recordId);
+    // Note: File download implementation pending (see 1.4 Frontend Feature Completion)
+    // This will be implemented when the backend file download endpoint is ready
   };
 
   const handleExport = async (format = 'excel') => {

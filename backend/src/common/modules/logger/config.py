@@ -74,12 +74,18 @@ def setup_logging() -> None:
         console_handler.addFilter(context_filter)
         root_logger.addHandler(console_handler)
 
-    # File handler (for production logging)
-    if getattr(settings, "LOG_ENABLE_FILE", False) and not settings.DEBUG:
+    # File handler (only enabled if LOG_ENABLE_FILE is explicitly set to True)
+    # Note: Application logs go to backend_logs.log/frontend_logs.log via logging_service
+    # This app.log is for standard Python logging (system logs, HTTP requests, etc.)
+    # Console logging is usually sufficient for development
+    enable_file = getattr(settings, "LOG_ENABLE_FILE", False)  # Default to False (console only)
+    if enable_file:
         log_file = getattr(settings, "LOG_FILE", None)
         if not log_file:
-            # Default log file location
-            log_file = Path("logs") / "app.log"
+            # Determine backend directory path (go up from src/common/modules/logger)
+            # backend/src/common/modules/logger/config.py -> backend/
+            backend_dir = Path(__file__).resolve().parent.parent.parent.parent.parent
+            log_file = backend_dir / "logs" / "app.log"
 
         file_handler = create_file_handler(
             str(log_file),

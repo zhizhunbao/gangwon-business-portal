@@ -229,6 +229,9 @@ The system follows a three-tier architecture:
   - Business registration number must be unique and validated
   - Registration requires admin approval before account activation
   - Password must meet security requirements (minimum length, complexity)
+  - **Region (所在地区)**: Required field with two options (supports both Chinese and Korean):
+    - "江原特别自治道" / "강원특별자치도" (Gangwon Special Self-Governing Province)
+    - "江原以外" / "강원 이외" (Outside Gangwon)
 
 #### FR1.2: Login & Session Management
 - **Description**: Secure authentication with JWT tokens
@@ -562,9 +565,6 @@ The system follows a three-tier architecture:
   - API documentation (OpenAPI/Swagger)
   - Architecture documentation
   - User guides and admin manuals
-- **Testing**: 
-  - Manual testing procedures
-  - Integration test coverage for critical paths
 
 ### NFR6: Compatibility
 
@@ -762,6 +762,9 @@ The system follows a three-tier architecture:
   - Business registration number: 10 digits, unique
   - Email: Valid format, domain validation
   - Phone: Format validation
+  - **Region (所在地区)**: Required field, must be one of (supports both Chinese and Korean):
+    - "江原特别自治道" / "강원특별자치도" (Gangwon Special Self-Governing Province)
+    - "江原以外" / "강원 이외" (Outside Gangwon)
   - File uploads: Type, size, MIME validation
 - **Server-Side Validation**: All inputs validated on backend
 - **Client-Side Validation**: Immediate feedback for better UX
@@ -1108,21 +1111,18 @@ The system follows a three-tier architecture:
   - `main`: Production
   - `develop`: Development
   - Feature branches for new features
-- **Automated Tests**: 
+- **Code Quality**: 
   - Linting and code quality checks
-  - Integration tests (if implemented)
 
 #### DEP3.2: Continuous Deployment
 - **Automated Deployment**: 
   - Push to `main` triggers production deployment
   - Push to `develop` triggers staging deployment
 - **Deployment Steps**: 
-  1. Run tests
-  2. Build application
-  3. Deploy to staging
-  4. Run smoke tests
-  5. Deploy to production
-  6. Post-deployment verification
+  1. Build application
+  2. Deploy to staging
+  3. Deploy to production
+  4. Post-deployment verification
 
 ### DEP4: Monitoring & Operations
 

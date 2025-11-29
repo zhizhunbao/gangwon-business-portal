@@ -116,9 +116,6 @@ export default function BannerManagement() {
           }
         }));
       }
-      
-      // 显示成功消息（可以添加 toast 通知）
-      console.log('Banner saved successfully:', bannerKey);
     } catch (error) {
       console.error('Failed to save banner:', error);
       alert(t('admin.dashboard.banner.saveError') || '保存失败，请重试');

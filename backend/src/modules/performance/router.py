@@ -303,7 +303,7 @@ async def get_performance_record_admin(
     return PerformanceRecordResponse.from_orm_without_reviews(record)
 
 
-@router.put(
+@router.post(
     "/api/admin/performance/{performance_id}/approve",
     response_model=PerformanceRecordResponse,
     tags=["admin-performance"],
@@ -344,7 +344,7 @@ async def approve_performance_record(
     return PerformanceRecordResponse.from_orm_without_reviews(record)
 
 
-@router.put(
+@router.post(
     "/api/admin/performance/{performance_id}/request-fix",
     response_model=PerformanceRecordResponse,
     tags=["admin-performance"],
@@ -386,7 +386,7 @@ async def request_fix_performance_record(
     return PerformanceRecordResponse.from_orm_without_reviews(record)
 
 
-@router.put(
+@router.post(
     "/api/admin/performance/{performance_id}/reject",
     response_model=PerformanceRecordResponse,
     tags=["admin-performance"],

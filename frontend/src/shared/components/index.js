@@ -23,4 +23,6 @@ export { default as LazyImage } from './LazyImage';
 export { default as UploadProgress } from './UploadProgress';
 export { default as ErrorBoundary } from './ErrorBoundary';
 export * from './Charts';
+export { TermsModal, TERM_TYPES } from './TermsModal';
+export { AddressSearch } from './AddressSearch';
 

@@ -187,8 +187,7 @@ export default function PerformanceCompanyInfo() {
     // Clear error
     setLogoError('');
     
-    // TODO: 文件上传处理
-    console.log('Uploading logo:', file);
+    // Note: File upload will be handled when saving the profile
     // Set file in companyData for now (actual upload will be handled in save)
     setCompanyData(prev => ({
       ...prev,
@@ -503,10 +502,10 @@ export default function PerformanceCompanyInfo() {
           </div>
 
           {isEditing && (
-            <div className="form-group full-width">
+              <div className="form-group full-width">
               <label>{t('member.cooperationFields', '产业合作期望领域')}</label>
               <div className="checkbox-group">
-                {/* TODO: 从设置API加载选项 */}
+                {/* Note: Options should be loaded from settings API (see 1.4 Frontend Feature Completion) */}
                 {['field1', 'field2', 'field3'].map(field => (
                   <label key={field} className="checkbox-item">
                     <input

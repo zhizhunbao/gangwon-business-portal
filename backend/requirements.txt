@@ -37,5 +37,6 @@ pytest-mock==3.12.0
 pytest-xdist==3.5.0
 httpx==0.27.0
 requests==2.31.0
+faker==24.0.0
 # httpx is a dependency of supabase, will be installed automatically
 

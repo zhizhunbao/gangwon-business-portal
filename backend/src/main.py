@@ -4,6 +4,8 @@ FastAPI application entry point.
 This is the main application file that initializes FastAPI,
 configures middleware, and registers routes.
 """
+
+import logging
 import time
 
 from fastapi import FastAPI, Request
@@ -13,7 +15,6 @@ from contextlib import asynccontextmanager
 from sqlalchemy.exc import SQLAlchemyError
 
 from .common.modules.config import settings
-from .common.modules.logger import logger
 from .common.modules.exception import (
     app_exception_handler,
     validation_exception_handler,
@@ -22,14 +23,20 @@ from .common.modules.exception import (
     AppException,
 )
 
+# Create main module logger (different from logger module's logger)
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events."""
-    # Startup
-    logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    logger.info(f"Debug mode: {settings.DEBUG}")
+    # Startup: handle log cleanup and logging
+    from .common.modules.logger.startup import handle_startup_logging
+    
+    await handle_startup_logging()
+    
     yield
+    
     # Shutdown
     logger.info("Shutting down application")
 
@@ -50,8 +57,25 @@ async def log_http_requests(request: Request, call_next):
 
     Logs method, path, status code and duration for every request.
     Also generates a trace_id for error tracking.
+    Records logs to both console and business log system (file + database).
     """
     from .common.modules.exception.responses import get_trace_id
+    from .common.modules.logger import logging_service
+    from .common.modules.db.session import AsyncSessionLocal
+
+    # Skip logging for health check endpoints, static files, and logging/exception endpoints
+    # to avoid infinite recursion (logging the logging API itself)
+    skip_paths = [
+        "/healthz", 
+        "/readyz", 
+        "/docs", 
+        "/openapi.json", 
+        "/redoc", 
+        "/favicon.ico",
+        "/api/v1/logging",  # Skip all logging endpoints to avoid recursion
+        "/api/v1/exceptions",  # Skip all exception endpoints to avoid recursion
+    ]
+    should_log = not any(request.url.path.startswith(path) for path in skip_paths)
 
     # Generate trace_id for this request
     trace_id = get_trace_id(request)
@@ -60,6 +84,22 @@ async def log_http_requests(request: Request, call_next):
     response = await call_next(request)
     process_time_ms = (time.time() - start_time) * 1000
 
+    # Get request information
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    
+    # Try to get user_id from request state (if authenticated)
+    user_id = getattr(request.state, "user_id", None)
+
+    # Determine log level based on status code
+    if response.status_code >= 500:
+        log_level = "ERROR"
+    elif response.status_code >= 400:
+        log_level = "WARNING"
+    else:
+        log_level = "INFO"
+
+    # Console logging (always)
     logger.info(
         f"{request.method} {request.url.path} "
         f"-> {response.status_code} ({process_time_ms:.2f} ms)",
@@ -71,6 +111,32 @@ async def log_http_requests(request: Request, call_next):
             "duration_ms": process_time_ms,
         },
     )
+
+    # Business log recording (file + database) - async, non-blocking
+    if should_log:
+        try:
+            async with AsyncSessionLocal() as db:
+                await logging_service.create_log(
+                    db=db,
+                    source="backend",
+                    level=log_level,
+                    message=f"{request.method} {request.url.path} -> {response.status_code}",
+                    logger_name=logger.name,  # Use the actual logger name from main.py
+                    module=logger.name,  # Use the same as logger_name for consistency
+                    function="log_http_requests",
+                    trace_id=trace_id,
+                    user_id=user_id,
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    request_method=request.method,
+                    request_path=request.url.path,
+                    response_status=response.status_code,
+                    duration_ms=int(process_time_ms),
+                )
+                await db.commit()
+        except Exception as e:
+            # Don't fail the request if logging fails
+            logger.warning(f"Failed to record business log: {str(e)}")
 
     # Add trace_id to response headers for debugging
     if settings.DEBUG:
@@ -102,6 +168,8 @@ from .modules.content.router import router as content_router
 from .modules.support.router import router as support_router
 from .modules.upload.router import router as upload_router
 from .common.modules.audit.router import router as audit_router
+from .common.modules.logger import logging_router
+from .common.modules.exception import exception_router
 
 app.include_router(auth_router)
 app.include_router(member_router)
@@ -111,6 +179,8 @@ app.include_router(content_router)
 app.include_router(support_router)
 app.include_router(upload_router)
 app.include_router(audit_router)
+app.include_router(logging_router)
+app.include_router(exception_router)
 
 
 # Health check endpoints

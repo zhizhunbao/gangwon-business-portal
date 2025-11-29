@@ -68,11 +68,12 @@ class Settings(BaseSettings):
 
     # Logging Configuration
     LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-    LOG_FILE: str | None = None  # Path to log file (None = console only)
+    LOG_FILE: str | None = None  # Path to log file (None = auto-detect backend/logs/app.log)
     LOG_FILE_MAX_BYTES: int = 10485760  # 10MB per log file
     LOG_FILE_BACKUP_COUNT: int = 5  # Number of backup files to keep
-    LOG_ENABLE_FILE: bool = False  # Enable file logging
+    LOG_ENABLE_FILE: bool = False  # Enable file logging (default: False - console only, can enable in production if needed)
     LOG_ENABLE_CONSOLE: bool = True  # Enable console logging
+    LOG_CLEAR_ON_STARTUP: bool = True  # Clear logs and database records on startup (default: True)
     LOG_SENSITIVE_FIELDS: List[str] = [
         "password",
         "token",

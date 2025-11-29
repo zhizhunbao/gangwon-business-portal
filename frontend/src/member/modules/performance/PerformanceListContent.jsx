@@ -119,7 +119,7 @@ export default function PerformanceListContent() {
 
   const handleDownload = async (fileUrl, fileName) => {
     try {
-      // TODO: 实现文件下载
+      // Note: File download implementation - using fetch for now, may need to use API service
       const response = await fetch(fileUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);

@@ -24,8 +24,6 @@ async function enableMocking() {
         url: '/mockServiceWorker.js'
       },
       quiet: false // Enable logging to see if MSW is working
-    }).then(() => {
-      console.log('[MSW] Mock Service Worker started successfully');
     }).catch((error) => {
       console.error('[MSW] Failed to start Mock Service Worker:', error);
     });

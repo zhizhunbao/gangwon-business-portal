@@ -63,8 +63,8 @@ export default function MemberDetail() {
   };
 
   const handleSearchNiceDnb = () => {
-    // TODO: 调用 Nice D&B API
-    console.log('Searching Nice D&B for:', member?.businessNumber);
+    // Note: Nice D&B API integration pending (see 1.4 Frontend Feature Completion)
+    // This will call the backend Nice D&B service endpoint
   };
 
   const handleViewPerformance = () => {

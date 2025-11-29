@@ -3,10 +3,22 @@ Authentication schemas.
 
 Pydantic models for request/response validation.
 """
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
+
+# Region options (支持中文和韩文)
+REGION_GANGWON_ZH = "江原特别自治道"
+REGION_GANGWON_KO = "강원특별자치도"
+REGION_OUTSIDE_GANGWON_ZH = "江原以外"
+REGION_OUTSIDE_GANGWON_KO = "강원 이외"
+VALID_REGIONS = [
+    REGION_GANGWON_ZH,
+    REGION_GANGWON_KO,
+    REGION_OUTSIDE_GANGWON_ZH,
+    REGION_OUTSIDE_GANGWON_KO,
+]
 
 
 class MemberRegisterRequest(BaseModel):
@@ -28,7 +40,11 @@ class MemberRegisterRequest(BaseModel):
     email: EmailStr = Field(..., description="Email address")
 
     # Step 2: Company information
-    region: Optional[str] = Field(None, max_length=100, description="Region")
+    region: str = Field(
+        ...,
+        max_length=100,
+        description="Region (所在地区). Required. Options: 江原特别自治道/강원특별자치도, 江原以外/강원 이외"
+    )
     company_type: Optional[str] = Field(None, max_length=100, description="Company type")
     corporate_number: Optional[str] = Field(None, max_length=20, description="Corporate number")
     address: Optional[str] = Field(None, description="Company address")
@@ -48,6 +64,17 @@ class MemberRegisterRequest(BaseModel):
 
     # Step 5: Terms agreement
     terms_agreed: bool = Field(..., description="Terms and conditions agreement")
+
+    @field_validator("region")
+    @classmethod
+    def validate_region(cls, v: str) -> str:
+        """Validate region value (supports both Chinese and Korean)."""
+        if v not in VALID_REGIONS:
+            raise ValueError(
+                f"Region must be one of: {', '.join(VALID_REGIONS)}. "
+                f"Got: {v}"
+            )
+        return v
 
 
 class LoginRequest(BaseModel):
@@ -100,3 +127,23 @@ class UserInfo(BaseModel):
     class Config:
         from_attributes = True
 
+
+class ChangePasswordRequest(BaseModel):
+    """Change password request schema."""
+
+    current_password: str = Field(..., description="Current password")
+    new_password: str = Field(..., min_length=8, description="New password (min 8 characters)")
+
+
+class ProfileUpdateRequest(BaseModel):
+    """Profile update request schema."""
+
+    company_name: Optional[str] = Field(None, max_length=255)
+    email: Optional[EmailStr] = None
+    industry: Optional[str] = Field(None, max_length=100)
+    revenue: Optional[float] = Field(None, ge=0)
+    employee_count: Optional[int] = Field(None, ge=0)
+    founding_date: Optional[str] = Field(None, description="YYYY-MM-DD format")
+    region: Optional[str] = Field(None, max_length=100)
+    address: Optional[str] = None
+    website: Optional[str] = Field(None, max_length=255)

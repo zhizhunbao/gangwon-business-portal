@@ -14,7 +14,6 @@ from sqlalchemy import (
     ForeignKey,
     CheckConstraint,
     Index,
-    JSON,
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
@@ -38,6 +37,8 @@ __all__ = [
     "FAQ",
     "Inquiry",
     "AuditLog",
+    "ApplicationLog",
+    "ApplicationException",
 ]
 
 
@@ -371,4 +372,88 @@ class AuditLog(Base):
 
     def __repr__(self):
         return f"<AuditLog(id={self.id}, action={self.action}, resource_type={self.resource_type})>"
+
+
+class ApplicationLog(Base):
+    """Application logs for debugging and monitoring."""
+
+    __tablename__ = "application_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    source = Column(String(20), nullable=False)  # backend, frontend
+    level = Column(String(20), nullable=False)  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    logger_name = Column(String(255))  # Logger name (e.g., module path)
+    message = Column(Text, nullable=False)
+    module = Column(String(255))  # Module name
+    function = Column(String(255))  # Function name
+    line_number = Column(Integer)  # Line number
+    trace_id = Column(String(100))  # Request trace ID
+    user_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)
+    ip_address = Column(String(45))
+    user_agent = Column(Text)
+    request_method = Column(String(10))  # GET, POST, etc.
+    request_path = Column(String(500))  # Request path
+    request_data = Column(JSONB)  # Request payload (sanitized)
+    response_status = Column(Integer)  # HTTP status code
+    duration_ms = Column(Integer)  # Request duration in milliseconds
+    extra_data = Column(JSONB)  # Additional context data
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), index=True)
+
+    # Relationships
+    user = relationship("Member", foreign_keys=[user_id])
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_app_logs_source_level", "source", "level", "created_at"),
+        Index("idx_app_logs_trace_id", "trace_id"),
+        Index("idx_app_logs_user_id", "user_id", "created_at"),
+        Index("idx_app_logs_created", "created_at"),
+    )
+
+    def __repr__(self):
+        return f"<ApplicationLog(id={self.id}, source={self.source}, level={self.level}, created_at={self.created_at})>"
+
+
+class ApplicationException(Base):
+    """Application exceptions for debugging and monitoring."""
+
+    __tablename__ = "application_exceptions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    source = Column(String(20), nullable=False)  # backend, frontend
+    exception_type = Column(String(255), nullable=False)  # Exception class name
+    exception_message = Column(Text, nullable=False)
+    error_code = Column(String(100))  # Application error code
+    status_code = Column(Integer)  # HTTP status code
+    trace_id = Column(String(100))  # Request trace ID
+    user_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)
+    ip_address = Column(String(45))
+    user_agent = Column(Text)
+    request_method = Column(String(10))  # GET, POST, etc.
+    request_path = Column(String(500))  # Request path
+    request_data = Column(JSONB)  # Request payload (sanitized)
+    stack_trace = Column(Text)  # Full stack trace
+    exception_details = Column(JSONB)  # Additional exception details
+    context_data = Column(JSONB)  # Additional context data
+    resolved = Column(String(10), default="false")  # "true" or "false" as string
+    resolved_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    resolved_by = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)
+    resolution_notes = Column(Text)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), index=True)
+
+    # Relationships
+    user = relationship("Member", foreign_keys=[user_id])
+    resolver = relationship("Member", foreign_keys=[resolved_by])
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_app_exceptions_source_type", "source", "exception_type", "created_at"),
+        Index("idx_app_exceptions_trace_id", "trace_id"),
+        Index("idx_app_exceptions_user_id", "user_id", "created_at"),
+        Index("idx_app_exceptions_resolved", "resolved", "created_at"),
+        Index("idx_app_exceptions_created", "created_at"),
+    )
+
+    def __repr__(self):
+        return f"<ApplicationException(id={self.id}, source={self.source}, exception_type={self.exception_type}, created_at={self.created_at})>"
 

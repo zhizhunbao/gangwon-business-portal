@@ -27,10 +27,11 @@ class AuthService {
       setStorage(ACCESS_TOKEN_KEY, response.access_token);
       // Backend doesn't return refresh_token or expires_at yet
       // Store user info with role from response
-      setStorage('user_info', {
+      const userInfo = {
         ...response.user,
         role: response.user.role || 'member' // Default to member if not provided
-      });
+      };
+      setStorage('user_info', userInfo);
     }
     
     return response;
@@ -53,10 +54,11 @@ class AuthService {
     
     if (response.access_token) {
       setStorage(ACCESS_TOKEN_KEY, response.access_token);
-      setStorage('user_info', {
+      const userInfo = {
         ...response.user,
         role: 'admin' // Ensure role is set to admin
-      });
+      };
+      setStorage('user_info', userInfo);
     }
     
     return response;
@@ -96,7 +98,7 @@ class AuthService {
       
       // Upload files first if they exist
       // Note: Currently, file upload requires authentication, so we skip file uploads during registration
-      // TODO: Backend needs to support file upload during registration (either by creating
+      // Backend needs to support file upload during registration (either by creating
       // a special registration upload endpoint or making the upload endpoint support optional auth)
       // For now, files can be uploaded later after user logs in and updates their profile
       let logoFileId = null;

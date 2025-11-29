@@ -56,6 +56,25 @@ class MemberService {
   }
 
   /**
+   * Verify company information
+   * 验证公司信息
+   * 
+   * @param {Object} data - Company verification data
+   * @param {string} data.businessNumber - Business registration number
+   * @param {string} [data.companyName] - Company name (optional)
+   * @returns {Promise<Object>} Verification result
+   */
+  async verifyCompany(data) {
+    const requestData = {
+      business_number: data.businessNumber?.replace(/-/g, '') || data.business_number,
+      company_name: data.companyName || null
+    };
+    
+    const response = await apiService.post(`${API_PREFIX}/members/verify-company`, requestData);
+    return response;
+  }
+
+  /**
    * Update current member's profile
    * 更新当前会员资料
    * 

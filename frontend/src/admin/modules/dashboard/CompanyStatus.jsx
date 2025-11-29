@@ -44,7 +44,6 @@ export default function CompanyStatus() {
         quarter: selectedQuarter
       };
       const response = await apiService.get(`${API_PREFIX}/admin/dashboard/stats`, params);
-      console.log('Company Status API response:', response);
       if (response && response.stats) {
         setStats(response.stats);
         // 设置图表数据

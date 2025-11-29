@@ -3,11 +3,11 @@
  * Multi-step Registration Form
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@shared/hooks';
-import { LanguageSwitcher } from '@shared/components';
+import { LanguageSwitcher, AddressSearch, TermsModal, TERM_TYPES } from '@shared/components';
 import { EyeIcon, EyeOffIcon } from '@shared/components/Icons';
 import { 
   formatBusinessLicense, 
@@ -20,9 +20,19 @@ import { validateImageFile, validateFile, ALLOWED_FILE_TYPES } from '@shared/uti
 import './Auth.css';
 
 export default function Register() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { register, isLoading } = useAuth();
+  
+  // 根据当前语言获取地区选项值
+  const getRegionValue = (isGangwon) => {
+    const isKorean = i18n.language === 'ko';
+    if (isGangwon) {
+      return isKorean ? '강원특별자치도' : '江原特别自治道';
+    } else {
+      return isKorean ? '강원 이외' : '江原以外';
+    }
+  };
   
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
@@ -74,6 +84,27 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [fileErrors, setFileErrors] = useState({});
+  
+  // Terms modal
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [currentTermType, setCurrentTermType] = useState(null);
+  
+  const handleAddressSelect = (address, zonecode) => {
+    setFormData(prev => ({
+      ...prev,
+      address: address
+    }));
+  };
+  
+  const handleViewTerms = (termType) => {
+    setCurrentTermType(termType);
+    setTermsModalOpen(true);
+  };
+  
+  const handleCloseTermsModal = () => {
+    setTermsModalOpen(false);
+    setCurrentTermType(null);
+  };
   
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -501,8 +532,8 @@ export default function Register() {
                     <input
                       type="radio"
                       name="region"
-                      value="gangwon"
-                      checked={formData.region === 'gangwon'}
+                      value={getRegionValue(true)}
+                      checked={formData.region === getRegionValue(true)}
                       onChange={handleChange}
                       required
                     />
@@ -512,8 +543,8 @@ export default function Register() {
                     <input
                       type="radio"
                       name="region"
-                      value="other"
-                      checked={formData.region === 'other'}
+                      value={getRegionValue(false)}
+                      checked={formData.region === getRegionValue(false)}
                       onChange={handleChange}
                       required
                     />
@@ -578,28 +609,11 @@ export default function Register() {
                 <label htmlFor="address">
                   {t('member.address')} <span className="required">*</span>
                 </label>
-                <div className="auth-input-group">
-                  <input
-                    id="address"
-                    name="address"
-                    type="text"
-                    className="auth-input"
-                    value={formData.address}
-                    onChange={handleChange}
-                    required
-                    readOnly
-                  />
-                  <button
-                    type="button"
-                    className="auth-button-secondary"
-                    onClick={() => {
-                      // TODO: Implement address search API
-                      alert(t('auth.searchAddress'));
-                    }}
-                  >
-                    {t('auth.searchAddress')}
-                  </button>
-                </div>
+                <AddressSearch
+                  value={formData.address}
+                  onSelect={handleAddressSelect}
+                  disabled={isLoading}
+                />
               </div>
               
               <div className="auth-form-group">
@@ -813,20 +827,15 @@ export default function Register() {
                 <label htmlFor="businessField">
                   {t('member.businessField')} <span className="required">*</span>
                 </label>
-                <select
+                <input
                   id="businessField"
                   name="businessField"
+                  type="text"
                   className="auth-input"
                   value={formData.businessField}
                   onChange={handleChange}
-                  required
-                >
-                  <option value="">{t('common.pleaseSelect')}</option>
-                  {/* TODO: Load from settings API */}
-                  <option value="tech">IT/技术</option>
-                  <option value="manufacturing">制造业</option>
-                  <option value="service">服务业</option>
-                </select>
+                  placeholder={t('member.businessField')}
+                />
               </div>
               
               <div className="auth-form-group">
@@ -889,24 +898,22 @@ export default function Register() {
               </div>
               
               <div className="auth-form-group">
-                <label>
+                <label htmlFor="cooperationFields">
                   {t('member.cooperationFields')}
                 </label>
-                <div className="auth-checkbox-list">
-                  {/* TODO: Load from settings API */}
-                  {['field1', 'field2', 'field3'].map(field => (
-                    <label key={field} className="auth-checkbox-label">
-                      <input
-                        type="checkbox"
-                        name="cooperationFields"
-                        value={field}
-                        checked={formData.cooperationFields.includes(field)}
-                        onChange={handleChange}
-                      />
-                      <span>{field}</span>
-                    </label>
-                  ))}
-                </div>
+                <input
+                  id="cooperationFields"
+                  name="cooperationFields"
+                  type="text"
+                  className="auth-input"
+                  value={formData.cooperationFields.join(', ')}
+                  onChange={(e) => {
+                    const values = e.target.value.split(',').map(v => v.trim()).filter(v => v);
+                    setFormData(prev => ({ ...prev, cooperationFields: values }));
+                  }}
+                  placeholder={t('member.cooperationFields')}
+                />
+                <small className="auth-hint">{t('common.commaSeparatedHint') || '多个值请用逗号分隔'}</small>
               </div>
             </div>
           )}
@@ -943,10 +950,7 @@ export default function Register() {
                     <button
                       type="button"
                       className="auth-terms-view"
-                      onClick={() => {
-                        // TODO: Show terms modal
-                        alert(t('auth.viewTerms'));
-                      }}
+                      onClick={() => handleViewTerms(TERM_TYPES.TERMS_OF_SERVICE)}
                     >
                       {t('auth.viewTerms')}
                     </button>
@@ -969,10 +973,7 @@ export default function Register() {
                     <button
                       type="button"
                       className="auth-terms-view"
-                      onClick={() => {
-                        // TODO: Show terms modal
-                        alert(t('auth.viewTerms'));
-                      }}
+                      onClick={() => handleViewTerms(TERM_TYPES.PRIVACY_POLICY)}
                     >
                       {t('auth.viewTerms')}
                     </button>
@@ -995,10 +996,7 @@ export default function Register() {
                     <button
                       type="button"
                       className="auth-terms-view"
-                      onClick={() => {
-                        // TODO: Show terms modal
-                        alert(t('auth.viewTerms'));
-                      }}
+                      onClick={() => handleViewTerms(TERM_TYPES.THIRD_PARTY_SHARING)}
                     >
                       {t('auth.viewTerms')}
                     </button>
@@ -1020,10 +1018,7 @@ export default function Register() {
                     <button
                       type="button"
                       className="auth-terms-view"
-                      onClick={() => {
-                        // TODO: Show terms modal
-                        alert(t('auth.viewTerms'));
-                      }}
+                      onClick={() => handleViewTerms(TERM_TYPES.MARKETING_CONSENT)}
                     >
                       {t('auth.viewTerms')}
                     </button>
@@ -1073,6 +1068,13 @@ export default function Register() {
           .
         </div>
       </div>
+      
+      {/* Terms Modal */}
+      <TermsModal
+        isOpen={termsModalOpen}
+        termType={currentTermType}
+        onClose={handleCloseTermsModal}
+      />
     </div>
   );
 }

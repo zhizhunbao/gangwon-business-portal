@@ -289,7 +289,7 @@ class AdminService {
       comments: comments || null
     };
     
-    const response = await apiService.put(`${API_PREFIX}/admin/performance/${recordId}/approve`, requestData);
+    const response = await apiService.post(`${API_PREFIX}/admin/performance/${recordId}/approve`, requestData);
     
     // Map backend response to frontend format
     if (response) {
@@ -323,7 +323,7 @@ class AdminService {
       comments: comments
     };
     
-    const response = await apiService.put(`${API_PREFIX}/admin/performance/${recordId}/request-fix`, requestData);
+    const response = await apiService.post(`${API_PREFIX}/admin/performance/${recordId}/request-fix`, requestData);
     
     // Map backend response to frontend format
     if (response) {
@@ -357,7 +357,7 @@ class AdminService {
       comments: comments || null
     };
     
-    const response = await apiService.put(`${API_PREFIX}/admin/performance/${recordId}/reject`, requestData);
+    const response = await apiService.post(`${API_PREFIX}/admin/performance/${recordId}/reject`, requestData);
     
     // Map backend response to frontend format
     if (response) {

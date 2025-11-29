@@ -17,6 +17,11 @@ from .handlers import (
     general_exception_handler,
 )
 from .responses import create_error_response, get_trace_id
+from .router import router as exception_router
+from .service import ExceptionService
+
+# Create service instance
+exception_service = ExceptionService()
 
 __all__ = [
     # Exception classes
@@ -37,5 +42,10 @@ __all__ = [
     # Response utilities
     "create_error_response",
     "get_trace_id",
+    # Router
+    "exception_router",
+    # Service
+    "ExceptionService",
+    "exception_service",
 ]
 

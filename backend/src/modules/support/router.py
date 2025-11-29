@@ -332,7 +332,7 @@ async def list_all_inquiries(
     )
 
 
-@router.put(
+@router.post(
     "/api/admin/inquiries/{inquiry_id}/reply",
     response_model=InquiryResponse,
     tags=["support", "admin"],
