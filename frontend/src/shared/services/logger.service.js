@@ -2,8 +2,9 @@
  * Logger Service
  * 
  * Service for recording application logs to the backend.
- * This service captures frontend logs and sends them to the backend
- * for centralized logging and debugging.
+ * This service captures frontend logs and sends them directly to the backend
+ * for centralized logging and debugging. If direct send fails, logs are queued
+ * as a fallback mechanism and retried periodically.
  */
 
 import { apiClient } from './api.service';
@@ -145,29 +146,80 @@ function loadQueueFromStorage() {
  */
 class LoggerService {
   constructor() {
-    this.queue = [];
+    this.queue = []; // Only used as fallback when direct send fails
     this.flushInterval = null;
     this.maxQueueSize = 50;
-    this.flushDelay = 5000; // 5 seconds
+    this.flushDelay = 10000; // 10 seconds - only flush queued logs (fallback)
     this.traceId = generateTraceId();
+    // Deduplication: track recent logs to prevent duplicates
+    this.recentLogs = new Map(); // key: logKey, value: timestamp
+    this.dedupWindow = 3000; // 3 seconds window for deduplication
     
-    // Load pending logs from local storage on startup
+    // Load pending logs from local storage on startup (in case of previous failures)
     this.loadPendingLogs();
     
-    // Start periodic flush
+    // Start periodic flush for queued logs only (fallback mechanism)
     this.startFlushInterval();
     
-    // Flush on page unload
+    // Flush on page unload (for any queued logs from failed direct sends)
     window.addEventListener('beforeunload', () => {
       this.saveQueueToStorage();
-      // Try to flush, but don't wait (page might close)
-      this.flush().catch(() => {});
+      // Try to flush queued logs, but don't wait (page might close)
+      if (this.queue.length > 0) {
+        this.flush().catch(() => {});
+      }
     });
     
-    // Save queue to storage periodically
+    // Save queue to storage periodically (only for fallback queue)
     this.saveInterval = setInterval(() => {
-      this.saveQueueToStorage();
-    }, 2000); // Save every 2 seconds
+      if (this.queue.length > 0) {
+        this.saveQueueToStorage();
+      }
+    }, 5000); // Save every 5 seconds (less frequent since most logs are sent directly)
+    
+    // Clean up old deduplication entries periodically
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupRecentLogs();
+    }, 10000); // Clean up every 10 seconds
+  }
+  
+  /**
+   * Generate a unique key for log deduplication
+   */
+  generateLogKey(message, extra = {}) {
+    // Use trace_id, message, and request_path to create unique key
+    const traceId = extra.trace_id || this.traceId;
+    const requestPath = extra.request_path || '';
+    const level = extra.level || '';
+    return `${traceId}-${level}-${message}-${requestPath}`;
+  }
+  
+  /**
+   * Check if a log is duplicate within the deduplication window
+   */
+  isDuplicate(logKey) {
+    const now = Date.now();
+    const lastTimestamp = this.recentLogs.get(logKey);
+    
+    if (lastTimestamp && (now - lastTimestamp) < this.dedupWindow) {
+      return true;
+    }
+    
+    // Update or add the log key with current timestamp
+    this.recentLogs.set(logKey, now);
+    return false;
+  }
+  
+  /**
+   * Clean up old entries from recentLogs map
+   */
+  cleanupRecentLogs() {
+    const now = Date.now();
+    for (const [key, timestamp] of this.recentLogs.entries()) {
+      if (now - timestamp > this.dedupWindow) {
+        this.recentLogs.delete(key);
+      }
+    }
   }
   
   /**
@@ -176,13 +228,40 @@ class LoggerService {
   loadPendingLogs() {
     const logs = loadQueueFromStorage();
     
-    // Add loaded logs to queue
+    if (logs.length === 0) {
+      return;
+    }
+    
+    // Apply deduplication to loaded logs
+    const uniqueLogs = [];
+    const seenKeys = new Set();
+    
     logs.forEach(log => {
+      // Generate key for deduplication
+      const logKey = this.generateLogKey(log.message, {
+        trace_id: log.trace_id,
+        request_path: log.request_path,
+        level: log.level,
+      });
+      
+      // Check if we've seen this log key before (in this batch)
+      if (!seenKeys.has(logKey)) {
+        seenKeys.add(logKey);
+        uniqueLogs.push(log);
+      }
+    });
+    
+    // Add unique logs to queue
+    uniqueLogs.forEach(log => {
       this.queue.push(log);
     });
     
     if (logs.length > 0) {
-      console.info(`Loaded ${logs.length} logs from local storage`);
+      const skippedCount = logs.length - uniqueLogs.length;
+      console.info(
+        `Loaded ${uniqueLogs.length} logs from local storage` +
+        (skippedCount > 0 ? ` (${skippedCount} duplicates skipped)` : '')
+      );
     }
   }
   
@@ -209,9 +288,27 @@ class LoggerService {
   }
 
   /**
-   * Add log entry to queue
+   * Add log entry and send directly to backend (no queueing)
+   * Falls back to queue only if direct send fails
    */
   async log(level, message, extra = {}) {
+    // Generate unique key for deduplication
+    const logKey = this.generateLogKey(message, { ...extra, level });
+    
+    // Check for duplicates (skip DEBUG level logs in development to reduce noise)
+    // Only deduplicate for INFO and above, or if explicitly requested
+    const shouldDedup = level !== 'DEBUG' || extra.force_dedup;
+    if (shouldDedup && this.isDuplicate(logKey)) {
+      // Skip duplicate log, but still log to console in dev
+      if (import.meta.env.DEV) {
+        const consoleMethod = level === 'ERROR' || level === 'CRITICAL' ? 'error' :
+                             level === 'WARNING' ? 'warn' :
+                             level === 'DEBUG' ? 'debug' : 'log';
+        console[consoleMethod](`[${level}] [DUPLICATE SKIPPED]`, message);
+      }
+      return;
+    }
+    
     const logEntry = {
       source: 'frontend',
       level,
@@ -235,16 +332,33 @@ class LoggerService {
       },
     };
 
-    // Add to queue
-    this.queue.push(logEntry);
-
-    // Save to local storage immediately (for persistence)
-    this.saveQueueToStorage();
-
-    // Flush if queue is too large
-    if (this.queue.length >= this.maxQueueSize) {
-      await this.flush();
-    }
+    // Try to send directly to backend (non-blocking fire-and-forget)
+    // If it fails, the error handler will add to queue as fallback
+    apiClient.post(`${API_PREFIX}/frontend/logs`, logEntry)
+      .then(() => {
+        // Successfully sent, no need to queue
+      })
+      .catch((error) => {
+        // If direct send fails, add to queue as fallback
+        // This handles network errors, backend unavailable, etc.
+        this.queue.push(logEntry);
+        this.saveQueueToStorage();
+        
+        // Log to console if in development
+        if (import.meta.env.DEV) {
+          console.warn(`[Logger] Failed to send log directly, added to queue:`, error.message);
+        }
+        
+        // Trigger flush if queue is getting large
+        if (this.queue.length >= this.maxQueueSize) {
+          // Don't await to avoid blocking
+          this.flush().catch(err => {
+            if (import.meta.env.DEV) {
+              console.error('[Logger] Flush failed:', err);
+            }
+          });
+        }
+      });
 
     // Also log to console in development
     if (import.meta.env.DEV) {
@@ -256,7 +370,8 @@ class LoggerService {
   }
 
   /**
-   * Flush queued logs to backend
+   * Flush queued logs to backend (fallback mechanism)
+   * This is only used for logs that failed to send directly
    */
   async flush() {
     if (this.queue.length === 0) {
@@ -276,10 +391,12 @@ class LoggerService {
           // If sending fails, keep in queue (but limit retries)
           if (!log._retry_count || log._retry_count < 3) {
             log._retry_count = (log._retry_count || 0) + 1;
-            // Keep in queue
+            // Keep in queue for next flush attempt
           } else {
-            // Too many retries, remove from queue
-            console.warn('Log failed to send after multiple retries, removing from queue:', log);
+            // Too many retries, remove from queue to prevent memory leak
+            if (import.meta.env.DEV) {
+              console.warn('Log failed to send after multiple retries, removing from queue:', log);
+            }
           }
         }
       }
@@ -287,11 +404,15 @@ class LoggerService {
       // Remove successfully sent items from queue
       this.queue = this.queue.filter(item => !successfullySent.includes(item));
       
-      // Update local storage
-      this.saveQueueToStorage();
+      // Update local storage only if queue changed
+      if (successfullySent.length > 0) {
+        this.saveQueueToStorage();
+      }
     } catch (e) {
       // If all fails, keep everything in queue
-      console.error('Failed to flush logs to backend:', e);
+      if (import.meta.env.DEV) {
+        console.error('Failed to flush logs to backend:', e);
+      }
       this.saveQueueToStorage();
     }
   }

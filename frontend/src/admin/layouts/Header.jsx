@@ -4,7 +4,7 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import useAuthStore from '@shared/stores/authStore';
 import LanguageSwitcher from '@shared/components/LanguageSwitcher';
@@ -14,13 +14,16 @@ import {
   SearchIcon,
   UserIcon,
   LogoutIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  DocumentIcon,
+  WarningIcon
 } from '@shared/components';
 import './Header.css';
 
 export default function Header({ onToggleSidebar }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -92,6 +95,24 @@ export default function Header({ onToggleSidebar }) {
       <div className="header-right">
         {/* 语言切换 */}
         <LanguageSwitcher />
+
+        {/* 日志 */}
+        <Link 
+          to="/admin/logs"
+          className={`header-icon-btn ${location.pathname.startsWith('/admin/logs') ? 'active' : ''}`}
+          title={t('admin.header.logs') || '应用日志'}
+        >
+          <DocumentIcon />
+        </Link>
+
+        {/* 异常 */}
+        <Link 
+          to="/admin/exceptions"
+          className={`header-icon-btn ${location.pathname.startsWith('/admin/exceptions') ? 'active' : ''}`}
+          title={t('admin.header.exceptions') || '应用异常'}
+        >
+          <WarningIcon />
+        </Link>
 
         {/* 通知 */}
         <div className="notification-menu" ref={notificationsRef}>

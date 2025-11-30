@@ -39,7 +39,24 @@
         "searchNiceDnb": "查询 Nice D&B",
         "viewPerformance": "查看业绩管理",
         "nicednbInfo": "Nice D&B 信息",
-        "nicednbPlaceholder": "可通过 Nice D&B API 查询企业信息。"
+        "nicednbPlaceholder": "可通过 Nice D&B API 查询企业信息。",
+        "noBusinessNumber": "缺少营业执照号，无法查询 Nice D&B 信息",
+        "nicednbSearchFailed": "查询 Nice D&B 信息失败",
+        "establishedDate": "成立日期",
+        "creditGrade": "信用等级",
+        "financialData": "财务数据",
+        "year": "年度",
+        "revenue": "营业收入",
+        "profit": "净利润",
+        "assets": "总资产",
+        "insights": "企业洞察",
+        "insight": "洞察",
+        "approveSuccess": "批准成功",
+        "approveFailed": "批准失败",
+        "rejectSuccess": "拒绝成功",
+        "rejectFailed": "拒绝失败",
+        "rejectReason": "请输入拒绝原因（可选）",
+        "loadFailed": "加载会员详情失败"
       }
     }
   }

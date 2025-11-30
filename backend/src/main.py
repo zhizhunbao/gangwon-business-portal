@@ -121,8 +121,7 @@ async def log_http_requests(request: Request, call_next):
                     source="backend",
                     level=log_level,
                     message=f"{request.method} {request.url.path} -> {response.status_code}",
-                    logger_name=logger.name,  # Use the actual logger name from main.py
-                    module=logger.name,  # Use the same as logger_name for consistency
+                    module=logger.name,
                     function="log_http_requests",
                     trace_id=trace_id,
                     user_id=user_id,

@@ -7,8 +7,9 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import '@shared/styles/index.css';
 
-// Enable MSW in development
+// Enable MSW in development (disabled by default - use real backend API)
 async function enableMocking() {
+  // MSW is disabled by default. Set VITE_USE_MOCK=true in .env to enable
   if (import.meta.env.VITE_USE_MOCK === 'true' && import.meta.env.DEV) {
     const { worker } = await import('./mocks/browser');
     
@@ -29,6 +30,7 @@ async function enableMocking() {
     });
   }
   
+  // MSW disabled - using real backend API
   return Promise.resolve();
 }
 

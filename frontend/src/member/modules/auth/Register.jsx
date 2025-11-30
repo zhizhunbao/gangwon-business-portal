@@ -39,7 +39,7 @@ export default function Register() {
   
   const [formData, setFormData] = useState({
     // Step 1: Basic Info
-    businessLicense: '',
+    businessNumber: '',
     password: '',
     passwordConfirm: '',
     companyName: '',
@@ -155,12 +155,12 @@ export default function Register() {
     }
   };
   
-  const handleBusinessLicenseChange = (e) => {
+  const handleBusinessNumberChange = (e) => {
     const value = e.target.value;
     const formatted = formatBusinessLicense(value);
     setFormData(prev => ({
       ...prev,
-      businessLicense: formatted
+      businessNumber: formatted
     }));
   };
   
@@ -239,7 +239,7 @@ export default function Register() {
     
     switch (step) {
       case 1:
-        if (!formData.businessLicense || formData.businessLicense.replace(/\D/g, '').length !== 10) {
+        if (!formData.businessNumber || formData.businessNumber.replace(/\D/g, '').length !== 10) {
           setError(t('validation.required', { field: t('auth.businessLicense') }));
           return false;
         }
@@ -357,8 +357,8 @@ export default function Register() {
         }
       });
       
-      // Clean business license for API (keep formatted for display, but backend will handle cleaning)
-      submitData.set('businessLicense', formData.businessLicense);
+      // Convert businessNumber (camelCase) to business_number (snake_case) for backend API
+      submitData.set('business_number', formData.businessNumber?.replace(/-/g, '') || '');
       
       // Call register - it will handle file uploads and field mapping
       const response = await register(submitData);
@@ -425,16 +425,16 @@ export default function Register() {
           {currentStep === 1 && (
             <div className="auth-step-content">
               <div className="auth-form-group">
-                <label htmlFor="businessLicense">
+                <label htmlFor="businessNumber">
                   {t('auth.businessLicense')} <span className="required">*</span>
                 </label>
                 <input
-                  id="businessLicense"
-                  name="businessLicense"
+                  id="businessNumber"
+                  name="businessNumber"
                   type="text"
                   className="auth-input"
-                  value={formData.businessLicense}
-                  onChange={handleBusinessLicenseChange}
+                  value={formData.businessNumber}
+                  onChange={handleBusinessNumberChange}
                   required
                   maxLength={12}
                   placeholder={t('auth.businessLicensePlaceholder')}

@@ -11,13 +11,13 @@ class AuthService {
    * Login
    * 
    * @param {Object} credentials - Login credentials
-   * @param {string} credentials.businessLicense - Business license number (will be converted to business_number)
+   * @param {string} credentials.businessNumber - Business number (will be converted to business_number for API)
    * @param {string} credentials.password - Password
    */
   async login(credentials) {
-    // Convert businessLicense to business_number for backend API
+    // Convert businessNumber (camelCase) to business_number (snake_case) for backend API
     const requestData = {
-      business_number: credentials.businessLicense || credentials.business_number,
+      business_number: credentials.businessNumber || credentials.business_number,
       password: credentials.password
     };
     
@@ -59,6 +59,12 @@ class AuthService {
         role: 'admin' // Ensure role is set to admin
       };
       setStorage('user_info', userInfo);
+      
+      // Return response with updated user info that includes role
+      return {
+        ...response,
+        user: userInfo
+      };
     }
     
     return response;
@@ -113,7 +119,7 @@ class AuthService {
       // Map frontend fields to backend fields
       registrationData = {
         // Step 1: Account information
-        business_number: data.businessLicense?.replace(/-/g, '') || data.business_number,
+        business_number: data.businessNumber?.replace(/-/g, '') || data.business_number,
         company_name: data.companyName,
         password: data.password,
         email: data.email,
@@ -213,13 +219,13 @@ class AuthService {
    * Forgot password (Request password reset)
    * 
    * @param {Object} data - Password reset request data
-   * @param {string} data.businessLicense - Business license number (will be converted to business_number)
+   * @param {string} data.businessNumber - Business number (will be converted to business_number for API)
    * @param {string} data.email - Email address
    */
   async forgotPassword(data) {
-    // Convert businessLicense to business_number for backend API
+    // Convert businessNumber (camelCase) to business_number (snake_case) for backend API
     const requestData = {
-      business_number: data.businessLicense?.replace(/-/g, '') || data.business_number,
+      business_number: data.businessNumber?.replace(/-/g, '') || data.business_number,
       email: data.email
     };
     

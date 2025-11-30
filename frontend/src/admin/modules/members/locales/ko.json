@@ -39,7 +39,24 @@
         "searchNiceDnb": "Nice D&B 검색",
         "viewPerformance": "실적 관리 보기",
         "nicednbInfo": "Nice D&B 정보",
-        "nicednbPlaceholder": "Nice D&B API를 통해 기업 정보를 조회할 수 있습니다."
+        "nicednbPlaceholder": "Nice D&B API를 통해 기업 정보를 조회할 수 있습니다.",
+        "noBusinessNumber": "사업자등록번호가 없어 Nice D&B 정보를 조회할 수 없습니다",
+        "nicednbSearchFailed": "Nice D&B 정보 조회 실패",
+        "establishedDate": "설립일",
+        "creditGrade": "신용등급",
+        "financialData": "재무 데이터",
+        "year": "연도",
+        "revenue": "매출액",
+        "profit": "순이익",
+        "assets": "총자산",
+        "insights": "기업 인사이트",
+        "insight": "인사이트",
+        "approveSuccess": "승인 성공",
+        "approveFailed": "승인 실패",
+        "rejectSuccess": "거부 성공",
+        "rejectFailed": "거부 실패",
+        "rejectReason": "거부 사유를 입력하세요 (선택사항)",
+        "loadFailed": "회원 상세 정보 로드 실패"
       }
     }
   }

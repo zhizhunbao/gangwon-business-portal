@@ -8,6 +8,40 @@ import { getStorage, setStorage, removeStorage } from '@shared/utils/storage';
 import loggerService from './logger.service';
 import exceptionService from './exception.service';
 
+/**
+ * Sanitize request data for logging (remove sensitive info, limit size)
+ */
+function sanitizeRequestData(data) {
+  if (!data) return null;
+  
+  try {
+    // If FormData, don't log the content
+    if (data instanceof FormData) {
+      return { _type: 'FormData', _size: 'hidden' };
+    }
+    
+    const sanitized = { ...data };
+    
+    // Remove sensitive fields
+    const sensitiveFields = ['password', 'password_hash', 'token', 'access_token', 'refresh_token', 'secret', 'api_key'];
+    sensitiveFields.forEach(field => {
+      if (sanitized[field]) {
+        sanitized[field] = '***REDACTED***';
+      }
+    });
+    
+    // Limit size to avoid huge payloads
+    const jsonStr = JSON.stringify(sanitized);
+    if (jsonStr.length > 500) {
+      return { ...sanitized, _truncated: true, _original_size: jsonStr.length };
+    }
+    
+    return sanitized;
+  } catch (e) {
+    return { _error: 'Failed to sanitize data' };
+  }
+}
+
 // Create axios instance
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -40,14 +74,8 @@ apiClient.interceptors.request.use(
     // Record request start time for duration calculation
     config._startTime = Date.now();
     
-    // Log request (skip logging endpoint to avoid recursion)
-    if (!config.url?.includes('/logging/') && !config.url?.includes('/exceptions/')) {
-      loggerService.debug(`API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-        request_method: config.method,
-        request_path: config.url,
-        request_data: config.data,
-      });
-    }
+    // Don't log requests separately - we'll log the complete request/response in the response interceptor
+    // This reduces duplicate logs and provides better context
     
     return config;
   },
@@ -68,14 +96,17 @@ apiClient.interceptors.response.use(
     // Calculate duration
     const duration = response.config._startTime ? Date.now() - response.config._startTime : null;
     
-    // Log successful response (skip logging endpoint to avoid recursion)
+    // Log complete request/response (skip logging endpoint to avoid recursion)
     if (!response.config.url?.includes('/logging/') && !response.config.url?.includes('/exceptions/')) {
       const level = response.status >= 400 ? 'WARNING' : 'INFO';
-      loggerService.log(level, `API Response: ${response.config.method?.toUpperCase()} ${response.config.url} -> ${response.status}`, {
+      // Log complete API call with both request and response info
+      loggerService.log(level, `API: ${response.config.method?.toUpperCase()} ${response.config.url} -> ${response.status}`, {
         request_method: response.config.method,
         request_path: response.config.url,
+        request_data: sanitizeRequestData(response.config.data),
         response_status: response.status,
         duration_ms: duration,
+        force_dedup: true, // Force deduplication for API logs
       });
     }
     

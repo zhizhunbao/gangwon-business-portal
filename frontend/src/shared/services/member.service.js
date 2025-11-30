@@ -20,7 +20,6 @@ class MemberService {
     if (response) {
       return {
         id: response.id,
-        businessLicense: response.business_number,
         businessNumber: response.business_number,
         companyName: response.company_name,
         email: response.email,
@@ -128,7 +127,6 @@ class MemberService {
     if (response) {
       return {
         id: response.id,
-        businessLicense: response.business_number,
         businessNumber: response.business_number,
         companyName: response.company_name,
         email: response.email,

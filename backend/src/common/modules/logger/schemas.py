@@ -16,7 +16,6 @@ class ApplicationLogResponse(BaseModel):
     id: UUID
     source: str  # backend, frontend
     level: str  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-    logger_name: Optional[str] = None
     message: str
     module: Optional[str] = None
     function: Optional[str] = None
@@ -69,7 +68,6 @@ class FrontendLogCreate(BaseModel):
 
     level: str = Field(default="INFO", description="Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)")
     message: str = Field(..., description="Log message")
-    logger_name: Optional[str] = None
     module: Optional[str] = None
     function: Optional[str] = None
     line_number: Optional[int] = None

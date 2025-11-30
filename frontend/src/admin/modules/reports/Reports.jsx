@@ -3,7 +3,7 @@
  * 统计报表
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, Select, Input, Button, Table, Badge, Alert } from '@shared/components';
 import { apiService } from '@shared/services';

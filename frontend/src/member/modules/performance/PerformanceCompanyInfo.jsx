@@ -40,7 +40,7 @@ export default function PerformanceCompanyInfo() {
   const [logoError, setLogoError] = useState('');
   const [companyData, setCompanyData] = useState({
     companyName: '',
-    businessLicense: '',
+    businessNumber: '',
     corporationNumber: '',
     establishedDate: '',
     representativeName: '',
@@ -77,7 +77,7 @@ export default function PerformanceCompanyInfo() {
       if (profile) {
         setCompanyData({
           companyName: profile.companyName || '',
-          businessLicense: profile.businessLicense || profile.businessNumber || '',
+          businessNumber: profile.businessNumber || '',
           corporationNumber: profile.corporationNumber || '',
           establishedDate: profile.establishedDate || profile.foundingDate || '',
           representativeName: profile.representativeName || '',
@@ -308,7 +308,7 @@ export default function PerformanceCompanyInfo() {
           <div className="form-group">
             <label>{t('member.businessLicense', '营业执照号')} *</label>
             <Input
-              value={companyData.businessLicense}
+              value={companyData.businessNumber}
               disabled={true}
               title={t('profile.businessLicenseNotEditable', '营业执照号不可修改')}
             />

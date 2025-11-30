@@ -7,4 +7,5 @@ export * from './useDebounce';
 export * from './usePagination';
 export * from './useLocalStorage';
 export * from './useToggle';
+export * from './useErrorHandler';
 

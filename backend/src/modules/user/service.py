@@ -362,9 +362,12 @@ class AuthService:
             },
         )
 
-        # Find member by business number (username)
+        # Find member by business number or email (username)
+        # Try business_number first, then email
         result = await db.execute(
-            select(Member).where(Member.business_number == username)
+            select(Member).where(
+                (Member.business_number == username) | (Member.email == username)
+            )
         )
         member = result.scalar_one_or_none()
 

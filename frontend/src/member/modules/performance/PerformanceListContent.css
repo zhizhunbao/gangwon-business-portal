@@ -193,6 +193,19 @@
     @apply text-gray-400 text-sm sm:text-base;
   }
 
+  /* Attachment Buttons */
+  .performance-list-content .attachment-buttons {
+    @apply flex flex-wrap gap-2 items-center;
+  }
+
+  .performance-list-content .attachment-buttons button {
+    @apply transition-all duration-200;
+  }
+
+  .performance-list-content .attachment-buttons button:hover {
+    @apply transform scale-105;
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .performance-list-content {

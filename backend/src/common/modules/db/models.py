@@ -382,9 +382,8 @@ class ApplicationLog(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     source = Column(String(20), nullable=False)  # backend, frontend
     level = Column(String(20), nullable=False)  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-    logger_name = Column(String(255))  # Logger name (e.g., module path)
     message = Column(Text, nullable=False)
-    module = Column(String(255))  # Module name
+    module = Column(String(255))  # Module name (e.g., module path)
     function = Column(String(255))  # Function name
     line_number = Column(Integer)  # Line number
     trace_id = Column(String(100))  # Request trace ID

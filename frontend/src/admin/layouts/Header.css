@@ -128,6 +128,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  text-decoration: none;
 }
 
 .header-icon-btn svg {
@@ -137,6 +138,17 @@
 
 .header-icon-btn:hover {
   color: #111827;
+  background-color: #f3f4f6;
+}
+
+.header-icon-btn.active {
+  color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.header-icon-btn.active:hover {
+  color: #2563eb;
+  background-color: #dbeafe;
 }
 
 .notification-badge {

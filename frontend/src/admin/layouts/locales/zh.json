@@ -6,7 +6,9 @@
       "profile": "个人资料",
       "logout": "退出登录",
       "notifications": "通知",
-      "searchPlaceholder": "搜索..."
+      "searchPlaceholder": "搜索...",
+      "logs": "应用日志",
+      "exceptions": "应用异常"
     },
     "menu": {
       "dashboard": "仪表盘",

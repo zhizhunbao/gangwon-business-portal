@@ -82,6 +82,79 @@
   margin-bottom: 1rem;
 }
 
+.nicednb-loading,
+.nicednb-error {
+  padding: 2rem;
+  text-align: center;
+}
+
+.nicednb-error {
+  color: #e74c3c;
+}
+
+.nicednb-content {
+  margin-top: 1.5rem;
+}
+
+.nicednb-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.nicednb-section h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.nicednb-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.nicednb-table th,
+.nicednb-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.nicednb-table th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+  color: #333;
+}
+
+.nicednb-table td {
+  color: #666;
+}
+
+.nicednb-insights {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nicednb-insights li {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background-color: #f9f9f9;
+  border-left: 3px solid #4CAF50;
+  border-radius: 4px;
+}
+
+.nicednb-insights li strong {
+  color: #333;
+  margin-right: 0.5rem;
+}
+
+.nicednb-insights li span {
+  color: #666;
+}
+
 .error-message {
   padding: 3rem;
   text-align: center;

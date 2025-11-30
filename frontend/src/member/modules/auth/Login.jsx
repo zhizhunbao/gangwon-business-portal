@@ -18,7 +18,7 @@ export default function Login() {
   const { login, isLoading } = useAuth();
   
   const [formData, setFormData] = useState({
-    businessLicense: '',
+    businessNumber: '',
     password: ''
   });
   const [error, setError] = useState('');
@@ -29,10 +29,10 @@ export default function Login() {
     setError('');
     
     try {
-      // Remove dashes from business license for API call
-      const businessLicenseClean = formData.businessLicense.replace(/-/g, '');
+      // Remove dashes from business number for API call
+      const businessNumberClean = formData.businessNumber.replace(/-/g, '');
       const response = await login({
-        businessLicense: businessLicenseClean,
+        businessNumber: businessNumberClean,
         password: formData.password
       });
       // Redirect based on role
@@ -43,12 +43,12 @@ export default function Login() {
     }
   };
   
-  const handleBusinessLicenseChange = (e) => {
+  const handleBusinessNumberChange = (e) => {
     const value = e.target.value;
     const formatted = formatBusinessLicense(value);
     setFormData(prev => ({
       ...prev,
-      businessLicense: formatted
+      businessNumber: formatted
     }));
   };
   
@@ -82,16 +82,16 @@ export default function Login() {
         
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-form-group">
-            <label htmlFor="businessLicense">
+            <label htmlFor="businessNumber">
               {t('auth.businessLicense')}
             </label>
             <input
-              id="businessLicense"
-              name="businessLicense"
+              id="businessNumber"
+              name="businessNumber"
               type="text"
               className="auth-input"
-              value={formData.businessLicense}
-              onChange={handleBusinessLicenseChange}
+              value={formData.businessNumber}
+              onChange={handleBusinessNumberChange}
               required
               maxLength={12}
               placeholder={t('auth.businessLicensePlaceholder')}

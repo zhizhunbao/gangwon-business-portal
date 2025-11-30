@@ -11,7 +11,7 @@ import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import Select from '@shared/components/Select';
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@shared/components/Table';
-import { performanceService } from '@shared/services';
+import { performanceService, uploadService } from '@shared/services';
 import { DownloadIcon, EditIcon, TrashIcon, SearchIcon } from '@shared/components/Icons';
 import './PerformanceListContent.css';
 
@@ -47,20 +47,52 @@ export default function PerformanceListContent() {
       });
       
       if (response.records) {
-        const formatted = response.records.map(r => ({
-          id: r.id,
-          year: r.year,
-          quarter: r.quarter,
-          type: r.quarter ? 'quarterly' : 'annual',
-          status: r.status,
-          submittedDate: r.submittedAt ? new Date(r.submittedAt).toISOString().split('T')[0] : null,
-          approvedDate: null, // Will be populated from reviews if needed
-          documentType: r.type || '成果报告',
-          fileName: `成果报告_${r.year}_${r.quarter || '年度'}.pdf`,
-          fileUrl: null, // File download will be handled separately
-          isOwnUpload: true, // All records are owned by current user
-          attachments: []
-        }));
+        const formatted = response.records.map(r => {
+          // Extract attachments from data_json if available
+          let attachments = [];
+          if (r.data_json) {
+            try {
+              const dataJson = typeof r.data_json === 'string' ? JSON.parse(r.data_json) : r.data_json;
+              
+              // Check for attachments in different possible locations
+              if (dataJson.attachments && Array.isArray(dataJson.attachments)) {
+                attachments = dataJson.attachments;
+              } else if (dataJson.intellectualProperty && Array.isArray(dataJson.intellectualProperty)) {
+                // Extract proof documents from intellectual property
+                dataJson.intellectualProperty.forEach(ip => {
+                  if (ip.proofDocument && ip.proofDocument.file_id) {
+                    attachments.push({
+                      file_id: ip.proofDocument.file_id,
+                      original_name: ip.proofDocument.original_name || ip.proofDocument.name,
+                      name: ip.proofDocument.original_name || ip.proofDocument.name
+                    });
+                  }
+                });
+              }
+            } catch (e) {
+              console.warn('Failed to parse data_json for attachments:', e);
+            }
+          }
+          
+          // Get file info from first attachment if available
+          const firstAttachment = attachments.length > 0 ? attachments[0] : null;
+          
+          return {
+            id: r.id,
+            year: r.year,
+            quarter: r.quarter,
+            type: r.quarter ? 'quarterly' : 'annual',
+            status: r.status,
+            submittedDate: r.submittedAt ? new Date(r.submittedAt).toISOString().split('T')[0] : null,
+            approvedDate: null, // Will be populated from reviews if needed
+            documentType: r.type || '成果报告',
+            fileName: firstAttachment?.original_name || firstAttachment?.name || `成果报告_${r.year}_${r.quarter || '年度'}.pdf`,
+            fileId: firstAttachment?.file_id || null,
+            fileUrl: firstAttachment?.file_url || null,
+            isOwnUpload: true, // All records are owned by current user
+            attachments: attachments
+          };
+        });
         setPerformances(formatted);
       }
     } catch (error) {
@@ -117,22 +149,35 @@ export default function PerformanceListContent() {
     navigate(`/member/performance/edit/${id}`);
   };
 
-  const handleDownload = async (fileUrl, fileName) => {
+  const handleDownload = async (fileId, fileName) => {
     try {
-      // Note: File download implementation - using fetch for now, may need to use API service
-      const response = await fetch(fileUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      if (!fileId) {
+        alert(t('message.fileNotFound', '文件不存在'));
+        return;
+      }
+
+      // Use upload service to download file
+      await uploadService.downloadFile(fileId, fileName);
     } catch (error) {
       console.error('Failed to download:', error);
-      alert(t('message.downloadFailed', '下载失败'));
+      const errorMessage = error.response?.data?.detail || error.message || t('message.downloadFailed', '下载失败');
+      alert(errorMessage);
+    }
+  };
+
+  const handleDownloadByUrl = async (fileUrl, fileName) => {
+    try {
+      if (!fileUrl) {
+        alert(t('message.fileNotFound', '文件不存在'));
+        return;
+      }
+
+      // Use upload service to download file by URL
+      await uploadService.downloadFileByUrl(fileUrl, fileName);
+    } catch (error) {
+      console.error('Failed to download:', error);
+      const errorMessage = error.response?.data?.detail || error.message || t('message.downloadFailed', '下载失败');
+      alert(errorMessage);
     }
   };
 
@@ -272,15 +317,42 @@ export default function PerformanceListContent() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      {perf.status === 'approved' && perf.fileUrl ? (
+                      {perf.status === 'approved' && (perf.fileId || perf.fileUrl) ? (
                         <Button
-                          onClick={() => handleDownload(perf.fileUrl, perf.fileName)}
+                          onClick={() => {
+                            if (perf.fileId) {
+                              handleDownload(perf.fileId, perf.fileName);
+                            } else if (perf.fileUrl) {
+                              handleDownloadByUrl(perf.fileUrl, perf.fileName);
+                            }
+                          }}
                           variant="secondary"
                           size="small"
                         >
                           <DownloadIcon className="w-4 h-4" style={{ marginRight: '0.25rem' }} />
                           {t('performance.download', '下载')}
                         </Button>
+                      ) : perf.attachments && perf.attachments.length > 0 ? (
+                        <div className="attachment-buttons">
+                          {perf.attachments.map((attachment, idx) => (
+                            <Button
+                              key={idx}
+                              onClick={() => {
+                                if (attachment.file_id) {
+                                  handleDownload(attachment.file_id, attachment.original_name || attachment.name);
+                                } else if (attachment.file_url) {
+                                  handleDownloadByUrl(attachment.file_url, attachment.original_name || attachment.name);
+                                }
+                              }}
+                              variant="secondary"
+                              size="small"
+                              style={{ marginRight: '0.5rem', marginBottom: '0.25rem' }}
+                            >
+                              <DownloadIcon className="w-4 h-4" style={{ marginRight: '0.25rem' }} />
+                              {attachment.original_name || attachment.name || t('performance.download', '下载')}
+                            </Button>
+                          ))}
+                        </div>
                       ) : (
                         <span className="text-muted">-</span>
                       )}

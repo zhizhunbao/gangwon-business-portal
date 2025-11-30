@@ -158,7 +158,6 @@ async def create_frontend_log(
         source="frontend",  # Always frontend for this endpoint
         level=log_data.level,
         message=log_data.message,
-        logger_name=log_data.logger_name,
         module=log_data.module,
         function=log_data.function,
         line_number=log_data.line_number,
@@ -203,7 +202,6 @@ async def get_log(
         id=log.id,
         source=log.source,
         level=log.level,
-        logger_name=log.logger_name,
         message=log.message,
         module=log.module,
         function=log.function,

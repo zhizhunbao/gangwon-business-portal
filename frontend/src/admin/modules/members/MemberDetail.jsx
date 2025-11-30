@@ -16,6 +16,9 @@ export default function MemberDetail() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [member, setMember] = useState(null);
+  const [niceDnbData, setNiceDnbData] = useState(null);
+  const [niceDnbLoading, setNiceDnbLoading] = useState(false);
+  const [niceDnbError, setNiceDnbError] = useState(null);
 
   useEffect(() => {
     loadMemberDetail();
@@ -62,9 +65,26 @@ export default function MemberDetail() {
     }
   };
 
-  const handleSearchNiceDnb = () => {
-    // Note: Nice D&B API integration pending (see 1.4 Frontend Feature Completion)
-    // This will call the backend Nice D&B service endpoint
+  const handleSearchNiceDnb = async () => {
+    if (!member || !member.businessNumber) {
+      alert(t('admin.members.detail.noBusinessNumber', '缺少营业执照号，无法查询 Nice D&B 信息'));
+      return;
+    }
+
+    setNiceDnbLoading(true);
+    setNiceDnbError(null);
+    
+    try {
+      const data = await adminService.searchNiceDnb(member.businessNumber);
+      setNiceDnbData(data);
+    } catch (error) {
+      console.error('Failed to search Nice D&B:', error);
+      const errorMessage = error.response?.data?.detail || error.message || t('admin.members.detail.nicednbSearchFailed', '查询 Nice D&B 信息失败');
+      setNiceDnbError(errorMessage);
+      alert(errorMessage);
+    } finally {
+      setNiceDnbLoading(false);
+    }
   };
 
   const handleViewPerformance = () => {
@@ -119,7 +139,7 @@ export default function MemberDetail() {
         <div className="info-grid">
           <div className="info-item">
             <label>{t('admin.members.detail.businessNumber')}</label>
-            <span>{member.businessLicense || member.businessNumber || '-'}</span>
+            <span>{member.businessNumber || '-'}</span>
           </div>
           <div className="info-item">
             <label>{t('admin.members.detail.companyName')}</label>
@@ -163,13 +183,117 @@ export default function MemberDetail() {
 
       {/* Nice D&B 信息卡片 */}
       <Card className="nicednb-card">
-        <h2>{t('admin.members.detail.nicednbInfo')}</h2>
-        <div className="nicednb-placeholder">
-          <p>{t('admin.members.detail.nicednbPlaceholder')}</p>
-          <Button onClick={handleSearchNiceDnb}>
-            {t('admin.members.detail.searchNiceDnb')}
+        <div className="card-header">
+          <h2>{t('admin.members.detail.nicednbInfo')}</h2>
+          <Button 
+            onClick={handleSearchNiceDnb}
+            disabled={niceDnbLoading || !member?.businessNumber}
+            variant="outline"
+          >
+            {niceDnbLoading 
+              ? t('common.loading', '加载中...') 
+              : t('admin.members.detail.searchNiceDnb')}
           </Button>
         </div>
+
+        {niceDnbLoading && (
+          <div className="nicednb-loading">
+            <p>{t('common.loading', '加载中...')}</p>
+          </div>
+        )}
+
+        {niceDnbError && (
+          <div className="nicednb-error">
+            <p>{niceDnbError}</p>
+          </div>
+        )}
+
+        {!niceDnbData && !niceDnbLoading && !niceDnbError && (
+          <div className="nicednb-placeholder">
+            <p>{t('admin.members.detail.nicednbPlaceholder')}</p>
+          </div>
+        )}
+
+        {niceDnbData && niceDnbData.success && niceDnbData.data && (
+          <div className="nicednb-content">
+            <div className="info-grid">
+              <div className="info-item">
+                <label>{t('admin.members.detail.businessNumber')}</label>
+                <span>{niceDnbData.data.businessNumber || '-'}</span>
+              </div>
+              <div className="info-item">
+                <label>{t('admin.members.detail.companyName')}</label>
+                <span>{niceDnbData.data.companyName || '-'}</span>
+              </div>
+              <div className="info-item">
+                <label>{t('admin.members.detail.representative')}</label>
+                <span>{niceDnbData.data.representative || '-'}</span>
+              </div>
+              <div className="info-item">
+                <label>{t('admin.members.detail.address')}</label>
+                <span>{niceDnbData.data.address || '-'}</span>
+              </div>
+              <div className="info-item">
+                <label>{t('admin.members.detail.industry')}</label>
+                <span>{niceDnbData.data.industry || '-'}</span>
+              </div>
+              {niceDnbData.data.establishedDate && (
+                <div className="info-item">
+                  <label>{t('admin.members.detail.establishedDate', '成立日期')}</label>
+                  <span>{new Date(niceDnbData.data.establishedDate).toLocaleDateString()}</span>
+                </div>
+              )}
+              {niceDnbData.data.creditGrade && (
+                <div className="info-item">
+                  <label>{t('admin.members.detail.creditGrade', '信用等级')}</label>
+                  <Badge variant="info">{niceDnbData.data.creditGrade}</Badge>
+                </div>
+              )}
+            </div>
+
+            {niceDnbData.financials && niceDnbData.financials.length > 0 && (
+              <div className="nicednb-section">
+                <h3>{t('admin.members.detail.financialData', '财务数据')}</h3>
+                <div className="table-wrapper">
+                  <table className="nicednb-table">
+                    <thead>
+                      <tr>
+                        <th>{t('admin.members.detail.year', '年度')}</th>
+                        <th>{t('admin.members.detail.revenue', '营业收入')}</th>
+                        <th>{t('admin.members.detail.profit', '净利润')}</th>
+                        <th>{t('admin.members.detail.assets', '总资产')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {niceDnbData.financials.map((financial, index) => (
+                        <tr key={index}>
+                          <td>{financial.year || '-'}</td>
+                          <td>{financial.revenue ? financial.revenue.toLocaleString() : '-'}</td>
+                          <td>{financial.profit ? financial.profit.toLocaleString() : '-'}</td>
+                          <td>{financial.assets ? financial.assets.toLocaleString() : '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {niceDnbData.insights && niceDnbData.insights.length > 0 && (
+              <div className="nicednb-section">
+                <h3>{t('admin.members.detail.insights', '企业洞察')}</h3>
+                <ul className="nicednb-insights">
+                  {niceDnbData.insights.map((insight, index) => (
+                    <li key={index}>
+                      <strong>{insight.title || t('admin.members.detail.insight', '洞察')}:</strong>
+                      <span>{insight.description || '-'}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
     </div>
   );

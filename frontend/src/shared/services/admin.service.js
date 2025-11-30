@@ -50,7 +50,6 @@ class AdminService {
       return {
         members: response.items.map(item => ({
           id: item.id,
-          businessLicense: item.business_number,
           businessNumber: item.business_number,
           companyName: item.company_name,
           email: item.email,
@@ -105,7 +104,6 @@ class AdminService {
     if (response) {
       return {
         id: response.id,
-        businessLicense: response.business_number,
         businessNumber: response.business_number,
         companyName: response.company_name,
         email: response.email,
@@ -525,6 +523,24 @@ class AdminService {
     }
     
     const response = await apiService.download(`${API_PREFIX}/admin/members/export`, queryParams);
+    return response;
+  }
+
+  /**
+   * Search Nice D&B company information
+   * 查询 Nice D&B 企业信息
+   * 
+   * @param {string} businessNumber - Business registration number (with or without dashes)
+   * @returns {Promise<Object>} Nice D&B company data
+   */
+  async searchNiceDnb(businessNumber) {
+    // Remove dashes from business number
+    const cleanBusinessNumber = businessNumber.replace(/-/g, '');
+    
+    const response = await apiService.get(`${API_PREFIX}/admin/members/nice-dnb`, {
+      business_number: cleanBusinessNumber
+    });
+    
     return response;
   }
 

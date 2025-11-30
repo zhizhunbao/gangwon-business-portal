@@ -6,7 +6,9 @@
       "profile": "프로필",
       "logout": "로그아웃",
       "notifications": "알림",
-      "searchPlaceholder": "검색..."
+      "searchPlaceholder": "검색...",
+      "logs": "애플리케이션 로그",
+      "exceptions": "애플리케이션 예외"
     },
     "menu": {
       "dashboard": "대시보드",

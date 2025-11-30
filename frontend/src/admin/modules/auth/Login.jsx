@@ -74,7 +74,7 @@ export default function AdminLogin() {
               onChange={handleChange}
               required
               autoComplete="username"
-              placeholder={t('admin.auth.usernamePlaceholder') || 'Enter admin username'}
+              placeholder={t('admin.auth.usernamePlaceholder') || '000-00-00000 或 admin@example.com'}
             />
             
             <Input

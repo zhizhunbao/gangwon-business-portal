@@ -177,7 +177,7 @@ export default function ApplicationModal({
             <div className="company-info-grid">
               <div className="info-item">
                 <label className="info-label">{t('projects.companyId', '企业ID')}</label>
-                <span className="info-value">{user.business_number || user.businessLicense || user.id}</span>
+                <span className="info-value">{user.business_number || user.businessNumber || user.id}</span>
               </div>
               <div className="info-item">
                 <label className="info-label">{t('projects.companyName', '企业名')}</label>

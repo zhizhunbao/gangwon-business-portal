@@ -28,7 +28,6 @@ class LoggingService:
         source: str,  # backend, frontend
         level: str,  # DEBUG, INFO, WARNING, ERROR, CRITICAL
         message: str,
-        logger_name: Optional[str] = None,
         module: Optional[str] = None,
         function: Optional[str] = None,
         line_number: Optional[int] = None,
@@ -51,7 +50,6 @@ class LoggingService:
             source: Source of the log (backend/frontend)
             level: Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)
             message: Log message
-            logger_name: Logger name
             module: Module name
             function: Function name
             line_number: Line number
@@ -72,7 +70,6 @@ class LoggingService:
         app_log = ApplicationLog(
             source=source,
             level=level,
-            logger_name=logger_name,
             message=message,
             module=module,
             function=function,
@@ -99,7 +96,6 @@ class LoggingService:
                 source=source,
                 level=level,
                 message=message,
-                logger_name=logger_name,
                 module=module,
                 function=function,
                 line_number=line_number,
@@ -194,7 +190,6 @@ class LoggingService:
                     id=log.id,
                     source=log.source,
                     level=log.level,
-                    logger_name=log.logger_name,
                     message=log.message,
                     module=log.module,
                     function=log.function,

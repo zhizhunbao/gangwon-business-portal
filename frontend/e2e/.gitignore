@@ -1,0 +1,12 @@
+# Playwright test results
+test-results/
+# Test results are in ../test-results/
+playwright/.cache/
+
+# Screenshots and videos
+screenshots/
+videos/
+
+# Test artifacts
+*.zip
+

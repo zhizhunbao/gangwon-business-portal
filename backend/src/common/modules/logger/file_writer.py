@@ -125,7 +125,6 @@ class FileLogWriter:
         source: str,  # backend, frontend
         level: str,
         message: str,
-        logger_name: Optional[str] = None,
         module: Optional[str] = None,
         function: Optional[str] = None,
         line_number: Optional[int] = None,
@@ -146,7 +145,6 @@ class FileLogWriter:
             source: Source of the log (backend/frontend)
             level: Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)
             message: Log message
-            logger_name: Logger name
             module: Module name
             function: Function name
             line_number: Line number
@@ -162,7 +160,6 @@ class FileLogWriter:
             extra_data: Additional context data
         """
         log_data = {
-            "logger_name": logger_name,
             "module": module,
             "function": function,
             "line_number": line_number,

@@ -37,6 +37,10 @@ pnpm-debug.log*
 .temp
 *.tmp
 
+# Test results (all in test-results directory)
+test-results/
+playwright-report/
+
 # Allow mocks data directory (exception to root .gitignore)
 !src/mocks/data/
 
