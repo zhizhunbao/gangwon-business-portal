@@ -1,5 +1,6 @@
 import { apiClient } from './api.service';
 import { getStorage } from '@shared/utils/storage';
+import loggerService from './logger.service';
 
 const API_PREFIX = '/api/v1/exceptions';
 
@@ -77,6 +78,20 @@ class ExceptionService {
       context_data: { ...getClientInfo(), ...context.context_data },
     };
 
+    // Log the exception using loggerService
+    loggerService.error(`Exception: ${exceptionEntry.exception_type}`, {
+      module: 'ExceptionService',
+      function: 'recordException',
+      exception_type: exceptionEntry.exception_type,
+      exception_message: exceptionEntry.exception_message,
+      error_code: exceptionEntry.error_code,
+      status_code: exceptionEntry.status_code,
+      request_path: exceptionEntry.request_path,
+      request_method: exceptionEntry.request_method,
+      trace_id: exceptionEntry.trace_id,
+      user_id: exceptionEntry.user_id,
+    });
+
     apiClient.post(`${API_PREFIX}/frontend`, exceptionEntry).catch((error) => {
       if (import.meta.env.DEV) {
         console.error('Failed to send exception:', error);
@@ -92,18 +107,43 @@ class ExceptionService {
 const exceptionService = new ExceptionService();
 
 if (typeof window !== 'undefined') {
+  // Global error handler - catches uncaught JavaScript errors
   window.addEventListener('error', (event) => {
-    exceptionService.recordException(event.error || new Error(event.message), {
+    const error = event.error || new Error(event.message);
+    loggerService.error('Global error caught', {
+      module: 'ExceptionService',
+      function: 'globalErrorHandler',
+      error_message: error.message,
+      error_name: error.name,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
       request_path: window.location.pathname,
+    });
+    
+    exceptionService.recordException(error, {
+      request_path: window.location.pathname,
+      error_code: 'GLOBAL_ERROR',
       context_data: { filename: event.filename, lineno: event.lineno, colno: event.colno },
     });
   });
 
+  // Global unhandled promise rejection handler
   window.addEventListener('unhandledrejection', (event) => {
-    exceptionService.recordException(
-      event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
-      { request_path: window.location.pathname, context_data: { type: 'unhandled_promise_rejection' } }
-    );
+    const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
+    loggerService.error('Unhandled promise rejection', {
+      module: 'ExceptionService',
+      function: 'unhandledRejectionHandler',
+      error_message: error.message,
+      error_name: error.name,
+      request_path: window.location.pathname,
+    });
+    
+    exceptionService.recordException(error, {
+      request_path: window.location.pathname,
+      error_code: 'UNHANDLED_PROMISE_REJECTION',
+      context_data: { type: 'unhandled_promise_rejection' },
+    });
   });
 }
 

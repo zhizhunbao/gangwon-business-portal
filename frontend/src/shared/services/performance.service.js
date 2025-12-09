@@ -7,6 +7,7 @@ import apiService from './api.service';
 import loggerService from './logger.service';
 import exceptionService from './exception.service';
 import { API_PREFIX } from '@shared/utils/constants';
+import { autoLog } from '@shared/utils/decorators';
 
 class PerformanceService {
   /**
@@ -23,96 +24,72 @@ class PerformanceService {
    * @returns {Promise<Object>} Paginated performance list
    */
   async listRecords(params = {}) {
-    try {
-      loggerService.info('List performance records', {
-        module: 'PerformanceService',
-        function: 'listRecords',
-        request_path: `${API_PREFIX}/performance`
-      });
-
-      const queryParams = {
-        page: params.page || 1,
-        page_size: params.pageSize || params.page_size || 20,
-      };
-      
-      if (params.year !== undefined && params.year !== null && params.year !== '') {
-        queryParams.year = parseInt(params.year);
-      }
-      if (params.quarter !== undefined && params.quarter !== null && params.quarter !== '') {
-        queryParams.quarter = parseInt(params.quarter);
-      }
-      if (params.status) {
-        queryParams.status = params.status;
-      }
-      if (params.type) {
-        queryParams.type = params.type;
-      }
-      
-      const response = await apiService.get(`${API_PREFIX}/performance`, queryParams);
-      
-      // Map backend response to frontend format
-      if (response && response.items) {
-        const result = {
-          records: response.items.map(item => ({
-            id: item.id,
-            year: item.year,
-            quarter: item.quarter,
-            type: item.type,
-            status: item.status,
-            submittedAt: item.submitted_at,
-            createdAt: item.created_at,
-            updatedAt: item.updated_at,
-          })),
-          pagination: {
-            total: response.total,
-            page: response.page,
-            pageSize: response.page_size,
-            totalPages: response.total_pages
-          },
+    const queryParams = {
+      page: params.page || 1,
+      page_size: params.pageSize || params.page_size || 20,
+    };
+    
+    if (params.year !== undefined && params.year !== null && params.year !== '') {
+      queryParams.year = parseInt(params.year);
+    }
+    if (params.quarter !== undefined && params.quarter !== null && params.quarter !== '') {
+      queryParams.quarter = parseInt(params.quarter);
+    }
+    if (params.status) {
+      queryParams.status = params.status;
+    }
+    if (params.type) {
+      queryParams.type = params.type;
+    }
+    
+    const response = await this._listRecordsInternal(queryParams);
+    
+    // Map backend response to frontend format
+    if (response && response.items) {
+      const result = {
+        records: response.items.map(item => ({
+          id: item.id,
+          year: item.year,
+          quarter: item.quarter,
+          type: item.type,
+          status: item.status,
+          submittedAt: item.submitted_at,
+          createdAt: item.created_at,
+          updatedAt: item.updated_at,
+        })),
+        pagination: {
           total: response.total,
           page: response.page,
           pageSize: response.page_size,
           totalPages: response.total_pages
-        };
-        
-        loggerService.info('List performance records successful', {
-          module: 'PerformanceService',
-          function: 'listRecords',
-          total: response.total,
-          response_status: 200
-        });
-        
-        return result;
-      }
-      
-      return {
-        records: [],
-        pagination: {
-          total: 0,
-          page: 1,
-          pageSize: 20,
-          totalPages: 0
         },
+        total: response.total,
+        page: response.page,
+        pageSize: response.page_size,
+        totalPages: response.total_pages
+      };
+      
+      return result;
+    }
+    
+    return {
+      records: [],
+      pagination: {
         total: 0,
         page: 1,
         pageSize: 20,
         totalPages: 0
-      };
-    } catch (error) {
-      loggerService.error('List performance records failed', {
-        module: 'PerformanceService',
-        function: 'listRecords',
-        request_path: `${API_PREFIX}/performance`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/performance`,
-        error_code: error.code || 'LIST_RECORDS_FAILED'
-      });
-      throw error;
-    }
+      },
+      total: 0,
+      page: 1,
+      pageSize: 20,
+      totalPages: 0
+    };
+  }
+  
+  @autoLog('list_performance_records', { logResultCount: true })
+  async _listRecordsInternal(queryParams) {
+    return await apiService.get(`${API_PREFIX}/performance`, queryParams);
   }
 
   /**
@@ -122,59 +99,29 @@ class PerformanceService {
    * @param {string} recordId - Performance record ID (UUID)
    * @returns {Promise<Object>} Performance record details
    */
+  @autoLog('get_performance_record', { logResourceId: true })
   async getRecord(recordId) {
-    try {
-      loggerService.info('Get performance record', {
-        module: 'PerformanceService',
-        function: 'getRecord',
-        request_path: `${API_PREFIX}/performance/${recordId}`,
-        record_id: recordId
-      });
-
-      const response = await apiService.get(`${API_PREFIX}/performance/${recordId}`);
+    const response = await apiService.get(`${API_PREFIX}/performance/${recordId}`);
+    
+    // Map backend response to frontend format
+    if (response) {
+      const mappedResponse = {
+        id: response.id,
+        year: response.year,
+        quarter: response.quarter,
+        type: response.type,
+        status: response.status,
+        dataJson: response.data_json,
+        submittedAt: response.submitted_at,
+        createdAt: response.created_at,
+        updatedAt: response.updated_at,
+        reviews: response.reviews || []
+      };
       
-      // Map backend response to frontend format
-      if (response) {
-        const mappedResponse = {
-          id: response.id,
-          year: response.year,
-          quarter: response.quarter,
-          type: response.type,
-          status: response.status,
-          dataJson: response.data_json,
-          submittedAt: response.submitted_at,
-          createdAt: response.created_at,
-          updatedAt: response.updated_at,
-          reviews: response.reviews || []
-        };
-        
-        loggerService.info('Get performance record successful', {
-          module: 'PerformanceService',
-          function: 'getRecord',
-          record_id: recordId,
-          response_status: 200
-        });
-        
-        return mappedResponse;
-      }
-      
-      return response;
-    } catch (error) {
-      loggerService.error('Get performance record failed', {
-        module: 'PerformanceService',
-        function: 'getRecord',
-        request_path: `${API_PREFIX}/performance/${recordId}`,
-        record_id: recordId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/performance/${recordId}`,
-        error_code: error.code || 'GET_RECORD_FAILED'
-      });
-      throw error;
+      return mappedResponse;
     }
+    
+    return response;
   }
 
   /**
@@ -189,62 +136,38 @@ class PerformanceService {
    * @returns {Promise<Object>} Created performance record
    */
   async createRecord(data) {
-    try {
-      loggerService.info('Create performance record', {
-        module: 'PerformanceService',
-        function: 'createRecord',
-        request_path: `${API_PREFIX}/performance`
-      });
-
-      const requestData = {
-        year: data.year,
-        quarter: data.quarter || null,
-        type: data.type,
-        data_json: data.dataJson || data.data_json
+    const requestData = {
+      year: data.year,
+      quarter: data.quarter || null,
+      type: data.type,
+      data_json: data.dataJson || data.data_json
+    };
+    
+    const response = await this._createRecordInternal(requestData);
+    
+    // Map backend response to frontend format
+    if (response) {
+      const mappedResponse = {
+        id: response.id,
+        year: response.year,
+        quarter: response.quarter,
+        type: response.type,
+        status: response.status,
+        dataJson: response.data_json,
+        submittedAt: response.submitted_at,
+        createdAt: response.created_at,
+        updatedAt: response.updated_at
       };
       
-      const response = await apiService.post(`${API_PREFIX}/performance`, requestData);
-      
-      // Map backend response to frontend format
-      if (response) {
-        const mappedResponse = {
-          id: response.id,
-          year: response.year,
-          quarter: response.quarter,
-          type: response.type,
-          status: response.status,
-          dataJson: response.data_json,
-          submittedAt: response.submitted_at,
-          createdAt: response.created_at,
-          updatedAt: response.updated_at
-        };
-        
-        loggerService.info('Create performance record successful', {
-          module: 'PerformanceService',
-          function: 'createRecord',
-          record_id: response.id,
-          response_status: 200
-        });
-        
-        return mappedResponse;
-      }
-      
-      return response;
-    } catch (error) {
-      loggerService.error('Create performance record failed', {
-        module: 'PerformanceService',
-        function: 'createRecord',
-        request_path: `${API_PREFIX}/performance`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'POST',
-        request_path: `${API_PREFIX}/performance`,
-        error_code: error.code || 'CREATE_RECORD_FAILED'
-      });
-      throw error;
+      return mappedResponse;
     }
+    
+    return response;
+  }
+  
+  @autoLog('create_performance_record', { logResourceId: true })
+  async _createRecordInternal(requestData) {
+    return await apiService.post(`${API_PREFIX}/performance`, requestData);
   }
 
   /**
@@ -260,72 +183,46 @@ class PerformanceService {
    * @returns {Promise<Object>} Updated performance record
    */
   async updateRecord(recordId, data) {
-    try {
-      loggerService.info('Update performance record', {
-        module: 'PerformanceService',
-        function: 'updateRecord',
-        request_path: `${API_PREFIX}/performance/${recordId}`,
-        record_id: recordId
-      });
-
-      const requestData = {};
-      
-      if (data.year !== undefined) {
-        requestData.year = data.year;
-      }
-      if (data.quarter !== undefined) {
-        requestData.quarter = data.quarter || null;
-      }
-      if (data.type !== undefined) {
-        requestData.type = data.type;
-      }
-      if (data.dataJson !== undefined || data.data_json !== undefined) {
-        requestData.data_json = data.dataJson || data.data_json;
-      }
-      
-      const response = await apiService.put(`${API_PREFIX}/performance/${recordId}`, requestData);
-      
-      // Map backend response to frontend format
-      if (response) {
-        const mappedResponse = {
-          id: response.id,
-          year: response.year,
-          quarter: response.quarter,
-          type: response.type,
-          status: response.status,
-          dataJson: response.data_json,
-          submittedAt: response.submitted_at,
-          createdAt: response.created_at,
-          updatedAt: response.updated_at
-        };
-        
-        loggerService.info('Update performance record successful', {
-          module: 'PerformanceService',
-          function: 'updateRecord',
-          record_id: recordId,
-          response_status: 200
-        });
-        
-        return mappedResponse;
-      }
-      
-      return response;
-    } catch (error) {
-      loggerService.error('Update performance record failed', {
-        module: 'PerformanceService',
-        function: 'updateRecord',
-        request_path: `${API_PREFIX}/performance/${recordId}`,
-        record_id: recordId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'PUT',
-        request_path: `${API_PREFIX}/performance/${recordId}`,
-        error_code: error.code || 'UPDATE_RECORD_FAILED'
-      });
-      throw error;
+    const requestData = {};
+    
+    if (data.year !== undefined) {
+      requestData.year = data.year;
     }
+    if (data.quarter !== undefined) {
+      requestData.quarter = data.quarter || null;
+    }
+    if (data.type !== undefined) {
+      requestData.type = data.type;
+    }
+    if (data.dataJson !== undefined || data.data_json !== undefined) {
+      requestData.data_json = data.dataJson || data.data_json;
+    }
+    
+    const response = await this._updateRecordInternal(recordId, requestData);
+    
+    // Map backend response to frontend format
+    if (response) {
+      const mappedResponse = {
+        id: response.id,
+        year: response.year,
+        quarter: response.quarter,
+        type: response.type,
+        status: response.status,
+        dataJson: response.data_json,
+        submittedAt: response.submitted_at,
+        createdAt: response.created_at,
+        updatedAt: response.updated_at
+      };
+      
+      return mappedResponse;
+    }
+    
+    return response;
+  }
+  
+  @autoLog('update_performance_record', { logResourceId: true })
+  async _updateRecordInternal(recordId, requestData) {
+    return await apiService.put(`${API_PREFIX}/performance/${recordId}`, requestData);
   }
 
   /**
@@ -335,39 +232,9 @@ class PerformanceService {
    * @param {string} recordId - Performance record ID (UUID)
    * @returns {Promise<void>}
    */
+  @autoLog('delete_performance_record', { logResourceId: true })
   async deleteRecord(recordId) {
-    try {
-      loggerService.info('Delete performance record', {
-        module: 'PerformanceService',
-        function: 'deleteRecord',
-        request_path: `${API_PREFIX}/performance/${recordId}`,
-        record_id: recordId
-      });
-
-      await apiService.delete(`${API_PREFIX}/performance/${recordId}`);
-      
-      loggerService.info('Delete performance record successful', {
-        module: 'PerformanceService',
-        function: 'deleteRecord',
-        record_id: recordId,
-        response_status: 200
-      });
-    } catch (error) {
-      loggerService.error('Delete performance record failed', {
-        module: 'PerformanceService',
-        function: 'deleteRecord',
-        request_path: `${API_PREFIX}/performance/${recordId}`,
-        record_id: recordId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'DELETE',
-        request_path: `${API_PREFIX}/performance/${recordId}`,
-        error_code: error.code || 'DELETE_RECORD_FAILED'
-      });
-      throw error;
-    }
+    await apiService.delete(`${API_PREFIX}/performance/${recordId}`);
   }
 
   /**
@@ -378,57 +245,31 @@ class PerformanceService {
    * @returns {Promise<Object>} Updated performance record
    */
   async submitRecord(recordId) {
-    try {
-      loggerService.info('Submit performance record', {
-        module: 'PerformanceService',
-        function: 'submitRecord',
-        request_path: `${API_PREFIX}/performance/${recordId}/submit`,
-        record_id: recordId
-      });
-
-      const response = await apiService.post(`${API_PREFIX}/performance/${recordId}/submit`);
+    const response = await this._submitRecordInternal(recordId);
+    
+    // Map backend response to frontend format
+    if (response) {
+      const mappedResponse = {
+        id: response.id,
+        year: response.year,
+        quarter: response.quarter,
+        type: response.type,
+        status: response.status,
+        dataJson: response.data_json,
+        submittedAt: response.submitted_at,
+        createdAt: response.created_at,
+        updatedAt: response.updated_at
+      };
       
-      // Map backend response to frontend format
-      if (response) {
-        const mappedResponse = {
-          id: response.id,
-          year: response.year,
-          quarter: response.quarter,
-          type: response.type,
-          status: response.status,
-          dataJson: response.data_json,
-          submittedAt: response.submitted_at,
-          createdAt: response.created_at,
-          updatedAt: response.updated_at
-        };
-        
-        loggerService.info('Submit performance record successful', {
-          module: 'PerformanceService',
-          function: 'submitRecord',
-          record_id: recordId,
-          response_status: 200
-        });
-        
-        return mappedResponse;
-      }
-      
-      return response;
-    } catch (error) {
-      loggerService.error('Submit performance record failed', {
-        module: 'PerformanceService',
-        function: 'submitRecord',
-        request_path: `${API_PREFIX}/performance/${recordId}/submit`,
-        record_id: recordId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'POST',
-        request_path: `${API_PREFIX}/performance/${recordId}/submit`,
-        error_code: error.code || 'SUBMIT_RECORD_FAILED'
-      });
-      throw error;
+      return mappedResponse;
     }
+    
+    return response;
+  }
+  
+  @autoLog('submit_performance_record', { logResourceId: true })
+  async _submitRecordInternal(recordId) {
+    return await apiService.post(`${API_PREFIX}/performance/${recordId}/submit`);
   }
 
   /**

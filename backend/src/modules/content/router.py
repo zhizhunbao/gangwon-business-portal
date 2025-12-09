@@ -13,9 +13,8 @@ from fastapi import Request
 
 from ...common.modules.db.session import get_db
 from ...common.modules.db.models import Member
-from ...common.modules.audit import audit_log_service, get_client_info
-from ...common.modules.logger import logging_service
-from ...common.modules.exception.responses import get_trace_id
+from ...common.modules.audit import audit_log
+from ...common.modules.logger import auto_log
 from ..user.dependencies import get_current_admin_user
 from .service import ContentService
 from .schemas import (
@@ -49,6 +48,7 @@ service = ContentService()
     tags=["content"],
     summary="List notices",
 )
+@auto_log("list_notices", log_result_count=True)
 async def list_notices(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -79,6 +79,7 @@ async def list_notices(
     tags=["content"],
     summary="Get latest 5 notices",
 )
+@auto_log("get_latest_notices")
 async def get_latest_notices(
     db: AsyncSession = Depends(get_db),
 ):
@@ -93,6 +94,7 @@ async def get_latest_notices(
     tags=["content"],
     summary="Get notice detail",
 )
+@auto_log("get_notice", log_resource_id=True)
 async def get_notice(
     notice_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -136,6 +138,8 @@ async def get_notice(
     tags=["content", "admin"],
     summary="Create notice",
 )
+@auto_log("create_notice", log_resource_id=True)
+@audit_log(action="create", resource_type="notice")
 async def create_notice(
     data: NoticeCreate,
     request: Request,
@@ -143,38 +147,7 @@ async def create_notice(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new notice (admin only)."""
-    trace_id = get_trace_id(request)
     notice = await service.create_notice(data, current_user.id, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="create",
-            user_id=current_user.id,
-            resource_type="notice",
-            resource_id=notice.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="create_notice",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=201,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
     
     return NoticeResponse(
         id=notice.id,
@@ -195,6 +168,8 @@ async def create_notice(
     tags=["content", "admin"],
     summary="Update notice",
 )
+@auto_log("update_notice", log_resource_id=True)
+@audit_log(action="update", resource_type="notice")
 async def update_notice(
     notice_id: UUID,
     data: NoticeUpdate,
@@ -203,38 +178,7 @@ async def update_notice(
     db: AsyncSession = Depends(get_db),
 ):
     """Update a notice (admin only)."""
-    trace_id = get_trace_id(request)
     notice = await service.update_notice(notice_id, data, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="update",
-            user_id=current_user.id,
-            resource_type="notice",
-            resource_id=notice.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="update_notice",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
     
     # Get author name if available
     author_name = None
@@ -265,6 +209,8 @@ async def update_notice(
     tags=["content", "admin"],
     summary="Delete notice",
 )
+@auto_log("delete_notice", log_resource_id=True)
+@audit_log(action="delete", resource_type="notice")
 async def delete_notice(
     notice_id: UUID,
     request: Request,
@@ -272,38 +218,7 @@ async def delete_notice(
     db: AsyncSession = Depends(get_db),
 ):
     """Delete a notice (admin only)."""
-    trace_id = get_trace_id(request)
     await service.delete_notice(notice_id, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="delete",
-            user_id=current_user.id,
-            resource_type="notice",
-            resource_id=notice_id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="delete_notice",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=204,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
 
 
 # Public Press Release Endpoints
@@ -314,6 +229,7 @@ async def delete_notice(
     tags=["content"],
     summary="List press releases",
 )
+@auto_log("list_press_releases", log_result_count=True)
 async def list_press_releases(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -377,6 +293,7 @@ async def get_latest_press(
     tags=["content"],
     summary="Get press release detail",
 )
+@auto_log("get_press_release", log_resource_id=True)
 async def get_press_release(
     press_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -413,6 +330,8 @@ async def get_press_release(
     tags=["content", "admin"],
     summary="Create press release",
 )
+@auto_log("create_press_release", log_resource_id=True)
+@audit_log(action="create", resource_type="press_release")
 async def create_press_release(
     data: PressReleaseCreate,
     request: Request,
@@ -420,38 +339,7 @@ async def create_press_release(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new press release (admin only)."""
-    trace_id = get_trace_id(request)
     press = await service.create_press_release(data, current_user.id, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="create",
-            user_id=current_user.id,
-            resource_type="press_release",
-            resource_id=press.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="create_press_release",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=201,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
     
     return PressReleaseResponse(
         id=press.id,
@@ -469,6 +357,8 @@ async def create_press_release(
     tags=["content", "admin"],
     summary="Update press release",
 )
+@auto_log("update_press_release", log_resource_id=True)
+@audit_log(action="update", resource_type="press_release")
 async def update_press_release(
     press_id: UUID,
     data: PressReleaseUpdate,
@@ -477,38 +367,7 @@ async def update_press_release(
     db: AsyncSession = Depends(get_db),
 ):
     """Update a press release (admin only)."""
-    trace_id = get_trace_id(request)
     press = await service.update_press_release(press_id, data, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="update",
-            user_id=current_user.id,
-            resource_type="press_release",
-            resource_id=press.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="update_press_release",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
     
     # Get author name if available
     author_name = None
@@ -536,6 +395,8 @@ async def update_press_release(
     tags=["content", "admin"],
     summary="Delete press release",
 )
+@auto_log("delete_press_release", log_resource_id=True)
+@audit_log(action="delete", resource_type="press_release")
 async def delete_press_release(
     press_id: UUID,
     request: Request,
@@ -543,38 +404,7 @@ async def delete_press_release(
     db: AsyncSession = Depends(get_db),
 ):
     """Delete a press release (admin only)."""
-    trace_id = get_trace_id(request)
     await service.delete_press_release(press_id, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="delete",
-            user_id=current_user.id,
-            resource_type="press_release",
-            resource_id=press_id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="delete_press_release",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=204,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
 
 
 # Public Banner Endpoints
@@ -585,6 +415,7 @@ async def delete_press_release(
     tags=["content"],
     summary="Get banners",
 )
+@auto_log("get_banners")
 async def get_banners(
     banner_type: Optional[str] = Query(default=None, description="Banner type: MAIN, INTRO, PROGRAM, PERFORMANCE, SUPPORT"),
     db: AsyncSession = Depends(get_db),
@@ -621,6 +452,7 @@ async def get_banners(
     tags=["content", "admin"],
     summary="Get all banners (admin)",
 )
+@auto_log("get_all_banners")
 async def get_all_banners(
     current_user: Member = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
@@ -652,6 +484,8 @@ async def get_all_banners(
     tags=["content", "admin"],
     summary="Create banner",
 )
+@auto_log("create_banner", log_resource_id=True)
+@audit_log(action="create", resource_type="banner")
 async def create_banner(
     data: BannerCreate,
     request: Request,
@@ -659,38 +493,7 @@ async def create_banner(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new banner (admin only)."""
-    trace_id = get_trace_id(request)
     banner = await service.create_banner(data, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="create",
-            user_id=current_user.id,
-            resource_type="banner",
-            resource_id=banner.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="create_banner",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=201,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
     
     return BannerResponse(
         id=banner.id,
@@ -710,6 +513,8 @@ async def create_banner(
     tags=["content", "admin"],
     summary="Update banner",
 )
+@auto_log("update_banner", log_resource_id=True)
+@audit_log(action="update", resource_type="banner")
 async def update_banner(
     banner_id: UUID,
     data: BannerUpdate,
@@ -718,38 +523,7 @@ async def update_banner(
     db: AsyncSession = Depends(get_db),
 ):
     """Update a banner (admin only)."""
-    trace_id = get_trace_id(request)
     banner = await service.update_banner(banner_id, data, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="update",
-            user_id=current_user.id,
-            resource_type="banner",
-            resource_id=banner.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="update_banner",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
     
     return BannerResponse(
         id=banner.id,
@@ -769,6 +543,8 @@ async def update_banner(
     tags=["content", "admin"],
     summary="Delete banner",
 )
+@auto_log("delete_banner", log_resource_id=True)
+@audit_log(action="delete", resource_type="banner")
 async def delete_banner(
     banner_id: UUID,
     request: Request,
@@ -776,38 +552,7 @@ async def delete_banner(
     db: AsyncSession = Depends(get_db),
 ):
     """Delete a banner (admin only)."""
-    trace_id = get_trace_id(request)
     await service.delete_banner(banner_id, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="delete",
-            user_id=current_user.id,
-            resource_type="banner",
-            resource_id=banner_id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="delete_banner",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=204,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
 
 
 # Public SystemInfo Endpoints
@@ -818,6 +563,7 @@ async def delete_banner(
     tags=["content"],
     summary="Get system information",
 )
+@auto_log("get_system_info")
 async def get_system_info(
     db: AsyncSession = Depends(get_db),
 ):
@@ -855,6 +601,8 @@ async def get_system_info(
     tags=["content", "admin"],
     summary="Update system information",
 )
+@auto_log("update_system_info", log_resource_id=True)
+@audit_log(action="update", resource_type="system_info")
 async def update_system_info(
     data: SystemInfoUpdate,
     request: Request,
@@ -862,38 +610,7 @@ async def update_system_info(
     db: AsyncSession = Depends(get_db),
 ):
     """Update system introduction content (admin only, upsert pattern)."""
-    trace_id = get_trace_id(request)
     system_info = await service.update_system_info(data, current_user.id, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="update",
-            user_id=current_user.id,
-            resource_type="system_info",
-            resource_id=system_info.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="update_system_info",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
     
     return SystemInfoResponse(
         id=system_info.id,

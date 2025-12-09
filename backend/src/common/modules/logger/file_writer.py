@@ -1,20 +1,27 @@
 """File log writer for application logs and exceptions.
 
-This module provides thread-safe file writing for:
-- application_logs.log - Combined backend and frontend application logs (merged for easier debugging)
-- application_exceptions.log - Combined backend and frontend exceptions (merged for easier debugging)
+This module provides thread-safe asynchronous file writing for:
+- app_logs.log - Combined backend and frontend application logs (merged for easier debugging)
+- app_exceptions.log - Combined backend and frontend exceptions (merged for easier debugging)
 - audit_logs.log - Audit logs (compliance and security tracking)
+
+Uses queue-based asynchronous writing to avoid blocking the main thread.
 """
 import json
+import queue
 import threading
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 import logging
 
 
 class FileLogWriter:
-    """Thread-safe file log writer for application logs and exceptions."""
+    """Thread-safe asynchronous file log writer for application logs and exceptions.
+
+    Uses a queue-based approach where log entries are enqueued and written
+    asynchronously by a background thread to avoid blocking the main thread.
+    """
 
     _instance = None
     _lock = threading.Lock()
@@ -29,7 +36,7 @@ class FileLogWriter:
         return cls._instance
 
     def __init__(self):
-        """Initialize file log writer."""
+        """Initialize file log writer with asynchronous queue-based writing."""
         if self._initialized:
             return
 
@@ -41,9 +48,9 @@ class FileLogWriter:
 
         # File paths
         # Merged application logs (backend + frontend) for easier debugging with trace_id correlation
-        self.application_logs_file = self.logs_dir / "application_logs.log"
+        self.application_logs_file = self.logs_dir / "app_logs.log"
         # Merged exceptions (backend + frontend) for easier debugging with trace_id correlation
-        self.application_exceptions_file = self.logs_dir / "application_exceptions.log"
+        self.application_exceptions_file = self.logs_dir / "app_exceptions.log"
         self.audit_logs_file = self.logs_dir / "audit_logs.log"
 
         # Initialize log files (create empty files if they don't exist)
@@ -59,10 +66,72 @@ class FileLogWriter:
         self.max_bytes = 50 * 1024 * 1024  # 50MB
         self.backup_count = 10
 
-        # Thread lock for writing
+        # Queue for asynchronous log writing
+        # Each entry is a tuple: (file_path: Path, entry: str)
+        self.log_queue: queue.Queue[Tuple[Path, str]] = queue.Queue(maxsize=10000)
+        
+        # Control flags for background thread
+        self._shutdown_event = threading.Event()
+        self._worker_thread: Optional[threading.Thread] = None
+        
+        # Thread lock for file operations (rotation, etc.)
         self.write_lock = threading.Lock()
+        
+        # Start background worker thread
+        self._start_worker_thread()
 
         self._initialized = True
+
+    def _start_worker_thread(self) -> None:
+        """Start the background worker thread for asynchronous log writing."""
+        self._worker_thread = threading.Thread(
+            target=self._worker_loop,
+            name="FileLogWriter-Worker",
+            daemon=True,
+        )
+        self._worker_thread.start()
+
+    def _worker_loop(self) -> None:
+        """Background worker thread that processes log entries from the queue."""
+        while not self._shutdown_event.is_set():
+            try:
+                # Get entry from queue with timeout to allow periodic shutdown check
+                try:
+                    file_path, entry = self.log_queue.get(timeout=0.5)
+                except queue.Empty:
+                    continue
+
+                # Write entry to file
+                self._write_entry_to_file(file_path, entry)
+                self.log_queue.task_done()
+            except Exception as e:
+                # Fallback to standard logging if queue processing fails
+                logging.error(f"Error in FileLogWriter worker thread: {e}")
+
+        # Process remaining entries in queue before shutdown
+        while True:
+            try:
+                file_path, entry = self.log_queue.get_nowait()
+                self._write_entry_to_file(file_path, entry)
+                self.log_queue.task_done()
+            except queue.Empty:
+                break
+
+    def _write_entry_to_file(self, file_path: Path, entry: str) -> None:
+        """Write a single log entry to the specified file.
+        
+        This method is called by the background worker thread.
+        """
+        with self.write_lock:
+            try:
+                # Rotate if needed
+                self._rotate_file_if_needed(file_path)
+                # Write to file
+                with open(file_path, "a", encoding="utf-8") as f:
+                    f.write(entry + "\n")
+            except Exception as e:
+                # Fallback to standard logging if file write fails
+                logging.error(f"Failed to write log entry to {file_path}: {e}")
 
     def _rotate_file_if_needed(self, file_path: Path) -> None:
         """Rotate file if it exceeds max size."""
@@ -183,17 +252,20 @@ class FileLogWriter:
 
         formatted_entry = self._format_log_entry(level, message, source=source, extra_data=log_data)
 
-        with self.write_lock:
+        # Enqueue log entry for asynchronous writing
+        try:
+            # Write all logs (backend + frontend) to the same file for easier debugging
+            # Use source field to distinguish between backend and frontend logs
+            self.log_queue.put((self.application_logs_file, formatted_entry), block=False)
+        except queue.Full:
+            # If queue is full, fallback to synchronous write to avoid losing logs
+            logging.warning("Log queue is full, falling back to synchronous write")
             try:
-                # Write all logs (backend + frontend) to the same file for easier debugging
-                # Use source field to distinguish between backend and frontend logs
-                # Rotate if needed
-                self._rotate_file_if_needed(self.application_logs_file)
-                # Write to file
-                with open(self.application_logs_file, "a", encoding="utf-8") as f:
-                    f.write(formatted_entry + "\n")
+                with self.write_lock:
+                    self._rotate_file_if_needed(self.application_logs_file)
+                    with open(self.application_logs_file, "a", encoding="utf-8") as f:
+                        f.write(formatted_entry + "\n")
             except Exception as e:
-                # Fallback to standard logging if file write fails
                 logging.error(f"Failed to write log to file: {e}")
 
     def write_exception(
@@ -254,17 +326,20 @@ class FileLogWriter:
             exception_type, exception_message, source=source, extra_data=exception_data
         )
 
-        with self.write_lock:
+        # Enqueue exception entry for asynchronous writing
+        try:
+            # Write all exceptions (backend + frontend) to the same file for easier debugging
+            # Use source field to distinguish between backend and frontend exceptions
+            self.log_queue.put((self.application_exceptions_file, formatted_entry), block=False)
+        except queue.Full:
+            # If queue is full, fallback to synchronous write to avoid losing logs
+            logging.warning("Log queue is full, falling back to synchronous write")
             try:
-                # Write all exceptions (backend + frontend) to the same file for easier debugging
-                # Use source field to distinguish between backend and frontend exceptions
-                # Rotate if needed
-                self._rotate_file_if_needed(self.application_exceptions_file)
-                # Write to file
-                with open(self.application_exceptions_file, "a", encoding="utf-8") as f:
-                    f.write(formatted_entry + "\n")
+                with self.write_lock:
+                    self._rotate_file_if_needed(self.application_exceptions_file)
+                    with open(self.application_exceptions_file, "a", encoding="utf-8") as f:
+                        f.write(formatted_entry + "\n")
             except Exception as e:
-                # Fallback to standard logging if file write fails
                 logging.error(f"Failed to write exception to file: {e}")
 
     def _format_audit_entry(
@@ -327,20 +402,47 @@ class FileLogWriter:
             extra_data=extra_data,
         )
 
-        with self.write_lock:
+        # Enqueue audit log entry for asynchronous writing
+        try:
+            self.log_queue.put((self.audit_logs_file, formatted_entry), block=False)
+        except queue.Full:
+            # If queue is full, fallback to synchronous write to avoid losing logs
+            logging.warning("Log queue is full, falling back to synchronous write")
             try:
-                # Rotate if needed
-                self._rotate_file_if_needed(self.audit_logs_file)
-                # Write to file
-                with open(self.audit_logs_file, "a", encoding="utf-8") as f:
-                    f.write(formatted_entry + "\n")
+                with self.write_lock:
+                    self._rotate_file_if_needed(self.audit_logs_file)
+                    with open(self.audit_logs_file, "a", encoding="utf-8") as f:
+                        f.write(formatted_entry + "\n")
             except Exception as e:
-                # Fallback to standard logging if file write fails
                 logging.error(f"Failed to write audit log to file: {e}")
 
-    def close(self) -> None:
-        """Close file writer (no-op for direct file writes)."""
-        pass
+    def close(self, timeout: float = 5.0) -> None:
+        """Close file writer gracefully, ensuring all queued logs are written.
+        
+        Args:
+            timeout: Maximum time to wait for queue to empty (seconds)
+        """
+        if not self._initialized or self._shutdown_event.is_set():
+            return
+
+        # Signal shutdown to worker thread
+        self._shutdown_event.set()
+
+        # Wait for worker thread to finish processing remaining entries
+        if self._worker_thread and self._worker_thread.is_alive():
+            # Wait for queue to be processed
+            try:
+                self.log_queue.join()
+            except Exception:
+                pass
+
+            # Wait for thread to finish
+            self._worker_thread.join(timeout=timeout)
+            
+            if self._worker_thread.is_alive():
+                logging.warning(
+                    f"FileLogWriter worker thread did not finish within {timeout}s timeout"
+                )
 
 
 # Singleton instance

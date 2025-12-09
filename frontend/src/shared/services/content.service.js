@@ -7,6 +7,7 @@ import { apiService } from './index';
 import loggerService from './logger.service';
 import exceptionService from './exception.service';
 import { API_PREFIX } from '@shared/utils/constants';
+import { autoLog } from '@shared/utils/decorators';
 
 /**
  * 转换后端 snake_case 到前端 camelCase
@@ -50,54 +51,25 @@ const contentService = {
    * @returns {Promise<Object>} 公告列表响应
    */
   async listNotices(params = {}) {
-    try {
-      loggerService.info('List notices', {
-        module: 'ContentService',
-        function: 'listNotices',
-        request_path: `${API_PREFIX}/notices`
-      });
-
-      const { page = 1, pageSize = 20, search } = params;
-      const queryParams = {
-        page,
-        page_size: pageSize,
-        ...(search && { search })
-      };
-      
-      const response = await apiService.get(`${API_PREFIX}/notices`, queryParams);
-      
-      // 转换响应格式
-      const result = {
-        items: (response.items || []).map(toCamelCase),
-        total: response.total || 0,
-        page: response.page || page,
-        pageSize: response.page_size || response.pageSize || pageSize,
-        totalPages: response.total_pages || response.totalPages || 0
-      };
-      
-      loggerService.info('List notices successful', {
-        module: 'ContentService',
-        function: 'listNotices',
-        total: result.total,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('List notices failed', {
-        module: 'ContentService',
-        function: 'listNotices',
-        request_path: `${API_PREFIX}/notices`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/notices`,
-        error_code: error.code || 'LIST_NOTICES_FAILED'
-      });
-      throw error;
-    }
+    const { page = 1, pageSize = 20, search } = params;
+    const queryParams = {
+      page,
+      page_size: pageSize,
+      ...(search && { search })
+    };
+    
+    const response = await listNoticesInternal(queryParams);
+    
+    // 转换响应格式
+    const result = {
+      items: (response.items || []).map(toCamelCase),
+      total: response.total || 0,
+      page: response.page || page,
+      pageSize: response.page_size || response.pageSize || pageSize,
+      totalPages: response.total_pages || response.totalPages || 0
+    };
+    
+    return result;
   },
   
   /**
@@ -105,39 +77,8 @@ const contentService = {
    * @returns {Promise<Array>} 公告列表
    */
   async getLatestNotices() {
-    try {
-      loggerService.info('Get latest notices', {
-        module: 'ContentService',
-        function: 'getLatestNotices',
-        request_path: `${API_PREFIX}/notices/latest5`
-      });
-
-      const response = await apiService.get(`${API_PREFIX}/notices/latest5`);
-      const result = (response || []).map(toCamelCase);
-      
-      loggerService.info('Get latest notices successful', {
-        module: 'ContentService',
-        function: 'getLatestNotices',
-        count: result.length,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Get latest notices failed', {
-        module: 'ContentService',
-        function: 'getLatestNotices',
-        request_path: `${API_PREFIX}/notices/latest5`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/notices/latest5`,
-        error_code: error.code || 'GET_LATEST_NOTICES_FAILED'
-      });
-      throw error;
-    }
+    const response = await getLatestNoticesInternal();
+    return (response || []).map(toCamelCase);
   },
   
   /**
@@ -146,41 +87,8 @@ const contentService = {
    * @returns {Promise<Object>} 公告详情
    */
   async getNotice(noticeId) {
-    try {
-      loggerService.info('Get notice', {
-        module: 'ContentService',
-        function: 'getNotice',
-        request_path: `${API_PREFIX}/notices/${noticeId}`,
-        notice_id: noticeId
-      });
-
-      const response = await apiService.get(`${API_PREFIX}/notices/${noticeId}`);
-      const result = toCamelCase(response);
-      
-      loggerService.info('Get notice successful', {
-        module: 'ContentService',
-        function: 'getNotice',
-        notice_id: noticeId,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Get notice failed', {
-        module: 'ContentService',
-        function: 'getNotice',
-        request_path: `${API_PREFIX}/notices/${noticeId}`,
-        notice_id: noticeId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/notices/${noticeId}`,
-        error_code: error.code || 'GET_NOTICE_FAILED'
-      });
-      throw error;
-    }
+    const response = await getNoticeInternal(noticeId);
+    return toCamelCase(response);
   },
   
   /**
@@ -192,45 +100,14 @@ const contentService = {
    * @returns {Promise<Object>} 创建的公告
    */
   async createNotice(data) {
-    try {
-      loggerService.info('Create notice', {
-        module: 'ContentService',
-        function: 'createNotice',
-        request_path: `${API_PREFIX}/admin/content/notices`
-      });
-
-      const payload = toSnakeCase({
-        title: data.title,
-        contentHtml: data.contentHtml,
-        boardType: data.boardType || 'notice'
-      });
-      
-      const response = await apiService.post(`${API_PREFIX}/admin/content/notices`, payload);
-      const result = toCamelCase(response);
-      
-      loggerService.info('Create notice successful', {
-        module: 'ContentService',
-        function: 'createNotice',
-        notice_id: result.id,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Create notice failed', {
-        module: 'ContentService',
-        function: 'createNotice',
-        request_path: `${API_PREFIX}/admin/content/notices`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'POST',
-        request_path: `${API_PREFIX}/admin/content/notices`,
-        error_code: error.code || 'CREATE_NOTICE_FAILED'
-      });
-      throw error;
-    }
+    const payload = toSnakeCase({
+      title: data.title,
+      contentHtml: data.contentHtml,
+      boardType: data.boardType || 'notice'
+    });
+    
+    const response = await createNoticeInternal(payload);
+    return toCamelCase(response);
   },
   
   /**
@@ -240,42 +117,9 @@ const contentService = {
    * @returns {Promise<Object>} 更新后的公告
    */
   async updateNotice(noticeId, data) {
-    try {
-      loggerService.info('Update notice', {
-        module: 'ContentService',
-        function: 'updateNotice',
-        request_path: `${API_PREFIX}/admin/content/notices/${noticeId}`,
-        notice_id: noticeId
-      });
-
-      const payload = toSnakeCase(data);
-      const response = await apiService.put(`${API_PREFIX}/admin/content/notices/${noticeId}`, payload);
-      const result = toCamelCase(response);
-      
-      loggerService.info('Update notice successful', {
-        module: 'ContentService',
-        function: 'updateNotice',
-        notice_id: noticeId,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Update notice failed', {
-        module: 'ContentService',
-        function: 'updateNotice',
-        request_path: `${API_PREFIX}/admin/content/notices/${noticeId}`,
-        notice_id: noticeId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'PUT',
-        request_path: `${API_PREFIX}/admin/content/notices/${noticeId}`,
-        error_code: error.code || 'UPDATE_NOTICE_FAILED'
-      });
-      throw error;
-    }
+    const payload = toSnakeCase(data);
+    const response = await updateNoticeInternal(noticeId, payload);
+    return toCamelCase(response);
   },
   
   /**
@@ -284,38 +128,7 @@ const contentService = {
    * @returns {Promise<void>}
    */
   async deleteNotice(noticeId) {
-    try {
-      loggerService.info('Delete notice', {
-        module: 'ContentService',
-        function: 'deleteNotice',
-        request_path: `${API_PREFIX}/admin/content/notices/${noticeId}`,
-        notice_id: noticeId
-      });
-
-      await apiService.delete(`${API_PREFIX}/admin/content/notices/${noticeId}`);
-      
-      loggerService.info('Delete notice successful', {
-        module: 'ContentService',
-        function: 'deleteNotice',
-        notice_id: noticeId,
-        response_status: 200
-      });
-    } catch (error) {
-      loggerService.error('Delete notice failed', {
-        module: 'ContentService',
-        function: 'deleteNotice',
-        request_path: `${API_PREFIX}/admin/content/notices/${noticeId}`,
-        notice_id: noticeId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'DELETE',
-        request_path: `${API_PREFIX}/admin/content/notices/${noticeId}`,
-        error_code: error.code || 'DELETE_NOTICE_FAILED'
-      });
-      throw error;
-    }
+    await deleteNoticeInternal(noticeId);
   },
   
   // ========== 新闻稿 (Press Releases) ==========
@@ -328,53 +141,24 @@ const contentService = {
    * @returns {Promise<Object>} 新闻稿列表响应
    */
   async listPressReleases(params = {}) {
-    try {
-      loggerService.info('List press releases', {
-        module: 'ContentService',
-        function: 'listPressReleases',
-        request_path: `${API_PREFIX}/press`
-      });
-
-      const { page = 1, pageSize = 20 } = params;
-      const queryParams = {
-        page,
-        page_size: pageSize
-      };
-      
-      const response = await apiService.get(`${API_PREFIX}/press`, queryParams);
-      
-      // 转换响应格式
-      const result = {
-        items: (response.items || []).map(toCamelCase),
-        total: response.total || 0,
-        page: response.page || page,
-        pageSize: response.page_size || response.pageSize || pageSize,
-        totalPages: response.total_pages || response.totalPages || 0
-      };
-      
-      loggerService.info('List press releases successful', {
-        module: 'ContentService',
-        function: 'listPressReleases',
-        total: result.total,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('List press releases failed', {
-        module: 'ContentService',
-        function: 'listPressReleases',
-        request_path: `${API_PREFIX}/press`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/press`,
-        error_code: error.code || 'LIST_PRESS_RELEASES_FAILED'
-      });
-      throw error;
-    }
+    const { page = 1, pageSize = 20 } = params;
+    const queryParams = {
+      page,
+      page_size: pageSize
+    };
+    
+    const response = await listPressReleasesInternal(queryParams);
+    
+    // 转换响应格式
+    const result = {
+      items: (response.items || []).map(toCamelCase),
+      total: response.total || 0,
+      page: response.page || page,
+      pageSize: response.page_size || response.pageSize || pageSize,
+      totalPages: response.total_pages || response.totalPages || 0
+    };
+    
+    return result;
   },
   
   /**
@@ -382,39 +166,8 @@ const contentService = {
    * @returns {Promise<Object|null>} 新闻稿详情或 null
    */
   async getLatestPressRelease() {
-    try {
-      loggerService.info('Get latest press release', {
-        module: 'ContentService',
-        function: 'getLatestPressRelease',
-        request_path: `${API_PREFIX}/press/latest1`
-      });
-
-      const response = await apiService.get(`${API_PREFIX}/press/latest1`);
-      const result = response ? toCamelCase(response) : null;
-      
-      loggerService.info('Get latest press release successful', {
-        module: 'ContentService',
-        function: 'getLatestPressRelease',
-        has_result: !!result,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Get latest press release failed', {
-        module: 'ContentService',
-        function: 'getLatestPressRelease',
-        request_path: `${API_PREFIX}/press/latest1`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/press/latest1`,
-        error_code: error.code || 'GET_LATEST_PRESS_RELEASE_FAILED'
-      });
-      throw error;
-    }
+    const response = await getLatestPressReleaseInternal();
+    return response ? toCamelCase(response) : null;
   },
   
   /**
@@ -423,41 +176,8 @@ const contentService = {
    * @returns {Promise<Object>} 新闻稿详情
    */
   async getPressRelease(pressId) {
-    try {
-      loggerService.info('Get press release', {
-        module: 'ContentService',
-        function: 'getPressRelease',
-        request_path: `${API_PREFIX}/press/${pressId}`,
-        press_id: pressId
-      });
-
-      const response = await apiService.get(`${API_PREFIX}/press/${pressId}`);
-      const result = toCamelCase(response);
-      
-      loggerService.info('Get press release successful', {
-        module: 'ContentService',
-        function: 'getPressRelease',
-        press_id: pressId,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Get press release failed', {
-        module: 'ContentService',
-        function: 'getPressRelease',
-        request_path: `${API_PREFIX}/press/${pressId}`,
-        press_id: pressId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/press/${pressId}`,
-        error_code: error.code || 'GET_PRESS_RELEASE_FAILED'
-      });
-      throw error;
-    }
+    const response = await getPressReleaseInternal(pressId);
+    return toCamelCase(response);
   },
   
   /**
@@ -468,44 +188,13 @@ const contentService = {
    * @returns {Promise<Object>} 创建的新闻稿
    */
   async createPressRelease(data) {
-    try {
-      loggerService.info('Create press release', {
-        module: 'ContentService',
-        function: 'createPressRelease',
-        request_path: `${API_PREFIX}/admin/content/press`
-      });
-
-      const payload = toSnakeCase({
-        title: data.title,
-        imageUrl: data.imageUrl
-      });
-      
-      const response = await apiService.post(`${API_PREFIX}/admin/content/press`, payload);
-      const result = toCamelCase(response);
-      
-      loggerService.info('Create press release successful', {
-        module: 'ContentService',
-        function: 'createPressRelease',
-        press_id: result.id,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Create press release failed', {
-        module: 'ContentService',
-        function: 'createPressRelease',
-        request_path: `${API_PREFIX}/admin/content/press`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'POST',
-        request_path: `${API_PREFIX}/admin/content/press`,
-        error_code: error.code || 'CREATE_PRESS_RELEASE_FAILED'
-      });
-      throw error;
-    }
+    const payload = toSnakeCase({
+      title: data.title,
+      imageUrl: data.imageUrl
+    });
+    
+    const response = await createPressReleaseInternal(payload);
+    return toCamelCase(response);
   },
   
   /**
@@ -515,42 +204,9 @@ const contentService = {
    * @returns {Promise<Object>} 更新后的新闻稿
    */
   async updatePressRelease(pressId, data) {
-    try {
-      loggerService.info('Update press release', {
-        module: 'ContentService',
-        function: 'updatePressRelease',
-        request_path: `${API_PREFIX}/admin/content/press/${pressId}`,
-        press_id: pressId
-      });
-
-      const payload = toSnakeCase(data);
-      const response = await apiService.put(`${API_PREFIX}/admin/content/press/${pressId}`, payload);
-      const result = toCamelCase(response);
-      
-      loggerService.info('Update press release successful', {
-        module: 'ContentService',
-        function: 'updatePressRelease',
-        press_id: pressId,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Update press release failed', {
-        module: 'ContentService',
-        function: 'updatePressRelease',
-        request_path: `${API_PREFIX}/admin/content/press/${pressId}`,
-        press_id: pressId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'PUT',
-        request_path: `${API_PREFIX}/admin/content/press/${pressId}`,
-        error_code: error.code || 'UPDATE_PRESS_RELEASE_FAILED'
-      });
-      throw error;
-    }
+    const payload = toSnakeCase(data);
+    const response = await updatePressReleaseInternal(pressId, payload);
+    return toCamelCase(response);
   },
   
   /**
@@ -559,38 +215,7 @@ const contentService = {
    * @returns {Promise<void>}
    */
   async deletePressRelease(pressId) {
-    try {
-      loggerService.info('Delete press release', {
-        module: 'ContentService',
-        function: 'deletePressRelease',
-        request_path: `${API_PREFIX}/admin/content/press/${pressId}`,
-        press_id: pressId
-      });
-
-      await apiService.delete(`${API_PREFIX}/admin/content/press/${pressId}`);
-      
-      loggerService.info('Delete press release successful', {
-        module: 'ContentService',
-        function: 'deletePressRelease',
-        press_id: pressId,
-        response_status: 200
-      });
-    } catch (error) {
-      loggerService.error('Delete press release failed', {
-        module: 'ContentService',
-        function: 'deletePressRelease',
-        request_path: `${API_PREFIX}/admin/content/press/${pressId}`,
-        press_id: pressId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'DELETE',
-        request_path: `${API_PREFIX}/admin/content/press/${pressId}`,
-        error_code: error.code || 'DELETE_PRESS_RELEASE_FAILED'
-      });
-      throw error;
-    }
+    await deletePressReleaseInternal(pressId);
   },
   
   // ========== 横幅 (Banners) ==========
@@ -602,42 +227,11 @@ const contentService = {
    * @returns {Promise<Array>} 横幅列表
    */
   async getBanners(params = {}) {
-    try {
-      loggerService.info('Get banners', {
-        module: 'ContentService',
-        function: 'getBanners',
-        request_path: `${API_PREFIX}/banners`
-      });
-
-      const { bannerType } = params;
-      const queryParams = bannerType ? { banner_type: bannerType } : {};
-      
-      const response = await apiService.get(`${API_PREFIX}/banners`, queryParams);
-      const result = (response.items || []).map(toCamelCase);
-      
-      loggerService.info('Get banners successful', {
-        module: 'ContentService',
-        function: 'getBanners',
-        count: result.length,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Get banners failed', {
-        module: 'ContentService',
-        function: 'getBanners',
-        request_path: `${API_PREFIX}/banners`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/banners`,
-        error_code: error.code || 'GET_BANNERS_FAILED'
-      });
-      throw error;
-    }
+    const { bannerType } = params;
+    const queryParams = bannerType ? { banner_type: bannerType } : {};
+    
+    const response = await getBannersInternal(queryParams);
+    return (response.items || []).map(toCamelCase);
   },
   
   /**
@@ -645,39 +239,8 @@ const contentService = {
    * @returns {Promise<Array>} 横幅列表
    */
   async getAllBanners() {
-    try {
-      loggerService.info('Get all banners', {
-        module: 'ContentService',
-        function: 'getAllBanners',
-        request_path: `${API_PREFIX}/admin/content/banners`
-      });
-
-      const response = await apiService.get(`${API_PREFIX}/admin/content/banners`);
-      const result = (response.items || []).map(toCamelCase);
-      
-      loggerService.info('Get all banners successful', {
-        module: 'ContentService',
-        function: 'getAllBanners',
-        count: result.length,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Get all banners failed', {
-        module: 'ContentService',
-        function: 'getAllBanners',
-        request_path: `${API_PREFIX}/admin/content/banners`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/admin/content/banners`,
-        error_code: error.code || 'GET_ALL_BANNERS_FAILED'
-      });
-      throw error;
-    }
+    const response = await getAllBannersInternal();
+    return (response.items || []).map(toCamelCase);
   },
   
   /**
@@ -691,47 +254,16 @@ const contentService = {
    * @returns {Promise<Object>} 创建的横幅
    */
   async createBanner(data) {
-    try {
-      loggerService.info('Create banner', {
-        module: 'ContentService',
-        function: 'createBanner',
-        request_path: `${API_PREFIX}/admin/content/banners`
-      });
-
-      const payload = toSnakeCase({
-        bannerType: data.bannerType,
-        imageUrl: data.imageUrl,
-        linkUrl: data.linkUrl,
-        isActive: data.isActive !== undefined ? data.isActive : true,
-        displayOrder: data.displayOrder || 0
-      });
-      
-      const response = await apiService.post(`${API_PREFIX}/admin/content/banners`, payload);
-      const result = toCamelCase(response);
-      
-      loggerService.info('Create banner successful', {
-        module: 'ContentService',
-        function: 'createBanner',
-        banner_id: result.id,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Create banner failed', {
-        module: 'ContentService',
-        function: 'createBanner',
-        request_path: `${API_PREFIX}/admin/content/banners`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'POST',
-        request_path: `${API_PREFIX}/admin/content/banners`,
-        error_code: error.code || 'CREATE_BANNER_FAILED'
-      });
-      throw error;
-    }
+    const payload = toSnakeCase({
+      bannerType: data.bannerType,
+      imageUrl: data.imageUrl,
+      linkUrl: data.linkUrl,
+      isActive: data.isActive !== undefined ? data.isActive : true,
+      displayOrder: data.displayOrder || 0
+    });
+    
+    const response = await createBannerInternal(payload);
+    return toCamelCase(response);
   },
   
   /**
@@ -741,42 +273,9 @@ const contentService = {
    * @returns {Promise<Object>} 更新后的横幅
    */
   async updateBanner(bannerId, data) {
-    try {
-      loggerService.info('Update banner', {
-        module: 'ContentService',
-        function: 'updateBanner',
-        request_path: `${API_PREFIX}/admin/content/banners/${bannerId}`,
-        banner_id: bannerId
-      });
-
-      const payload = toSnakeCase(data);
-      const response = await apiService.put(`${API_PREFIX}/admin/content/banners/${bannerId}`, payload);
-      const result = toCamelCase(response);
-      
-      loggerService.info('Update banner successful', {
-        module: 'ContentService',
-        function: 'updateBanner',
-        banner_id: bannerId,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Update banner failed', {
-        module: 'ContentService',
-        function: 'updateBanner',
-        request_path: `${API_PREFIX}/admin/content/banners/${bannerId}`,
-        banner_id: bannerId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'PUT',
-        request_path: `${API_PREFIX}/admin/content/banners/${bannerId}`,
-        error_code: error.code || 'UPDATE_BANNER_FAILED'
-      });
-      throw error;
-    }
+    const payload = toSnakeCase(data);
+    const response = await updateBannerInternal(bannerId, payload);
+    return toCamelCase(response);
   },
   
   /**
@@ -785,38 +284,7 @@ const contentService = {
    * @returns {Promise<void>}
    */
   async deleteBanner(bannerId) {
-    try {
-      loggerService.info('Delete banner', {
-        module: 'ContentService',
-        function: 'deleteBanner',
-        request_path: `${API_PREFIX}/admin/content/banners/${bannerId}`,
-        banner_id: bannerId
-      });
-
-      await apiService.delete(`${API_PREFIX}/admin/content/banners/${bannerId}`);
-      
-      loggerService.info('Delete banner successful', {
-        module: 'ContentService',
-        function: 'deleteBanner',
-        banner_id: bannerId,
-        response_status: 200
-      });
-    } catch (error) {
-      loggerService.error('Delete banner failed', {
-        module: 'ContentService',
-        function: 'deleteBanner',
-        request_path: `${API_PREFIX}/admin/content/banners/${bannerId}`,
-        banner_id: bannerId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'DELETE',
-        request_path: `${API_PREFIX}/admin/content/banners/${bannerId}`,
-        error_code: error.code || 'DELETE_BANNER_FAILED'
-      });
-      throw error;
-    }
+    await deleteBannerInternal(bannerId);
   },
   
   // ========== 系统信息 (System Info) ==========
@@ -826,39 +294,8 @@ const contentService = {
    * @returns {Promise<Object|null>} 系统信息或 null
    */
   async getSystemInfo() {
-    try {
-      loggerService.info('Get system info', {
-        module: 'ContentService',
-        function: 'getSystemInfo',
-        request_path: `${API_PREFIX}/system-info`
-      });
-
-      const response = await apiService.get(`${API_PREFIX}/system-info`);
-      const result = response ? toCamelCase(response) : null;
-      
-      loggerService.info('Get system info successful', {
-        module: 'ContentService',
-        function: 'getSystemInfo',
-        has_result: !!result,
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Get system info failed', {
-        module: 'ContentService',
-        function: 'getSystemInfo',
-        request_path: `${API_PREFIX}/system-info`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/system-info`,
-        error_code: error.code || 'GET_SYSTEM_INFO_FAILED'
-      });
-      throw error;
-    }
+    const response = await getSystemInfoInternal();
+    return response ? toCamelCase(response) : null;
   },
   
   /**
@@ -869,45 +306,130 @@ const contentService = {
    * @returns {Promise<Object>} 更新后的系统信息
    */
   async updateSystemInfo(data) {
-    try {
-      loggerService.info('Update system info', {
-        module: 'ContentService',
-        function: 'updateSystemInfo',
-        request_path: `${API_PREFIX}/admin/content/system-info`
-      });
-
-      const payload = toSnakeCase({
-        contentHtml: data.contentHtml,
-        imageUrl: data.imageUrl
-      });
-      
-      const response = await apiService.put(`${API_PREFIX}/admin/content/system-info`, payload);
-      const result = toCamelCase(response);
-      
-      loggerService.info('Update system info successful', {
-        module: 'ContentService',
-        function: 'updateSystemInfo',
-        response_status: 200
-      });
-      
-      return result;
-    } catch (error) {
-      loggerService.error('Update system info failed', {
-        module: 'ContentService',
-        function: 'updateSystemInfo',
-        request_path: `${API_PREFIX}/admin/content/system-info`,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'PUT',
-        request_path: `${API_PREFIX}/admin/content/system-info`,
-        error_code: error.code || 'UPDATE_SYSTEM_INFO_FAILED'
-      });
-      throw error;
-    }
+    const payload = toSnakeCase({
+      contentHtml: data.contentHtml,
+      imageUrl: data.imageUrl
+    });
+    
+    const response = await updateSystemInfoInternal(payload);
+    return toCamelCase(response);
   }
 };
+
+// 内部辅助函数（使用装饰器）
+const listNoticesInternal = autoLog('list_notices', { logResultCount: true, serviceName: 'ContentService', methodName: 'listNotices' })(
+  async (queryParams) => {
+    return await apiService.get(`${API_PREFIX}/notices`, queryParams);
+  }
+);
+
+const getLatestNoticesInternal = autoLog('get_latest_notices', { logResultCount: true, serviceName: 'ContentService', methodName: 'getLatestNotices' })(
+  async () => {
+    return await apiService.get(`${API_PREFIX}/notices/latest5`);
+  }
+);
+
+const getNoticeInternal = autoLog('get_notice', { logResourceId: true, serviceName: 'ContentService', methodName: 'getNotice' })(
+  async (noticeId) => {
+    return await apiService.get(`${API_PREFIX}/notices/${noticeId}`);
+  }
+);
+
+const createNoticeInternal = autoLog('create_notice', { logResourceId: true, serviceName: 'ContentService', methodName: 'createNotice' })(
+  async (data) => {
+    return await apiService.post(`${API_PREFIX}/admin/content/notices`, data);
+  }
+);
+
+const updateNoticeInternal = autoLog('update_notice', { logResourceId: true, serviceName: 'ContentService', methodName: 'updateNotice' })(
+  async (noticeId, data) => {
+    return await apiService.put(`${API_PREFIX}/admin/content/notices/${noticeId}`, data);
+  }
+);
+
+const deleteNoticeInternal = autoLog('delete_notice', { logResourceId: true, serviceName: 'ContentService', methodName: 'deleteNotice' })(
+  async (noticeId) => {
+    return await apiService.delete(`${API_PREFIX}/admin/content/notices/${noticeId}`);
+  }
+);
+
+const listPressReleasesInternal = autoLog('list_press_releases', { logResultCount: true, serviceName: 'ContentService', methodName: 'listPressReleases' })(
+  async (queryParams) => {
+    return await apiService.get(`${API_PREFIX}/press`, queryParams);
+  }
+);
+
+const getLatestPressReleaseInternal = autoLog('get_latest_press_release', { serviceName: 'ContentService', methodName: 'getLatestPressRelease' })(
+  async () => {
+    return await apiService.get(`${API_PREFIX}/press/latest1`);
+  }
+);
+
+const getPressReleaseInternal = autoLog('get_press_release', { logResourceId: true, serviceName: 'ContentService', methodName: 'getPressRelease' })(
+  async (pressId) => {
+    return await apiService.get(`${API_PREFIX}/press/${pressId}`);
+  }
+);
+
+const createPressReleaseInternal = autoLog('create_press_release', { logResourceId: true, serviceName: 'ContentService', methodName: 'createPressRelease' })(
+  async (data) => {
+    return await apiService.post(`${API_PREFIX}/admin/content/press`, data);
+  }
+);
+
+const updatePressReleaseInternal = autoLog('update_press_release', { logResourceId: true, serviceName: 'ContentService', methodName: 'updatePressRelease' })(
+  async (pressId, data) => {
+    return await apiService.put(`${API_PREFIX}/admin/content/press/${pressId}`, data);
+  }
+);
+
+const deletePressReleaseInternal = autoLog('delete_press_release', { logResourceId: true, serviceName: 'ContentService', methodName: 'deletePressRelease' })(
+  async (pressId) => {
+    return await apiService.delete(`${API_PREFIX}/admin/content/press/${pressId}`);
+  }
+);
+
+const getBannersInternal = autoLog('get_banners', { logResultCount: true, serviceName: 'ContentService', methodName: 'getBanners' })(
+  async (queryParams) => {
+    return await apiService.get(`${API_PREFIX}/banners`, queryParams);
+  }
+);
+
+const getAllBannersInternal = autoLog('get_all_banners', { logResultCount: true, serviceName: 'ContentService', methodName: 'getAllBanners' })(
+  async () => {
+    return await apiService.get(`${API_PREFIX}/admin/content/banners`);
+  }
+);
+
+const createBannerInternal = autoLog('create_banner', { logResourceId: true, serviceName: 'ContentService', methodName: 'createBanner' })(
+  async (data) => {
+    return await apiService.post(`${API_PREFIX}/admin/content/banners`, data);
+  }
+);
+
+const updateBannerInternal = autoLog('update_banner', { logResourceId: true, serviceName: 'ContentService', methodName: 'updateBanner' })(
+  async (bannerId, data) => {
+    return await apiService.put(`${API_PREFIX}/admin/content/banners/${bannerId}`, data);
+  }
+);
+
+const deleteBannerInternal = autoLog('delete_banner', { logResourceId: true, serviceName: 'ContentService', methodName: 'deleteBanner' })(
+  async (bannerId) => {
+    return await apiService.delete(`${API_PREFIX}/admin/content/banners/${bannerId}`);
+  }
+);
+
+const getSystemInfoInternal = autoLog('get_system_info', { serviceName: 'ContentService', methodName: 'getSystemInfo' })(
+  async () => {
+    return await apiService.get(`${API_PREFIX}/system-info`);
+  }
+);
+
+const updateSystemInfoInternal = autoLog('update_system_info', { serviceName: 'ContentService', methodName: 'updateSystemInfo' })(
+  async (data) => {
+    return await apiService.put(`${API_PREFIX}/admin/content/system-info`, data);
+  }
+);
 
 export default contentService;
 

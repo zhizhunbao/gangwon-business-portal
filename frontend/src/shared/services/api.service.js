@@ -2,7 +2,6 @@ import axios from 'axios';
 import { API_BASE_URL, API_PREFIX, ACCESS_TOKEN_KEY, HTTP_STATUS } from '@shared/utils/constants';
 import { getStorage, setStorage, removeStorage } from '@shared/utils/storage';
 import loggerService from './logger.service';
-import exceptionService from './exception.service';
 
 function sanitizeRequestData(data) {
   if (!data) return null;
@@ -52,43 +51,25 @@ apiClient.interceptors.request.use(
     if (token) config.headers.Authorization = `Bearer ${token}`;
     const language = getStorage('language') || 'ko';
     config.headers['Accept-Language'] = language;
+    // Pass frontend-generated trace_id to backend via X-Trace-Id header for request correlation
+    if (loggerService.traceId) {
+      config.headers['X-Trace-Id'] = loggerService.traceId;
+    }
     if (config.data instanceof FormData) delete config.headers['Content-Type'];
     config._startTime = Date.now();
     return config;
   },
   (error) => {
-    loggerService.error('API Request Error', {
-      request_method: error.config?.method,
-      request_path: error.config?.url,
-      error: error.message,
-    });
+    // Request configuration error - reject without logging
+    // (Service layer decorators will handle logging if needed)
     return Promise.reject(error);
   }
 );
 
 apiClient.interceptors.response.use(
   (response) => {
-    const duration = response.config._startTime ? Date.now() - response.config._startTime : null;
-    // Get the full request URL (axios config.url is relative to baseURL)
-    const requestUrl = response.config.url || '';
-    
-    // Skip logging for logging and exception endpoints to avoid recursion
-    if (!requestUrl?.includes('/logging/') && !requestUrl?.includes('/exceptions/')) {
-      const status = response.status;
-      // Log all successful responses (200-299) and server errors (500+)
-      // 4xx errors are logged in the error handler below
-      if ((status >= 200 && status < 300) || status >= 500) {
-        const level = status >= 500 ? 'WARNING' : 'INFO';
-        loggerService.log(level, `API: ${response.config.method?.toUpperCase()} ${requestUrl} -> ${status}`, {
-          request_method: response.config.method,
-          request_path: requestUrl,
-          request_data: sanitizeRequestData(response.config.data),
-          response_status: status,
-          duration_ms: duration,
-          force_dedup: true,
-        });
-      }
-    }
+    // Successful responses are logged by @autoLog decorators in service methods
+    // Interceptor only handles data transformation
     if (response.config.responseType === 'blob') return response;
     return response.data;
   },
@@ -113,12 +94,7 @@ apiClient.interceptors.response.use(
         removeStorage(ACCESS_TOKEN_KEY);
         removeStorage('refresh_token');
         removeStorage('user_info');
-        exceptionService.recordException(refreshError, {
-          request_method: 'POST',
-          request_path: `${API_PREFIX}/auth/refresh`,
-          error_code: 'TOKEN_REFRESH_FAILED',
-          status_code: refreshError.response?.status,
-        });
+        // Token refresh error will be caught by global exception handler or decorator
         const currentPath = window.location.pathname;
         const isPublicPage = 
           currentPath === '/member' || 
@@ -134,64 +110,14 @@ apiClient.interceptors.response.use(
     
     // Get the full request URL (axios config.url is relative to baseURL)
     const requestUrl = originalRequest?.url || '';
-    
-    if (!requestUrl?.includes('/logging/') && !requestUrl?.includes('/exceptions/')) {
-      const errorMessage = error.response?.data?.detail || error.response?.data?.message || error.message || 'An error occurred';
-      const errorCode = error.response?.data?.code || 'API_ERROR';
-      const status = error.response?.status;
-      
-      // Record 5xx errors and important 4xx errors as exceptions
-      // Important 4xx errors: 404 (Not Found), 403 (Forbidden), 401 (Unauthorized - but token refresh is handled separately)
-      const shouldRecordAsException = status >= 500 || (status === 404 || status === 403);
-      
-      if (shouldRecordAsException) {
-        exceptionService.recordException(new Error(errorMessage), {
-          request_method: originalRequest?.method,
-          request_path: requestUrl,
-          request_data: sanitizeRequestData(originalRequest?.data),
-          error_code: errorCode,
-          status_code: status,
-          duration_ms: duration,
-        });
-      }
-      
-      // Log all errors (4xx and 5xx) as warnings
-      // 4xx errors are client errors (like 404), 5xx are server errors
-      if (status !== undefined) {
-        const logLevel = status >= 500 ? 'ERROR' : 'WARNING';
-        loggerService.log(logLevel, `API Error: ${originalRequest?.method?.toUpperCase()} ${requestUrl} -> ${status}`, {
-          request_method: originalRequest?.method,
-          request_path: requestUrl,
-          request_data: sanitizeRequestData(originalRequest?.data),
-          response_status: status,
-          error_code: errorCode,
-          error_message: errorMessage,
-          duration_ms: duration,
-          force_dedup: true,
-        });
-      } else {
-        // Network errors or other errors without status code - also record as exceptions
-        exceptionService.recordException(new Error(errorMessage), {
-          request_method: originalRequest?.method,
-          request_path: requestUrl,
-          request_data: sanitizeRequestData(originalRequest?.data),
-          error_code: 'NETWORK_ERROR',
-          status_code: null,
-          duration_ms: duration,
-        });
-        loggerService.warn(`API Error: ${originalRequest?.method?.toUpperCase()} ${requestUrl} -> Network Error`, {
-          request_method: originalRequest?.method,
-          request_path: requestUrl,
-          request_data: sanitizeRequestData(originalRequest?.data),
-          error_code: errorCode,
-          error_message: errorMessage,
-          duration_ms: duration,
-          force_dedup: true,
-        });
-      }
-    }
-    
     const errorMessage = error.response?.data?.detail || error.response?.data?.message || error.message || 'An error occurred';
+    const errorCode = error.response?.data?.code || 'API_ERROR';
+    const status = error.response?.status;
+    
+    // Error logging and exception recording are handled by:
+    // 1. @autoLog decorators in service methods (for business errors)
+    // 2. Global exception handlers (for unhandled errors)
+    // Interceptor only handles infrastructure concerns (token refresh, data transformation)
     return Promise.reject({
       message: errorMessage,
       status: error.response?.status,

@@ -7,6 +7,7 @@ import apiService from './api.service';
 import loggerService from './logger.service';
 import exceptionService from './exception.service';
 import { API_PREFIX } from '@shared/utils/constants';
+import { autoLog } from '@shared/utils/decorators';
 
 class UploadService {
   /**
@@ -86,32 +87,21 @@ class UploadService {
    * @returns {Promise<void>}
    */
   async downloadFile(fileId, filename = null) {
-    try {
-      // First get file info to get the download URL
-      const fileInfo = await this.getFileInfo(fileId);
-      
-      if (!fileInfo.file_url) {
-        throw new Error('File URL not available');
-      }
-
-      // Use the file URL to download
-      const downloadFilename = filename || fileInfo.original_name || `file-${fileId}`;
-      await apiService.download(fileInfo.file_url, {}, downloadFilename);
-    } catch (error) {
-      loggerService.error('Failed to download file', {
-        module: 'UploadService',
-        function: 'downloadFile',
-        file_id: fileId,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_method: 'GET',
-        request_path: `${API_PREFIX}/upload/${fileId}`,
-        error_code: error.code || 'DOWNLOAD_FILE_FAILED'
-      });
-      throw error;
+    // First get file info to get the download URL
+    const fileInfo = await this.getFileInfo(fileId);
+    
+    if (!fileInfo.file_url) {
+      throw new Error('File URL not available');
     }
+
+    // Use the file URL to download
+    const downloadFilename = filename || fileInfo.original_name || `file-${fileId}`;
+    await this._downloadFileInternal(fileInfo.file_url, downloadFilename);
+  }
+  
+  @autoLog('download_file', { logResourceId: true })
+  async _downloadFileInternal(fileUrl, filename) {
+    await apiService.download(fileUrl, {}, filename);
   }
 
   /**

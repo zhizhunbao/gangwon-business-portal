@@ -26,6 +26,8 @@ from .formatter import JSONFormatter
 from .file_writer import file_log_writer
 from .service import LoggingService
 from .router import router as logging_router
+from .request import get_trace_id, set_request_context, get_request_context
+from .decorator import auto_log
 
 # Initialize logging on import
 setup_logging()
@@ -44,5 +46,9 @@ __all__ = [
     "LoggingService",
     "logging_service",
     "logging_router",
+    "get_trace_id",
+    "set_request_context",
+    "get_request_context",
+    "auto_log",
 ]
 

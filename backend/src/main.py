@@ -15,8 +15,10 @@ from contextlib import asynccontextmanager
 from sqlalchemy.exc import SQLAlchemyError
 
 from .common.modules.config import settings
+from fastapi.exceptions import HTTPException
 from .common.modules.exception import (
     app_exception_handler,
+    http_exception_handler,
     validation_exception_handler,
     sqlalchemy_exception_handler,
     general_exception_handler,
@@ -59,7 +61,7 @@ async def log_http_requests(request: Request, call_next):
     Also generates a trace_id for error tracking.
     Records logs to both console and business log system (file + database).
     """
-    from .common.modules.exception.responses import get_trace_id
+    from .common.modules.logger.request import get_trace_id, set_request_context
     from .common.modules.logger import logging_service
 
     # Skip logging for health check endpoints, static files, and logging/exception endpoints
@@ -79,16 +81,28 @@ async def log_http_requests(request: Request, call_next):
     # Generate trace_id for this request
     trace_id = get_trace_id(request)
 
-    start_time = time.time()
-    response = await call_next(request)
-    process_time_ms = (time.time() - start_time) * 1000
-
     # Get request information
     ip_address = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")
     
     # Try to get user_id from request state (if authenticated)
     user_id = getattr(request.state, "user_id", None)
+    
+    # Set request context for SQL logging and other async operations
+    # This allows SQL logs to include trace_id, user_id, request_path, etc.
+    # user_id is stored as-is (UUID or None), no need to convert to string
+    set_request_context(
+        trace_id=trace_id,
+        user_id=user_id,  # Keep as UUID, no string conversion needed
+        request_path=request.url.path,
+        request_method=request.method,
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+
+    start_time = time.time()
+    response = await call_next(request)
+    process_time_ms = (time.time() - start_time) * 1000
 
     # Determine log level based on status code
     if response.status_code >= 500:
@@ -149,9 +163,12 @@ app.add_middleware(
 )
 
 # Register exception handlers
+# Order matters: more specific handlers should be registered first
 app.add_exception_handler(AppException, app_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
+# General exception handler should be last (catches all remaining exceptions)
 app.add_exception_handler(Exception, general_exception_handler)
 
 # Register routers

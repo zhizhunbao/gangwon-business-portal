@@ -3,15 +3,13 @@ Authentication router.
 
 API endpoints for user authentication and authorization.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...common.modules.db.session import get_db
 from ...common.modules.db.models import Member
-from ...common.modules.exception import UnauthorizedError, exception_service
-from ...common.modules.audit import audit_log_service, get_client_info
-from ...common.modules.logger import logging_service
-from ...common.modules.exception.responses import get_trace_id
+from ...common.modules.audit import audit_log
+from ...common.modules.logger import auto_log
 from .schemas import (
     MemberRegisterRequest,
     LoginRequest,
@@ -32,6 +30,8 @@ auth_service = AuthService()
 
 
 @router.post("/register", response_model=dict, status_code=status.HTTP_201_CREATED)
+@auto_log("register_member", log_resource_id=True)
+@audit_log(action="create", resource_type="member")
 async def register(
     data: MemberRegisterRequest,
     request: Request,
@@ -43,53 +43,16 @@ async def register(
     This endpoint handles the complete member registration process including
     account creation, profile setup, and file attachments.
     """
-    trace_id = get_trace_id(request)
-    try:
-        member = await auth_service.register_member(data, db)
-        
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message="Member registration succeeded",
-            module=__name__,
-            function="register",
-            trace_id=trace_id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=201,
-            extra_data={
-                "member_id": str(member.id),
-            },
-        )
-        
-        return {
-            "message": "Registration successful. Please wait for admin approval.",
-            "member_id": str(member.id),
-        }
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Member registration failed: {str(e)}",
-            module=__name__,
-            function="register",
-            trace_id=trace_id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=400,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-        
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+    member = await auth_service.register_member(data, db)
+    return {
+        "message": "Registration successful. Please wait for admin approval.",
+        "member_id": str(member.id),
+    }
 
 
 @router.post("/login", response_model=TokenResponse)
+@auto_log("login_member", log_resource_id=True)
+@audit_log(action="login", resource_type="member")
 async def login(
     data: LoginRequest,
     request: Request,
@@ -100,102 +63,31 @@ async def login(
 
     Authenticates a member and returns a JWT access token.
     """
-    trace_id = get_trace_id(request)
-    try:
-        member = await auth_service.authenticate(data.business_number, data.password, db)
+    member = await auth_service.authenticate(data.business_number, data.password, db)
 
-        # Create access token
-        access_token = auth_service.create_access_token(
-            data={"sub": str(member.id), "role": "member"}
-        )
+    # Create access token
+    access_token = auth_service.create_access_token(
+        data={"sub": str(member.id), "role": "member"}
+    )
 
-        # Record audit log for successful login
-        try:
-            ip_address, user_agent = get_client_info(request)
-            await audit_log_service.create_audit_log(
-                db=db,
-                action="login",
-                user_id=member.id,
-                resource_type="member",
-                resource_id=member.id,
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
-        except Exception as e:
-            # Log error but don't fail the login
-            logging_service.create_log(
-                source="backend",
-                level="ERROR",
-                message=f"Failed to create audit log for login: {str(e)}",
-                module=__name__,
-                function="login",
-                trace_id=trace_id,
-                user_id=member.id,
-                request_path=request.url.path,
-                request_method=request.method,
-                response_status=200,
-                extra_data={
-                    "error": str(e),
-                    "error_type": type(e).__name__,
-                },
-            )
-
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message="Member login succeeded",
-            module=__name__,
-            function="login",
-            trace_id=trace_id,
-            user_id=member.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-        )
-
-        return TokenResponse(
-            access_token=access_token,
-            token_type="bearer",
-            user={
-                "id": str(member.id),
-                "business_number": member.business_number,
-                "company_name": member.company_name,
-                "email": member.email,
-                "status": member.status,
-                "approval_status": member.approval_status,
-                "role": "member",  # Add role field for frontend authorization
-            },
-        )
-    except UnauthorizedError as e:
-        # Record exception to file for security monitoring
-        try:
-            ip_address, user_agent = get_client_info(request)
-            exception_service.create_exception(
-                source="backend",
-                exception_type=type(e).__name__,
-                exception_message=str(e),
-                error_code="LOGIN_FAILED",
-                status_code=401,
-                trace_id=trace_id,
-                user_id=None,  # User not authenticated
-                ip_address=ip_address,
-                user_agent=user_agent,
-                request_method=request.method,
-                request_path=request.url.path,
-                request_data={"business_number": data.business_number} if hasattr(data, "business_number") else None,
-                exc=e,
-            )
-        except Exception:
-            # Don't fail the request if exception logging fails
-            pass
-
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user={
+            "id": str(member.id),
+            "business_number": member.business_number,
+            "company_name": member.company_name,
+            "email": member.email,
+            "status": member.status,
+            "approval_status": member.approval_status,
+            "role": "member",  # Add role field for frontend authorization
+        },
+    )
 
 
 @router.post("/admin-login", response_model=TokenResponse)
+@auto_log("admin_login", log_resource_id=True)
+@audit_log(action="admin_login", resource_type="member")
 async def admin_login(
     data: AdminLoginRequest,
     request: Request,
@@ -206,118 +98,30 @@ async def admin_login(
 
     Authenticates an admin user and returns a JWT access token.
     """
-    trace_id = get_trace_id(request)
-    try:
-        member = await auth_service.authenticate_admin(data.username, data.password, db)
+    member = await auth_service.authenticate_admin(data.username, data.password, db)
 
-        # Create access token with admin role
-        access_token = auth_service.create_access_token(
-            data={"sub": str(member.id), "role": "admin"}
-        )
+    # Create access token with admin role
+    access_token = auth_service.create_access_token(
+        data={"sub": str(member.id), "role": "admin"}
+    )
 
-        # Record audit log for successful admin login
-        try:
-            ip_address, user_agent = get_client_info(request)
-            await audit_log_service.create_audit_log(
-                db=db,
-                action="admin_login",
-                user_id=member.id,
-                resource_type="member",
-                resource_id=member.id,
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
-        except Exception as e:
-            # Log error but don't fail the login
-            logging_service.create_log(
-                source="backend",
-                level="ERROR",
-                message=f"Failed to create audit log for admin login: {str(e)}",
-                module=__name__,
-                function="admin_login",
-                trace_id=trace_id,
-                user_id=member.id,
-                request_path=request.url.path,
-                request_method=request.method,
-                response_status=200,
-                extra_data={
-                    "error": str(e),
-                    "error_type": type(e).__name__,
-                },
-            )
-
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message="Admin login succeeded",
-            module=__name__,
-            function="admin_login",
-            trace_id=trace_id,
-            user_id=member.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-        )
-
-        return TokenResponse(
-            access_token=access_token,
-            token_type="bearer",
-            user={
-                "id": str(member.id),
-                "business_number": member.business_number,
-                "company_name": member.company_name,
-                "email": member.email,
-                "status": member.status,
-                "approval_status": member.approval_status,
-                "role": "admin",  # Admin login always returns admin role
-            },
-        )
-    except UnauthorizedError as e:
-        # Record exception to file for security monitoring
-        try:
-            ip_address, user_agent = get_client_info(request)
-            exception_service.create_exception(
-                source="backend",
-                exception_type=type(e).__name__,
-                exception_message=str(e),
-                error_code="ADMIN_LOGIN_FAILED",
-                status_code=401,
-                trace_id=trace_id,
-                user_id=None,  # User not authenticated
-                ip_address=ip_address,
-                user_agent=user_agent,
-                request_method=request.method,
-                request_path=request.url.path,
-                request_data={"username": data.username} if hasattr(data, "username") else None,
-                exc=e,
-            )
-        except Exception:
-            # Don't fail the request if exception logging fails
-            pass
-
-        logging_service.create_log(
-            source="backend",
-            level="WARNING",
-            message=f"Admin login failed: {str(e)}",
-            module=__name__,
-            function="admin_login",
-            trace_id=trace_id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=401,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user={
+            "id": str(member.id),
+            "business_number": member.business_number,
+            "company_name": member.company_name,
+            "email": member.email,
+            "status": member.status,
+            "approval_status": member.approval_status,
+            "role": "admin",  # Admin login always returns admin role
+        },
+    )
 
 
 @router.post("/password-reset-request", response_model=dict)
+@auto_log("password_reset_request")
 async def password_reset_request(
     data: PasswordResetRequest,
     request: Request,
@@ -328,63 +132,25 @@ async def password_reset_request(
 
     Sends a password reset email to the user.
     """
-    trace_id = get_trace_id(request)
-    try:
-        reset_token = await auth_service.create_password_reset_request(
-            data.business_number, data.email, db
-        )
+    reset_token = await auth_service.create_password_reset_request(
+        data.business_number, data.email, db
+    )
 
-        # Send password reset email
-        from ...common.modules.email import email_service
-        email_sent = await email_service.send_password_reset_email(
-            to_email=data.email,
-            reset_token=reset_token,
-            business_number=data.business_number,
-        )
+    # Send password reset email
+    from ...common.modules.email import email_service
+    await email_service.send_password_reset_email(
+        to_email=data.email,
+        reset_token=reset_token,
+        business_number=data.business_number,
+    )
 
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message="Password reset request processed",
-            module=__name__,
-            function="password_reset_request",
-            trace_id=trace_id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-            extra_data={
-                "email_sent": email_sent,
-            },
-        )
-
-        return {
-            "message": "If your email is registered, you will receive a password reset link.",
-        }
-    except Exception as e:
-        # Don't reveal whether email exists (security best practice)
-        # Always return the same message
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Password reset request failed: {str(e)}",
-            module=__name__,
-            function="password_reset_request",
-            trace_id=trace_id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,  # Still return 200 for security
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-        
-        return {
-            "message": "If your email is registered, you will receive a password reset link."
-        }
+    return {
+        "message": "If your email is registered, you will receive a password reset link.",
+    }
 
 
 @router.post("/password-reset", response_model=dict)
+@auto_log("password_reset")
 async def password_reset(
     data: PasswordReset,
     request: Request,
@@ -395,72 +161,17 @@ async def password_reset(
 
     Resets the user's password using a valid reset token.
     """
-    trace_id = get_trace_id(request)
-    try:
-        await auth_service.reset_password_with_token(
-            data.token, data.new_password, db
-        )
+    await auth_service.reset_password_with_token(
+        data.token, data.new_password, db
+    )
 
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message="Password reset succeeded",
-            module=__name__,
-            function="password_reset",
-            trace_id=trace_id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-        )
-
-        return {
-            "message": "Password reset successful. You can now login with your new password."
-        }
-    except UnauthorizedError as e:
-        logging_service.create_log(
-            source="backend",
-            level="WARNING",
-            message=f"Password reset failed: {str(e)}",
-            module=__name__,
-            function="password_reset",
-            trace_id=trace_id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=400,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-        
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Password reset failed: {str(e)}",
-            module=__name__,
-            function="password_reset",
-            trace_id=trace_id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=400,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-        
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to reset password. Please try again.",
-        )
+    return {
+        "message": "Password reset successful. You can now login with your new password."
+    }
 
 
 @router.get("/me", response_model=UserInfo)
+@auto_log("get_current_user_info")
 async def get_current_user_info(
     request: Request,
     current_user: Member = Depends(get_current_active_user),
@@ -470,8 +181,6 @@ async def get_current_user_info(
 
     Returns the authenticated user's information including role from token.
     """
-    trace_id = get_trace_id(request)
-    
     # Extract role from JWT token
     role = "member"  # Default role
     
@@ -494,19 +203,6 @@ async def get_current_user_info(
         if auth_service.is_admin(current_user):
             role = "admin"
     
-    logging_service.create_log(
-        source="backend",
-        level="INFO",
-        message="Get current user info succeeded",
-        module=__name__,
-        function="get_current_user_info",
-        trace_id=trace_id,
-        user_id=current_user.id,
-        request_path=request.url.path,
-        request_method=request.method,
-        response_status=200,
-    )
-    
     return UserInfo(
         id=current_user.id,
         business_number=current_user.business_number,
@@ -520,6 +216,8 @@ async def get_current_user_info(
 
 
 @router.post("/logout", response_model=dict)
+@auto_log("logout", log_resource_id=True)
+@audit_log(action="logout", resource_type="member")
 async def logout(
     request: Request,
     current_user: Member = Depends(get_current_active_user),
@@ -531,57 +229,12 @@ async def logout(
     Note: With JWT tokens, logout is typically handled client-side by removing the token.
     This endpoint can be used for audit logging or token blacklisting in the future.
     """
-    trace_id = get_trace_id(request)
-    
-    # Record audit log for logout
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="logout",
-            user_id=current_user.id,
-            resource_type="member",
-            resource_id=current_user.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        # Log error but don't fail the logout
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log for logout: {str(e)}",
-            module=__name__,
-            function="logout",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-
-    logging_service.create_log(
-        source="backend",
-        level="INFO",
-        message="Member logout succeeded",
-        module=__name__,
-        function="logout",
-        trace_id=trace_id,
-        user_id=current_user.id,
-        request_path=request.url.path,
-        request_method=request.method,
-        response_status=200,
-    )
-
     # TODO: Implement token blacklisting if needed
     return {"message": "Logged out successfully"}
 
 
 @router.post("/refresh", response_model=TokenResponse)
+@auto_log("refresh_token")
 async def refresh_token(
     request: Request,
     current_user: Member = Depends(get_current_active_user),
@@ -591,23 +244,8 @@ async def refresh_token(
 
     Generates a new access token for the current user.
     """
-    trace_id = get_trace_id(request)
-    
     access_token = auth_service.create_access_token(
         data={"sub": str(current_user.id), "role": "member"}
-    )
-
-    logging_service.create_log(
-        source="backend",
-        level="INFO",
-        message="Token refresh succeeded",
-        module=__name__,
-        function="refresh_token",
-        trace_id=trace_id,
-        user_id=current_user.id,
-        request_path=request.url.path,
-        request_method=request.method,
-        response_status=200,
     )
 
     return TokenResponse(
@@ -625,6 +263,8 @@ async def refresh_token(
 
 
 @router.put("/profile", response_model=UserInfo)
+@auto_log("update_profile", log_resource_id=True)
+@audit_log(action="update", resource_type="member")
 async def update_profile(
     data: ProfileUpdateRequest,
     request: Request,
@@ -654,89 +294,24 @@ async def update_profile(
         website=data.website,
     )
     
-    trace_id = get_trace_id(request)
-    try:
-        member, profile = await member_service.update_member_profile(
-            current_user.id, profile_update, db
-        )
+    member, profile = await member_service.update_member_profile(
+        current_user.id, profile_update, db
+    )
 
-        # Record audit log
-        try:
-            ip_address, user_agent = get_client_info(request)
-            await audit_log_service.create_audit_log(
-                db=db,
-                action="update",
-                user_id=current_user.id,
-                resource_type="member",
-                resource_id=member.id,
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
-        except Exception as e:
-            logging_service.create_log(
-                source="backend",
-                level="ERROR",
-                message=f"Failed to create audit log: {str(e)}",
-                module=__name__,
-                function="update_profile",
-                trace_id=trace_id,
-                user_id=current_user.id,
-                request_path=request.url.path,
-                request_method=request.method,
-                response_status=200,
-                extra_data={
-                    "error": str(e),
-                    "error_type": type(e).__name__,
-                },
-            )
-
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message="Update profile succeeded",
-            module=__name__,
-            function="update_profile",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-        )
-
-        return UserInfo(
-            id=member.id,
-            business_number=member.business_number,
-            company_name=member.company_name,
-            email=member.email,
-            status=member.status,
-            approval_status=member.approval_status,
-            created_at=member.created_at,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Update profile failed: {str(e)}",
-            module=__name__,
-            function="update_profile",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=400,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-        
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+    return UserInfo(
+        id=member.id,
+        business_number=member.business_number,
+        company_name=member.company_name,
+        email=member.email,
+        status=member.status,
+        approval_status=member.approval_status,
+        created_at=member.created_at,
+    )
 
 
 @router.post("/change-password", response_model=dict)
+@auto_log("change_password", log_resource_id=True)
+@audit_log(action="change_password", resource_type="member")
 async def change_password(
     data: ChangePasswordRequest,
     request: Request,
@@ -748,98 +323,9 @@ async def change_password(
 
     Changes the authenticated user's password.
     """
-    trace_id = get_trace_id(request)
-    try:
-        await auth_service.change_password(
-            current_user, data.current_password, data.new_password, db
-        )
+    await auth_service.change_password(
+        current_user, data.current_password, data.new_password, db
+    )
 
-        # Record audit log
-        try:
-            ip_address, user_agent = get_client_info(request)
-            await audit_log_service.create_audit_log(
-                db=db,
-                action="change_password",
-                user_id=current_user.id,
-                resource_type="member",
-                resource_id=current_user.id,
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
-        except Exception as e:
-            logging_service.create_log(
-                source="backend",
-                level="ERROR",
-                message=f"Failed to create audit log: {str(e)}",
-                module=__name__,
-                function="change_password",
-                trace_id=trace_id,
-                user_id=current_user.id,
-                request_path=request.url.path,
-                request_method=request.method,
-                response_status=200,
-                extra_data={
-                    "error": str(e),
-                    "error_type": type(e).__name__,
-                },
-            )
-
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message="Change password succeeded",
-            module=__name__,
-            function="change_password",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-        )
-
-        return {"message": "Password changed successfully"}
-    except UnauthorizedError as e:
-        logging_service.create_log(
-            source="backend",
-            level="WARNING",
-            message=f"Change password failed: {str(e)}",
-            module=__name__,
-            function="change_password",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=401,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-        
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Change password failed: {str(e)}",
-            module=__name__,
-            function="change_password",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=400,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-        
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+    return {"message": "Password changed successfully"}
 

@@ -12,11 +12,14 @@ from .exceptions import (
 )
 from .handlers import (
     app_exception_handler,
+    http_exception_handler,
     validation_exception_handler,
     sqlalchemy_exception_handler,
     general_exception_handler,
 )
-from .responses import create_error_response, get_trace_id
+from .responses import create_error_response
+# Import get_trace_id from logger module (moved for better organization)
+from ..logger.request import get_trace_id
 from .router import router as exception_router
 from .service import ExceptionService
 
@@ -36,6 +39,7 @@ __all__ = [
     "ServiceUnavailableError",
     # Exception handlers
     "app_exception_handler",
+    "http_exception_handler",
     "validation_exception_handler",
     "sqlalchemy_exception_handler",
     "general_exception_handler",

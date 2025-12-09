@@ -40,3 +40,6 @@ requests==2.31.0
 faker==24.0.0
 # httpx is a dependency of supabase, will be installed automatically
 
+# Browser Automation
+playwright==1.40.0
+

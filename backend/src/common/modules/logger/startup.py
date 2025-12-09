@@ -27,8 +27,8 @@ async def clear_logs_on_startup() -> tuple[list[str], int, int]:
     
     # Clear all log files (using actual file paths from file_log_writer)
     log_files = [
-        ("application_logs.log", file_log_writer.application_logs_file),
-        ("application_exceptions.log", file_log_writer.application_exceptions_file),
+        ("app_logs.log", file_log_writer.application_logs_file),
+        ("app_exceptions.log", file_log_writer.application_exceptions_file),
         ("audit_logs.log", file_log_writer.audit_logs_file),
         ("db_pool.log", logs_dir / "db_pool.log"),
     ]

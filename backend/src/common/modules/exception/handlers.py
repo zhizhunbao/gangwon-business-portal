@@ -3,7 +3,7 @@ Exception handlers for FastAPI.
 
 This module provides global exception handlers for various exception types.
 """
-from fastapi import Request, status
+from fastapi import Request, status, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -14,7 +14,8 @@ from uuid import UUID
 from ..config import settings
 from ..logger import logger
 from .exceptions import AppException
-from .responses import create_error_response, get_trace_id
+from .responses import create_error_response
+from ..logger.request import get_trace_id
 
 
 def _record_exception_to_file(
@@ -127,6 +128,89 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
         include_details=include_details,
     )
 
+    return JSONResponse(status_code=exc.status_code, content=response)
+
+
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    """Handle HTTP exceptions (FastAPI's HTTPException)."""
+    trace_id = get_trace_id(request)
+    
+    # Get user_id from request state if available
+    user_id = None
+    if hasattr(request.state, "user_id"):
+        user_id = request.state.user_id
+    
+    # Extract detail message from HTTPException
+    # HTTPException.detail can be a string, dict, or list
+    detail = exc.detail
+    if isinstance(detail, dict):
+        message = detail.get("message", detail.get("detail", "HTTP error"))
+    elif isinstance(detail, list):
+        message = "HTTP error"
+    else:
+        message = str(detail) if detail else "HTTP error"
+    
+    # Use appropriate log level based on status code
+    # 4xx errors (client errors) are expected in normal operation, use warning
+    # 5xx errors (server errors) are unexpected, use error
+    if exc.status_code >= 500:
+        log_level = logger.error
+        log_message = f"HTTP server error: {message}"
+        include_exc_info = True
+        # Record 5xx errors to file
+        _record_exception_to_file(
+            request=request,
+            exc=exc,
+            error_code="HTTP_SERVER_ERROR",
+            status_code=exc.status_code,
+            user_id=user_id,
+        )
+    elif exc.status_code >= 400:
+        log_level = logger.warning
+        log_message = f"HTTP client error: {message}"
+        include_exc_info = False
+    else:
+        log_level = logger.info
+        log_message = f"HTTP response: {message}"
+        include_exc_info = False
+    
+    # Log with appropriate level
+    log_level(
+        log_message,
+        exc_info=exc if include_exc_info else None,
+        extra={
+            "status_code": exc.status_code,
+            "trace_id": trace_id,
+            "path": request.url.path,
+            "method": request.method,
+        },
+    )
+    
+    # Include details only in debug mode
+    include_details = settings.DEBUG
+    
+    # Format error code based on status code
+    error_code = f"HTTP_{exc.status_code}"
+    if exc.status_code >= 500:
+        error_code = "HTTP_SERVER_ERROR"
+    elif exc.status_code == 404:
+        error_code = "NOT_FOUND"
+    elif exc.status_code == 401:
+        error_code = "UNAUTHORIZED"
+    elif exc.status_code == 403:
+        error_code = "FORBIDDEN"
+    elif exc.status_code == 400:
+        error_code = "BAD_REQUEST"
+    
+    response = create_error_response(
+        message=message,
+        status_code=exc.status_code,
+        error_code=error_code,
+        details={"detail": detail} if include_details and detail else None,
+        trace_id=trace_id,
+        include_details=include_details,
+    )
+    
     return JSONResponse(status_code=exc.status_code, content=response)
 
 

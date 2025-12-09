@@ -8,4 +8,6 @@ export * from './usePagination';
 export * from './useLocalStorage';
 export * from './useToggle';
 export * from './useErrorHandler';
+export * from './useLogLayout';
+export * from './useLogStyle';
 

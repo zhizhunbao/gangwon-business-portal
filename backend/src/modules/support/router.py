@@ -13,9 +13,8 @@ from fastapi import Request
 
 from ...common.modules.db.session import get_db
 from ...common.modules.db.models import Member
-from ...common.modules.audit import audit_log_service, get_client_info
-from ...common.modules.logger import logging_service
-from ...common.modules.exception.responses import get_trace_id
+from ...common.modules.audit import audit_log
+from ...common.modules.logger import auto_log
 from ..user.dependencies import get_current_active_user, get_current_admin_user
 from .service import SupportService
 from .schemas import (
@@ -42,6 +41,7 @@ service = SupportService()
     tags=["support"],
     summary="List FAQs",
 )
+@auto_log("list_faqs")
 async def list_faqs(
     category: Optional[str] = Query(default=None, description="Filter by category"),
     db: AsyncSession = Depends(get_db),
@@ -64,6 +64,8 @@ async def list_faqs(
     tags=["support", "admin"],
     summary="Create FAQ",
 )
+@auto_log("create_faq", log_resource_id=True)
+@audit_log(action="create", resource_type="faq")
 async def create_faq(
     data: FAQCreate,
     request: Request,
@@ -71,39 +73,7 @@ async def create_faq(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new FAQ (admin only)."""
-    trace_id = get_trace_id(request)
     faq = await service.create_faq(data, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="create",
-            user_id=current_user.id,
-            resource_type="faq",
-            resource_id=faq.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="create_faq",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=201,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-    
     return FAQResponse.model_validate(faq)
 
 
@@ -113,6 +83,8 @@ async def create_faq(
     tags=["support", "admin"],
     summary="Update FAQ",
 )
+@auto_log("update_faq", log_resource_id=True)
+@audit_log(action="update", resource_type="faq")
 async def update_faq(
     faq_id: UUID,
     data: FAQUpdate,
@@ -121,39 +93,7 @@ async def update_faq(
     db: AsyncSession = Depends(get_db),
 ):
     """Update an FAQ (admin only)."""
-    trace_id = get_trace_id(request)
     faq = await service.update_faq(faq_id, data, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="update",
-            user_id=current_user.id,
-            resource_type="faq",
-            resource_id=faq.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="update_faq",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-    
     return FAQResponse.model_validate(faq)
 
 
@@ -163,6 +103,8 @@ async def update_faq(
     tags=["support", "admin"],
     summary="Delete FAQ",
 )
+@auto_log("delete_faq", log_resource_id=True)
+@audit_log(action="delete", resource_type="faq")
 async def delete_faq(
     faq_id: UUID,
     request: Request,
@@ -170,38 +112,7 @@ async def delete_faq(
     db: AsyncSession = Depends(get_db),
 ):
     """Delete an FAQ (admin only)."""
-    trace_id = get_trace_id(request)
     await service.delete_faq(faq_id, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="delete",
-            user_id=current_user.id,
-            resource_type="faq",
-            resource_id=faq_id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="delete_faq",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=204,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
 
 
 # Member Inquiry Endpoints
@@ -213,6 +124,8 @@ async def delete_faq(
     tags=["support"],
     summary="Submit inquiry",
 )
+@auto_log("create_inquiry", log_resource_id=True)
+@audit_log(action="create", resource_type="inquiry")
 async def create_inquiry(
     data: InquiryCreate,
     request: Request,
@@ -220,38 +133,7 @@ async def create_inquiry(
     db: AsyncSession = Depends(get_db),
 ):
     """Submit a new 1:1 inquiry (member only)."""
-    trace_id = get_trace_id(request)
     inquiry = await service.create_inquiry(data, current_user.id, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="create",
-            user_id=current_user.id,
-            resource_type="inquiry",
-            resource_id=inquiry.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="create_inquiry",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=201,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
     
     return InquiryResponse(
         id=inquiry.id,
@@ -272,6 +154,7 @@ async def create_inquiry(
     tags=["support"],
     summary="List my inquiries",
 )
+@auto_log("list_my_inquiries", log_result_count=True)
 async def list_my_inquiries(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -316,6 +199,7 @@ async def list_my_inquiries(
     tags=["support"],
     summary="Get inquiry detail",
 )
+@auto_log("get_inquiry", log_resource_id=True)
 async def get_inquiry(
     inquiry_id: UUID,
     current_user: Member = Depends(get_current_active_user),
@@ -349,6 +233,7 @@ async def get_inquiry(
     tags=["support", "admin"],
     summary="List all inquiries (admin)",
 )
+@auto_log("list_all_inquiries", log_result_count=True)
 async def list_all_inquiries(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -400,6 +285,8 @@ async def list_all_inquiries(
     tags=["support", "admin"],
     summary="Reply to inquiry",
 )
+@auto_log("reply_to_inquiry", log_resource_id=True)
+@audit_log(action="reply", resource_type="inquiry")
 async def reply_to_inquiry(
     inquiry_id: UUID,
     data: InquiryReplyRequest,
@@ -408,38 +295,7 @@ async def reply_to_inquiry(
     db: AsyncSession = Depends(get_db),
 ):
     """Reply to an inquiry (admin only)."""
-    trace_id = get_trace_id(request)
     inquiry = await service.reply_to_inquiry(inquiry_id, data, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="reply",
-            user_id=current_user.id,
-            resource_type="inquiry",
-            resource_id=inquiry.id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="reply_to_inquiry",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
     
     # Get member name
     from sqlalchemy import select

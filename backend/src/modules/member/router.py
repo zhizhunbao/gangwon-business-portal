@@ -14,10 +14,8 @@ from fastapi import Request
 
 from ...common.modules.db.session import get_db
 from ...common.modules.db.models import Member
-from ...common.modules.exception import NotFoundError, ValidationError
-from ...common.modules.audit import audit_log_service, get_client_info
-from ...common.modules.logger import logging_service
-from ...common.modules.exception.responses import get_trace_id
+from ...common.modules.audit import audit_log
+from ...common.modules.logger import auto_log
 from ...common.modules.integrations.nice_dnb import nice_dnb_client
 from .schemas import (
     MemberProfileResponse,
@@ -37,28 +35,14 @@ member_service = MemberService()
 
 # Member self-service endpoints
 @router.get("/api/member/profile", response_model=MemberProfileResponse)
+@auto_log("get_my_profile")
 async def get_my_profile(
     request: Request,
     current_user: Member = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get current member's profile."""
-    trace_id = get_trace_id(request)
-    
     member, profile = await member_service.get_member_profile(current_user.id, db)
-
-    logging_service.create_log(
-        source="backend",
-        level="INFO",
-        message="Get my profile succeeded",
-        module=__name__,
-        function="get_my_profile",
-        trace_id=trace_id,
-        user_id=current_user.id,
-        request_path=request.url.path,
-        request_method=request.method,
-        response_status=200,
-    )
 
     return MemberProfileResponse(
         id=member.id,
@@ -81,6 +65,8 @@ async def get_my_profile(
 
 
 @router.put("/api/member/profile", response_model=MemberProfileResponse)
+@auto_log("update_my_profile", log_resource_id=True)
+@audit_log(action="update", resource_type="member")
 async def update_my_profile(
     data: MemberProfileUpdate,
     request: Request,
@@ -88,56 +74,11 @@ async def update_my_profile(
     db: AsyncSession = Depends(get_db),
 ):
     """Update current member's profile."""
-    trace_id = get_trace_id(request)
-    try:
-        member, profile = await member_service.update_member_profile(
-            current_user.id, data, db
-        )
+    member, profile = await member_service.update_member_profile(
+        current_user.id, data, db
+    )
 
-        # Record audit log
-        try:
-            ip_address, user_agent = get_client_info(request)
-            await audit_log_service.create_audit_log(
-                db=db,
-                action="update",
-                user_id=current_user.id,
-                resource_type="member",
-                resource_id=member.id,
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
-        except Exception as e:
-            logging_service.create_log(
-                source="backend",
-                level="ERROR",
-                message=f"Failed to create audit log: {str(e)}",
-                module=__name__,
-                function="update_my_profile",
-                trace_id=trace_id,
-                user_id=current_user.id,
-                request_path=request.url.path,
-                request_method=request.method,
-                response_status=200,
-                extra_data={
-                    "error": str(e),
-                    "error_type": type(e).__name__,
-                },
-            )
-        
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message="Update my profile succeeded",
-            module=__name__,
-            function="update_my_profile",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-        )
-
-        return MemberProfileResponse(
+    return MemberProfileResponse(
             id=member.id,
             business_number=member.business_number,
             company_name=member.company_name,
@@ -155,29 +96,11 @@ async def update_my_profile(
             created_at=member.created_at,
             updated_at=profile.updated_at if profile else member.updated_at,
         )
-    except (NotFoundError, ValidationError) as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Update my profile failed: {str(e)}",
-            module=__name__,
-            function="update_my_profile",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=400,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-        
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 # Admin endpoints
 @router.get("/api/admin/members", response_model=MemberListResponsePaginated)
+@auto_log("list_members", log_result_count=True)
 async def list_members(
     request: Request,
     page: int = Query(1, ge=1),
@@ -191,8 +114,6 @@ async def list_members(
     db: AsyncSession = Depends(get_db),
 ):
     """List members with pagination and filtering (admin only)."""
-    trace_id = get_trace_id(request)
-    
     query = MemberListQuery(
         page=page,
         page_size=page_size,
@@ -204,19 +125,6 @@ async def list_members(
     )
 
     members, total = await member_service.list_members(query, db)
-    
-    logging_service.create_log(
-        source="backend",
-        level="INFO",
-        message=f"List members succeeded: {total} total members",
-        module=__name__,
-        function="list_members",
-        trace_id=trace_id,
-        user_id=current_user.id,
-        request_path=request.url.path,
-        request_method=request.method,
-        response_status=200,
-    )
 
     return MemberListResponsePaginated(
         items=[
@@ -242,6 +150,7 @@ async def list_members(
 
 
 @router.get("/api/admin/members/{member_id:uuid}", response_model=MemberProfileResponse)
+@auto_log("get_member", log_resource_id=True)
 async def get_member(
     member_id: UUID,
     request: Request,
@@ -249,25 +158,9 @@ async def get_member(
     db: AsyncSession = Depends(get_db),
 ):
     """Get member details (admin only)."""
-    trace_id = get_trace_id(request)
-    
-    try:
-        member, profile = await member_service.get_member_profile(member_id, db)
-        
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message=f"Get member succeeded: {member_id}",
-            module=__name__,
-            function="get_member",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-        )
+    member, profile = await member_service.get_member_profile(member_id, db)
 
-        return MemberProfileResponse(
+    return MemberProfileResponse(
             id=member.id,
             business_number=member.business_number,
             company_name=member.company_name,
@@ -285,11 +178,11 @@ async def get_member(
             created_at=member.created_at,
             updated_at=profile.updated_at if profile else member.updated_at,
         )
-    except NotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.put("/api/admin/members/{member_id:uuid}/approve", response_model=dict)
+@auto_log("approve_member", log_resource_id=True)
+@audit_log(action="approve", resource_type="member")
 async def approve_member(
     member_id: UUID,
     request: Request,
@@ -297,80 +190,17 @@ async def approve_member(
     db: AsyncSession = Depends(get_db),
 ):
     """Approve a member registration (admin only)."""
-    trace_id = get_trace_id(request)
-    try:
-        member = await member_service.approve_member(member_id, db)
-        
-        # Record audit log
-        try:
-            ip_address, user_agent = get_client_info(request)
-            await audit_log_service.create_audit_log(
-                db=db,
-                action="approve",
-                user_id=current_user.id,
-                resource_type="member",
-                resource_id=member.id,
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
-        except Exception as e:
-            logging_service.create_log(
-                source="backend",
-                level="ERROR",
-                message=f"Failed to create audit log: {str(e)}",
-                module=__name__,
-                function="approve_member",
-                trace_id=trace_id,
-                user_id=current_user.id,
-                request_path=request.url.path,
-                request_method=request.method,
-                response_status=200,
-                extra_data={
-                    "error": str(e),
-                    "error_type": type(e).__name__,
-                },
-            )
-        
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message=f"Approve member succeeded: {member_id}",
-            module=__name__,
-            function="approve_member",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-        )
-        
-        return {
-            "message": "Member approved successfully",
-            "member_id": str(member.id),
-        }
-    except NotFoundError as e:
-        logging_service.create_log(
-            source="backend",
-            level="WARNING",
-            message=f"Approve member failed: Member not found: {member_id}",
-            module=__name__,
-            function="approve_member",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=404,
-            extra_data={
-                "member_id": str(member_id),
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-        
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    member = await member_service.approve_member(member_id, db)
+    
+    return {
+        "message": "Member approved successfully",
+        "member_id": str(member.id),
+    }
 
 
 @router.put("/api/admin/members/{member_id:uuid}/reject", response_model=dict)
+@auto_log("reject_member", log_resource_id=True)
+@audit_log(action="reject", resource_type="member")
 async def reject_member(
     member_id: UUID,
     request: Request,
@@ -379,59 +209,12 @@ async def reject_member(
     db: AsyncSession = Depends(get_db),
 ):
     """Reject a member registration (admin only)."""
-    trace_id = get_trace_id(request)
-    try:
-        member = await member_service.reject_member(member_id, reason, db)
-        
-        # Record audit log
-        try:
-            ip_address, user_agent = get_client_info(request)
-            await audit_log_service.create_audit_log(
-                db=db,
-                action="reject",
-                user_id=current_user.id,
-                resource_type="member",
-                resource_id=member.id,
-                ip_address=ip_address,
-                user_agent=user_agent,
-            )
-        except Exception as e:
-            logging_service.create_log(
-                source="backend",
-                level="ERROR",
-                message=f"Failed to create audit log: {str(e)}",
-                module=__name__,
-                function="reject_member",
-                trace_id=trace_id,
-                user_id=current_user.id,
-                request_path=request.url.path,
-                request_method=request.method,
-                response_status=200,
-                extra_data={
-                    "error": str(e),
-                    "error_type": type(e).__name__,
-                },
-            )
-        
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message=f"Reject member succeeded: {member_id}",
-            module=__name__,
-            function="reject_member",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-        )
-        
-        return {
-            "message": "Member rejected",
-            "member_id": str(member.id),
-        }
-    except NotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    member = await member_service.reject_member(member_id, reason, db)
+    
+    return {
+        "message": "Member rejected",
+        "member_id": str(member.id),
+    }
 
 
 @router.post(
@@ -501,6 +284,8 @@ async def reject_member(
     },
     tags=["Member", "Nice D&B"],
 )
+@auto_log("verify_company")
+@audit_log(action="verify_company", resource_type="member")
 async def verify_company(
     data: CompanyVerifyRequest,
     request: Request,
@@ -520,7 +305,6 @@ async def verify_company(
     Returns:
         Company verification result with verification status and company data
     """
-    trace_id = get_trace_id(request)
     
     try:
         # Call Nice D&B API to verify company
@@ -539,47 +323,6 @@ async def verify_company(
             response = await nice_dnb_client.search_company(data.business_number)
             
             if response and response.success:
-                # Record audit log for successful verification
-                try:
-                    ip_address, user_agent = get_client_info(request)
-                    await audit_log_service.create_audit_log(
-                        db=db,
-                        action="verify_company",
-                        user_id=None,  # No user logged in during registration
-                        resource_type="member",
-                        resource_id=None,
-                        ip_address=ip_address,
-                        user_agent=user_agent,
-                    )
-                except Exception as e:
-                    logging_service.create_log(
-                        source="backend",
-                        level="WARNING",
-                        message=f"Failed to create audit log for company verification: {str(e)}",
-                        module=__name__,
-                        function="verify_company",
-                        trace_id=trace_id,
-                        request_path=request.url.path,
-                        request_method=request.method,
-                        response_status=200,
-                        extra_data={
-                            "error": str(e),
-                            "error_type": type(e).__name__,
-                        },
-                    )
-                
-                logging_service.create_log(
-                    source="backend",
-                    level="INFO",
-                    message=f"Company verification succeeded: {data.business_number}",
-                    module=__name__,
-                    function="verify_company",
-                    trace_id=trace_id,
-                    request_path=request.url.path,
-                    request_method=request.method,
-                    response_status=200,
-                )
-                
                 return CompanyVerifyResponse(
                     verified=True,
                     business_number=data.business_number,
@@ -599,18 +342,6 @@ async def verify_company(
                     },
                 )
             else:
-                logging_service.create_log(
-                    source="backend",
-                    level="INFO",
-                    message=f"Company verification failed: Company not found: {data.business_number}",
-                    module=__name__,
-                    function="verify_company",
-                    trace_id=trace_id,
-                    request_path=request.url.path,
-                    request_method=request.method,
-                    response_status=200,
-                )
-                
                 return CompanyVerifyResponse(
                     verified=False,
                     business_number=data.business_number,
@@ -619,47 +350,6 @@ async def verify_company(
                     data=None,
                 )
         else:
-            # Record audit log for failed verification
-            try:
-                ip_address, user_agent = get_client_info(request)
-                await audit_log_service.create_audit_log(
-                    db=db,
-                    action="verify_company",
-                    user_id=None,
-                    resource_type="member",
-                    resource_id=None,
-                    ip_address=ip_address,
-                    user_agent=user_agent,
-                )
-            except Exception as e:
-                logging_service.create_log(
-                    source="backend",
-                    level="WARNING",
-                    message=f"Failed to create audit log for company verification: {str(e)}",
-                    module=__name__,
-                    function="verify_company",
-                    trace_id=trace_id,
-                    request_path=request.url.path,
-                    request_method=request.method,
-                    response_status=200,
-                    extra_data={
-                        "error": str(e),
-                        "error_type": type(e).__name__,
-                    },
-                )
-            
-            logging_service.create_log(
-                source="backend",
-                level="INFO",
-                message=f"Company verification failed: {data.business_number}",
-                module=__name__,
-                function="verify_company",
-                trace_id=trace_id,
-                request_path=request.url.path,
-                request_method=request.method,
-                response_status=200,
-            )
-            
             return CompanyVerifyResponse(
                 verified=False,
                 business_number=data.business_number,
@@ -668,19 +358,7 @@ async def verify_company(
                 data=None,
             )
             
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Error verifying company with Nice D&B: {str(e)}",
-            module=__name__,
-            function="verify_company",
-            trace_id=trace_id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,  # Still return 200 for graceful degradation
-        )
-        
+    except Exception:
         # If API is not configured or fails, return a warning but don't block registration
         # This allows registration to proceed even if Nice D&B is unavailable
         return CompanyVerifyResponse(
@@ -776,6 +454,7 @@ async def verify_company(
     },
     tags=["Admin", "Nice D&B"],
 )
+@auto_log("search_nice_dnb")
 async def search_nice_dnb(
     request: Request,
     business_number: str = Query(
@@ -799,48 +478,18 @@ async def search_nice_dnb(
     Returns:
         Nice D&B company information including financials and insights
     """
-    trace_id = get_trace_id(request)
+    # Call Nice D&B API
+    response = await nice_dnb_client.search_company(business_number)
     
-    try:
-        # Call Nice D&B API
-        response = await nice_dnb_client.search_company(business_number)
-        
-        if not response:
-            # API not configured or request failed
-            logging_service.create_log(
-                source="backend",
-                level="WARNING",
-                message=f"Nice D&B API not available: {business_number}",
-                module=__name__,
-                function="search_nice_dnb",
-                trace_id=trace_id,
-                user_id=current_user.id,
-                request_path=request.url.path,
-                request_method=request.method,
-                response_status=503,
-            )
-            
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Nice D&B API is not available. Please check configuration or try again later.",
-            )
-        
-        # Record success log
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message=f"Search Nice D&B succeeded: {business_number}",
-            module=__name__,
-            function="search_nice_dnb",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
+    if not response:
+        # API not configured or request failed
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Nice D&B API is not available. Please check configuration or try again later.",
         )
-        
-        # Convert response to dict format expected by frontend
-        return {
+    
+    # Convert response to dict format expected by frontend
+    return {
             "success": response.success,
             "data": {
                 "businessNumber": response.data.business_number,
@@ -875,34 +524,11 @@ async def search_nice_dnb(
                 for i in response.insights
             ],
         }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Error searching Nice D&B: {str(e)}",
-            module=__name__,
-            function="search_nice_dnb",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path if request else None,
-            request_method=request.method if request else None,
-            response_status=500,
-            extra_data={
-                "business_number": business_number,
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-        
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve Nice D&B data: {str(e)}",
-        )
 
 
 @router.get("/api/admin/members/export")
+@auto_log("export_members", log_result_count=True)
+@audit_log(action="export", resource_type="member")
 async def export_members(
     request: Request,
     format: str = Query("excel", regex="^(excel|csv)$", description="Export format: excel or csv"),
@@ -919,10 +545,7 @@ async def export_members(
     
     Supports the same filtering options as the list endpoint.
     """
-    trace_id = get_trace_id(request)
-    
     from ...common.modules.export import ExportService
-    from ...common.modules.audit import audit_log_service
     
     query = MemberListQuery(
         page=1,
@@ -936,49 +559,6 @@ async def export_members(
     
     # Get export data
     export_data = await member_service.export_members_data(query, db)
-    
-    # Record audit log
-    try:
-        ip_address, user_agent = get_client_info(request)
-        await audit_log_service.create_audit_log(
-            db=db,
-            action="export",
-            user_id=current_user.id,
-            resource_type="member",
-            resource_id=None,
-            ip_address=ip_address,
-            user_agent=user_agent,
-        )
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to create audit log: {str(e)}",
-            module=__name__,
-            function="export_members",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-            },
-        )
-    
-    logging_service.create_log(
-        source="backend",
-        level="INFO",
-        message=f"Export members succeeded: format={format}",
-        module=__name__,
-        function="export_members",
-        trace_id=trace_id,
-        user_id=current_user.id,
-        request_path=request.url.path,
-        request_method=request.method,
-        response_status=200,
-    )
     
     # Generate export file
     if format == "excel":

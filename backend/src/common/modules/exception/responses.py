@@ -1,6 +1,5 @@
 """Error response models and utilities."""
 from typing import Any, Optional
-from uuid import uuid4
 
 
 def create_error_response(
@@ -42,27 +41,6 @@ def create_error_response(
         response["details"] = details
 
     return response
-
-
-def get_trace_id(request: Any) -> str:
-    """
-    Get or create trace ID from request.
-
-    Args:
-        request: FastAPI Request object
-
-    Returns:
-        Trace ID string
-    """
-    # Try to get trace_id from request state (set by middleware)
-    if hasattr(request.state, "trace_id"):
-        return request.state.trace_id
-
-    # Generate new trace_id if not present
-    trace_id = str(uuid4())
-    if hasattr(request, "state"):
-        request.state.trace_id = trace_id
-    return trace_id
 
 
 

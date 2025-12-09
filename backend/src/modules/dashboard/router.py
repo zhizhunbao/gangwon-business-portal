@@ -9,8 +9,7 @@ from typing import Optional
 
 from ...common.modules.db.session import get_db
 from ...common.modules.db.models import Member
-from ...common.modules.logger import logging_service
-from ...common.modules.exception.responses import get_trace_id
+from ...common.modules.logger import auto_log
 from ..user.dependencies import get_current_admin_user
 from .service import DashboardService
 from .schemas import DashboardResponse
@@ -25,6 +24,7 @@ service = DashboardService()
     tags=["dashboard"],
     summary="Get admin dashboard statistics",
 )
+@auto_log("get_dashboard_stats")
 async def get_dashboard_stats(
     year: Optional[str] = Query(
         None, description="Year filter ('all' or specific year)"
@@ -56,48 +56,8 @@ async def get_dashboard_stats(
     Returns:
         Dashboard statistics and chart data
     """
-    trace_id = get_trace_id(request)
-    try:
-        result = await service.get_dashboard_stats(
-            year=year or "all", quarter=quarter or "all", db=db
-        )
-
-        logging_service.create_log(
-            source="backend",
-            level="INFO",
-            message="Dashboard stats retrieved successfully",
-            module=__name__,
-            function="get_dashboard_stats",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=200,
-            extra_data={
-                "year": year,
-                "quarter": quarter,
-            },
-        )
-
-        return DashboardResponse(**result)
-    except Exception as e:
-        logging_service.create_log(
-            source="backend",
-            level="ERROR",
-            message=f"Failed to get dashboard stats: {str(e)}",
-            module=__name__,
-            function="get_dashboard_stats",
-            trace_id=trace_id,
-            user_id=current_user.id,
-            request_path=request.url.path,
-            request_method=request.method,
-            response_status=500,
-            extra_data={
-                "error": str(e),
-                "error_type": type(e).__name__,
-                "year": year,
-                "quarter": quarter,
-            },
-        )
-        raise
+    result = await service.get_dashboard_stats(
+        year=year or "all", quarter=quarter or "all", db=db
+    )
+    return DashboardResponse(**result)
 
