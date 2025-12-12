@@ -237,6 +237,7 @@ if __name__ == "__main__":
         "src.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=settings.DEBUG,
+        # reload=settings.DEBUG,  # 注释掉热部署，避免测试时服务器重启导致连接断开
+        reload=False,
     )
 

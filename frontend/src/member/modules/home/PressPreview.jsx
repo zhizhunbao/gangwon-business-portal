@@ -7,6 +7,19 @@ import LazyImage from '@shared/components/LazyImage';
 import { contentService, loggerService, exceptionService } from '@shared/services';
 import { ROUTES } from '@shared/utils/constants';
 
+// 生成占位符图片
+const generatePlaceholderImage = (width = 400, height = 250) => {
+  const svg = `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="#e5e7eb"/>
+      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="16" fill="#9ca3af" text-anchor="middle" dominant-baseline="middle">
+        News
+      </text>
+    </svg>
+  `.trim();
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+};
+
 function PressPreview() {
   const { t, i18n } = useTranslation();
   const [news, setNews] = useState(null);
@@ -68,9 +81,9 @@ function PressPreview() {
           <Link to={ROUTES.MEMBER_PRESS} className="news-card-link">
             <div className="news-card-thumbnail">
               <LazyImage 
-                src={news.thumbnailUrl || '/uploads/banners/news.png'} 
+                src={news.thumbnailUrl || generatePlaceholderImage()} 
                 alt={news.title}
-                placeholder="/uploads/banners/news.png"
+                placeholder={generatePlaceholderImage()}
               />
             </div>
             <div className="news-card-content">

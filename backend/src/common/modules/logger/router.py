@@ -6,13 +6,16 @@ Exception endpoints are in the exception module.
 """
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from uuid import UUID
 
-from ..db.session import get_db
-from ..db.models import Member
 from .service import LoggingService
+from ..db.session import get_db
+
+# Use TYPE_CHECKING to avoid circular import
+if TYPE_CHECKING:
+    pass
 from .schemas import (
     LogListResponse,
     LogListQuery,
@@ -31,7 +34,15 @@ def get_admin_user_dependency():
     This function can be used directly with Depends() as a dependency.
     """
     from ....modules.user.dependencies import get_current_admin_user
-    return get_current_admin_user()
+    return get_current_admin_user
+
+
+def get_member_type():
+    """
+    Lazy import of Member type for type hints.
+    """
+    from ..db.models import Member
+    return Member
 
 
 @router.get("/api/v1/logging/logs", response_model=LogListResponse)
@@ -44,7 +55,7 @@ async def list_logs(
     user_id: Optional[UUID] = Query(default=None, description="Filter by user ID"),
     start_date: Optional[datetime] = Query(default=None, description="Start date filter"),
     end_date: Optional[datetime] = Query(default=None, description="End date filter"),
-    current_user: Member = Depends(get_admin_user_dependency),
+    current_user = Depends(get_admin_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -76,7 +87,7 @@ async def list_backend_logs(
     user_id: Optional[UUID] = Query(default=None, description="Filter by user ID"),
     start_date: Optional[datetime] = Query(default=None, description="Start date filter"),
     end_date: Optional[datetime] = Query(default=None, description="End date filter"),
-    current_user: Member = Depends(get_admin_user_dependency),
+    current_user = Depends(get_admin_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -107,7 +118,7 @@ async def list_frontend_logs(
     user_id: Optional[UUID] = Query(default=None, description="Filter by user ID"),
     start_date: Optional[datetime] = Query(default=None, description="Start date filter"),
     end_date: Optional[datetime] = Query(default=None, description="End date filter"),
-    current_user: Member = Depends(get_admin_user_dependency),
+    current_user = Depends(get_admin_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -177,7 +188,7 @@ async def create_frontend_log(
 @router.get("/api/v1/logging/logs/{log_id}", response_model=ApplicationLogResponse)
 async def get_log(
     log_id: UUID,
-    current_user: Member = Depends(get_admin_user_dependency),
+    current_user = Depends(get_admin_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -186,7 +197,7 @@ async def get_log(
     log = await logging_service.get_log(db, log_id)
     
     if not log:
-        from ...exception import NotFoundError
+        from ..exception import NotFoundError
         raise NotFoundError("Application log")
     
     user_email = None

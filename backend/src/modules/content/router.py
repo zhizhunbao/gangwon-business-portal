@@ -143,11 +143,14 @@ async def get_notice(
 async def create_notice(
     data: NoticeCreate,
     request: Request,
-    current_user: Member = Depends(get_current_admin_user),
+    current_user = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new notice (admin only)."""
-    notice = await service.create_notice(data, current_user.id, db)
+    notice = await service.create_notice(data, db)
+    
+    # Admin users don't have company_name, use full_name or email instead
+    author_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Admin')
     
     return NoticeResponse(
         id=notice.id,
@@ -155,7 +158,7 @@ async def create_notice(
         title=notice.title,
         content_html=notice.content_html,
         author_id=notice.author_id,
-        author_name=current_user.company_name,
+        author_name=author_name,
         view_count=notice.view_count or 0,
         created_at=notice.created_at,
         updated_at=notice.updated_at,
@@ -335,18 +338,21 @@ async def get_press_release(
 async def create_press_release(
     data: PressReleaseCreate,
     request: Request,
-    current_user: Member = Depends(get_current_admin_user),
+    current_user = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new press release (admin only)."""
-    press = await service.create_press_release(data, current_user.id, db)
+    press = await service.create_press_release(data, db)
+    
+    # Admin users don't have company_name, use full_name or email instead
+    author_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Admin')
     
     return PressReleaseResponse(
         id=press.id,
         title=press.title,
         image_url=press.image_url,
         author_id=press.author_id,
-        author_name=current_user.company_name,
+        author_name=author_name,
         created_at=press.created_at,
     )
 
@@ -606,18 +612,21 @@ async def get_system_info(
 async def update_system_info(
     data: SystemInfoUpdate,
     request: Request,
-    current_user: Member = Depends(get_current_admin_user),
+    current_user = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Update system introduction content (admin only, upsert pattern)."""
     system_info = await service.update_system_info(data, current_user.id, db)
+    
+    # Admin users don't have company_name, use full_name or email instead
+    updater_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Admin')
     
     return SystemInfoResponse(
         id=system_info.id,
         content_html=system_info.content_html,
         image_url=system_info.image_url,
         updated_by=system_info.updated_by,
-        updater_name=current_user.company_name,
+        updater_name=updater_name,
         updated_at=system_info.updated_at,
     )
 

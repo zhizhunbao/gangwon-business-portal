@@ -16,7 +16,7 @@ export default function AdminLogin() {
   const { adminLogin, isLoading } = useAuth();
   
   const [formData, setFormData] = useState({
-    username: '',
+    email: '',
     password: ''
   });
   const [error, setError] = useState('');
@@ -29,13 +29,13 @@ export default function AdminLogin() {
       loggerService.info('Admin login attempt', {
         module: 'AdminLogin',
         function: 'handleSubmit',
-        username: formData.username
+        email: formData.email
       });
       await adminLogin(formData);
       loggerService.info('Admin login succeeded', {
         module: 'AdminLogin',
         function: 'handleSubmit',
-        username: formData.username
+        email: formData.email
       });
       // Redirect to admin dashboard
       navigate('/admin');
@@ -43,7 +43,7 @@ export default function AdminLogin() {
       loggerService.error('Admin login failed', {
         module: 'AdminLogin',
         function: 'handleSubmit',
-        username: formData.username,
+        email: formData.email,
         error_message: err.message,
         error_code: err.code
       });
@@ -89,14 +89,14 @@ export default function AdminLogin() {
             )}
             
             <Input
-              label={t('admin.auth.username') || 'Username'}
-              type="text"
-              name="username"
-              value={formData.username}
+              label={t('admin.auth.email') || 'Email'}
+              type="email"
+              name="email"
+              value={formData.email}
               onChange={handleChange}
               required
-              autoComplete="username"
-              placeholder={t('admin.auth.usernamePlaceholder') || '000-00-00000 或 admin@example.com'}
+              autoComplete="email"
+              placeholder={t('admin.auth.emailPlaceholder') || 'admin@example.com'}
             />
             
             <Input

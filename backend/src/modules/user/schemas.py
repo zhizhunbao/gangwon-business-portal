@@ -87,7 +87,7 @@ class LoginRequest(BaseModel):
 class AdminLoginRequest(BaseModel):
     """Admin login request schema."""
 
-    username: str = Field(..., description="Admin username")
+    email: EmailStr = Field(..., description="Admin email")
     password: str = Field(..., description="Admin password")
 
 
@@ -114,7 +114,11 @@ class TokenResponse(BaseModel):
 
 
 class UserInfo(BaseModel):
-    """User information schema."""
+    """User information schema.
+    
+    Note: This schema is only used for member endpoints.
+    Admin endpoints use different response models.
+    """
 
     id: UUID
     business_number: str
@@ -122,7 +126,6 @@ class UserInfo(BaseModel):
     email: str
     status: str
     approval_status: str
-    role: str  # User role: 'member' or 'admin'
     created_at: datetime
 
     class Config:

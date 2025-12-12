@@ -7,11 +7,14 @@ Exception operations are in the exception module.
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
-from typing import Optional, Any
+from typing import Optional, Any, TYPE_CHECKING
 from uuid import UUID
 
-from ..db.models import ApplicationLog, Member
 from .file_writer import file_log_writer
+
+# Use TYPE_CHECKING to avoid circular import
+if TYPE_CHECKING:
+    from ..db.models import ApplicationLog, Member
 from .schemas import (
     LogListQuery,
     LogListResponse,
@@ -101,6 +104,9 @@ class LoggingService:
         Returns:
             Paginated list of application logs
         """
+        # Lazy import to avoid circular dependency
+        from ..db.models import ApplicationLog, Member
+        
         # Build base query
         base_query = select(ApplicationLog).options(selectinload(ApplicationLog.user))
 
@@ -194,7 +200,7 @@ class LoggingService:
         self,
         db: AsyncSession,
         log_id: UUID,
-    ) -> Optional[ApplicationLog]:
+    ) -> Optional['ApplicationLog']:
         """
         Get a single log by ID.
 
@@ -205,6 +211,9 @@ class LoggingService:
         Returns:
             ApplicationLog instance or None if not found
         """
+        # Lazy import to avoid circular dependency
+        from ..db.models import ApplicationLog
+        
         result = await db.execute(
             select(ApplicationLog)
             .options(selectinload(ApplicationLog.user))

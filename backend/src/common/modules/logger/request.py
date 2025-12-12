@@ -61,11 +61,19 @@ def get_trace_id(request: Any) -> Optional[str]:
     Trace ID must be provided by the frontend via X-Trace-Id header.
 
     Args:
-        request: FastAPI Request object
+        request: FastAPI Request object (or None)
 
     Returns:
         Trace ID string if found, None otherwise
     """
+    # Check if request is None or not a FastAPI Request object
+    if request is None:
+        return None
+    
+    # Check if it's a FastAPI Request object (has 'state' and 'headers' attributes)
+    if not (hasattr(request, "state") and hasattr(request, "headers")):
+        return None
+    
     # Try to get trace_id from request state (set by middleware)
     if hasattr(request.state, "trace_id"):
         return request.state.trace_id

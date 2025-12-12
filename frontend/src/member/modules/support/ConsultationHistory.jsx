@@ -7,13 +7,28 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import Card from '@shared/components/Card';
-import { supportService, loggerService, exceptionService } from '@shared/services';
+import { supportService, contentService, loggerService, exceptionService } from '@shared/services';
+import { BANNER_TYPES } from '@shared/utils/constants';
 import './ConsultationHistory.css';
+
+// 生成占位符图片
+const generatePlaceholderImage = (width = 400, height = 200) => {
+  const svg = `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="#e5e7eb"/>
+      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="16" fill="#9ca3af" text-anchor="middle" dominant-baseline="middle">
+        Support
+      </text>
+    </svg>
+  `.trim();
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+};
 
 export default function ConsultationHistory() {
   const { t } = useTranslation();
   const [inquiries, setInquiries] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [supportBannerUrl, setSupportBannerUrl] = useState(null);
 
   useEffect(() => {
     const loadInquiries = async () => {
@@ -41,7 +56,27 @@ export default function ConsultationHistory() {
       }
     };
 
+    // 加载 support 横幅
+    const loadSupportBanner = async () => {
+      try {
+        const banners = await contentService.getBanners({ bannerType: BANNER_TYPES.SUPPORT });
+        if (banners && banners.length > 0 && banners[0].imageUrl) {
+          setSupportBannerUrl(banners[0].imageUrl);
+        } else {
+          setSupportBannerUrl(generatePlaceholderImage());
+        }
+      } catch (error) {
+        loggerService.warn('Failed to load support banner, using placeholder', {
+          module: 'ConsultationHistory',
+          function: 'loadSupportBanner',
+          error_message: error.message
+        });
+        setSupportBannerUrl(generatePlaceholderImage());
+      }
+    };
+
     loadInquiries();
+    loadSupportBanner();
   }, []);
 
   return (
@@ -76,7 +111,9 @@ export default function ConsultationHistory() {
               <div 
                 className="ac-card-img" 
                 style={{ 
-                  backgroundImage: `url('/uploads/banners/support.png')` 
+                  backgroundImage: `url('${supportBannerUrl || generatePlaceholderImage()}')`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center'
                 }}
               />
               <div className="ac-card-body">

@@ -237,3 +237,69 @@ class MemberService:
 
         return member
 
+    async def export_members_data(
+        self, query: MemberListQuery, db: AsyncSession
+    ) -> list[dict]:
+        """
+        Export members data for download (admin only).
+
+        Args:
+            query: Filter parameters
+            db: Database session
+
+        Returns:
+            List of member records as dictionaries
+        """
+        # Build query directly without pagination for export
+        # Select both Member and MemberProfile to avoid N+1 queries
+        stmt = select(Member, MemberProfile).outerjoin(
+            MemberProfile, Member.id == MemberProfile.member_id
+        )
+
+        # Apply filters
+        if query.search:
+            stmt = stmt.where(
+                or_(
+                    Member.company_name.ilike(f"%{query.search}%"),
+                    Member.business_number.ilike(f"%{query.search}%"),
+                )
+            )
+        if query.industry:
+            stmt = stmt.where(MemberProfile.industry == query.industry)
+        if query.region:
+            stmt = stmt.where(MemberProfile.region == query.region)
+        if query.approval_status:
+            stmt = stmt.where(Member.approval_status == query.approval_status)
+        if query.status:
+            stmt = stmt.where(Member.status == query.status)
+
+        stmt = stmt.order_by(Member.created_at.desc())
+
+        # Execute query to get all matching members with profiles
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        # Convert to dict format for export
+        export_data = []
+        for member, profile in rows:
+            export_data.append({
+                "id": str(member.id),
+                "business_number": member.business_number,
+                "company_name": member.company_name,
+                "email": member.email,
+                "status": member.status,
+                "approval_status": member.approval_status,
+                "industry": profile.industry if profile else None,
+                "revenue": float(profile.revenue) if profile and profile.revenue else None,
+                "employee_count": profile.employee_count if profile else None,
+                "founding_date": profile.founding_date.isoformat() if profile and profile.founding_date else None,
+                "region": profile.region if profile else None,
+                "address": profile.address if profile else None,
+                "website": profile.website if profile else None,
+                "logo_url": profile.logo_url if profile else None,
+                "created_at": member.created_at.isoformat() if member.created_at else None,
+                "updated_at": member.updated_at.isoformat() if member.updated_at else None,
+            })
+
+        return export_data
+

@@ -246,40 +246,25 @@ async function adminLogin(req) {
   
   const users = await getUsers();
   const body = await req.request.json();
-  const { username, email, password } = body;
+  const { email, password } = body;
   
   // Trim password to handle accidental spaces
   const passwordClean = password ? password.trim() : '';
   
-  // Find admin user by username or email
-  // Admin can login with either username (business_number) or email
-  const loginIdentifier = username || email;
-  if (!loginIdentifier) {
+  // Find admin user by email only
+  if (!email) {
     return HttpResponse.json(
-      { message: 'Username or email is required', code: 'MISSING_CREDENTIALS' },
+      { message: 'Email is required', code: 'MISSING_CREDENTIALS' },
       { status: 400 }
     );
   }
   
-  // Find user: check by email first, then by username (if username is provided)
-  let user = null;
-  
-  // Try to find by email
-  if (email || loginIdentifier.includes('@')) {
-    user = users.find(u => u.email === loginIdentifier && u.password === passwordClean && u.role === 'admin');
-  }
-  
-  // If not found by email, try to find by username (business_number) for admin
-  // Note: Admin users typically don't have businessLicense, so we check by email only
-  // But we can also support username if it matches the email
-  if (!user && username) {
-    user = users.find(u => {
-      // Check if username matches email or if user has matching identifier
-      return (u.email === username || u.name === username) && 
-             u.password === passwordClean && 
-             u.role === 'admin';
-    });
-  }
+  // Find user by email
+  const user = users.find(u => 
+    u.email === email && 
+    u.password === passwordClean && 
+    u.role === 'admin'
+  );
   
   if (!user || user.role !== 'admin') {
     return HttpResponse.json(

@@ -1,7 +1,7 @@
 """Log formatter for structured logging."""
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
 
 class JSONFormatter(logging.Formatter):
@@ -9,8 +9,8 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
-        # Use UTC timezone with explicit timezone info
-        timestamp = datetime.now(timezone.utc).isoformat()
+        # Use local timezone
+        timestamp = datetime.now().isoformat()
 
         log_data = {
             "timestamp": timestamp,
@@ -24,12 +24,19 @@ class JSONFormatter(logging.Formatter):
 
         # Add exception info if present
         if record.exc_info:
-            log_data["exception"] = self.formatException(record.exc_info)
+            # Use stack_trace for consistency with app_exceptions.log format
+            log_data["stack_trace"] = self.formatException(record.exc_info)
+            # Also extract exception type and message for consistency
+            exc_type, exc_value, exc_tb = record.exc_info
+            if exc_type:
+                log_data["error_type"] = exc_type.__name__
+            if exc_value:
+                log_data["error_message"] = str(exc_value)
 
-        # Add stack trace for errors
+        # Add stack trace for errors without exception info
         if record.levelno >= logging.ERROR and record.exc_info is None:
             import traceback
-            log_data["stack_trace"] = traceback.format_stack()
+            log_data["stack_trace"] = "\n".join(traceback.format_stack())
 
         # Add extra fields (request context, user info, etc.)
         extra_fields = [

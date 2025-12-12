@@ -94,10 +94,10 @@ See [DATABASE_SETUP.md](../docs/DATABASE_SETUP.md) for complete configuration gu
 ### 5. Run Development Server
 
 ```bash
-# Using uvicorn directly
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+# Using uvicorn directly (without reload for production/testing)
+uvicorn src.main:app --host 0.0.0.0 --port 8000
 
-# Or using Python
+# Or using Python (reload is disabled in code)
 python -m src.main
 ```
 

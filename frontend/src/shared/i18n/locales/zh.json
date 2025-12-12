@@ -135,8 +135,8 @@
     "auth": {
       "loginTitle": "管理员登录",
       "loginSubtitle": "请输入管理员凭据以访问管理面板",
-      "username": "用户名",
-      "usernamePlaceholder": "请输入管理员用户名或邮箱",
+      "email": "邮箱",
+      "emailPlaceholder": "请输入管理员邮箱",
       "password": "密码",
       "passwordPlaceholder": "请输入密码",
       "rememberMe": "记住登录状态",

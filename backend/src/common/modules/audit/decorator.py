@@ -72,6 +72,7 @@ def audit_log(
             from ..db.session import get_db
 
             # Execute the original function
+            # Exceptions will be handled by global exception handlers
             result = await func(*args, **kwargs)
 
             # Try to extract database session and request from kwargs or args
@@ -99,17 +100,47 @@ def audit_log(
                         request = arg
                         break
 
-            # Find user_id from current_user or similar
+            # Helper function to check if user object is an Admin (not a Member)
+            def is_admin_user(user_obj) -> bool:
+                """Check if user object is an Admin (not a Member)."""
+                if user_obj is None:
+                    return False
+                # Admin has 'username' attribute, Member has 'business_number'
+                return hasattr(user_obj, "username") and not hasattr(user_obj, "business_number")
+
+            # Find user_id from current_user, current_admin, or similar
             if "current_user" in kwargs:
                 user = kwargs["current_user"]
                 if hasattr(user, "id"):
-                    user_id = user.id
+                    # Check if it's actually an Admin object (even though param name is current_user)
+                    if is_admin_user(user):
+                        # Admin operations should have user_id = None
+                        # because audit_logs.user_id FK only references members.id
+                        user_id = None
+                    else:
+                        # It's a Member, use member id
+                        user_id = user.id
+            elif "current_admin" in kwargs:
+                admin = kwargs["current_admin"]
+                if hasattr(admin, "id"):
+                    # For admin operations, we can't set user_id to admin.id
+                    # because audit_logs.user_id FK only references members.id
+                    # So we set it to None for admin operations
+                    user_id = None
             else:
                 # Try to find user in args
                 for arg in args:
                     if hasattr(arg, "id") and hasattr(arg, "email"):
-                        # Likely a Member instance
-                        user_id = arg.id
+                        # Check if it's an admin (has username) or member (has business_number)
+                        if is_admin_user(arg):
+                            # Admin - set user_id to None
+                            user_id = None
+                        elif hasattr(arg, "business_number"):
+                            # Member - use member id
+                            user_id = arg.id
+                        else:
+                            # Default to member id (safer assumption)
+                            user_id = arg.id
                         break
 
             # Extract resource_id if function provided
@@ -127,6 +158,7 @@ def audit_log(
                 ip_address, user_agent = get_client_info(request)
 
             # Create audit log entry (non-blocking, log errors but don't fail)
+            # Only log if function succeeded (exceptions are handled by global handlers)
             if db:
                 try:
                     audit_service = AuditLogService()
@@ -143,7 +175,7 @@ def audit_log(
                     # Log error but don't fail the operation
                     import logging
                     logger = logging.getLogger(__name__)
-                    logger.error(f"Failed to create audit log: {str(e)}", exc_info=True)
+                    logger.warning(f"Failed to create audit log: {str(e)}", exc_info=False)
 
             return result
 

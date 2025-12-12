@@ -1,0 +1,214 @@
+{
+  "accounts": {
+    "admin": {
+      "business_number": "000-00-00000",
+      "email": "admin@k-talk.kr",
+      "password": "password123",
+      "company_name": "관리자 (Administrator)",
+      "profile": {
+        "industry": "IT/소프트웨어",
+        "revenue": 0,
+        "employee_count": 1,
+        "region": "서울",
+        "address": "서울시 강남구"
+      }
+    },
+    "admin_user": {
+      "username": "admin",
+      "email": "admin@k-talk.kr",
+      "password": "password123",
+      "full_name": "시스템 관리자"
+    },
+    "test": {
+      "business_number": "999-99-99999",
+      "email": "test@example.com",
+      "password": "password123",
+      "company_name": "테스트 회사 (Test Company)",
+      "profile": {
+        "website": "https://test-company.example.com"
+      }
+    },
+    "test_modify": {
+      "business_number": "888-88-88888",
+      "email": "test-modify@example.com",
+      "password": "password123",
+      "company_name": "테스트 수정 회사 (Test Modify Company)",
+      "profile": {
+        "website": "https://test-modify-company.example.com"
+      }
+    }
+  },
+  "data_definitions": {
+    "industries": [
+      "IT/소프트웨어",
+      "제조업",
+      "건설업",
+      "유통/물류",
+      "서비스업",
+      "금융업",
+      "의료/바이오",
+      "교육",
+      "문화/예술",
+      "농업/수산업"
+    ],
+    "regions": [
+      "서울",
+      "부산",
+      "대구",
+      "인천",
+      "광주",
+      "대전",
+      "울산",
+      "경기",
+      "강원",
+      "충북",
+      "충남",
+      "전북",
+      "전남",
+      "경북",
+      "경남",
+      "제주"
+    ],
+    "member_statuses": ["pending", "active", "suspended"],
+    "approval_statuses": ["pending", "approved", "rejected"],
+    "performance_types": ["sales", "support", "ip"],
+    "performance_statuses": ["draft", "submitted", "approved", "rejected", "revision_requested"],
+    "project_statuses": ["active", "inactive", "archived"],
+    "application_statuses": ["submitted", "under_review", "approved", "rejected"],
+    "inquiry_statuses": ["pending", "replied", "closed"],
+    "banner_types": ["MAIN", "INTRO", "PROGRAM", "PERFORMANCE", "SUPPORT"],
+    "faq_categories": ["회원가입", "성과관리", "프로젝트", "기타"],
+    "audit_actions": ["login", "logout", "create", "update", "delete", "view", "approve", "reject"],
+    "audit_resource_types": [
+      "member",
+      "performance",
+      "project",
+      "project_application",
+      "notice",
+      "press_release",
+      "faq",
+      "inquiry"
+    ],
+    "user_agents": [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+    ],
+    "file_types": ["image", "document"],
+    "mime_types": {
+      "image": [
+        "image/jpeg",
+        "image/png",
+        "image/gif"
+      ],
+      "document": [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ]
+    }
+  },
+  "data_ranges": {
+    "member": {
+      "revenue_min": 1000000,
+      "revenue_max": 1000000000,
+      "employee_count_min": 1,
+      "employee_count_max": 500,
+      "founding_date_years_ago": 20
+    },
+    "test_account": {
+      "revenue_min": 10000000,
+      "revenue_max": 100000000,
+      "employee_count_min": 10,
+      "employee_count_max": 100,
+      "founding_date_years_ago": 10
+    },
+    "performance": {
+      "sales": {
+        "revenue_min": 1000000,
+        "revenue_max": 100000000,
+        "employees_min": 10,
+        "employees_max": 500,
+        "new_contracts_min": 0,
+        "new_contracts_max": 50
+      },
+      "support": {
+        "support_amount_min": 500000,
+        "support_amount_max": 50000000,
+        "programs_min": 1,
+        "programs_max": 10,
+        "beneficiaries_min": 5,
+        "beneficiaries_max": 200
+      },
+      "ip": {
+        "patents_min": 0,
+        "patents_max": 20,
+        "trademarks_min": 0,
+        "trademarks_max": 15,
+        "copyrights_min": 0,
+        "copyrights_max": 10
+      },
+      "year_range": 2,
+      "submitted_days_ago_max": 180,
+      "created_days_ago_max": 365,
+      "review_days_min": 1,
+      "review_days_max": 30
+    },
+    "project": {
+      "start_date_days_ago": 365,
+      "start_date_days_ahead": 365,
+      "duration_days_min": 30,
+      "duration_days_max": 365,
+      "created_days_ago_max": 180
+    },
+    "application": {
+      "submitted_days_ago_max": 90,
+      "review_days_min": 1,
+      "review_days_max": 30
+    },
+    "content": {
+      "notices_count": 20,
+      "press_releases_count": 15,
+      "banners_per_type": 2,
+      "faqs_count": 25,
+      "created_days_ago_max": 180
+    },
+    "inquiry": {
+      "count": 30,
+      "created_days_ago_max": 90,
+      "replied_days_ago_max": 30
+    },
+    "attachment": {
+      "file_size_min": 10000,
+      "file_size_max": 5000000,
+      "uploaded_days_ago_max": 180
+    },
+    "audit_log": {
+      "created_days_ago_max": 365
+    }
+  },
+  "generation_counts": {
+    "members": 75,
+    "admins": 5,
+    "performance_records": 350,
+    "projects": 35,
+    "project_applications": 150,
+    "attachments": 100,
+    "audit_logs": 1000
+  },
+  "probabilities": {
+    "member_profile_industry_null": 0.1,
+    "member_profile_revenue_null": 0.2,
+    "member_profile_employee_count_null": 0.2,
+    "member_profile_founding_date_null": 0.2,
+    "member_profile_region_null": 0.1,
+    "member_profile_address_null": 0.1,
+    "member_profile_website_null": 0.3,
+    "performance_review_comments_null": 0.3,
+    "banner_link_url_null": 0.3,
+    "banner_is_active": 0.8,
+    "audit_log_member_null": 0.1,
+    "audit_log_resource_type_null": 0.3
+  }
+}
+

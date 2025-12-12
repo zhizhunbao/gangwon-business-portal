@@ -29,9 +29,9 @@ class NiceDnBClient:
         """Initialize Nice D&B API client."""
         self.api_key = settings.NICE_DNB_API_KEY
         self.api_secret_key = settings.NICE_DNB_API_SECRET_KEY
-        # API base URL from official OpenAPI documentation: https://openapi.nicednb.com/#/
+        # API base URL from official documentation: https://gate.nicednb.com
         # OAuth documentation: https://openapi.nicednb.com/#/guide/common/oauth
-        self.base_url = settings.NICE_DNB_API_URL or "https://openapi.nicednb.com"
+        self.base_url = settings.NICE_DNB_API_URL or "https://gate.nicednb.com"
         self.timeout = 30.0  # Request timeout in seconds
         
         # OAuth token cache
@@ -69,32 +69,29 @@ class NiceDnBClient:
             return self._access_token
         
         if not self._is_configured():
-            logger.warning(
-                "Nice D&B API key or secret key is not configured. Cannot get access token."
-            )
             return None
         
         try:
             # OAuth 2.0 Client Credentials Grant
-            # Token endpoint: typically /oauth/token or /oauth2/token
-            # Note: Actual endpoint path may vary - check API documentation
-            token_url = f"{self.base_url}/oauth/token"
-            # Alternative common paths:
-            # - f"{self.base_url}/oauth2/token"
-            # - f"{self.base_url}/api/oauth/token"
+            # Use endpoint from settings if configured, otherwise use default
+            token_url = settings.NICE_DNB_OAUTH_TOKEN_ENDPOINT
+            if not token_url:
+                # Fallback to default endpoint if not configured
+                token_url = f"{self.base_url}/nice/oauth/v1.0/accesstoken"
             
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 # OAuth 2.0 Client Credentials Grant request
-                # Using form-encoded data as per OAuth 2.0 spec
+                # Using JSON body as per Nice D&B API specification
                 response = await client.post(
                     token_url,
-                    data={
-                        "grant_type": "client_credentials",
-                        "client_id": self.api_key,
-                        "client_secret": self.api_secret_key,
+                    json={
+                        "appKey": self.api_key,
+                        "appSecret": self.api_secret_key,
+                        "grantType": "client_credentials",
+                        "scope": "oob",
                     },
                     headers={
-                        "Content-Type": "application/x-www-form-urlencoded",
+                        "Content-Type": "application/json; charset=UTF-8",
                         "Accept": "application/json",
                     },
                 )
@@ -103,30 +100,44 @@ class NiceDnBClient:
                 token_data = response.json()
                 
                 # Extract access token and expiration
-                self._access_token = token_data.get("access_token")
+                # Nice D&B uses "accessToken" (camelCase), not "access_token"
+                self._access_token = token_data.get("accessToken")
                 
                 # Calculate expiration time
-                expires_in = token_data.get("expires_in", 3600)  # Default to 1 hour
+                expires_in = token_data.get("expiresIn", 3600)  # Default to 1 hour
                 self._token_expires_at = datetime.now() + timedelta(seconds=expires_in)
                 
-                logger.info("Successfully obtained Nice D&B OAuth access token")
                 return self._access_token
                 
         except httpx.HTTPStatusError as e:
             logger.error(
-                f"Nice D&B OAuth token request failed with status {e.response.status_code}: {e.response.text}",
+                f"Nice D&B OAuth token request failed with status {e.response.status_code}",
+                extra={
+                    "error_type": "HTTPStatusError",
+                    "status_code": e.response.status_code,
+                    "response_text": e.response.text[:500] if e.response.text else None,
+                    "token_url": token_url,
+                },
                 exc_info=True,
             )
             return None
         except httpx.RequestError as e:
             logger.error(
                 f"Nice D&B OAuth token request failed: {str(e)}",
+                extra={
+                    "error_type": "RequestError",
+                    "token_url": token_url,
+                },
                 exc_info=True,
             )
             return None
         except Exception as e:
             logger.error(
-                f"Unexpected error getting Nice D&B OAuth token: {str(e)}",
+                f"Nice D&B OAuth token request failed with unexpected error: {str(e)}",
+                extra={
+                    "error_type": type(e).__name__,
+                    "token_url": token_url,
+                },
                 exc_info=True,
             )
             return None
@@ -142,7 +153,7 @@ class NiceDnBClient:
             Dictionary of HTTP headers
         """
         headers = {
-            "Content-Type": "application/json",
+            "Content-Type": "application/json; charset=UTF-8",
             "Accept": "application/json",
         }
         
@@ -169,60 +180,126 @@ class NiceDnBClient:
             Exception: If API call fails and error handling is needed
         """
         if not self._is_configured():
-            logger.warning(
-                "Nice D&B API key or secret key is not configured. Skipping API call."
-            )
             return None
 
         # Clean business number (remove hyphens if present)
         business_number = business_number.replace("-", "").strip()
 
         if not business_number:
-            logger.error("Business number is required for Nice D&B search")
             return None
 
-        try:
-            # Get OAuth access token
-            access_token = await self._get_access_token()
-            if not access_token:
-                logger.error("Failed to obtain OAuth access token for Nice D&B API")
-                return None
-            
-            # TODO: Update endpoint path based on actual API documentation
-            # This is a placeholder endpoint - check OpenAPI docs for correct path
-            url = f"{self.base_url}/v1/companies/{business_number}"
-            # Alternative endpoint patterns to check:
-            # - f"{self.base_url}/api/v1/companies/{business_number}"
-            # - f"{self.base_url}/companies/{business_number}"
-            # - f"{self.base_url}/api/company/search?business_number={business_number}"
+        # Use endpoint from settings if configured
+        api_url = settings.NICE_DNB_COMPANY_INFO_ENDPOINT
+        if not api_url:
+            logger.error(
+                "NICE_DNB_COMPANY_INFO_ENDPOINT is not configured in settings",
+                extra={"business_number": business_number}
+            )
+            return None
 
+        # Get OAuth access token
+        access_token = await self._get_access_token()
+        if not access_token:
+            return None
+
+        # Try POST method first (certification endpoint typically uses POST)
+        try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.get(
-                    url,
+                # Try POST with JSON body
+                response = await client.post(
+                    api_url,
                     headers=self._get_headers(access_token),
+                    json={"bizNo": business_number},
                 )
                 response.raise_for_status()
 
                 data = response.json()
+                
+                logger.info(
+                    f"Nice D&B API request succeeded with endpoint: {api_url}",
+                    extra={
+                        "business_number": business_number,
+                        "api_url": api_url,
+                        "method": "POST",
+                    }
+                )
 
-                # TODO: Map actual API response to our schema
-                # The actual response structure will depend on Nice D&B API documentation
                 return self._parse_response(data, business_number)
-
+                
         except httpx.HTTPStatusError as e:
+            # If POST returns 405, try GET method
+            if e.response.status_code == 405:
+                try:
+                    async with httpx.AsyncClient(timeout=self.timeout) as client:
+                        response = await client.get(
+                            api_url,
+                            headers=self._get_headers(access_token),
+                            params={"bizNo": business_number},
+                        )
+                        response.raise_for_status()
+
+                        data = response.json()
+                        
+                        logger.info(
+                            f"Nice D&B API request succeeded with endpoint: {api_url}",
+                            extra={
+                                "business_number": business_number,
+                                "api_url": api_url,
+                                "method": "GET",
+                            }
+                        )
+
+                        return self._parse_response(data, business_number)
+                except httpx.HTTPStatusError as get_error:
+                    logger.error(
+                        f"Nice D&B API request failed with status {get_error.response.status_code}",
+                        extra={
+                            "error_type": "HTTPStatusError",
+                            "status_code": get_error.response.status_code,
+                            "response_text": get_error.response.text[:500] if get_error.response.text else None,
+                            "business_number": business_number,
+                            "api_url": api_url,
+                            "method": "GET",
+                        },
+                        exc_info=True,
+                    )
+                    return None
+            else:
+                # For other HTTP errors, log and return None
+                logger.error(
+                    f"Nice D&B API request failed with status {e.response.status_code}",
+                    extra={
+                        "error_type": "HTTPStatusError",
+                        "status_code": e.response.status_code,
+                        "response_text": e.response.text[:500] if e.response.text else None,
+                        "business_number": business_number,
+                        "api_url": api_url,
+                        "method": "POST",
+                    },
+                    exc_info=True,
+                )
+                return None
+        except httpx.RequestError as e:
+            # Network errors should be logged and return None
             logger.error(
-                f"Nice D&B API returned error status {e.response.status_code}: {e.response.text}",
+                f"Nice D&B API request failed: {str(e)}",
+                extra={
+                    "error_type": "RequestError",
+                    "business_number": business_number,
+                    "api_url": api_url,
+                },
                 exc_info=True,
             )
             return None
-        except httpx.RequestError as e:
-            logger.error(
-                f"Nice D&B API request failed: {str(e)}", exc_info=True
-            )
-            return None
         except Exception as e:
+            # Unexpected errors
             logger.error(
-                f"Unexpected error calling Nice D&B API: {str(e)}",
+                f"Nice D&B API request failed with unexpected error: {str(e)}",
+                extra={
+                    "error_type": type(e).__name__,
+                    "business_number": business_number,
+                    "api_url": api_url,
+                },
                 exc_info=True,
             )
             return None
@@ -234,37 +311,85 @@ class NiceDnBClient:
         Parse API response into NiceDnBResponse schema.
 
         Args:
-            api_data: Raw API response data
+            api_data: Raw API response data (contains dataHeader and dataBody)
             business_number: Business registration number used in the query
 
         Returns:
             Parsed NiceDnBResponse object
 
         Note:
-            This method needs to be updated based on the actual Nice D&B API
-            response structure. Currently provides a basic mapping structure.
+            API response format according to documentation:
+            {
+                "dataHeader": {...},
+                "dataBody": {...}
+            }
         """
-        # TODO: Update this mapping based on actual API response structure
-        # The following is a template that should be adjusted to match the real API
+        # Extract dataBody from response (according to API documentation)
+        data_body = api_data.get("dataBody", {})
+        
+        # If dataBody is empty or not found, try using api_data directly (for backward compatibility)
+        if not data_body:
+            data_body = api_data
 
         # Extract company basic information
+        # Based on actual API response fields: cmpNm, ceoNm, addr, indNm, etc.
         company_data = NiceDnBCompanyData(
-            business_number=business_number,
-            company_name=api_data.get("company_name") or api_data.get("name") or "",
-            representative=api_data.get("representative") or api_data.get("ceo"),
-            address=api_data.get("address") or api_data.get("location"),
-            industry=api_data.get("industry") or api_data.get("sector"),
-            established_date=self._parse_date(
-                api_data.get("established_date") or api_data.get("founding_date")
+            business_number=data_body.get("bizNo") or business_number,
+            company_name=(
+                data_body.get("cmpNm")  # Korean company name (회사명)
+                or data_body.get("cmpEnm")  # English company name
+                or data_body.get("company_name") 
+                or data_body.get("name") 
+                or data_body.get("corpNm") 
+                or data_body.get("corpName")
+                or data_body.get("bzmnNm")
+                or ""
             ),
-            credit_grade=api_data.get("credit_grade") or api_data.get("rating"),
-            risk_level=api_data.get("risk_level") or api_data.get("risk"),
-            summary=api_data.get("summary") or api_data.get("evaluation"),
+            representative=(
+                data_body.get("ceoNm")  # CEO name (대표자명)
+                or data_body.get("representative") 
+                or data_body.get("ceo") 
+                or ""
+            ),
+            address=(
+                data_body.get("addr")  # Address (주소)
+                or data_body.get("address") 
+                or data_body.get("location") 
+                or ""
+            ),
+            industry=(
+                data_body.get("indNm")  # Industry name (업종명)
+                or data_body.get("indutyNm")
+                or data_body.get("industry") 
+                or data_body.get("sector") 
+                or ""
+            ),
+            established_date=self._parse_date(
+                data_body.get("estbDt")  # Establishment date (설립일자)
+                or data_body.get("established_date") 
+                or data_body.get("founding_date")
+            ),
+            credit_grade=(
+                data_body.get("crcdGrade")  # Credit grade (신용등급)
+                or data_body.get("credit_grade") 
+                or data_body.get("rating") 
+                or ""
+            ),
+            risk_level=(
+                data_body.get("risk_level") 
+                or data_body.get("risk") 
+                or ""
+            ),
+            summary=(
+                data_body.get("summary") 
+                or data_body.get("evaluation") 
+                or ""
+            ),
         )
 
         # Extract financial data
         financials = []
-        financial_list = api_data.get("financials") or api_data.get("financial_data") or []
+        financial_list = data_body.get("financials") or data_body.get("financial_data") or []
         for financial in financial_list:
             financials.append(
                 NiceDnBFinancialData(
@@ -277,7 +402,7 @@ class NiceDnBClient:
 
         # Extract insights
         insights = []
-        insights_list = api_data.get("insights") or api_data.get("metrics") or []
+        insights_list = data_body.get("insights") or data_body.get("metrics") or []
         for insight in insights_list:
             insights.append(
                 NiceDnBInsight(
@@ -321,7 +446,6 @@ class NiceDnBClient:
             except ValueError:
                 continue
 
-        logger.warning(f"Could not parse date string: {date_str}")
         return None
 
     async def verify_company(

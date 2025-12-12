@@ -14,7 +14,6 @@ import aiosmtplib
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound, select_autoescape
 
 from ..config.settings import settings
-from ..logger import logger
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 
@@ -82,6 +81,10 @@ class EmailService:
         message.set_content(text_body)
         message.add_alternative(html_body, subtype="html")
 
+        # 检查邮件配置是否完整
+        if not self._settings.EMAIL_SMTP_USER or not self._settings.EMAIL_SMTP_PASSWORD:
+            return False
+        
         try:
             smtp = aiosmtplib.SMTP(
                 hostname=self._settings.EMAIL_SMTP_HOST,
@@ -96,26 +99,12 @@ class EmailService:
                 )
             await smtp.send_message(message)
             await smtp.quit()
-            logger.info(
-                "Email sent successfully",
-                extra={
-                    "module_name": __name__,
-                    "recipient": to_email,
-                    "subject": subject,
-                },
-            )
             return True
-        except Exception as exc:  # pragma: no cover - covered via unit tests
-            logger.error(
-                "Failed to send email",
-                extra={
-                    "module_name": __name__,
-                    "recipient": to_email,
-                    "subject": subject,
-                    "error": str(exc),
-                },
-                exc_info=self._settings.DEBUG,
-            )
+        except aiosmtplib.SMTPAuthenticationError:
+            return False
+        except aiosmtplib.SMTPConnectError:
+            return False
+        except Exception:  # pragma: no cover - covered via unit tests
             return False
 
     async def send_registration_confirmation_email(

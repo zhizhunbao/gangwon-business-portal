@@ -135,8 +135,8 @@
     "auth": {
       "loginTitle": "관리자 로그인",
       "loginSubtitle": "관리자 자격 증명을 입력하여 관리 패널에 액세스하세요",
-      "username": "사용자명",
-      "usernamePlaceholder": "관리자 사용자명 또는 이메일을 입력하세요",
+      "email": "이메일",
+      "emailPlaceholder": "관리자 이메일을 입력하세요",
       "password": "비밀번호",
       "passwordPlaceholder": "비밀번호를 입력하세요",
       "rememberMe": "로그인 상태 유지",

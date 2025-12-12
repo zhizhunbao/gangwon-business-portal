@@ -370,160 +370,171 @@ async def verify_company(
         )
 
 
-@router.get(
-    "/api/admin/members/nice-dnb",
-    status_code=status.HTTP_200_OK,
-    summary="Search Company Information (Admin)",
-    description="""
-    Search company information from Nice D&B API (admin only).
-    
-    This endpoint allows administrators to query detailed company information
-    from the Nice D&B database, including:
-    - Basic company information (name, address, representative, etc.)
-    - Financial data (revenue, profit, employees by year)
-    - Business insights and metrics
-    - Credit grade and risk assessment
-    
-    **Authentication:**
-    - Requires admin role
-    - Bearer token authentication required
-    
-    **Usage:**
-    - Use during member approval process to verify company details
-    - Research company information for business intelligence
-    - Validate company information before making decisions
-    
-    **Parameters:**
-    - `business_number`: Business registration number (사업자등록번호)
-      - Format: 10 digits (e.g., "1234567890" or "123-45-67890")
-      - Required: Yes
-    """,
-    responses={
-        200: {
-            "description": "Company information retrieved successfully",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "success": True,
-                        "data": {
-                            "businessNumber": "1234567890",
-                            "companyName": "Example Corp",
-                            "representative": "홍길동",
-                            "address": "강원특별자치도 춘천시 중앙로 1",
-                            "industry": "제조업",
-                            "establishedDate": "2018-05-10",
-                            "creditGrade": "A+",
-                            "riskLevel": "low",
-                            "summary": "Established company with good credit rating"
-                        },
-                        "financials": [
-                            {
-                                "year": 2024,
-                                "revenue": 4500000000,
-                                "profit": 540000000,
-                                "employees": 220
-                            }
-                        ],
-                        "insights": [
-                            {
-                                "label": "수출 비중",
-                                "value": "45%",
-                                "trend": "up"
-                            }
-                        ]
-                    }
-                }
-            }
-        },
-        401: {
-            "description": "Unauthorized - Admin authentication required"
-        },
-        403: {
-            "description": "Forbidden - Admin role required"
-        },
-        503: {
-            "description": "Nice D&B API service unavailable",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": "Nice D&B API is not available. Please check configuration or try again later."
-                    }
-                }
-            }
-        }
-    },
-    tags=["Admin", "Nice D&B"],
-)
-@auto_log("search_nice_dnb")
-async def search_nice_dnb(
-    request: Request,
-    business_number: str = Query(
-        ...,
-        description="Business registration number (사업자등록번호)",
-        min_length=10,
-        max_length=20,
-        example="123-45-67890"
-    ),
-    current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Search company information from Nice D&B API (admin only).
-    
-    Args:
-        business_number: Business registration number (사업자등록번호)
-        current_user: Current admin user (from dependency)
-        db: Database session (from dependency)
-    
-    Returns:
-        Nice D&B company information including financials and insights
-    """
-    # Call Nice D&B API
-    response = await nice_dnb_client.search_company(business_number)
-    
-    if not response:
-        # API not configured or request failed
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Nice D&B API is not available. Please check configuration or try again later.",
-        )
-    
-    # Convert response to dict format expected by frontend
-    return {
-            "success": response.success,
-            "data": {
-                "businessNumber": response.data.business_number,
-                "companyName": response.data.company_name,
-                "representative": response.data.representative,
-                "address": response.data.address,
-                "industry": response.data.industry,
-                "establishedDate": (
-                    response.data.established_date.isoformat()
-                    if response.data.established_date
-                    else None
-                ),
-                "creditGrade": response.data.credit_grade,
-                "riskLevel": response.data.risk_level,
-                "summary": response.data.summary,
-            },
-            "financials": [
-                {
-                    "year": f.year,
-                    "revenue": f.revenue,
-                    "profit": f.profit,
-                    "employees": f.employees,
-                }
-                for f in response.financials
-            ],
-            "insights": [
-                {
-                    "label": i.label,
-                    "value": i.value,
-                    "trend": i.trend,
-                }
-                for i in response.insights
-            ],
-        }
+# TODO: Re-enable after Nice D&B API endpoint is confirmed
+# @router.get(
+#     "/api/admin/members/nice-dnb",
+#     status_code=status.HTTP_200_OK,
+#     summary="Search Company Information (Admin)",
+#     description="""
+#     Search company information from Nice D&B API (admin only).
+#     
+#     This endpoint allows administrators to query detailed company information
+#     from the Nice D&B database, including:
+#     - Basic company information (name, address, representative, etc.)
+#     - Financial data (revenue, profit, employees by year)
+#     - Business insights and metrics
+#     - Credit grade and risk assessment
+#     
+#     **Authentication:**
+#     - Requires admin role
+#     - Bearer token authentication required
+#     
+#     **Usage:**
+#     - Use during member approval process to verify company details
+#     - Research company information for business intelligence
+#     - Validate company information before making decisions
+#     
+#     **Parameters:**
+#     - `business_number`: Business registration number (사업자등록번호)
+#       - Format: 10 digits (e.g., "1234567890" or "123-45-67890")
+#       - Required: Yes
+#     """,
+#     responses={
+#         200: {
+#             "description": "Company information retrieved successfully",
+#             "content": {
+#                 "application/json": {
+#                     "example": {
+#                         "success": True,
+#                         "data": {
+#                             "businessNumber": "1234567890",
+#                             "companyName": "Example Corp",
+#                             "representative": "홍길동",
+#                             "address": "강원특별자치도 춘천시 중앙로 1",
+#                             "industry": "제조업",
+#                             "establishedDate": "2018-05-10",
+#                             "creditGrade": "A+",
+#                             "riskLevel": "low",
+#                             "summary": "Established company with good credit rating"
+#                         },
+#                         "financials": [
+#                             {
+#                                 "year": 2024,
+#                                 "revenue": 4500000000,
+#                                 "profit": 540000000,
+#                                 "employees": 220
+#                             }
+#                         ],
+#                         "insights": [
+#                             {
+#                                 "label": "수출 비중",
+#                                 "value": "45%",
+#                                 "trend": "up"
+#                             }
+#                         ]
+#                     }
+#                 }
+#             }
+#         },
+#         401: {
+#             "description": "Unauthorized - Admin authentication required"
+#         },
+#         403: {
+#             "description": "Forbidden - Admin role required"
+#         },
+#         503: {
+#             "description": "Nice D&B API service unavailable",
+#             "content": {
+#                 "application/json": {
+#                     "example": {
+#                         "detail": "Nice D&B API is not available. Please check configuration or try again later."
+#                     }
+#                 }
+#             }
+#         }
+#     },
+#     tags=["Admin", "Nice D&B"],
+# )
+# @auto_log("search_nice_dnb")
+# async def search_nice_dnb(
+#     request: Request,
+#     business_number: str = Query(
+#         ...,
+#         description="Business registration number (사업자등록번호)",
+#         min_length=10,
+#         max_length=20,
+#         example="123-45-67890"
+#     ),
+#     current_user: Member = Depends(get_current_admin_user),
+#     db: AsyncSession = Depends(get_db),
+# ):
+#     """
+#     Search company information from Nice D&B API (admin only).
+#     
+#     Args:
+#         business_number: Business registration number (사업자등록번호)
+#         current_user: Current admin user (from dependency)
+#         db: Database session (from dependency)
+#     
+#     Returns:
+#         Nice D&B company information including financials and insights
+#     
+#     Raises:
+#         HTTPException: If API is not configured or request fails
+#     """
+#     # Check if API is configured
+#     if not nice_dnb_client._is_configured():
+#         raise HTTPException(
+#             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+#             detail="Nice D&B API is not configured. Please set NICE_DNB_API_KEY and NICE_DNB_API_SECRET_KEY environment variables.",
+#         )
+#     
+#     # Call Nice D&B API
+#     response = await nice_dnb_client.search_company(business_number)
+#     
+#     if not response:
+#         # API request failed (network error, authentication error, etc.)
+#         raise HTTPException(
+#             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+#             detail="Nice D&B API request failed. Please check the API configuration, network connection, or try again later.",
+#         )
+#     
+#     # Convert response to dict format expected by frontend
+#     return {
+#             "success": response.success,
+#             "data": {
+#                 "businessNumber": response.data.business_number,
+#                 "companyName": response.data.company_name,
+#                 "representative": response.data.representative,
+#                 "address": response.data.address,
+#                 "industry": response.data.industry,
+#                 "establishedDate": (
+#                     response.data.established_date.isoformat()
+#                     if response.data.established_date
+#                     else None
+#                 ),
+#                 "creditGrade": response.data.credit_grade,
+#                 "riskLevel": response.data.risk_level,
+#                 "summary": response.data.summary,
+#             },
+#             "financials": [
+#                 {
+#                     "year": f.year,
+#                     "revenue": f.revenue,
+#                     "profit": f.profit,
+#                     "employees": f.employees,
+#                 }
+#                 for f in response.financials
+#             ],
+#             "insights": [
+#                 {
+#                     "label": i.label,
+#                     "value": i.value,
+#                     "trend": i.trend,
+#                 }
+#                 for i in response.insights
+#             ],
+#         }
 
 
 @router.get("/api/admin/members/export")

@@ -39,6 +39,7 @@ __all__ = [
     "AuditLog",
     "ApplicationLog",
     "ApplicationException",
+    "Admin",
 ]
 
 
@@ -240,7 +241,7 @@ class Notice(Base):
     board_type = Column(String(50), default="notice")  # notice, announcement, etc.
     title = Column(String(255), nullable=False)
     content_html = Column(Text)
-    author_id = Column(UUID(as_uuid=True), ForeignKey("members.id"))  # Admin member ID
+    author_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)  # Can be NULL for admin-created content
     view_count = Column(Integer, default=0)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -265,7 +266,7 @@ class PressRelease(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title = Column(String(255), nullable=False)
     image_url = Column(String(500), nullable=False)
-    author_id = Column(UUID(as_uuid=True), ForeignKey("members.id"))  # Admin member ID
+    author_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)  # Can be NULL for admin-created content
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     # Relationships
@@ -306,7 +307,7 @@ class SystemInfo(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     content_html = Column(Text, nullable=False)  # WYSIWYG editor content
     image_url = Column(String(500))  # Optional image
-    updated_by = Column(UUID(as_uuid=True), ForeignKey("members.id"))  # Admin member ID
+    updated_by = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)  # Member ID (NULL for admin updates)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
@@ -359,7 +360,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("members.id"))
+    user_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)  # Can be NULL for admin operations
     action = Column(String(100), nullable=False)  # login, create, update, delete, etc.
     resource_type = Column(String(50))  # member, performance, project, etc.
     resource_id = Column(UUID(as_uuid=True))
@@ -455,4 +456,22 @@ class ApplicationException(Base):
 
     def __repr__(self):
         return f"<ApplicationException(id={self.id}, source={self.source}, exception_type={self.exception_type}, created_at={self.created_at})>"
+
+
+class Admin(Base):
+    """Admin user table."""
+
+    __tablename__ = "admins"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    username = Column(String(255), unique=True, nullable=False, index=True)
+    email = Column(String(255), unique=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    full_name = Column(String(255), nullable=True)
+    is_active = Column(String(10), default="true")  # "true" or "false" as string
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<Admin(id={self.id}, username={self.username}, email={self.email})>"
 

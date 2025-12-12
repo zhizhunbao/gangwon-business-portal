@@ -87,7 +87,7 @@ async def login(
 
 @router.post("/admin-login", response_model=TokenResponse)
 @auto_log("admin_login", log_resource_id=True)
-@audit_log(action="admin_login", resource_type="member")
+@audit_log(action="admin_login", resource_type="admin")
 async def admin_login(
     data: AdminLoginRequest,
     request: Request,
@@ -98,23 +98,22 @@ async def admin_login(
 
     Authenticates an admin user and returns a JWT access token.
     """
-    member = await auth_service.authenticate_admin(data.username, data.password, db)
+    admin = await auth_service.authenticate_admin(data.email, data.password, db)
 
     # Create access token with admin role
     access_token = auth_service.create_access_token(
-        data={"sub": str(member.id), "role": "admin"}
+        data={"sub": str(admin.id), "role": "admin"}
     )
 
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
         user={
-            "id": str(member.id),
-            "business_number": member.business_number,
-            "company_name": member.company_name,
-            "email": member.email,
-            "status": member.status,
-            "approval_status": member.approval_status,
+            "id": str(admin.id),
+            "username": admin.username,
+            "email": admin.email,
+            "full_name": admin.full_name,
+            "is_active": admin.is_active,
             "role": "admin",  # Admin login always returns admin role
         },
     )
@@ -179,30 +178,8 @@ async def get_current_user_info(
     """
     Get current user information.
 
-    Returns the authenticated user's information including role from token.
+    Returns the authenticated member's information.
     """
-    # Extract role from JWT token
-    role = "member"  # Default role
-    
-    # Get Authorization header
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header.replace("Bearer ", "")
-        try:
-            auth_service = AuthService()
-            payload = auth_service.decode_token(token)
-            role = payload.get("role", "member")
-        except Exception:
-            # If token decode fails, check if user is admin (for backward compatibility)
-            auth_service = AuthService()
-            if auth_service.is_admin(current_user):
-                role = "admin"
-    else:
-        # Fallback: check if user is admin
-        auth_service = AuthService()
-        if auth_service.is_admin(current_user):
-            role = "admin"
-    
     return UserInfo(
         id=current_user.id,
         business_number=current_user.business_number,
@@ -210,7 +187,6 @@ async def get_current_user_info(
         email=current_user.email,
         status=current_user.status,
         approval_status=current_user.approval_status,
-        role=role,
         created_at=current_user.created_at,
     )
 

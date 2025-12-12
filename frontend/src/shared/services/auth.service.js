@@ -45,13 +45,13 @@ class AuthService {
    * Admin Login
    * 
    * @param {Object} credentials - Admin login credentials
-   * @param {string} credentials.username - Admin username (business_number)
+   * @param {string} credentials.email - Admin email
    * @param {string} credentials.password - Password
    */
   @autoLog('admin_login', { logResourceId: true })
   async adminLogin(credentials) {
     const requestData = {
-      username: credentials.username || credentials.email, // Support both username and email
+      email: credentials.email,
       password: credentials.password
     };
     

@@ -50,7 +50,14 @@ class Settings(BaseSettings):
     # Nice D&B API (Optional)
     NICE_DNB_API_KEY: str | None = None
     NICE_DNB_API_SECRET_KEY: str | None = None
-    NICE_DNB_API_URL: str | None = None  # API base URL (defaults to https://api.nicednb.com if not set)
+    NICE_DNB_API_URL: str | None = None  # API base URL (defaults to https://gate.nicednb.com if not set)
+    
+    # Nice D&B API Endpoints
+    NICE_DNB_OAUTH_TOKEN_ENDPOINT: str | None = None  # OAuth 令牌端点
+    NICE_DNB_COMPANY_INFO_ENDPOINT: str | None = None  # 企业信用信息端点
+    NICE_DNB_FINANCIAL_STATEMENT_ENDPOINT: str | None = None  # 财务报表端点
+    NICE_DNB_GLOBAL_RATE_ENDPOINT: str | None = None  # 全球等级端点
+    NICE_DNB_CRITERIA_SEARCH_ENDPOINT: str | None = None  # 标准查询端点
 
     # Email Configuration
     EMAIL_SMTP_HOST: str = "smtp.gmail.com"

@@ -420,15 +420,43 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.commit()
             db_pool_logger.debug("Database session committed successfully")
         except Exception as e:
-            await session.rollback()
-            db_pool_logger.error(
-                "Database session rollback due to error",
-                extra={
-                    "error_type": type(e).__name__,
-                    "error_message": str(e),
-                },
-                exc_info=True,
-            )
+            # Only rollback for database-related errors
+            # Business logic exceptions (AppException) should not trigger rollback
+            from sqlalchemy.exc import SQLAlchemyError
+            from ..exception.exceptions import AppException
+            
+            # Check if it's a database error
+            if isinstance(e, SQLAlchemyError):
+                await session.rollback()
+                db_pool_logger.error(
+                    "Database session rollback due to database error",
+                    extra={
+                        "exception_type": type(e).__name__,
+                        "exception_message": str(e),
+                    },
+                    exc_info=True,
+                )
+            # For business logic exceptions, just log at debug level (no rollback needed)
+            elif isinstance(e, AppException):
+                db_pool_logger.debug(
+                    f"Business logic exception (no rollback needed): {type(e).__name__}",
+                    extra={
+                        "exception_type": type(e).__name__,
+                        "exception_message": str(e),
+                        "status_code": e.status_code,
+                    },
+                )
+            # For other unexpected exceptions, rollback to be safe
+            else:
+                await session.rollback()
+                db_pool_logger.error(
+                    "Database session rollback due to unexpected error",
+                    extra={
+                        "exception_type": type(e).__name__,
+                        "exception_message": str(e),
+                    },
+                    exc_info=True,
+                )
             raise
         finally:
             db_pool_logger.debug("Database session closed")

@@ -13,7 +13,7 @@ from datetime import datetime
 from fastapi import Request
 
 from ...common.modules.db.session import get_db
-from ...common.modules.db.models import Member
+from ...common.modules.db.models import Member, Admin
 from ...common.modules.audit import audit_log
 from ...common.modules.logger import auto_log
 from ..user.dependencies import get_current_active_user, get_current_admin_user
@@ -235,6 +235,57 @@ async def list_all_performance_records(
 
 
 @router.get(
+    "/api/admin/performance/export",
+    tags=["admin-performance"],
+    summary="Export performance data (Admin)",
+)
+@auto_log("export_performance_data", log_result_count=True)
+@audit_log(action="export", resource_type="performance")
+async def export_performance_data(
+    query: Annotated[PerformanceListQuery, Depends()],
+    request: Request,
+    current_admin: Annotated[Admin, Depends(get_current_admin_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    export_format: str = Query("excel", alias="format", regex="^(excel|csv)$", description="Export format: excel or csv"),
+):
+    """
+    Export performance data to Excel or CSV (admin only).
+
+    Supports the same filtering options as the list endpoint.
+    """
+    from ...common.modules.export import ExportService
+    
+    # Get export data
+    export_data = await service.export_performance_data(query, db)
+    
+    # Generate export file
+    if export_format == "excel":
+        excel_bytes = ExportService.export_to_excel(
+            data=export_data,
+            sheet_name="Performance",
+            title=f"Performance Data Export - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        )
+        return Response(
+            content=excel_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f'attachment; filename="performance_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+            },
+        )
+    else:  # CSV
+        csv_content = ExportService.export_to_csv(
+            data=export_data,
+        )
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f'attachment; filename="performance_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+            },
+        )
+
+
+@router.get(
     "/api/admin/performance/{performance_id}",
     response_model=PerformanceRecordResponse,
     tags=["admin-performance"],
@@ -264,9 +315,9 @@ async def get_performance_record_admin(
 @audit_log(action="approve", resource_type="performance")
 async def approve_performance_record(
     performance_id: UUID,
-    request: PerformanceApprovalRequest,
-    http_request: Request,
-    current_admin: Annotated[Member, Depends(get_current_admin_user)],
+    data: PerformanceApprovalRequest,
+    request: Request,
+    current_admin: Annotated[Admin, Depends(get_current_admin_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
@@ -274,8 +325,10 @@ async def approve_performance_record(
 
     Creates a review record and changes status to approved.
     """
+    # Note: reviewer_id is not used because admin is not in members table
+    # The PerformanceReview.reviewer_id foreign key points to members.id
     record = await service.approve_performance(
-        performance_id, current_admin.id, request.comments, db
+        performance_id, None, data.comments, db  # reviewer_id set to None for admin
     )
     return PerformanceRecordResponse.from_orm_without_reviews(record)
 
@@ -290,9 +343,9 @@ async def approve_performance_record(
 @audit_log(action="request_fix", resource_type="performance")
 async def request_fix_performance_record(
     performance_id: UUID,
-    request: PerformanceApprovalRequest,
-    http_request: Request,
-    current_admin: Annotated[Member, Depends(get_current_admin_user)],
+    data: PerformanceApprovalRequest,
+    request: Request,
+    current_admin: Annotated[Admin, Depends(get_current_admin_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
@@ -301,8 +354,9 @@ async def request_fix_performance_record(
     Creates a review record and changes status to revision_requested.
     Member will be able to edit the record again.
     """
+    # Note: reviewer_id is not used because admin is not in members table
     record = await service.request_fix_performance(
-        performance_id, current_admin.id, request.comments, db
+        performance_id, None, data.comments, db  # reviewer_id set to None for admin
     )
     return PerformanceRecordResponse.from_orm_without_reviews(record)
 
@@ -317,9 +371,9 @@ async def request_fix_performance_record(
 @audit_log(action="reject", resource_type="performance")
 async def reject_performance_record(
     performance_id: UUID,
-    request: PerformanceApprovalRequest,
-    http_request: Request,
-    current_admin: Annotated[Member, Depends(get_current_admin_user)],
+    data: PerformanceApprovalRequest,
+    request: Request,
+    current_admin: Annotated[Admin, Depends(get_current_admin_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
@@ -327,58 +381,8 @@ async def reject_performance_record(
 
     Creates a review record and changes status to rejected.
     """
+    # Note: reviewer_id is not used because admin is not in members table
     record = await service.reject_performance(
-        performance_id, current_admin.id, request.comments, db
+        performance_id, None, data.comments, db  # reviewer_id set to None for admin
     )
     return PerformanceRecordResponse.from_orm_without_reviews(record)
-
-
-@router.get(
-    "/api/admin/performance/export",
-    tags=["admin-performance"],
-    summary="Export performance data (Admin)",
-)
-@auto_log("export_performance_data", log_result_count=True)
-@audit_log(action="export", resource_type="performance")
-async def export_performance_data(
-    query: Annotated[PerformanceListQuery, Depends()],
-    request: Request,
-    current_admin: Annotated[Member, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
-    format: str = Query("excel", regex="^(excel|csv)$", description="Export format: excel or csv"),
-):
-    """
-    Export performance data to Excel or CSV (admin only).
-
-    Supports the same filtering options as the list endpoint.
-    """
-    from ...common.modules.export import ExportService
-    
-    # Get export data
-    export_data = await service.export_performance_data(query, db)
-    
-    # Generate export file
-    if format == "excel":
-        excel_bytes = ExportService.export_to_excel(
-            data=export_data,
-            sheet_name="Performance",
-            title=f"Performance Data Export - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        )
-        return Response(
-            content=excel_bytes,
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={
-                "Content-Disposition": f'attachment; filename="performance_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
-            },
-        )
-    else:  # CSV
-        csv_content = ExportService.export_to_csv(
-            data=export_data,
-        )
-        return Response(
-            content=csv_content,
-            media_type="text/csv",
-            headers={
-                "Content-Disposition": f'attachment; filename="performance_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"'
-            },
-        )

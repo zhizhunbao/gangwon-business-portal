@@ -384,25 +384,38 @@ class ProjectService:
         Returns:
             List of project records as dictionaries
         """
-        # Get all matching records without pagination
-        query_no_page = ProjectListQuery(
-            page=1,
-            page_size=10000,  # Large limit for export
-            status=query.status,
-            search=query.search,
-        )
+        # Build query directly without pagination for export
+        stmt = select(Project)
+        
+        # Apply filters
+        if query.status:
+            stmt = stmt.where(Project.status == query.status.value)
+        if query.search:
+            stmt = stmt.where(
+                or_(
+                    Project.title.ilike(f"%{query.search}%"),
+                    Project.description.ilike(f"%{query.search}%"),
+                )
+            )
+        
+        stmt = stmt.order_by(Project.created_at.desc())
+        
+        # Execute query to get all matching projects
+        result = await db.execute(stmt)
+        projects = result.scalars().all()
 
-        projects, _ = await self.list_projects(query_no_page, db)
+        # Get all application counts in one query using GROUP BY
+        app_counts_stmt = select(
+            ProjectApplication.project_id,
+            func.count(ProjectApplication.id).label('count')
+        ).group_by(ProjectApplication.project_id)
+        app_counts_result = await db.execute(app_counts_stmt)
+        app_counts = {row.project_id: row.count for row in app_counts_result.all()}
 
         # Convert to dict format for export
         export_data = []
         for project in projects:
-            # Get applications count
-            app_count_stmt = select(func.count()).where(
-                ProjectApplication.project_id == project.id
-            )
-            app_count_result = await db.execute(app_count_stmt)
-            app_count = app_count_result.scalar() or 0
+            app_count = app_counts.get(project.id, 0)
 
             export_data.append({
                 "id": str(project.id),

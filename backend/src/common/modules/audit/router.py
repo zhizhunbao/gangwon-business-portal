@@ -39,7 +39,7 @@ async def list_audit_logs(
     resource_id: Optional[UUID] = Query(default=None, description="Filter by resource ID"),
     start_date: Optional[datetime] = Query(default=None, description="Start date filter"),
     end_date: Optional[datetime] = Query(default=None, description="End date filter"),
-    current_user: Member = Depends(get_admin_user_dependency()),
+    current_user: Member = Depends(get_admin_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -66,7 +66,7 @@ async def list_audit_logs(
 @router.get("/api/admin/audit-logs/{log_id}", response_model=AuditLogResponse)
 async def get_audit_log(
     log_id: UUID,
-    current_user: Member = Depends(get_admin_user_dependency()),
+    current_user: Member = Depends(get_admin_user_dependency),
     db: AsyncSession = Depends(get_db),
 ):
     """

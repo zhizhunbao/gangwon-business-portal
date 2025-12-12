@@ -12,7 +12,6 @@ from typing import Optional
 from uuid import UUID
 
 from ..config import settings
-from ..logger import logger
 from .exceptions import AppException
 from .responses import create_error_response
 from ..logger.request import get_trace_id
@@ -65,9 +64,9 @@ def _record_exception_to_file(
             request_data=request_data,
             exc=exc,
         )
-    except Exception as e:
+    except Exception:
         # Silently fail to avoid recursive errors
-        logger.debug(f"Failed to record exception to file: {str(e)}")
+        pass
 
 
 async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
@@ -79,14 +78,8 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
     if hasattr(request.state, "user_id"):
         user_id = request.state.user_id
 
-    # Use appropriate log level based on status code
-    # 4xx errors (client errors) are expected in normal operation, use warning
-    # 5xx errors (server errors) are unexpected, use error
+    # Record 5xx errors to database (no terminal logging)
     if exc.status_code >= 500:
-        log_level = logger.error
-        log_message = f"Application error: {exc.message}"
-        include_exc_info = True
-        # Record 5xx errors to file
         _record_exception_to_file(
             request=request,
             exc=exc,
@@ -94,27 +87,6 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
             status_code=exc.status_code,
             user_id=user_id,
         )
-    elif exc.status_code >= 400:
-        log_level = logger.warning
-        log_message = f"Client error: {exc.message}"
-        include_exc_info = False
-    else:
-        log_level = logger.info
-        log_message = f"Application response: {exc.message}"
-        include_exc_info = False
-
-    # Log with appropriate level
-    log_level(
-        log_message,
-        exc_info=exc if include_exc_info else None,
-        extra={
-            "error_code": exc.error_code,
-            "status_code": exc.status_code,
-            "trace_id": trace_id,
-            "path": request.url.path,
-            "method": request.method,
-        },
-    )
 
     # Include details only in debug mode
     include_details = settings.DEBUG
@@ -150,14 +122,8 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     else:
         message = str(detail) if detail else "HTTP error"
     
-    # Use appropriate log level based on status code
-    # 4xx errors (client errors) are expected in normal operation, use warning
-    # 5xx errors (server errors) are unexpected, use error
+    # Record 5xx errors to database (no terminal logging)
     if exc.status_code >= 500:
-        log_level = logger.error
-        log_message = f"HTTP server error: {message}"
-        include_exc_info = True
-        # Record 5xx errors to file
         _record_exception_to_file(
             request=request,
             exc=exc,
@@ -165,26 +131,6 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
             status_code=exc.status_code,
             user_id=user_id,
         )
-    elif exc.status_code >= 400:
-        log_level = logger.warning
-        log_message = f"HTTP client error: {message}"
-        include_exc_info = False
-    else:
-        log_level = logger.info
-        log_message = f"HTTP response: {message}"
-        include_exc_info = False
-    
-    # Log with appropriate level
-    log_level(
-        log_message,
-        exc_info=exc if include_exc_info else None,
-        extra={
-            "status_code": exc.status_code,
-            "trace_id": trace_id,
-            "path": request.url.path,
-            "method": request.method,
-        },
-    )
     
     # Include details only in debug mode
     include_details = settings.DEBUG
@@ -221,27 +167,68 @@ async def validation_exception_handler(
     trace_id = get_trace_id(request)
     errors = exc.errors()
 
-    # Log validation error
-    logger.warning(
-        "Validation error",
-        extra={
-            "errors": errors,
-            "trace_id": trace_id,
-            "path": request.url.path,
-            "method": request.method,
-        },
-    )
+    # Don't log validation errors to terminal, just return error response
+    # But record to exception log file for debugging (especially in DEBUG mode)
+    if settings.DEBUG:
+        # Get user_id from request state if available
+        user_id = None
+        if hasattr(request.state, "user_id"):
+            user_id = request.state.user_id
+        
+        # Record validation error to file for debugging
+        try:
+            from .service import ExceptionService
+            
+            ip_address = request.client.host if request.client else None
+            user_agent = request.headers.get("user-agent")
+            
+            # Format validation errors as a readable message
+            error_messages = []
+            for error in errors:
+                loc = " -> ".join(str(loc_item) for loc_item in error.get("loc", []))
+                msg = error.get("msg", "Validation error")
+                error_messages.append(f"{loc}: {msg}")
+            
+            exception_message = f"Validation error: {'; '.join(error_messages)}"
+            
+            service = ExceptionService()
+            service.create_exception(
+                source="backend",
+                exception_type="RequestValidationError",
+                exception_message=exception_message,
+                error_code="VALIDATION_ERROR",
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                trace_id=trace_id,
+                request_path=request.url.path,
+                request_method=request.method,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                user_id=user_id,
+                context_data={"validation_errors": errors},
+            )
+        except Exception:
+            pass  # Ignore errors when recording validation exceptions
 
-    # Include validation details only in debug mode
-    include_details = settings.DEBUG
+    # Format error messages for response - always include details for validation errors
+    simplified_errors = []
+    for error in errors:
+        loc = " -> ".join(str(loc_item) for loc_item in error.get("loc", []))
+        msg = error.get("msg", "Validation error")
+        simplified_errors.append(f"{loc}: {msg}")
+
+    # Always include validation error details in response for debugging
+    error_details = {
+        "validation_errors": errors,  # Full error details
+        "simplified_errors": simplified_errors,  # Human-readable format
+    }
 
     response = create_error_response(
-        message="Validation error",
+        message=f"Validation error: {'; '.join(simplified_errors)}",
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         error_code="VALIDATION_ERROR",
-        details={"validation_errors": errors} if include_details else None,
+        details=error_details,
         trace_id=trace_id,
-        include_details=include_details,
+        include_details=True,  # Always include details for validation errors
     )
 
     return JSONResponse(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, content=response)
@@ -262,41 +249,11 @@ async def sqlalchemy_exception_handler(
     if isinstance(exc, IntegrityError):
         error_message = "Database integrity constraint violation"
         error_code = "DATABASE_INTEGRITY_ERROR"
-        # In production, don't expose database details
-        if settings.DEBUG:
-            logger.error(
-                f"Database integrity error: {str(exc)}",
-                exc_info=exc,
-                extra={
-                    "trace_id": trace_id,
-                    "path": request.url.path,
-                    "method": request.method,
-                },
-            )
-        else:
-            logger.error(
-                "Database integrity error",
-                exc_info=exc,
-                extra={
-                    "trace_id": trace_id,
-                    "path": request.url.path,
-                    "method": request.method,
-                },
-            )
     else:
         error_message = "Database error occurred"
         error_code = "DATABASE_ERROR"
-        logger.error(
-            f"Database error: {str(exc)}",
-            exc_info=exc,
-            extra={
-                "trace_id": trace_id,
-                "path": request.url.path,
-                "method": request.method,
-            },
-        )
     
-    # Record database errors to file
+    # Record database errors to database (no terminal logging)
     _record_exception_to_file(
         request=request,
         exc=exc,
@@ -331,19 +288,7 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
     if hasattr(request.state, "user_id"):
         user_id = request.state.user_id
 
-    # Log full exception with stack trace
-    logger.error(
-        f"Unexpected error: {type(exc).__name__}: {str(exc)}",
-        exc_info=exc,
-        extra={
-            "trace_id": trace_id,
-            "path": request.url.path,
-            "method": request.method,
-            "exception_type": type(exc).__name__,
-        },
-    )
-    
-    # Record unexpected exceptions to file
+    # Record unexpected exceptions to database (no terminal logging)
     _record_exception_to_file(
         request=request,
         exc=exc,

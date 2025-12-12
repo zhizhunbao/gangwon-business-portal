@@ -5,11 +5,8 @@ from supabase import create_client, Client
 from fastapi import UploadFile
 import uuid
 from typing import Optional
-import logging
 
 from ..config import settings
-
-logger = logging.getLogger(__name__)
 
 
 class StorageService:
@@ -23,12 +20,39 @@ class StorageService:
     def client(self) -> Client:
         """Lazily create and return Supabase client."""
         if self._client is None:
-            if settings.SUPABASE_KEY == "placeholder-key" or settings.SUPABASE_URL == "https://placeholder.supabase.co":
+            if settings.SUPABASE_URL == "https://placeholder.supabase.co":
                 raise ValueError(
-                    "Supabase credentials not configured. "
-                    "Please set SUPABASE_URL and SUPABASE_KEY in your .env file."
+                    "Supabase URL not configured. "
+                    "Please set SUPABASE_URL in your .env file."
                 )
-            self._client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+            
+            # Prefer service role key for server-side operations (bypasses RLS)
+            # Fall back to anon key if service key is not available
+            supabase_key = settings.SUPABASE_SERVICE_KEY or settings.SUPABASE_KEY
+            
+            if supabase_key == "placeholder-key" or not supabase_key:
+                raise ValueError(
+                    "Supabase key not configured. "
+                    "Please set SUPABASE_SERVICE_KEY (recommended) or SUPABASE_KEY in your .env file. "
+                    "Service role key is required for file upload operations to bypass RLS policies."
+                )
+            
+            try:
+                self._client = create_client(settings.SUPABASE_URL, supabase_key)
+            except TypeError as e:
+                if "proxy" in str(e) and "unexpected keyword argument" in str(e):
+                    # This is a known compatibility issue between gotrue and httpx
+                    # The error occurs when gotrue tries to pass 'proxy' parameter to httpx Client
+                    # which is not supported in newer httpx versions
+                    raise ValueError(
+                        "Supabase client initialization failed due to library compatibility issue. "
+                        "This is a known issue with gotrue/httpx versions. "
+                        "To fix this, please reinstall dependencies:\n"
+                        "  pip install --upgrade 'supabase==2.25.1' 'gotrue>=2.12.0' 'httpx>=0.26.0,<0.27.0'\n"
+                        "Or if using requirements.txt:\n"
+                        "  pip install -r requirements.txt --force-reinstall"
+                    ) from e
+                raise
         return self._client
 
     async def upload_file(
@@ -81,7 +105,14 @@ class StorageService:
                 "mime_type": file.content_type,
             }
         except Exception as e:
-            logger.error(f"File upload error: {str(e)}", exc_info=e)
+            error_str = str(e)
+            # Check for RLS policy violation errors
+            if "row-level security policy" in error_str.lower() or "403" in error_str:
+                raise ValueError(
+                    "File upload failed due to Supabase security policy. "
+                    "Please ensure SUPABASE_SERVICE_KEY is set in your .env file. "
+                    "Service role key is required to bypass Row-Level Security (RLS) policies for server-side operations."
+                ) from e
             raise
 
     async def delete_file(self, bucket: str, path: str) -> bool:
@@ -99,7 +130,11 @@ class StorageService:
             self.client.storage.from_(bucket).remove([path])
             return True
         except Exception as e:
-            logger.error(f"File delete error: {str(e)}", exc_info=e)
+            error_str = str(e)
+            # Check for RLS policy violation errors
+            if "row-level security policy" in error_str.lower() or "403" in error_str:
+                # Don't raise here, just return False as the method signature indicates
+                return False
             return False
 
     def create_signed_url(self, bucket: str, path: str, expires_in: int = 3600) -> str:
@@ -121,7 +156,14 @@ class StorageService:
                 return result.get('signedURL', result.get('url', str(result)))
             return str(result)
         except Exception as e:
-            logger.error(f"Signed URL creation error: {str(e)}", exc_info=e)
+            error_str = str(e)
+            # Check for RLS policy violation errors
+            if "row-level security policy" in error_str.lower() or "403" in error_str:
+                raise ValueError(
+                    "Signed URL creation failed due to Supabase security policy. "
+                    "Please ensure SUPABASE_SERVICE_KEY is set in your .env file. "
+                    "Service role key is required to bypass Row-Level Security (RLS) policies for server-side operations."
+                ) from e
             raise
 
 

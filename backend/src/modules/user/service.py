@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from ...common.modules.config import settings
-from ...common.modules.db.models import Member, MemberProfile
+from ...common.modules.db.models import Member, MemberProfile, Admin
 from ...common.modules.exception import UnauthorizedError, ValidationError, NotFoundError
 from .schemas import MemberRegisterRequest
 
@@ -101,25 +101,37 @@ class AuthService:
         if result.scalar_one_or_none():
             raise ValidationError("Email already registered")
 
-        # Verify company information with Nice D&B API (optional, non-blocking)
-        # This helps ensure data accuracy but doesn't block registration if API is unavailable
-        try:
-            from ...common.modules.integrations.nice_dnb import nice_dnb_client
+        # Verify company information with Nice D&B API
+        # This helps ensure data accuracy and can auto-fill company information
+        nice_dnb_data = None
+        from ...common.modules.integrations.nice_dnb import nice_dnb_client
+        
+        # Search for company information using Nice D&B API
+        response = await nice_dnb_client.search_company(data.business_number)
+        
+        if response and response.success:
+            nice_dnb_data = response.data
             
-            # Attempt to verify company information (non-blocking)
-            await nice_dnb_client.verify_company(
-                data.business_number, data.company_name
-            )
-            # Note: We don't raise an error here - registration can still proceed
+            # Optionally verify company name matches (if provided)
+            # Note: Name mismatch is silently ignored - registration can still proceed
             # The admin will review the registration during approval
-        except Exception:
-            # Ignore errors - don't block registration
-            pass
+            if data.company_name and nice_dnb_data.company_name:
+                # Case-insensitive comparison
+                if nice_dnb_data.company_name.lower().strip() != data.company_name.lower().strip():
+                    # Name mismatch detected but don't block registration
+                    pass
 
         # Create member record
+        # Use Nice D&B company name if available and more accurate
+        company_name = data.company_name
+        if nice_dnb_data and nice_dnb_data.company_name:
+            # Use Nice D&B company name as it's from official records
+            # This ensures consistency with official business registration
+            company_name = nice_dnb_data.company_name
+        
         member = Member(
             business_number=data.business_number,
-            company_name=data.company_name,
+            company_name=company_name,
             email=data.email,
             password_hash=self.get_password_hash(data.password),
             status="pending",
@@ -129,16 +141,36 @@ class AuthService:
         await db.flush()
 
         # Create member profile
+        # Use Nice D&B data to auto-fill fields if available and not provided by user
+        profile_industry = data.industry
+        profile_address = data.address
+        profile_founding_date = None
+        
+        if nice_dnb_data:
+            # Auto-fill industry if not provided by user
+            if not profile_industry and nice_dnb_data.industry:
+                profile_industry = nice_dnb_data.industry
+            
+            # Auto-fill address if not provided by user
+            if not profile_address and nice_dnb_data.address:
+                profile_address = nice_dnb_data.address
+            
+            # Auto-fill founding date if not provided by user
+            if not data.founding_date and nice_dnb_data.established_date:
+                profile_founding_date = nice_dnb_data.established_date
+            elif data.founding_date:
+                profile_founding_date = datetime.strptime(data.founding_date, "%Y-%m-%d").date()
+        elif data.founding_date:
+            profile_founding_date = datetime.strptime(data.founding_date, "%Y-%m-%d").date()
+        
         profile = MemberProfile(
             member_id=member.id,
-            industry=data.industry,
+            industry=profile_industry,
             revenue=data.revenue,
             employee_count=data.employee_count,
-            founding_date=datetime.strptime(data.founding_date, "%Y-%m-%d").date()
-            if data.founding_date
-            else None,
+            founding_date=profile_founding_date,
             region=data.region,
-            address=data.address,
+            address=profile_address,
             website=data.website,
         )
         db.add(profile)
@@ -146,16 +178,12 @@ class AuthService:
         await db.refresh(member)
 
         # Send registration confirmation email
-        try:
-            from ...common.modules.email import email_service
-            await email_service.send_registration_confirmation_email(
-                to_email=member.email,
-                company_name=member.company_name,
-                business_number=member.business_number,
-            )
-        except Exception:
-            # Ignore errors - don't fail registration if email fails
-            pass
+        from ...common.modules.email import email_service
+        await email_service.send_registration_confirmation_email(
+            to_email=member.email,
+            company_name=member.company_name,
+            business_number=member.business_number,
+        )
 
         return member
 
@@ -223,57 +251,60 @@ class AuthService:
             raise NotFoundError("Member")
         return member
 
-    @staticmethod
-    def is_admin(member: Member) -> bool:
+    async def is_admin(self, user_id: str, db: AsyncSession) -> bool:
         """
-        Check if a member is an admin.
+        Check if a user is an admin by checking admins table.
 
         Args:
-            member: Member object
+            user_id: User ID (can be admin id or member id)
+            db: Database session
 
         Returns:
-            True if member is admin, False otherwise
+            True if user is admin, False otherwise
         """
-        # Admin is identified by special business number
-        return member.business_number == "000-00-00000"
+        from uuid import UUID
+        try:
+            admin_id = UUID(user_id)
+            result = await db.execute(
+                select(Admin).where(Admin.id == admin_id)
+            )
+            admin = result.scalar_one_or_none()
+            if admin and admin.is_active == "true":
+                return True
+        except (ValueError, TypeError):
+            pass
+        return False
 
     async def authenticate_admin(
-        self, username: str, password: str, db: AsyncSession
-    ) -> Member:
+        self, email: str, password: str, db: AsyncSession
+    ) -> Admin:
         """
         Authenticate an admin user.
 
         Args:
-            username: Admin username (business_number)
+            email: Admin email
             password: Plain text password
             db: Database session
 
         Returns:
-            Authenticated admin member object
+            Authenticated admin object
 
         Raises:
             UnauthorizedError: If credentials are invalid or user is not admin
         """
-        # Find member by business number or email (username)
-        # Try business_number first, then email
+        # Find admin by email
         result = await db.execute(
-            select(Member).where(
-                (Member.business_number == username) | (Member.email == username)
-            )
+            select(Admin).where(Admin.email == email)
         )
-        member = result.scalar_one_or_none()
+        admin = result.scalar_one_or_none()
 
-        if not member or not self.verify_password(password, member.password_hash):
+        if not admin or not self.verify_password(password, admin.password_hash):
             raise UnauthorizedError("Invalid admin credentials")
 
-        # Verify user is admin
-        if not self.is_admin(member):
-            raise UnauthorizedError("Admin access required")
-
-        if member.status != "active":
+        if admin.is_active != "true":
             raise UnauthorizedError("Account is suspended")
 
-        return member
+        return admin
 
     @staticmethod
     def generate_reset_token() -> str:

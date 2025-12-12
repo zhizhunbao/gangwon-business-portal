@@ -190,7 +190,6 @@ const getInquiryInternal = autoLog('get_inquiry', { logResourceId: true, service
     return await apiService.get(`${API_PREFIX}/inquiries/${inquiryId}`);
   }
 );
-};
 
 export default supportService;
 

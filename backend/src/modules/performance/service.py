@@ -311,7 +311,7 @@ class PerformanceService:
     async def approve_performance(
         self,
         performance_id: UUID,
-        reviewer_id: UUID,
+        reviewer_id: Optional[UUID],  # Can be None for admin reviewers
         comments: Optional[str],
         db: AsyncSession,
     ) -> PerformanceRecord:
@@ -344,9 +344,11 @@ class PerformanceService:
         record.status = "approved"
 
         # Create review record
+        # Note: reviewer_id is set to None because admin is not in members table
+        # The reviewer_id foreign key points to members.id, but admins are in admins table
         review = PerformanceReview(
             performance_id=performance_id,
-            reviewer_id=reviewer_id,
+            reviewer_id=None,  # Admin is not a member, so set to None
             status="approved",
             comments=comments,
         )
@@ -380,7 +382,7 @@ class PerformanceService:
     async def request_fix_performance(
         self,
         performance_id: UUID,
-        reviewer_id: UUID,
+        reviewer_id: Optional[UUID],  # Can be None for admin reviewers
         comments: Optional[str],
         db: AsyncSession,
     ) -> PerformanceRecord:
@@ -413,9 +415,10 @@ class PerformanceService:
         record.status = "revision_requested"
 
         # Create review record
+        # Note: reviewer_id is set to None because admin is not in members table
         review = PerformanceReview(
             performance_id=performance_id,
-            reviewer_id=reviewer_id,
+            reviewer_id=None,  # Admin is not a member, so set to None
             status="revision_requested",
             comments=comments,
         )
@@ -451,7 +454,7 @@ class PerformanceService:
     async def reject_performance(
         self,
         performance_id: UUID,
-        reviewer_id: UUID,
+        reviewer_id: Optional[UUID],  # Can be None for admin reviewers
         comments: Optional[str],
         db: AsyncSession,
     ) -> PerformanceRecord:
@@ -484,9 +487,10 @@ class PerformanceService:
         record.status = "rejected"
 
         # Create review record
+        # Note: reviewer_id is set to None because admin is not in members table
         review = PerformanceReview(
             performance_id=performance_id,
-            reviewer_id=reviewer_id,
+            reviewer_id=None,  # Admin is not a member, so set to None
             status="rejected",
             comments=comments,
         )
@@ -510,20 +514,31 @@ class PerformanceService:
         Returns:
             List of performance records as dictionaries
         """
-        # Get all matching records without pagination
-        query_no_page = PerformanceListQuery(
-            page=1,
-            page_size=10000,  # Large limit for export
-            year=query.year,
-            quarter=query.quarter,
-            status=query.status,
-            type=query.type,
-            member_id=query.member_id,
-        )
+        # Build query directly to avoid page_size validation limit
+        # Export needs to get all records, not just paginated subset
+        stmt = select(PerformanceRecord)
 
-        records, _ = await self.list_all_performance_records(query_no_page, db)
+        # Apply filters from query
+        if query.member_id:
+            stmt = stmt.where(PerformanceRecord.member_id == query.member_id)
+        if query.year:
+            stmt = stmt.where(PerformanceRecord.year == query.year)
+        if query.quarter:
+            stmt = stmt.where(PerformanceRecord.quarter == query.quarter)
+        if query.status:
+            stmt = stmt.where(PerformanceRecord.status == query.status)
+        if query.type:
+            stmt = stmt.where(PerformanceRecord.type == query.type)
+
+        # Order by submitted_at descending
+        stmt = stmt.order_by(PerformanceRecord.submitted_at.desc())
+
+        # Execute query - no pagination limit for export
+        result = await db.execute(stmt)
+        records = result.scalars().all()
 
         # Convert to dict format for export
+        import json
         export_data = []
         for record in records:
             export_data.append({
@@ -533,10 +548,10 @@ class PerformanceService:
                 "quarter": record.quarter,
                 "type": record.type,
                 "status": record.status,
-                "data_json": record.data_json,
+                "data_json": json.dumps(record.data_json, ensure_ascii=False) if record.data_json else "",
                 "submitted_at": record.submitted_at.isoformat() if record.submitted_at else None,
                 "created_at": record.created_at.isoformat(),
-                    "updated_at": record.updated_at.isoformat(),
+                "updated_at": record.updated_at.isoformat(),
             })
 
         return export_data

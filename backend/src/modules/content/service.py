@@ -112,24 +112,23 @@ class ContentService:
         return notice
 
     async def create_notice(
-        self, data: NoticeCreate, author_id: UUID, db: AsyncSession
+        self, data: NoticeCreate, db: AsyncSession
     ) -> Notice:
         """
         Create a new notice.
 
         Args:
             data: Notice creation data
-            author_id: Admin member ID
             db: Database session
 
         Returns:
             Created notice object
         """
+        # For admin-created content, author_id is None since admin IDs are not in members table
         notice = Notice(
             title=data.title,
             content_html=data.content_html,
             board_type=data.board_type or "notice",
-            author_id=author_id,
             view_count=0,
         )
         db.add(notice)
@@ -269,23 +268,22 @@ class ContentService:
         return press
 
     async def create_press_release(
-        self, data: PressReleaseCreate, author_id: UUID, db: AsyncSession
+        self, data: PressReleaseCreate, db: AsyncSession
     ) -> PressRelease:
         """
         Create a new press release.
 
         Args:
             data: Press release creation data
-            author_id: Admin member ID
             db: Database session
 
         Returns:
             Created press release object
         """
+        # For admin-created content, author_id is None since admin IDs are not in members table
         press = PressRelease(
             title=data.title,
             image_url=data.image_url,
-            author_id=author_id,
         )
         db.add(press)
         await db.commit()
@@ -504,12 +502,22 @@ class ContentService:
 
         Args:
             data: System info update data
-            updated_by: Admin member ID
+            updated_by: User ID (Admin or Member ID)
             db: Database session
 
         Returns:
             Updated or created SystemInfo object
         """
+        from sqlalchemy import select
+        from ...common.modules.db.models import Member
+        
+        # Check if updated_by is a member (admins are not in members table)
+        member_result = await db.execute(select(Member).where(Member.id == updated_by))
+        member = member_result.scalar_one_or_none()
+        
+        # If not a member, it's an admin - set to None to avoid foreign key constraint
+        member_id = updated_by if member else None
+        
         # Try to get existing system info
         existing = await self.get_system_info(db)
 
@@ -518,7 +526,7 @@ class ContentService:
             existing.content_html = data.content_html
             if data.image_url is not None:
                 existing.image_url = data.image_url
-            existing.updated_by = updated_by
+            existing.updated_by = member_id
             await db.commit()
             await db.refresh(existing)
             return existing
@@ -527,7 +535,7 @@ class ContentService:
             system_info = SystemInfo(
                 content_html=data.content_html,
                 image_url=data.image_url,
-                updated_by=updated_by,
+                updated_by=member_id,
             )
             db.add(system_info)
             await db.commit()

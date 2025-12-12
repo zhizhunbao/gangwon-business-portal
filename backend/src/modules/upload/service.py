@@ -6,9 +6,8 @@ Business logic for file upload and management.
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from fastapi import UploadFile, HTTPException, status
+from fastapi import UploadFile
 from uuid import UUID
-import mimetypes
 
 from ...common.modules.db.models import Attachment, Member
 from ...common.modules.storage import storage_service
@@ -116,10 +115,14 @@ class UploadService:
         # Validate file again with actual size (in case Content-Length was wrong)
         self._validate_file(file, file_size=file_size, check_size_first=False)
 
-        # Determine file path (use business_number if available)
-        path = ""
+        # Determine file path (project name + business_number + resource_type)
+        project_prefix = "gangwon-portal"
+        file_category = resource_type or "files"  # Default category if not specified
+        
         if hasattr(user, 'business_number') and user.business_number:
-            path = str(user.business_number)
+            path = f"{project_prefix}/{user.business_number}/{file_category}"
+        else:
+            path = f"{project_prefix}/{file_category}"
 
         # Upload to Supabase Storage
         upload_result = await storage_service.upload_file(
@@ -181,10 +184,14 @@ class UploadService:
         # Validate file again with actual size (in case Content-Length was wrong)
         self._validate_file(file, file_size=file_size, check_size_first=False)
 
-        # Determine file path (use business_number if available)
-        path = ""
+        # Determine file path (project name + business_number + resource_type)
+        project_prefix = "gangwon-portal"
+        file_category = resource_type or "files"  # Default category if not specified
+        
         if hasattr(user, 'business_number') and user.business_number:
-            path = str(user.business_number)
+            path = f"{project_prefix}/{user.business_number}/{file_category}"
+        else:
+            path = f"{project_prefix}/{file_category}"
 
         # Upload to Supabase Storage (private)
         upload_result = await storage_service.upload_file(
@@ -250,7 +257,7 @@ class UploadService:
         # For private files, check if user owns the resource or is admin
         from ...modules.user.service import AuthService
         auth_service = AuthService()
-        is_admin = auth_service.is_admin(user)
+        is_admin = await auth_service.is_admin(str(user.id), db)
 
         if attachment.resource_type == "public":
             # Public files are accessible to everyone
@@ -321,30 +328,44 @@ class UploadService:
         # Check permissions
         from ...modules.user.service import AuthService
         auth_service = AuthService()
-        is_admin = auth_service.is_admin(user)
+        is_admin = await auth_service.is_admin(str(user.id), db)
 
         if not is_admin and attachment.resource_id != user.id:
             raise UnauthorizedError("You don't have permission to delete this file")
 
         # Determine bucket and path
+        project_prefix = "gangwon-portal"
+        file_category = attachment.resource_type if attachment.resource_type not in ["public", "private"] else "files"
+        
         if attachment.resource_type == "public" or not attachment.file_url.startswith("private-files/"):
             bucket = "public-files"
-            # For public files, extract path from stored_name or file_url
+            # For public files, reconstruct path with project prefix and category
             if attachment.file_url.startswith("http"):
-                # Public URL - we need to extract the path
-                # Supabase public URLs typically have the path in them
-                # For now, reconstruct from stored_name and business_number if available
+                # Public URL - reconstruct path with project prefix and category
                 if hasattr(user, 'business_number') and user.business_number:
-                    path = f"{user.business_number}/{attachment.stored_name}"
+                    path = f"{project_prefix}/{user.business_number}/{file_category}/{attachment.stored_name}"
                 else:
-                    path = attachment.stored_name
+                    path = f"{project_prefix}/{file_category}/{attachment.stored_name}"
             else:
-                # Already a path
-                path = attachment.file_url
+                # Already a path - use as is if it has project prefix, otherwise reconstruct
+                if attachment.file_url.startswith(project_prefix):
+                    path = attachment.file_url
+                else:
+                    # Reconstruct with project prefix and category
+                    if hasattr(user, 'business_number') and user.business_number:
+                        path = f"{project_prefix}/{user.business_number}/{file_category}/{attachment.stored_name}"
+                    else:
+                        path = f"{project_prefix}/{file_category}/{attachment.stored_name}"
         else:
             bucket = "private-files"
             # Remove "private-files/" prefix
             path = attachment.file_url.replace("private-files/", "").lstrip("/")
+            # Ensure path has project prefix and category
+            if not path.startswith(project_prefix):
+                if hasattr(user, 'business_number') and user.business_number:
+                    path = f"{project_prefix}/{user.business_number}/{file_category}/{attachment.stored_name}"
+                else:
+                    path = f"{project_prefix}/{file_category}/{attachment.stored_name}"
 
         # Delete from storage
         # Try to delete, but don't fail if file doesn't exist in storage

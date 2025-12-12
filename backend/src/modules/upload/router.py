@@ -41,10 +41,10 @@ def _handle_app_exception(exc: AppException) -> None:
 async def upload_public_file(
     file: Annotated[UploadFile, File(description="File to upload")],
     request: Request,
+    current_user: Annotated[Member, Depends(get_current_active_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
     resource_type: Annotated[Optional[str], Query(description="Resource type (e.g., 'banner', 'notice')")] = None,
     resource_id: Annotated[Optional[UUID], Query(description="Associated resource ID")] = None,
-    current_user: Annotated[Member, Depends(get_current_active_user)] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
 ):
     """
     Upload a public file (e.g., banner images, notice images).
@@ -80,10 +80,10 @@ async def upload_public_file(
 async def upload_private_file(
     file: Annotated[UploadFile, File(description="File to upload")],
     request: Request,
+    current_user: Annotated[Member, Depends(get_current_active_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
     resource_type: Annotated[Optional[str], Query(description="Resource type (e.g., 'performance', 'project')")] = None,
     resource_id: Annotated[Optional[UUID], Query(description="Associated resource ID")] = None,
-    current_user: Annotated[Member, Depends(get_current_active_user)] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
 ):
     """
     Upload a private file (e.g., performance attachments, member certificates).

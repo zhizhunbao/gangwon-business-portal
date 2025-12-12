@@ -34,17 +34,23 @@ const EXTENDED_ROUTE_TO_BANNER_TYPE = {
   '/member/home': ROUTE_TO_BANNER_TYPE[ROUTES.MEMBER_HOME],
 };
 
-// 默认横幅图片映射
-const DEFAULT_BANNER_IMAGES = {
-  [BANNER_TYPES.MAIN_PRIMARY]: '/uploads/banners/main_primary.png',
-  [BANNER_TYPES.MAIN_SECONDARY]: '/uploads/banners/main_secondary.png',
-  [BANNER_TYPES.ABOUT]: '/uploads/banners/about.png',
-  [BANNER_TYPES.PROJECTS]: '/uploads/banners/projects.png',
-  [BANNER_TYPES.PERFORMANCE]: '/uploads/banners/performance.png',
-  [BANNER_TYPES.SUPPORT]: '/uploads/banners/support.png',
-  [BANNER_TYPES.PROFILE]: '/uploads/banners/profile.png',
-  [BANNER_TYPES.NOTICES]: '/uploads/banners/notices.png',
-  [BANNER_TYPES.NEWS]: '/uploads/banners/news.png',
+// 生成占位符图片（SVG data URI）
+// 当没有从 API 获取到横幅时使用
+const generatePlaceholderImage = (width = 1920, height = 400, text = '') => {
+  const svg = `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="#e5e7eb"/>
+      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="24" fill="#9ca3af" text-anchor="middle" dominant-baseline="middle">
+        ${text || 'Banner Placeholder'}
+      </text>
+    </svg>
+  `.trim();
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+};
+
+// 默认横幅占位符（当 API 没有返回横幅时使用）
+const getDefaultPlaceholder = (bannerType) => {
+  return generatePlaceholderImage(1920, 400, 'Banner');
 };
 
 // 横幅文字切换组件
@@ -62,10 +68,11 @@ function BannerText({ text, isTitle }) {
 
 /**
  * Generic Banner Component
+ * 横幅组件 - 优先从数据库获取数据，如果没有数据或API失败则使用占位符
  * @param {Object} props
  * @param {string} props.bannerType - 横幅类型（如果提供，将直接使用，不进行路由匹配）
  * @param {Object} props.routeToBannerTypeMap - 路由到横幅类型的映射对象，如 { '/member/home': 'main_primary' }
- * @param {Object} props.defaultBannerImages - 默认横幅图片映射，如 { 'main_primary': '/uploads/banners/main_primary.png' }
+ * @param {Object} props.defaultBannerImages - 默认横幅图片映射（可选，当数据库没有数据时使用，格式：{ 'main_primary': 'https://...' }）
  * @param {string} props.className - 额外的 CSS 类名
  * @param {string} props.sectionClassName - 外层 section 的 CSS 类名（默认: 'banner-section'）
  * @param {number} props.autoSwitchInterval - 自动切换间隔（毫秒，默认: 5000）
@@ -82,7 +89,7 @@ export default function Banner({
 }) {
   // 使用传入的配置或默认配置
   const finalRouteToBannerTypeMap = routeToBannerTypeMap ?? EXTENDED_ROUTE_TO_BANNER_TYPE;
-  const finalDefaultBannerImages = defaultBannerImages ?? DEFAULT_BANNER_IMAGES;
+  const finalDefaultBannerImages = defaultBannerImages ?? {};
   const { i18n } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -170,10 +177,10 @@ export default function Banner({
           subtitle: b.subtitle || b.description || null
         }));
       } else {
-        // 如果没有横幅，使用默认图片
+        // 如果数据库没有横幅数据，使用占位符
         newBanners = [{
           id: 'default',
-          imageUrl: finalDefaultBannerImages[bannerType] || '/uploads/banners/default.png',
+          imageUrl: finalDefaultBannerImages?.[bannerType] || getDefaultPlaceholder(bannerType),
           link: null,
           title: null,
           subtitle: null
@@ -216,9 +223,10 @@ export default function Banner({
         context_data: { banner_type: bannerType }
       });
       
+      // API 调用失败时，使用占位符作为后备
       const fallbackBanner = [{
         id: 'default',
-        imageUrl: finalDefaultBannerImages[bannerType] || '/uploads/banners/default.png',
+        imageUrl: finalDefaultBannerImages?.[bannerType] || getDefaultPlaceholder(bannerType),
         link: null,
         title: null,
         subtitle: null

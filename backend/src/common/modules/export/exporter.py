@@ -131,7 +131,7 @@ class ExportService:
             logger.error(
                 f"Error exporting to Excel: {str(e)}",
                 exc_info=True,
-                extra={"module": __name__},
+                extra={"export_module": __name__},
             )
             raise
 
@@ -192,7 +192,7 @@ class ExportService:
             logger.error(
                 f"Error exporting to CSV: {str(e)}",
                 exc_info=True,
-                extra={"module": __name__},
+                extra={"export_module": __name__},
             )
             raise
 
