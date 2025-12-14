@@ -15,42 +15,44 @@ import { BANNER_TYPES } from '@shared/utils/constants';
 import { PageContainer } from '@member/layouts';
 import NoticesPreview from './NoticesPreview';
 import PressPreview from './PressPreview';
-import './Home.css';
 
 export default function Home() {
   const { t } = useTranslation();
 
   return (
-    <div className="home">
-      {/* 主横幅(1) - 大尺寸 */}
+    <div className="home w-full flex flex-col">
+      {/* 主横幅(1) - 大尺寸，全宽 */}
       <Banner
         bannerType={BANNER_TYPES.MAIN_PRIMARY}
-        sectionClassName="member-banner-section"
+        sectionClassName="mb-16"
         height="400px"
+        fullWidth={true}
       />
       
       {/* 三列布局：公告事项、新闻稿、主横幅(2) */}
-      <PageContainer>
-        <div className="home-three-columns">
-          <div className="home-column">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        <div className="grid grid-cols-1 md:grid-cols-[repeat(3,minmax(0,425px))] justify-center gap-6 lg:gap-8 auto-rows-[475px]">
+          {/* 公告事项 */}
+          <div className="flex h-full">
             <NoticesPreview />
           </div>
           
-          <div className="home-column">
-            {/* 新闻稿 - 最近1条缩略图 */}
+          {/* 新闻稿 */}
+          <div className="flex h-full">
             <PressPreview />
           </div>
           
-          <div className="home-column">
-            {/* 主横幅(2) - 小尺寸 */}
+          {/* 主横幅(2) - 小尺寸，不全宽 */}
+          <div className="flex h-full">
             <Banner
               bannerType={BANNER_TYPES.MAIN_SECONDARY}
-              sectionClassName="secondary-banner-section"
-              height="300px"
+              sectionClassName="h-full w-full rounded-lg overflow-hidden"
+              height="100%"
+              fullWidth={false}
             />
           </div>
         </div>
-      </PageContainer>
+      </div>
     </div>
   );
 }

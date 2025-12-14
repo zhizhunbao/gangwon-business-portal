@@ -127,6 +127,10 @@ class BannerCreate(BaseModel):
     banner_type: str = Field(..., description="Banner type: MAIN, INTRO, PROGRAM, PERFORMANCE, SUPPORT")
     image_url: str = Field(..., max_length=500, description="Banner image URL")
     link_url: Optional[str] = Field(None, max_length=500, description="Optional click-through URL")
+    title_ko: Optional[str] = Field(None, max_length=200, description="Korean title")
+    title_zh: Optional[str] = Field(None, max_length=200, description="Chinese title")
+    subtitle_ko: Optional[str] = Field(None, max_length=500, description="Korean subtitle")
+    subtitle_zh: Optional[str] = Field(None, max_length=500, description="Chinese subtitle")
     is_active: bool = Field(default=True, description="Whether banner is active")
     display_order: int = Field(default=0, description="Display order for sorting")
 
@@ -137,6 +141,10 @@ class BannerUpdate(BaseModel):
     banner_type: Optional[str] = Field(None, description="Banner type")
     image_url: Optional[str] = Field(None, max_length=500, description="Banner image URL")
     link_url: Optional[str] = Field(None, max_length=500, description="Optional click-through URL")
+    title_ko: Optional[str] = Field(None, max_length=200, description="Korean title")
+    title_zh: Optional[str] = Field(None, max_length=200, description="Chinese title")
+    subtitle_ko: Optional[str] = Field(None, max_length=500, description="Korean subtitle")
+    subtitle_zh: Optional[str] = Field(None, max_length=500, description="Chinese subtitle")
     is_active: Optional[bool] = Field(None, description="Whether banner is active")
     display_order: Optional[int] = Field(None, description="Display order for sorting")
 
@@ -148,6 +156,10 @@ class BannerResponse(BaseModel):
     banner_type: str
     image_url: str
     link_url: Optional[str]
+    title_ko: Optional[str]
+    title_zh: Optional[str]
+    subtitle_ko: Optional[str]
+    subtitle_zh: Optional[str]
     is_active: bool
     display_order: int
     created_at: datetime

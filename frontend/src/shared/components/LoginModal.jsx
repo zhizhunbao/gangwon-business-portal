@@ -1,22 +1,22 @@
 /**
- * Login Page - Member Portal
- * Minimalist Style
+ * Login Modal Component
+ * 登录弹窗组件
  */
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@shared/hooks";
-import { LanguageSwitcher } from "@shared/components";
-import { EyeIcon, EyeOffIcon } from "@shared/components/Icons";
+import { Modal } from "./Modal";
+import { EyeIcon, EyeOffIcon } from "./Icons";
 import { formatBusinessLicense } from "@shared/utils/format";
 import { loggerService, exceptionService } from "@shared/services";
 import { API_PREFIX } from "@shared/utils/constants";
-import "./Auth.css";
+import "@member/modules/auth/Auth.css";
+import "./LoginModal.css";
 
-export default function Login() {
+export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { login, isLoading } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -39,7 +39,6 @@ export default function Login() {
       });
 
       // Log successful login
-      // Mask business number for security (show only first 3 digits)
       const maskedBusinessNumber =
         businessNumberClean.length > 3
           ? `${businessNumberClean.substring(
@@ -47,22 +46,25 @@ export default function Login() {
               3
             )}-${businessNumberClean.substring(3, 5)}-*****`
           : "***-***-*****";
-      loggerService.info("Member login successful", {
+      loggerService.info("Member login successful (modal)", {
         request_method: "POST",
         request_path: `${API_PREFIX}/auth/login`,
         response_status: 200,
         extra_data: {
-          component: "Login",
+          component: "LoginModal",
           action: "handleSubmit",
           user_role: response.user?.role,
           business_number_masked: maskedBusinessNumber,
         },
       });
 
-      // Redirect based on role
-      const redirectPath =
-        response.user.role === "admin" ? "/admin" : "/member";
-      navigate(redirectPath);
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess(response);
+      }
+
+      // Close modal
+      onClose();
     } catch (err) {
       // Extract error message properly
       const errorMessage =
@@ -71,38 +73,10 @@ export default function Login() {
         err.message ||
         (typeof err === "string" ? err : JSON.stringify(err)) ||
         t("auth.loginFailed");
-
-      // Check for approval status errors and show user-friendly messages
-      const lowerMessage = errorMessage.toLowerCase();
-      let displayMessage = errorMessage;
-
-      if (
-        lowerMessage.includes("pending") ||
-        lowerMessage.includes("approval")
-      ) {
-        // Account is pending approval
-        displayMessage = t("auth.approvalPending");
-      } else if (
-        lowerMessage.includes("suspended") ||
-        lowerMessage.includes("inactive") ||
-        lowerMessage.includes("disabled")
-      ) {
-        // Account is suspended
-        displayMessage = t("auth.accountSuspended");
-      } else if (
-        lowerMessage.includes("invalid") ||
-        lowerMessage.includes("credentials") ||
-        lowerMessage.includes("password")
-      ) {
-        // Invalid credentials
-        displayMessage = t("auth.loginFailed");
-      }
-
-      setError(displayMessage);
+      setError(errorMessage);
 
       // Log login failure
       const businessNumberClean = formData.businessNumber.replace(/-/g, "");
-      // Mask business number for security (show only first 3 digits)
       const maskedBusinessNumber =
         businessNumberClean.length > 3
           ? `${businessNumberClean.substring(
@@ -111,11 +85,9 @@ export default function Login() {
             )}-${businessNumberClean.substring(3, 5)}-*****`
           : "***-***-*****";
 
-      // Create proper Error object with meaningful message
       const errorObj =
         err instanceof Error ? err : new Error(errorMessage || "Login failed");
 
-      // Ensure error object has proper message
       if (!errorObj.message || errorObj.message === "[object Object]") {
         errorObj.message = errorMessage;
       }
@@ -126,20 +98,20 @@ export default function Login() {
         error_code: err.response?.data?.code || err.code || "LOGIN_FAILED",
         status_code: err.response?.status || err.status,
         context_data: {
-          component: "Login",
+          component: "LoginModal",
           action: "handleSubmit",
           business_number_masked: maskedBusinessNumber,
         },
       });
 
-      loggerService.warn("Member login failed", {
+      loggerService.warn("Member login failed (modal)", {
         request_method: "POST",
         request_path: `${API_PREFIX}/auth/login`,
         response_status: err.response?.status || err.status,
         error_code: err.response?.data?.code || err.code || "LOGIN_FAILED",
         error_message: errorMessage,
         extra_data: {
-          component: "Login",
+          component: "LoginModal",
           action: "handleSubmit",
           business_number_masked: maskedBusinessNumber,
         },
@@ -167,24 +139,30 @@ export default function Login() {
     setShowPassword((prev) => !prev);
   };
 
+  // Reset form when modal closes
+  const handleClose = () => {
+    setFormData({ businessNumber: "", password: "" });
+    setError("");
+    onClose();
+  };
+
   return (
-    <div className="auth-container">
-      <div className="auth-language-switcher">
-        <LanguageSwitcher />
-      </div>
-
-      <div className="auth-card">
-        <div className="auth-brand">
-          <h2 className="auth-app-name">{t("common.appName")}</h2>
-        </div>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={t("auth.login")}
+      size="sm"
+    >
+      <div className="login-modal-content">
         {error && <div className="auth-alert auth-alert-error">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form" autoComplete="on">
           <div className="auth-form-group">
-            <label htmlFor="businessNumber">{t("auth.businessLicense")}</label>
+            <label htmlFor="modal-businessNumber">
+              {t("auth.businessLicense")}
+            </label>
             <input
-              id="businessNumber"
+              id="modal-businessNumber"
               name="businessNumber"
               type="text"
               className="auth-input"
@@ -202,20 +180,24 @@ export default function Login() {
 
           <div className="auth-form-group">
             <div className="auth-links">
-              <label htmlFor="password">{t("auth.password")}</label>
+              <label htmlFor="modal-password">{t("auth.password")}</label>
               <div className="auth-link-group">
-                <Link to="/find-id" className="auth-link">
+                <Link to="/find-id" className="auth-link" onClick={handleClose}>
                   {t("auth.findId")}
                 </Link>
                 <span className="auth-link-separator">|</span>
-                <Link to="/forgot-password" className="auth-link">
+                <Link
+                  to="/forgot-password"
+                  className="auth-link"
+                  onClick={handleClose}
+                >
                   {t("auth.forgotPassword")}
                 </Link>
               </div>
             </div>
             <div className="auth-password-input-wrapper">
               <input
-                id="password"
+                id="modal-password"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 className="auth-input"
@@ -244,12 +226,12 @@ export default function Login() {
 
           <div className="auth-checkbox-group">
             <input
-              id="remember-me"
+              id="modal-remember-me"
               name="remember-me"
               type="checkbox"
               className="auth-checkbox"
             />
-            <label htmlFor="remember-me" className="auth-checkbox-label">
+            <label htmlFor="modal-remember-me" className="auth-checkbox-label">
               {t("auth.rememberMe")}
             </label>
           </div>
@@ -267,12 +249,20 @@ export default function Login() {
 
         <div className="auth-footer">
           {t("auth.noAccount")}{" "}
-          <Link to="/member/register" className="auth-link">
+          <button
+            type="button"
+            className="auth-link-button"
+            onClick={() => {
+              handleClose();
+              if (onSwitchToRegister) onSwitchToRegister();
+            }}
+          >
             {t("common.register")}
-          </Link>
-          .
+          </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
+
+export default LoginModal;

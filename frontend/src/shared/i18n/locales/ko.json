@@ -129,7 +129,15 @@
     "termsOfService": "이용약관 동의",
     "privacyPolicy": "개인정보 수집 및 이용 동의",
     "thirdPartySharing": "개인정보 제3자 제공",
-    "marketingConsent": "선택 정보 수집 및 이용 동의"
+    "marketingConsent": "선택 정보 수집 및 이용 동의",
+    "step1Title": "기본 정보",
+    "step2Title": "기업 정보",
+    "step3Title": "연락처 정보",
+    "step4Title": "사업 정보",
+    "step5Title": "약관 동의",
+    "passwordPolicy": "비밀번호는 8자 이상, 영문 대소문자, 숫자, 특수문자를 포함해야 합니다",
+    "fileUploadError": "파일 업로드에 실패했습니다",
+    "approvalPending": "회원가입 신청이 접수되었으며 현재 '승인 대기' 상태입니다. 관리자의 승인이 완료된 후 다시 로그인해 주세요."
   },
   "admin": {
     "auth": {
@@ -183,7 +191,10 @@
     "pending": "승인 대기",
     "approved": "승인 완료",
     "rejected": "승인 거부",
-    "supplement": "보완 요청"
+    "supplement": "보완 요청",
+    "companyNamePlaceholder": "회사명을 입력하세요",
+    "addressDetailPlaceholder": "상세주소를 입력하세요",
+    "mainProducts": "주요 제품 및 서비스"
   },
   "project": {
     "title": "사업명",
@@ -199,6 +210,43 @@
     "attachments": "첨부파일",
     "progress": "진행률",
     "manager": "담당자"
+  },
+  "projects": {
+    "title": "프로그램",
+    "detail": "프로그램 상세",
+    "searchPlaceholder": "제목/내용으로 검색",
+    "statusFilter": "상태 필터",
+    "itemsPerPage": "페이지당 표시",
+    "applicationsCount": "신청 수",
+    "targetAudience": "대상",
+    "apply": "프로그램 신청",
+    "notAvailable": "신청 불가",
+    "period": "프로그램 기간",
+    "description": "프로그램 설명",
+    "projectNotFound": "프로그램을 찾을 수 없습니다",
+    "companyInfo": "기업 정보",
+    "companyId": "기업 ID",
+    "companyName": "기업명",
+    "contactPerson": "담당자",
+    "status": {
+      "active": "진행중",
+      "inactive": "비활성",
+      "archived": "보관됨",
+      "recruiting": "모집중",
+      "ongoing": "진행중",
+      "closed": "마감"
+    },
+    "application": {
+      "reasonMinLength": "신청 사유는 최소 10자 이상이어야 합니다",
+      "validationError": "필수 정보를 모두 입력한 후 다시 시도해주세요",
+      "form": {
+        "title": "신청서 작성",
+        "description": "아래 신청 내용을 완전히 작성해주세요",
+        "reason": "신청 사유",
+        "reasonPlaceholder": "이 프로그램에 신청하는 이유를 상세히 설명해주세요. 프로그램 목표, 예상 효과, 참여 인원 등의 정보를 포함해주세요 (최소 10자)",
+        "reasonHelp": "현재 {{count}}자, 최소 10자 필요"
+      }
+    }
   },
   "performance": {
     "type": "실적 유형",

@@ -6,16 +6,16 @@
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
 import Footer from './Footer';
-import './MemberLayout.css';
 
 function MemberLayout() {
   return (
-    <div className="member-layout">
+    <div className="flex flex-col min-h-screen bg-gray-50 font-sans">
       <Header />
       
-      <div className="layout-body">
-        <main className="main-content">
-          <div className="content-wrapper">
+      {/* pt-[70px] 对应 header 高度 */}
+      <div className="flex flex-1 flex-col pt-[70px] max-md:pt-[60px]">
+        <main className="flex-1 flex flex-col w-full bg-gray-50">
+          <div className="flex-1 w-full flex flex-col">
             <Outlet />
           </div>
           <Footer />

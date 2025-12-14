@@ -25,13 +25,18 @@ export default function App() {
     }
   }, [theme]);
 
-  // Initialize authentication state on app load
+  // Initialize authentication state on app load - validate token
   useEffect(() => {
-    if (isAuthenticated) {
-      getCurrentUser().catch(() => {
-        // Silently fail if token is invalid
-      });
-    }
+    const validateToken = async () => {
+      if (isAuthenticated) {
+        try {
+          await getCurrentUser();
+        } catch (error) {
+          // Token is invalid, auth state already cleared by getCurrentUser
+        }
+      }
+    };
+    validateToken();
   }, []);
   
   if (isLoading) {

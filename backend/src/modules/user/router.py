@@ -20,6 +20,7 @@ from .schemas import (
     UserInfo,
     ChangePasswordRequest,
     ProfileUpdateRequest,
+    CheckAvailabilityResponse,
 )
 from .service import AuthService
 from .dependencies import get_current_active_user
@@ -304,4 +305,37 @@ async def change_password(
     )
 
     return {"message": "Password changed successfully"}
+
+
+@router.get("/check-business-number/{business_number}", response_model=CheckAvailabilityResponse)
+@auto_log("check_business_number")
+async def check_business_number(
+    business_number: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Check if business number is available.
+
+    Public endpoint - no authentication required.
+    """
+    result = await auth_service.check_business_number(business_number, db)
+    return CheckAvailabilityResponse(**result)
+
+
+@router.get("/check-email/{email}", response_model=CheckAvailabilityResponse)
+@auto_log("check_email")
+async def check_email(
+    email: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Check if email is available.
+
+    Checks both Member and Admin tables.
+    Public endpoint - no authentication required.
+    """
+    result = await auth_service.check_email(email, db)
+    return CheckAvailabilityResponse(**result)
 

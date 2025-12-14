@@ -15,7 +15,6 @@
     "registerFailed": "注册失败",
     "invalidEmail": "请输入有效的邮箱地址",
     "invalidPassword": "密码至少需要8个字符",
-    "passwordMismatch": "密码不匹配",
     "emailRequired": "请输入邮箱",
     "passwordRequired": "请输入密码",
     "loginTitle": "登录",
@@ -25,8 +24,33 @@
     "redirectToLogin": "正在跳转到登录页面...",
     "companyInfo": "企业信息",
     "accountInfo": "账号信息",
-    "approvalPending": "您的注册申请已提交，目前处于“审批进行中”状态，请等待管理员审核通过后再尝试登录。",
-    "accountSuspended": "您的账号已被停用，如有疑问请联系平台管理员。"
+    "approvalPending": "您的注册申请已提交，目前处于审批进行中状态，请等待管理员审核通过后再尝试登录。",
+    "accountSuspended": "您的账号已被停用，如有疑问请联系平台管理员。",
+    "checking": "检查中...",
+    "businessLicense": "营业执照号",
+    "businessLicensePlaceholder": "000-00-00000",
+    "businessLicenseHelp": "请输入不含连字符的数字",
+    "emailPlaceholder": "example@company.com",
+    "passwordHelp": "8位以上，包含大小写字母、数字和特殊字符",
+    "passwordMinLength": "密码至少需要8个字符",
+    "passwordMatch": "密码匹配",
+    "passwordMismatch": "密码不匹配",
+    "businessNumberAvailable": "营业执照号可用",
+    "businessNumberUnavailable": "营业执照号已被注册",
+    "emailAvailable": "邮箱可用",
+    "emailUnavailable": "邮箱已被注册",
+    "passwordCheck": {
+      "minLength": "8位以上",
+      "hasUpperCase": "包含大写字母",
+      "hasLowerCase": "包含小写字母",
+      "hasNumber": "包含数字",
+      "hasSpecialChar": "包含特殊字符"
+    },
+    "passwordStrength": {
+      "weak": "弱",
+      "medium": "中",
+      "strong": "强"
+    }
   },
   "validation": {
     "required": "此项为必填项",

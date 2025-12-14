@@ -7,7 +7,7 @@
 @tailwind utilities;
 
 .modal-container {
-  @apply fixed inset-0 z-50 overflow-y-auto;
+  @apply fixed inset-0 z-[1100] overflow-y-auto;
 }
 
 .modal-overlay {

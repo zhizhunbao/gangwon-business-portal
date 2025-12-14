@@ -10,7 +10,6 @@ import Button from '@shared/components/Button';
 import Input from '@shared/components/Input';
 import Textarea from '@shared/components/Textarea';
 import { supportService, loggerService, exceptionService } from '@shared/services';
-import './ConsultationForm.css';
 
 export default function ConsultationForm({ onSubmitSuccess }) {
   const { t } = useTranslation();
@@ -80,31 +79,33 @@ export default function ConsultationForm({ onSubmitSuccess }) {
   return (
     <Card>
       <h2>{t('support.newInquiry')}</h2>
-      <form onSubmit={handleSubmit} className="consultation-form">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         {error && (
-          <div className="form-error">
-            <p>{error}</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-600 m-0">{error}</p>
           </div>
         )}
 
-        <div className="form-group">
-          <label>{t('support.subjectLabel')} *</label>
+        <div className="flex flex-col gap-3 transition-all duration-200 focus-within:transform [&:focus-within_label]:text-blue-600">
+          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 transition-colors duration-200">{t('support.subjectLabel')} *</label>
           <Input
             value={formData.subject}
             onChange={(e) => handleChange('subject', e.target.value)}
             placeholder={t('support.subjectPlaceholder')}
             required
+            className="focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:border-blue-500"
           />
         </div>
 
-        <div className="form-group">
-          <label>{t('support.contentLabel')} *</label>
+        <div className="flex flex-col gap-3 transition-all duration-200 focus-within:transform [&:focus-within_label]:text-blue-600">
+          <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 transition-colors duration-200">{t('support.contentLabel')} *</label>
           <Textarea
             value={formData.content}
             onChange={(e) => handleChange('content', e.target.value)}
             rows={8}
             placeholder={t('support.contentPlaceholder')}
             required
+            className="focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:border-blue-500"
           />
         </div>
 
@@ -112,6 +113,7 @@ export default function ConsultationForm({ onSubmitSuccess }) {
           type="submit"
           variant="primary"
           disabled={isSubmitting || !formData.subject || !formData.content}
+          className="mt-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           {isSubmitting ? t('common.submitting') : t('common.submit')}
         </Button>

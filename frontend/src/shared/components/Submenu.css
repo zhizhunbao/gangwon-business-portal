@@ -19,7 +19,7 @@
   background-color: #ffffff;
   border-bottom: 2px solid var(--border-color, #e0e0e0);
   box-shadow: var(--shadow-sm);
-  order: 2;
+  /* 移除 order: 2，让组件在 DOM 中的位置决定显示顺序 */
   /* 与 Header 的 padding 保持一致 */
   padding: 0 2rem;
 }

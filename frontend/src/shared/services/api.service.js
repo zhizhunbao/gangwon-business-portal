@@ -91,13 +91,24 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
+        // Clear storage and auth store state
         removeStorage(ACCESS_TOKEN_KEY);
         removeStorage('refresh_token');
         removeStorage('user_info');
-        // Token refresh error will be caught by global exception handler or decorator
+        removeStorage('token_expiry');
+        
+        // Update Zustand store state (import dynamically to avoid circular dependency)
+        try {
+          const { useAuthStore } = await import('@shared/stores/authStore');
+          useAuthStore.getState().clearAuth();
+        } catch (e) {
+          // Ignore if store not available
+        }
+        
         const currentPath = window.location.pathname;
         const isPublicPage = 
           currentPath === '/member' || 
+          currentPath === '/member/home' ||
           currentPath === '/member/about' ||
           currentPath === '/login' ||
           currentPath === '/register' ||
@@ -105,6 +116,20 @@ apiClient.interceptors.response.use(
           currentPath.startsWith('/register');
         if (!isPublicPage) window.location.href = '/login';
         return Promise.reject(refreshError);
+      }
+      
+      // No refresh token available, clear auth state
+      removeStorage(ACCESS_TOKEN_KEY);
+      removeStorage('refresh_token');
+      removeStorage('user_info');
+      removeStorage('token_expiry');
+      
+      // Update Zustand store state
+      try {
+        const { useAuthStore } = await import('@shared/stores/authStore');
+        useAuthStore.getState().clearAuth();
+      } catch (e) {
+        // Ignore if store not available
       }
     }
     

@@ -129,7 +129,15 @@
     "termsOfService": "使用条款同意",
     "privacyPolicy": "个人信息收集及使用同意",
     "thirdPartySharing": "个人信息第三方提供",
-    "marketingConsent": "选择信息收集及使用同意"
+    "marketingConsent": "选择信息收集及使用同意",
+    "step1Title": "基本信息",
+    "step2Title": "企业信息",
+    "step3Title": "联系信息",
+    "step4Title": "业务信息",
+    "step5Title": "条款同意",
+    "passwordPolicy": "密码必须包含8位以上字符，包括大小写字母、数字和特殊字符",
+    "fileUploadError": "文件上传失败",
+    "approvalPending": "您的注册申请已提交，目前处于审批进行中状态，请等待管理员审核通过后再尝试登录。"
   },
   "admin": {
     "auth": {
@@ -183,7 +191,10 @@
     "pending": "待审批",
     "approved": "已批准",
     "rejected": "已拒绝",
-    "supplement": "需补充"
+    "supplement": "需补充",
+    "companyNamePlaceholder": "请输入公司名称",
+    "addressDetailPlaceholder": "请输入详细地址",
+    "mainProducts": "主要产品及服务"
   },
   "project": {
     "title": "项目名称",
@@ -199,6 +210,43 @@
     "attachments": "附件",
     "progress": "进度",
     "manager": "负责人"
+  },
+  "projects": {
+    "title": "项目",
+    "detail": "项目详情",
+    "searchPlaceholder": "按标题/内容搜索",
+    "statusFilter": "状态筛选",
+    "itemsPerPage": "每页显示",
+    "applicationsCount": "申请数",
+    "targetAudience": "目标对象",
+    "apply": "程序申请",
+    "notAvailable": "不可申请",
+    "period": "项目期间",
+    "description": "项目描述",
+    "projectNotFound": "项目不存在",
+    "companyInfo": "企业信息",
+    "companyId": "企业ID",
+    "companyName": "企业名",
+    "contactPerson": "负责人",
+    "status": {
+      "active": "进行中",
+      "inactive": "未激活",
+      "archived": "已归档",
+      "recruiting": "招募中",
+      "ongoing": "进行中",
+      "closed": "已截止"
+    },
+    "application": {
+      "reasonMinLength": "申请理由至少需要10个字符",
+      "validationError": "请补全必填信息后再试",
+      "form": {
+        "title": "填写申请书",
+        "description": "请完整填写以下申请内容",
+        "reason": "申请理由",
+        "reasonPlaceholder": "请详细说明申请此项目的原因，包括项目目标、预期效果、参与人员等信息（至少10个字符）",
+        "reasonHelp": "当前 {{count}} 个字符，至少需要 10 个字符"
+      }
+    }
   },
   "performance": {
     "type": "业绩类型",

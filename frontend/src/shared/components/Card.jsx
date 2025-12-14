@@ -1,16 +1,15 @@
 /**
- * Card Component
+ * Card Component - Tailwind Style
  */
 
 import { cn } from '@shared/utils/helpers';
-import './Card.css';
 
 export function Card({ children, hover = false, className, ...props }) {
   return (
     <div
       className={cn(
-        'card',
-        hover && 'card-hover',
+        'bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden',
+        hover && 'transition-shadow duration-200 hover:shadow-md',
         className
       )}
       {...props}
@@ -22,7 +21,7 @@ export function Card({ children, hover = false, className, ...props }) {
 
 export function CardHeader({ children, className, ...props }) {
   return (
-    <div className={cn('card-header', className)} {...props}>
+    <div className={cn('px-6 py-4 border-b border-gray-200', className)} {...props}>
       {children}
     </div>
   );
@@ -30,7 +29,7 @@ export function CardHeader({ children, className, ...props }) {
 
 export function CardBody({ children, className, ...props }) {
   return (
-    <div className={cn('card-body', className)} {...props}>
+    <div className={cn('px-6 py-4', className)} {...props}>
       {children}
     </div>
   );
@@ -38,11 +37,10 @@ export function CardBody({ children, className, ...props }) {
 
 export function CardFooter({ children, className, ...props }) {
   return (
-    <div className={cn('card-footer', className)} {...props}>
+    <div className={cn('px-6 py-4 border-t border-gray-200 bg-gray-50', className)} {...props}>
       {children}
     </div>
   );
 }
 
 export default Card;
-

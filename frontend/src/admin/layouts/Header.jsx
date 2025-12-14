@@ -25,7 +25,7 @@ export default function Header({ onToggleSidebar }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -166,54 +166,63 @@ export default function Header({ onToggleSidebar }) {
           )}
         </div>
 
-        {/* 用户菜单 */}
-        <div className="user-menu" ref={userMenuRef} data-open={showUserMenu}>
-          <button 
-            className="user-menu-trigger"
-            onClick={() => setShowUserMenu(!showUserMenu)}
-          >
-            <div className="user-avatar">
-              {user?.name?.charAt(0) || 'A'}
-            </div>
-            <span className="user-name">{user?.name || t('admin.header.admin')}</span>
-            <ChevronDownIcon className="dropdown-arrow" />
-          </button>
-
-          {showUserMenu && (
-            <div className="user-menu-dropdown">
-              <div className="user-info">
-                <div className="user-avatar-large">
-                  {user?.name?.charAt(0) || 'A'}
-                </div>
-                <div className="user-details">
-                  <div className="user-name-large">{user?.name || t('admin.header.admin')}</div>
-                  <div className="user-email">{user?.email || ''}</div>
-                </div>
+        {/* 用户菜单或登录按钮 */}
+        {isAuthenticated ? (
+          <div className="user-menu" ref={userMenuRef} data-open={showUserMenu}>
+            <button 
+              className="user-menu-trigger"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+            >
+              <div className="user-avatar">
+                {user?.name?.charAt(0) || 'A'}
               </div>
-              
-              <div className="menu-divider" />
-              
-              <Link 
-                to="/admin/profile"
-                className="menu-item"
-                onClick={() => setShowUserMenu(false)}
-              >
-                <UserIcon className="menu-icon" />
-                <span>{t('admin.header.profile')}</span>
-              </Link>
-              
-              <div className="menu-divider" />
-              
-              <button 
-                className="menu-item menu-item-danger"
-                onClick={handleLogout}
-              >
-                <LogoutIcon className="menu-icon" />
-                <span>{t('admin.header.logout')}</span>
-              </button>
-            </div>
-          )}
-        </div>
+              <span className="user-name">{user?.name || t('admin.header.admin')}</span>
+              <ChevronDownIcon className="dropdown-arrow" />
+            </button>
+
+            {showUserMenu && (
+              <div className="user-menu-dropdown">
+                <div className="user-info">
+                  <div className="user-avatar-large">
+                    {user?.name?.charAt(0) || 'A'}
+                  </div>
+                  <div className="user-details">
+                    <div className="user-name-large">{user?.name || t('admin.header.admin')}</div>
+                    <div className="user-email">{user?.email || ''}</div>
+                  </div>
+                </div>
+                
+                <div className="menu-divider" />
+                
+                <Link 
+                  to="/admin/profile"
+                  className="menu-item"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  <UserIcon className="menu-icon" />
+                  <span>{t('admin.header.profile')}</span>
+                </Link>
+                
+                <div className="menu-divider" />
+                
+                <button 
+                  className="menu-item menu-item-danger"
+                  onClick={handleLogout}
+                >
+                  <LogoutIcon className="menu-icon" />
+                  <span>{t('admin.header.logout')}</span>
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button 
+            className="header-login-btn"
+            onClick={() => navigate('/admin/login')}
+          >
+            {t('admin.header.login') || '로그인'}
+          </button>
+        )}
       </div>
     </header>
   );

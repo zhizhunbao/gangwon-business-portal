@@ -11,7 +11,6 @@ import Button from '@shared/components/Button';
 import { projectService, loggerService, exceptionService } from '@shared/services';
 import { ArrowLeftIcon } from '@shared/components/Icons';
 import ApplicationModal from './ApplicationModal';
-import './ProjectDetail.css';
 
 export default function ProjectDetail() {
   const { t, i18n } = useTranslation();
@@ -62,59 +61,59 @@ export default function ProjectDetail() {
 
   return (
     <>
-      <div className="page-header">
+      <div className="mb-8 p-0 bg-transparent shadow-none">
         <Button
           onClick={() => navigate('/member/programs')}
           variant="text"
-          className="back-button"
+          className="mb-4"
         >
           <ArrowLeftIcon className="w-5 h-5" />
           {t('common.back', '返回')}
         </Button>
-        <h1>{t('projects.detail', '项目详情')}</h1>
+        <h1 className="block text-2xl font-bold text-gray-900 mb-0">{t('projects.detail', '项目详情')}</h1>
       </div>
 
         {loading ? (
           <Card>
-            <div className="loading">
-              <p>{t('common.loading', '加载中...')}</p>
+            <div className="text-center py-12 px-4">
+              <p className="text-base text-gray-500 m-0">{t('common.loading', '加载中...')}</p>
             </div>
           </Card>
         ) : project ? (
-          <Card className="announcement-detail-card">
-            <div className="announcement-detail-header">
-              <h2>{project.title}</h2>
-              <div className="project-meta">
+          <Card className="w-full max-w-full p-4 sm:p-5 lg:p-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4 pb-3 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 m-0 flex-1">{project.title}</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 text-sm text-gray-500">
                 {project.startDate && project.endDate && (
-                  <span className="project-period">
+                  <span>
                     {t('projects.period', '项目期间')}: {new Date(project.startDate).toLocaleDateString()} - {new Date(project.endDate).toLocaleDateString()}
                   </span>
                 )}
-                <span className="announcement-date">
+                <span className="whitespace-nowrap flex-shrink-0">
                   {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : ''}
                 </span>
               </div>
             </div>
             {project.imageUrl && (
-              <div className="project-image">
-                <img src={project.imageUrl} alt={project.title} />
+              <div className="mb-4 rounded-lg overflow-hidden">
+                <img src={project.imageUrl} alt={project.title} className="w-full h-auto max-h-[300px] object-cover" />
               </div>
             )}
-            <div className="announcement-detail-content">
+            <div className="mb-4 text-sm text-gray-700 leading-relaxed">
               {project.description && (
-                <div className="project-description">
-                  <h3>{t('projects.description', '项目描述')}</h3>
-                  <p>{project.description}</p>
+                <div className="mb-4">
+                  <h3 className="text-base font-semibold text-gray-900 mb-2">{t('projects.description', '项目描述')}</h3>
+                  <p className="mb-2 leading-relaxed">{project.description}</p>
                 </div>
               )}
               {project.targetAudience && (
-                <div className="project-target-audience">
-                  <h3>{t('projects.targetAudience', '目标对象')}</h3>
-                  <p>{project.targetAudience}</p>
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900 mb-2">{t('projects.targetAudience', '目标对象')}</h3>
+                  <p className="leading-relaxed">{project.targetAudience}</p>
                 </div>
               )}
             </div>
-            <div className="announcement-detail-footer">
+            <div className="flex justify-end pt-4 border-t border-gray-200">
               <Button 
                 onClick={handleApply} 
                 variant="primary"
@@ -128,8 +127,8 @@ export default function ProjectDetail() {
           </Card>
         ) : (
           <Card>
-            <div className="no-data">
-              <p>{t('common.noData', '暂无数据')}</p>
+            <div className="text-center py-12 px-4">
+              <p className="text-base text-gray-500 m-0">{t('common.noData', '暂无数据')}</p>
             </div>
           </Card>
         )}

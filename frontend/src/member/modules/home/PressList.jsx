@@ -3,9 +3,8 @@
  * 新闻/보도자료列表页面
  */
 
-import './PressList.css';
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Card from '@shared/components/Card';
 import LazyImage from '@shared/components/LazyImage';
 import { Pagination } from '@shared/components';
@@ -87,37 +86,33 @@ function PressList() {
 
   return (
     <PageContainer>
-      <div className="news-list-page">
-        <div className="page-header">
-          <h1>{t('home.news.title', '新闻资料')}</h1>
-          <p className="page-description">{t('home.news.description', '查看最新新闻资料和资讯')}</p>
+      <div className="w-full">
+        <div className="mb-8">
+          <h1 className="text-3xl max-md:text-2xl font-bold text-gray-900 mb-2 m-0">{t('home.news.title', '新闻资料')}</h1>
+          <p className="text-base text-gray-500 m-0">{t('home.news.description', '查看最新新闻资料和资讯')}</p>
         </div>
 
       {loading && newsList.length === 0 ? (
-        <div className="loading-state">
-          <p>{t('common.loading', '加载中...')}</p>
+        <div className="text-center py-12 px-8">
+          <p className="text-base text-gray-500 m-0">{t('common.loading', '加载中...')}</p>
         </div>
       ) : newsList.length > 0 ? (
         <>
-          <div className="news-grid">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] max-md:grid-cols-2 max-sm:grid-cols-1 gap-6 max-md:gap-4 mb-8">
             {newsList.map((news) => (
-              <Card key={news.id} className="news-card">
-                <div className="news-card-link">
-                  <div className="news-card-thumbnail">
+              <Card key={news.id} className="h-full flex flex-col rounded-lg transition-all duration-200">
+                <div className="flex flex-col p-5 text-inherit h-full flex-1 cursor-default">
+                  <div className="w-full h-40 min-h-[10rem] max-h-40 overflow-hidden rounded-md mb-4 flex-shrink-0 relative bg-gray-100 flex items-center justify-center">
                     <LazyImage 
                       src={news.thumbnailUrl || generatePlaceholderImage()} 
                       alt={news.title}
                       placeholder={generatePlaceholderImage()}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover'
-                      }}
+                      className="!w-full !h-full min-w-full min-h-full max-w-full max-h-full block flex-shrink-0 object-cover object-center"
                     />
                   </div>
-                  <div className="news-card-content">
-                    <h3 className="news-card-title">{news.title}</h3>
-                    <span className="news-card-date">{news.publishedAt}</span>
+                  <div className="flex flex-col flex-1">
+                    <h3 className="text-base font-semibold text-gray-900 mb-2 leading-normal flex-1 line-clamp-2">{news.title}</h3>
+                    <span className="text-xs text-gray-400 mt-auto">{news.publishedAt}</span>
                   </div>
                 </div>
               </Card>
@@ -125,7 +120,7 @@ function PressList() {
           </div>
 
           {totalCount > pageSize && (
-            <div className="pagination-wrapper">
+            <div className="mt-8 flex justify-center">
               <Pagination
                 currentPage={currentPage}
                 totalItems={totalCount}
@@ -138,8 +133,8 @@ function PressList() {
           )}
         </>
       ) : (
-        <Card className="empty-state">
-          <p>{t('home.news.empty', '暂无新闻资料')}</p>
+        <Card className="text-center py-12 px-8">
+          <p className="text-base text-gray-500 m-0">{t('home.news.empty', '暂无新闻资料')}</p>
         </Card>
       )}
       </div>

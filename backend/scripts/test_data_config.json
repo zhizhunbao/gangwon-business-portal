@@ -76,7 +76,7 @@
     "project_statuses": ["active", "inactive", "archived"],
     "application_statuses": ["submitted", "under_review", "approved", "rejected"],
     "inquiry_statuses": ["pending", "replied", "closed"],
-    "banner_types": ["MAIN", "INTRO", "PROGRAM", "PERFORMANCE", "SUPPORT"],
+    "banner_types": ["MAIN", "INTRO", "PROGRAM", "PERFORMANCE", "SUPPORT", "PROFILE"],
     "faq_categories": ["회원가입", "성과관리", "프로젝트", "기타"],
     "audit_actions": ["login", "logout", "create", "update", "delete", "view", "approve", "reject"],
     "audit_resource_types": [

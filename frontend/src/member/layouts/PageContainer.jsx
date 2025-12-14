@@ -3,8 +3,13 @@
  * 页面容器组件 - 统一控制页面的边距和最大宽度
  */
 
-import './PageContainer.css';
 import { cn } from '@shared/utils/helpers';
+
+const sizeClasses = {
+  default: 'max-w-[1400px] px-4 py-4 pb-[4.5rem] sm:px-6 lg:px-8',
+  large: 'max-w-[1600px] px-4 py-4 pb-[4.5rem] sm:px-6 lg:px-8',
+  small: 'max-w-[1200px] px-6 py-6 pb-[4.5rem] sm:px-8',
+};
 
 /**
  * PageContainer - 页面容器组件
@@ -24,9 +29,8 @@ export function PageContainer({
   return (
     <div
       className={cn(
-        'page-container',
-        size && `page-container-${size}`,
-        fullWidth && 'page-container-full-width',
+        'w-full mx-auto box-border min-w-0',
+        fullWidth ? 'max-w-full' : sizeClasses[size],
         className
       )}
       {...props}

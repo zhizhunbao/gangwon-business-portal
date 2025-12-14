@@ -2,21 +2,63 @@
  * Router Configuration
  */
 
-import { createBrowserRouter, Navigate } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { useAuth } from '@shared/hooks';
-import { Button, Loading } from '@shared/components';
+import { Button, Loading, LoginModal } from '@shared/components';
 import '@shared/styles/ErrorPages.css';
 
-// Protected Route Component
+// Protected Route Component with Login Modal
 function ProtectedRoute({ children, allowedRoles = [] }) {
   const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  
+  useEffect(() => {
+    // Show login modal if not authenticated
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+    }
+  }, [isAuthenticated]);
+  
+  // Handle login success
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false);
+    // The route will automatically re-render after authentication state updates
+  };
   
   if (!isAuthenticated) {
-    // Redirect to appropriate login page based on route
-    const isAdminRoute = window.location.pathname.startsWith('/admin');
-    const loginPath = isAdminRoute ? '/admin/login' : '/login';
-    return <Navigate to={loginPath} replace />;
+    // Show login modal instead of redirecting
+    const isAdminRoute = location.pathname.startsWith('/admin');
+    
+    // For admin routes, we still redirect to admin login page
+    // For member routes, show login modal
+    if (isAdminRoute) {
+      return <Navigate to="/admin/login" replace />;
+    }
+    
+    return (
+      <>
+        <LoginModal
+          isOpen={showLoginModal}
+          onClose={() => {
+            setShowLoginModal(false);
+            // Redirect to home if user closes modal
+            window.location.href = '/member';
+          }}
+          onSuccess={handleLoginSuccess}
+        />
+        {/* Show loading or placeholder while modal is open */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '50vh' 
+        }}>
+          <Loading />
+        </div>
+      </>
+    );
   }
   
   if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role)) {
@@ -131,16 +173,7 @@ export const router = createBrowserRouter(
         </PublicRoute>
       )
     },
-    {
-      path: '/register',
-      element: (
-        <PublicRoute>
-          <LazyRoute>
-            <Register />
-          </LazyRoute>
-        </PublicRoute>
-      )
-    },
+
     {
       path: '/admin/login',
       element: (
@@ -185,6 +218,14 @@ export const router = createBrowserRouter(
           element: (
             <LazyRoute>
               <MemberAbout />
+            </LazyRoute>
+          )
+        },
+        {
+          path: 'register',
+          element: (
+            <LazyRoute>
+              <Register />
             </LazyRoute>
           )
         },

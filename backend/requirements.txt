@@ -40,6 +40,8 @@ requests==2.31.0
 faker==24.0.0
 # httpx is a dependency of supabase, will be installed automatically
 
-# Browser Automation
+# Browser Automation & E2E Testing
 playwright==1.40.0
+pytest-playwright==0.4.4
+pytest-html==4.1.1
 

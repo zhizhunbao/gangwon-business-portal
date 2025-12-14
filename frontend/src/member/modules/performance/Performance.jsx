@@ -8,7 +8,6 @@ import { useLocation, Outlet } from 'react-router-dom';
 import { Banner, Submenu } from '@shared/components';
 import { BANNER_TYPES } from '@shared/utils/constants';
 import { PageContainer } from '@member/layouts';
-import './Performance.css';
 
 export default function Performance() {
   const { t } = useTranslation();
@@ -37,7 +36,7 @@ export default function Performance() {
   ];
 
   return (
-    <div className="performance">
+    <div className="performance w-full max-w-full flex flex-col p-0 m-0 overflow-x-hidden relative">
       <Banner
         bannerType={BANNER_TYPES.PERFORMANCE}
         sectionClassName="member-banner-section"
@@ -46,7 +45,7 @@ export default function Performance() {
       <Submenu items={submenuItems} renderLeft={() => null} />
       
       <PageContainer>
-        <div className="performance-tab-content">
+        <div className="w-full">
           <Outlet />
         </div>
       </PageContainer>

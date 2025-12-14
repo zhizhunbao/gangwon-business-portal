@@ -70,8 +70,12 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"  # Frontend URL for email links
 
     # File Upload Configuration
-    MAX_UPLOAD_SIZE: int = 10485760  # 10MB
+    MAX_UPLOAD_SIZE: int = 10485760  # 10MB (default for backward compatibility)
+    MAX_IMAGE_SIZE: int = 5242880  # 5MB for images
+    MAX_DOCUMENT_SIZE: int = 10485760  # 10MB for documents
     ALLOWED_FILE_TYPES: str = "image/jpeg,image/png,image/gif,application/pdf"
+    ALLOWED_IMAGE_EXTENSIONS: str = "jpg,jpeg,png,gif,webp"
+    ALLOWED_DOCUMENT_EXTENSIONS: str = "pdf,doc,docx,xls,xlsx,ppt,pptx,txt"
 
     # Logging Configuration
     LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL

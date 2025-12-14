@@ -116,6 +116,27 @@
   color: #6b6b6b;
 }
 
+.auth-help-success {
+  color: #2f855a;
+}
+
+.auth-help-error {
+  color: #c53030;
+}
+
+.auth-validating {
+  color: #6b6b6b;
+  font-style: italic;
+}
+
+.auth-input-error {
+  border-bottom-color: #c53030 !important;
+}
+
+.auth-input-success {
+  border-bottom-color: #2f855a !important;
+}
+
 .auth-checkbox-group {
   display: flex;
   align-items: center;
@@ -212,6 +233,23 @@
 }
 
 .auth-link:hover {
+  text-decoration: underline;
+}
+
+/* Link button for switching between modals */
+.auth-link-button {
+  background: none;
+  border: none;
+  color: #1a1a1a;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.auth-link-button:hover {
   text-decoration: underline;
 }
 

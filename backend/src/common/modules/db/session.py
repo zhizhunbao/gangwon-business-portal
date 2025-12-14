@@ -13,6 +13,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy import event
 
 from ..config import settings
+# Import directly from submodules to avoid circular import through logger/__init__.py
 from ..logger.handlers import create_file_handler
 from ..logger.formatter import JSONFormatter
 
@@ -109,35 +110,46 @@ def _encode_database_url(url: str) -> str:
 # Database Connection Pool Configuration
 # ============================================================================
 
-POOL_SIZE = 10
-MAX_OVERFLOW = 20
-POOL_TIMEOUT = 30
-CONNECT_TIMEOUT = 10
-COMMAND_TIMEOUT = 30
+# 优化连接池配置以解决超时问题
+POOL_SIZE = 5           # 减少基础连接池大小，避免过多连接
+MAX_OVERFLOW = 10       # 减少溢出连接数
+POOL_TIMEOUT = 60       # 增加池超时时间到60秒
+CONNECT_TIMEOUT = 30    # 增加连接超时时间到30秒
+COMMAND_TIMEOUT = 60    # 增加命令超时时间到60秒
+POOL_RECYCLE = 3600     # 连接回收时间（1小时）
+POOL_PRE_PING = True    # 启用连接预检查
 
 # Log pool configuration
 db_pool_logger.info(
-    "Initializing database connection pool",
+    "Initializing database connection pool with optimized settings",
     extra={
         "pool_size": POOL_SIZE,
         "max_overflow": MAX_OVERFLOW,
         "pool_timeout": POOL_TIMEOUT,
         "connect_timeout": CONNECT_TIMEOUT,
         "command_timeout": COMMAND_TIMEOUT,
+        "pool_recycle": POOL_RECYCLE,
+        "pool_pre_ping": POOL_PRE_PING,
     }
 )
 
-# Create async engine with properly encoded URL
+# Create async engine with properly encoded URL and optimized settings
 engine = create_async_engine(
     _encode_database_url(settings.DATABASE_URL),
     echo=settings.DEBUG,
-    pool_pre_ping=True,
+    pool_pre_ping=POOL_PRE_PING,
     pool_size=POOL_SIZE,
     max_overflow=MAX_OVERFLOW,
     pool_timeout=POOL_TIMEOUT,
+    pool_recycle=POOL_RECYCLE,
     connect_args={
         "timeout": CONNECT_TIMEOUT,
         "command_timeout": COMMAND_TIMEOUT,
+        # 添加更多连接参数以提高稳定性
+        "server_settings": {
+            "application_name": "gangwon_business_portal",
+            "jit": "off",  # 禁用JIT以提高连接速度
+        },
     },
 )
 
@@ -404,66 +416,171 @@ Base = declarative_base()
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
-    Dependency function to get database session.
+    Dependency function to get database session with retry mechanism.
     
     This function provides a database session that is automatically
-    committed on success or rolled back on error.
+    committed on success or rolled back on error. Includes retry logic
+    for connection timeouts.
     
     Yields:
         AsyncSession: Database session
     """
-    db_pool_logger.debug("Creating new database session")
+    import asyncio
+    from sqlalchemy.exc import DisconnectionError, TimeoutError as SQLTimeoutError
     
-    async with AsyncSessionLocal() as session:
+    max_retries = 3
+    retry_delay = 1  # seconds
+    
+    for attempt in range(max_retries):
         try:
-            yield session
-            await session.commit()
-            db_pool_logger.debug("Database session committed successfully")
-        except Exception as e:
-            # Only rollback for database-related errors
-            # Business logic exceptions (AppException) should not trigger rollback
-            from sqlalchemy.exc import SQLAlchemyError
-            from ..exception.exceptions import AppException
+            db_pool_logger.debug(f"Creating new database session (attempt {attempt + 1}/{max_retries})")
             
-            # Check if it's a database error
-            if isinstance(e, SQLAlchemyError):
-                await session.rollback()
-                db_pool_logger.error(
-                    "Database session rollback due to database error",
+            async with AsyncSessionLocal() as session:
+                try:
+                    yield session
+                    await session.commit()
+                    db_pool_logger.debug("Database session committed successfully")
+                    return  # Success, exit retry loop
+                    
+                except Exception as e:
+                    # Only rollback for database-related errors
+                    # Business logic exceptions (AppException) should not trigger rollback
+                    from sqlalchemy.exc import SQLAlchemyError
+                    from ..exception.exceptions import AppException
+                    
+                    # Check if it's a database error
+                    if isinstance(e, SQLAlchemyError):
+                        await session.rollback()
+                        db_pool_logger.error(
+                            "Database session rollback due to database error",
+                            extra={
+                                "exception_type": type(e).__name__,
+                                "exception_message": str(e),
+                                "attempt": attempt + 1,
+                            },
+                            exc_info=True,
+                        )
+                    # For business logic exceptions, just log at debug level (no rollback needed)
+                    elif isinstance(e, AppException):
+                        db_pool_logger.debug(
+                            f"Business logic exception (no rollback needed): {type(e).__name__}",
+                            extra={
+                                "exception_type": type(e).__name__,
+                                "exception_message": str(e),
+                                "status_code": e.status_code,
+                            },
+                        )
+                    # For other unexpected exceptions, rollback to be safe
+                    else:
+                        await session.rollback()
+                        db_pool_logger.error(
+                            "Database session rollback due to unexpected error",
+                            extra={
+                                "exception_type": type(e).__name__,
+                                "exception_message": str(e),
+                                "attempt": attempt + 1,
+                            },
+                            exc_info=True,
+                        )
+                    raise
+                finally:
+                    db_pool_logger.debug("Database session closed")
+                    
+        except (DisconnectionError, SQLTimeoutError, asyncio.TimeoutError) as e:
+            if attempt < max_retries - 1:
+                db_pool_logger.warning(
+                    f"Database connection failed, retrying in {retry_delay}s",
                     extra={
                         "exception_type": type(e).__name__,
-                        "exception_message": str(e),
-                    },
-                    exc_info=True,
+                        "attempt": attempt + 1,
+                        "max_retries": max_retries,
+                        "retry_delay": retry_delay,
+                    }
                 )
-            # For business logic exceptions, just log at debug level (no rollback needed)
-            elif isinstance(e, AppException):
-                db_pool_logger.debug(
-                    f"Business logic exception (no rollback needed): {type(e).__name__}",
-                    extra={
-                        "exception_type": type(e).__name__,
-                        "exception_message": str(e),
-                        "status_code": e.status_code,
-                    },
-                )
-            # For other unexpected exceptions, rollback to be safe
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+                continue
             else:
-                await session.rollback()
                 db_pool_logger.error(
-                    "Database session rollback due to unexpected error",
+                    "Database connection failed after all retries",
                     extra={
                         "exception_type": type(e).__name__,
                         "exception_message": str(e),
+                        "total_attempts": max_retries,
                     },
                     exc_info=True,
                 )
+                raise
+        except Exception as e:
+            # For non-connection related errors, don't retry
             raise
-        finally:
-            db_pool_logger.debug("Database session closed")
+
+
+# ============================================================================
+# Connection Pool Health Check
+# ============================================================================
+
+async def check_db_health() -> dict:
+    """
+    Check database connection pool health.
+    
+    Returns:
+        dict: Pool status information
+    """
+    try:
+        from sqlalchemy import text
+        pool = engine.pool
+        
+        # Get pool statistics
+        pool_status = {
+            "pool_size": pool.size(),
+            "checked_in": pool.checkedin(),
+            "checked_out": pool.checkedout(),
+            "overflow": pool.overflow(),
+            "status": "healthy"
+        }
+        
+        # Test connection
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+            
+        db_pool_logger.info("Database health check passed", extra=pool_status)
+        return pool_status
+        
+    except Exception as e:
+        error_status = {
+            "status": "unhealthy",
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+        db_pool_logger.error("Database health check failed", extra=error_status, exc_info=True)
+        return error_status
+
+
+def get_pool_status() -> dict:
+    """
+    Get current connection pool status (synchronous).
+    
+    Returns:
+        dict: Current pool statistics
+    """
+    try:
+        pool = engine.pool
+        return {
+            "pool_size": pool.size(),
+            "checked_in": pool.checkedin(),
+            "checked_out": pool.checkedout(),
+            "overflow": pool.overflow(),
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
 
 
 # ============================================================================
 # Module Exports
 # ============================================================================
 
-__all__ = ["engine", "AsyncSessionLocal", "Base", "get_db", "db_pool_logger"]
+__all__ = ["engine", "AsyncSessionLocal", "Base", "get_db", "db_pool_logger", "check_db_health", "get_pool_status"]

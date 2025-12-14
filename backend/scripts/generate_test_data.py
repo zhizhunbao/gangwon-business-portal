@@ -387,51 +387,122 @@ async def generate_project_applications(
     return applications
 
 
-# Banner configuration - matches generate_banners.py
+# Banner configuration - gradient colors only, text stored in DB
 BANNER_CONFIGS = {
     'main_primary': {
         'size': (1920, 600),
         'color': (30, 64, 175),
+        'color2': (59, 130, 246),
+        'title_ko': '강원 기업 포털',
+        'title_zh': '江原企业门户',
+        'subtitle_ko': '기업 성장을 위한 원스톱 지원 플랫폼',
+        'subtitle_zh': '企业成长一站式支援平台',
     },
     'main_secondary': {
         'size': (800, 300),
         'color': (59, 130, 246),
+        'color2': (96, 165, 250),
+        'title_ko': '기업 지원',
+        'title_zh': '企业支援',
+        'subtitle_ko': '',
+        'subtitle_zh': '',
     },
     'about': {
         'size': (1920, 400),
         'color': (5, 150, 105),
+        'color2': (16, 185, 129),
+        'title_ko': '소개',
+        'title_zh': '简介',
+        'subtitle_ko': '강원 기업 포털에 오신 것을 환영합니다',
+        'subtitle_zh': '欢迎来到江原企业门户',
     },
     'projects': {
         'size': (1920, 400),
         'color': (220, 38, 38),
+        'color2': (248, 113, 113),
+        'title_ko': '지원 사업',
+        'title_zh': '支援项目',
+        'subtitle_ko': '다양한 기업 지원 프로그램',
+        'subtitle_zh': '多样化企业支援计划',
     },
     'performance': {
         'size': (1920, 400),
         'color': (124, 58, 237),
+        'color2': (167, 139, 250),
+        'title_ko': '실적 관리',
+        'title_zh': '业绩管理',
+        'subtitle_ko': '기업 실적 현황 및 분석',
+        'subtitle_zh': '企业业绩现状及分析',
     },
     'support': {
         'size': (1920, 400),
         'color': (234, 88, 12),
+        'color2': (251, 146, 60),
+        'title_ko': '지원 센터',
+        'title_zh': '支援中心',
+        'subtitle_ko': '기업 지원 서비스 안내',
+        'subtitle_zh': '企业支援服务指南',
     },
     'notices': {
         'size': (1920, 400),
         'color': (190, 24, 93),
+        'color2': (236, 72, 153),
+        'title_ko': '공지사항',
+        'title_zh': '公告',
+        'subtitle_ko': '최신 소식 및 안내',
+        'subtitle_zh': '最新消息及通知',
     },
     'news': {
         'size': (1920, 400),
         'color': (180, 83, 9),
-        'decorated': True,
+        'color2': (217, 119, 6),
+        'title_ko': '보도자료',
+        'title_zh': '新闻报道',
+        'subtitle_ko': '언론 보도 및 뉴스',
+        'subtitle_zh': '媒体报道及新闻',
     },
     'scroll': {
         'size': (1920, 150),
         'color': (71, 85, 105),
+        'color2': (100, 116, 139),
+        'title_ko': '',
+        'title_zh': '',
+        'subtitle_ko': '',
+        'subtitle_zh': '',
+    },
+    'profile': {
+        'size': (1920, 400),
+        'color': (79, 70, 229),
+        'color2': (99, 102, 241),
+        'title_ko': '기업 프로필',
+        'title_zh': '企业资料',
+        'subtitle_ko': '기업 정보 관리',
+        'subtitle_zh': '企业信息管理',
     }
 }
 
 
+def create_gradient_background(size: tuple, color1: tuple, color2: tuple) -> Image.Image:
+    """Create a diagonal gradient background."""
+    width, height = size
+    img = Image.new('RGB', size, color1)
+    draw = ImageDraw.Draw(img)
+    
+    # Diagonal gradient
+    for y in range(height):
+        for x in range(0, width, 4):  # Step by 4 for performance
+            ratio = (x + y) / (width + height)
+            r = int(color1[0] * (1 - ratio) + color2[0] * ratio)
+            g = int(color1[1] * (1 - ratio) + color2[1] * ratio)
+            b = int(color1[2] * (1 - ratio) + color2[2] * ratio)
+            draw.rectangle([x, y, x + 4, y + 1], fill=(r, g, b))
+    
+    return img
+
+
 def create_banner_image(config_name: str) -> bytes:
     """
-    Create a banner image in memory.
+    Create a banner image with gradient background (no text - text is stored in DB).
     
     Args:
         config_name: Banner configuration name (e.g., 'main_primary', 'about')
@@ -444,10 +515,17 @@ def create_banner_image(config_name: str) -> bytes:
     
     config = BANNER_CONFIGS.get(config_name, BANNER_CONFIGS['about'])
     size = config['size']
-    color = config['color']
+    color1 = config['color']
+    color2 = config.get('color2', color1)
     
-    # Create image
-    img = Image.new('RGB', size, color)
+    # Create gradient background (no text - text is rendered by frontend using DB data)
+    img = create_gradient_background(size, color1, color2)
+    draw = ImageDraw.Draw(img)
+    
+    # Draw decorative circles for visual interest
+    accent_color = tuple(min(c + 40, 255) for c in color1)
+    draw.ellipse([-100, -100, 300, 300], fill=accent_color)
+    draw.ellipse([size[0] - 200, size[1] - 200, size[0] + 100, size[1] + 100], fill=accent_color)
     
     # Save to bytes
     buffer = BytesIO()
@@ -456,13 +534,9 @@ def create_banner_image(config_name: str) -> bytes:
     return buffer.getvalue()
 
 
-def create_news_image(title: str, content: str = "") -> bytes:
+def create_news_image() -> bytes:
     """
-    Create a news article image in memory using generate_news_images.py functions.
-    
-    Args:
-        title: News article title
-        content: News article content (optional, for preview text)
+    Create a news article image with gradient background (no text - text rendered by frontend).
     
     Returns:
         bytes: JPEG image data
@@ -470,42 +544,33 @@ def create_news_image(title: str, content: str = "") -> bytes:
     if not HAS_PIL:
         raise ImportError("PIL/Pillow is required for news image generation. Install with: pip install pillow")
     
-    try:
-        # Import functions from generate_news_images.py
-        from scripts.generate_news_images import (
-            generate_main_image,
-            get_font_path,
-            NEWS_THEMES
-        )
-        
-        # Get font path
-        font_path = get_font_path()
-        
-        # Select a random theme (use news_id as index, but we'll use random)
-        theme_ids = list(NEWS_THEMES.keys())
-        news_id = random.choice(theme_ids)
-        theme = NEWS_THEMES[news_id]
-        
-        # Generate main image using the script's function
-        img = generate_main_image(news_id, title, content, theme, font_path)
-        
-        # Convert PIL Image to bytes
-        buffer = BytesIO()
-        img.save(buffer, format='JPEG', quality=90)
-        buffer.seek(0)
-        return buffer.getvalue()
-        
-    except ImportError as e:
-        # Fallback if generate_news_images.py is not available
-        print(f"  Warning: Could not import generate_news_images.py: {e}")
-        print("  Falling back to simple image generation")
-        
-        # Simple fallback: create a basic colored image
-        img = Image.new('RGB', (1200, 675), (75, 130, 180))
-        buffer = BytesIO()
-        img.save(buffer, format='JPEG', quality=90)
-        buffer.seek(0)
-        return buffer.getvalue()
+    # News themes - random colors
+    themes = [
+        {'primary': (75, 130, 180), 'secondary': (135, 206, 250)},   # Blue
+        {'primary': (220, 20, 60), 'secondary': (255, 99, 71)},      # Red
+        {'primary': (72, 61, 139), 'secondary': (138, 43, 226)},     # Purple
+        {'primary': (34, 139, 34), 'secondary': (50, 205, 50)},      # Green
+        {'primary': (46, 125, 50), 'secondary': (76, 175, 80)},      # Dark Green
+        {'primary': (180, 83, 9), 'secondary': (217, 119, 6)},       # Orange
+    ]
+    theme = random.choice(themes)
+    
+    size = (1200, 675)
+    
+    # Create gradient background
+    img = create_gradient_background(size, theme['primary'], theme['secondary'])
+    draw = ImageDraw.Draw(img)
+    
+    # Draw decorative circles
+    accent = tuple(min(c + 50, 255) for c in theme['primary'])
+    draw.ellipse([-80, -80, 250, 250], fill=accent)
+    draw.ellipse([size[0] - 180, size[1] - 180, size[0] + 80, size[1] + 80], fill=accent)
+    
+    # Save to bytes
+    buffer = BytesIO()
+    img.save(buffer, format='JPEG', quality=90)
+    buffer.seek(0)
+    return buffer.getvalue()
 
 
 async def upload_image_to_supabase(
@@ -564,9 +629,64 @@ async def upload_banner_to_supabase(
     return await upload_image_to_supabase(image_data, filename, storage_service, "image/png", "banners")
 
 
+async def clear_storage_folder(storage_service: Any, subfolder: str) -> int:
+    """
+    Clear all files in a Supabase Storage subfolder.
+    
+    Args:
+        storage_service: Storage service instance
+        subfolder: Subfolder to clear (e.g., "banners", "news")
+    
+    Returns:
+        int: Number of files deleted
+    """
+    client = storage_service.client
+    bucket = "public-files"
+    path = f"gangwon-portal/{subfolder}"
+    
+    try:
+        # List all files in the folder
+        files = client.storage.from_(bucket).list(path)
+        if not files:
+            return 0
+        
+        # Delete each file
+        deleted_count = 0
+        for file_info in files:
+            if file_info.get("name"):
+                file_path = f"{path}/{file_info['name']}"
+                try:
+                    client.storage.from_(bucket).remove([file_path])
+                    deleted_count += 1
+                except Exception as e:
+                    print(f"  Warning: Failed to delete {file_path}: {e}")
+        
+        return deleted_count
+    except Exception as e:
+        print(f"  Warning: Failed to list files in {path}: {e}")
+        return 0
+
+
 async def generate_content(session: AsyncSession, members: List['Member'], config: Dict[str, Any], storage_service: Any = None):
-    """Generate content test data (notices, press releases, banners, FAQs)."""
+    """Generate content test data (notices, press releases, banners, FAQs).
+    
+    Raises:
+        RuntimeError: If storage_service is not available or PIL is not installed
+    """
     from src.common.modules.db.models import Notice, PressRelease, Banner, FAQ
+    
+    # Check prerequisites - fail fast if not available
+    if not storage_service:
+        raise RuntimeError(
+            "Storage service is not available. Cannot generate banners and news images.\n"
+            "Please check your Supabase configuration in .env.local"
+        )
+    
+    if not HAS_PIL:
+        raise RuntimeError(
+            "PIL/Pillow is not installed. Cannot generate images.\n"
+            "Please install with: pip install pillow"
+        )
     
     approved_members = [m for m in members if m.approval_status == "approved"]
     if not approved_members:
@@ -577,13 +697,25 @@ async def generate_content(session: AsyncSession, members: List['Member'], confi
     data_ranges = config["data_ranges"]["content"]
     probs = config["probabilities"]
     
+    # Clear old images from Supabase Storage before generating new ones
+    print("  Clearing old banner images from Supabase Storage...")
+    deleted_banners = await clear_storage_folder(storage_service, "banners")
+    print(f"  Deleted {deleted_banners} old banner images")
+    
+    print("  Clearing old news images from Supabase Storage...")
+    deleted_news = await clear_storage_folder(storage_service, "news")
+    print(f"  Deleted {deleted_news} old news images")
+    
     # Mapping from banner_type to banner config names
     banner_type_to_config = {
         "MAIN": ["main_primary", "main_secondary"],
         "INTRO": ["about"],
         "PROGRAM": ["projects"],
         "PERFORMANCE": ["performance"],
+        "PROGRAM": ["projects"],
+        "PERFORMANCE": ["performance"],
         "SUPPORT": ["support"],
+        "PROFILE": ["profile"],
     }
     
     for i in range(data_ranges["notices_count"]):
@@ -599,42 +731,24 @@ async def generate_content(session: AsyncSession, members: List['Member'], confi
         session.add(notice)
     
     for i in range(data_ranges["press_releases_count"]):
-        # Generate news title and content
+        # Generate news title
         news_title = fake.sentence(nb_words=4)
-        news_content = fake.text(max_nb_chars=200)  # Generate some content for the image
         
-        # Generate news image and upload to Supabase Storage
-        image_url = None
-        if storage_service and HAS_PIL:
-            try:
-                # Generate news image using generate_news_images.py
-                image_data = create_news_image(news_title, news_content)
-                
-                # Create unique filename
-                news_filename = f"news_{uuid4().hex[:8]}.jpg"
-                
-                # Upload to Supabase Storage
-                image_url = await upload_image_to_supabase(
-                    image_data,
-                    news_filename,
-                    storage_service,
-                    "image/jpeg",
-                    "news"
-                )
-                print(f"  Uploaded news image to Supabase: {news_title[:30]}... -> {news_filename}")
-            except Exception as e:
-                print(f"  Warning: Failed to upload news image to Supabase: {e}")
-                import traceback
-                traceback.print_exc()
-                # Fallback to placeholder data URI if upload fails
-                image_url = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI2NzUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2U1ZTdlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPk5ld3M8L3RleHQ+PC9zdmc+"
-        else:
-            # Fallback to placeholder if storage service not available or PIL not installed
-            if not storage_service:
-                print(f"  Warning: Storage service not available, using placeholder for news image")
-            if not HAS_PIL:
-                print(f"  Warning: PIL not installed, using placeholder for news image")
-            image_url = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgaGVpZ2h0PSI2NzUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2U1ZTdlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPk5ld3M8L3RleHQ+PC9zdmc+"
+        # Generate news image (gradient color block) and upload to Supabase Storage
+        try:
+            image_data = create_news_image()
+            news_filename = f"news_{uuid4().hex[:8]}.jpg"
+            
+            image_url = await upload_image_to_supabase(
+                image_data,
+                news_filename,
+                storage_service,
+                "image/jpeg",
+                "news"
+            )
+            print(f"  Uploaded news image: {news_filename}")
+        except Exception as e:
+            raise RuntimeError(f"Failed to upload news image to Supabase: {e}")
         
         press = PressRelease(
             id=uuid4(),
@@ -659,40 +773,36 @@ async def generate_content(session: AsyncSession, members: List['Member'], confi
                 banner_config_name = f"{banner_type.lower()}_{i+1}"
             
             # Generate banner image and upload to Supabase Storage
-            image_url = None
-            if storage_service and HAS_PIL:
-                try:
-                    # Generate banner image
-                    image_data = create_banner_image(banner_config_name)
-                    
-                    # Create unique filename
-                    banner_filename = f"{banner_config_name}_{uuid4().hex[:8]}.png"
-                    
-                    # Upload to Supabase Storage
-                    image_url = await upload_banner_to_supabase(
-                        image_data,
-                        banner_filename,
-                        storage_service
-                    )
-                    print(f"  Uploaded banner to Supabase: {banner_type} -> {banner_filename}")
-                except Exception as e:
-                    print(f"  Warning: Failed to upload banner to Supabase: {e}")
-                    # Fallback to placeholder data URI if upload fails
-                    image_url = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSI0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2U1ZTdlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPkJhbm5lcjwvdGV4dD48L3N2Zz4="
-            else:
-                # Fallback to placeholder if storage service not available or PIL not installed
-                if not storage_service:
-                    print(f"  Warning: Storage service not available, using placeholder for banner")
-                if not HAS_PIL:
-                    print(f"  Warning: PIL not installed, using placeholder for banner")
-                image_url = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyMCIgaGVpZ2h0PSI0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2U1ZTdlYiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiPkJhbm5lcjwvdGV4dD48L3N2Zz4="
+            try:
+                # Generate banner image
+                image_data = create_banner_image(banner_config_name)
+                
+                # Create unique filename
+                banner_filename = f"{banner_config_name}_{uuid4().hex[:8]}.png"
+                
+                # Upload to Supabase Storage
+                image_url = await upload_banner_to_supabase(
+                    image_data,
+                    banner_filename,
+                    storage_service
+                )
+                print(f"  Uploaded banner: {banner_type} -> {banner_filename}")
+            except Exception as e:
+                raise RuntimeError(f"Failed to upload banner to Supabase: {e}")
+            
+            # Get multilingual text from config
+            banner_config = BANNER_CONFIGS.get(banner_config_name, {})
             
             banner = Banner(
                 id=uuid4(),
-                banner_type=banner_type,
+                banner_type=banner_config_name,
                 image_url=image_url,
                 link_url=f"https://example.com/{banner_type.lower()}" if random.random() > probs["banner_link_url_null"] else None,
-                is_active="true" if random.random() < probs["banner_is_active"] else "false",
+                title_ko=banner_config.get('title_ko', ''),
+                title_zh=banner_config.get('title_zh', ''),
+                subtitle_ko=banner_config.get('subtitle_ko', ''),
+                subtitle_zh=banner_config.get('subtitle_zh', ''),
+                is_active="true",  # 所有 banner 默认激活
                 display_order=i,
                 created_at=datetime.now(timezone.utc) - timedelta(days=random.randint(0, 90)),
             )
@@ -710,6 +820,46 @@ async def generate_content(session: AsyncSession, members: List['Member'], confi
         )
         session.add(faq)
     
+    await session.flush()
+
+
+async def generate_system_info(session: AsyncSession, members: List['Member']):
+    """Generate system info test data."""
+    from src.common.modules.db.models import SystemInfo
+    
+    # Check if system info already exists
+    result = await session.execute(select(SystemInfo))
+    if result.scalar_one_or_none():
+        return
+
+    approved_members = [m for m in members if m.approval_status == "approved"]
+    updater = approved_members[0] if approved_members else None
+
+    content_html = """
+    <div class="system-info">
+        <h2>강원 기업 포털 소개</h2>
+        <p>강원 기업 포털은 강원도 내 기업들의 성장과 발전을 지원하기 위한 종합 플랫폼입니다.</p>
+        
+        <h3>주요 서비스</h3>
+        <ul>
+            <li><strong>기업 지원 사업:</strong> 다양한 지원 사업 정보를 제공하고 온라인 신청을 지원합니다.</li>
+            <li><strong>성과 관리:</strong> 기업의 성과를 체계적으로 관리하고 분석할 수 있습니다.</li>
+            <li><strong>기업 프로필:</strong> 기업 정보를 등록하고 홍보할 수 있습니다.</li>
+        </ul>
+        
+        <h3>문의처</h3>
+        <p>전화: 033-000-0000<br>이메일: support@gangwon.kr</p>
+    </div>
+    """
+
+    system_info = SystemInfo(
+        id=uuid4(),
+        content_html=content_html,
+        image_url=None,
+        updated_by=updater.id if updater else None,
+        updated_at=datetime.now(timezone.utc)
+    )
+    session.add(system_info)
     await session.flush()
 
 
@@ -921,7 +1071,35 @@ async def generate_all(
     
     Note: This does NOT commit the transaction. The caller is responsible
     for committing or rolling back the transaction to ensure atomicity.
+    
+    Raises:
+        RuntimeError: If storage service or PIL is not available
     """
+    # Check prerequisites FIRST before any data generation
+    print("Checking prerequisites...")
+    
+    if not HAS_PIL:
+        raise RuntimeError(
+            "PIL/Pillow is not installed. Cannot generate images.\n"
+            "Please install with: pip install pillow"
+        )
+    print("  ✓ PIL/Pillow is available")
+    
+    # Initialize storage service
+    storage_service = None
+    try:
+        from src.common.modules.storage import storage_service as storage_svc
+        storage_service = storage_svc
+        # Test connection by trying to access the client
+        _ = storage_service.client
+        print("  ✓ Supabase Storage service is available")
+    except Exception as e:
+        raise RuntimeError(
+            f"Storage service is not available: {e}\n"
+            "Cannot generate banners and news images.\n"
+            "Please check your Supabase configuration in .env.local"
+        )
+    
     counts = config["generation_counts"]
     members_count = members_count or counts["members"]
     admins_count = admins_count or counts.get("admins", 5)
@@ -931,7 +1109,11 @@ async def generate_all(
     attachments_count = attachments_count or counts["attachments"]
     audit_logs_count = audit_logs_count or counts["audit_logs"]
     
-    print("Generating admins...")
+    print("\nGenerating system info...")
+    await generate_system_info(session, [])
+    print("Generated system info")
+
+    print("\nGenerating admins...")
     admins = await generate_admins(session, config, admins_count)
     print(f"Generated {len(admins)} admins")
     admin_user_config = config["accounts"].get("admin_user", {})
@@ -948,6 +1130,11 @@ async def generate_all(
     print("Generating members...")
     members = await generate_members(session, config, members_count)
     print(f"Generated {len(members)} members")
+
+    print("\nGenerating system info...")
+    await generate_system_info(session, members)
+    print("Generated system info")
+
     print(f"\n{Fore.GREEN if HAS_COLORAMA else ''}=== Test Accounts Info ==={Style.RESET_ALL if HAS_COLORAMA else ''}")
     
     # Test member account info
@@ -975,15 +1162,6 @@ async def generate_all(
     print(f"Generated {len(applications)} project applications")
     
     print("Generating content (notices, press releases, banners, FAQs)...")
-    # Try to get storage service for banner uploads
-    storage_service = None
-    try:
-        from src.common.modules.storage import storage_service as storage_svc
-        storage_service = storage_svc
-    except Exception as e:
-        print(f"  Warning: Could not initialize storage service: {e}")
-        print("  Banners will use local file paths instead of Supabase Storage")
-    
     await generate_content(session, members, config, storage_service)
     print("Generated content")
     

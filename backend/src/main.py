@@ -181,7 +181,7 @@ from .modules.support.router import router as support_router
 from .modules.upload.router import router as upload_router
 from .modules.dashboard.router import router as dashboard_router
 from .common.modules.audit.router import router as audit_router
-from .common.modules.logger import logging_router
+from .common.modules.logger import get_logging_router
 from .common.modules.exception import exception_router
 
 app.include_router(auth_router)
@@ -193,7 +193,7 @@ app.include_router(support_router)
 app.include_router(upload_router)
 app.include_router(dashboard_router)
 app.include_router(audit_router)
-app.include_router(logging_router)
+app.include_router(get_logging_router())
 app.include_router(exception_router)
 
 
@@ -217,6 +217,34 @@ async def readiness_check():
     except Exception as e:
         logger.error(f"Readiness check failed: {str(e)}")
         return {"status": "not ready", "error": str(e)}, 503
+
+
+@app.get("/db-status")
+async def database_status():
+    """Database connection pool status endpoint."""
+    from .common.modules.db.session import check_db_health, get_pool_status
+    
+    try:
+        # Get pool statistics
+        pool_stats = get_pool_status()
+        
+        # Perform health check
+        health_check = await check_db_health()
+        
+        return {
+            "timestamp": time.time(),
+            "pool_statistics": pool_stats,
+            "health_check": health_check,
+            "status": health_check.get("status", "unknown")
+        }
+    except Exception as e:
+        logger.error(f"Database status check failed: {str(e)}")
+        return {
+            "timestamp": time.time(),
+            "status": "error",
+            "error": str(e),
+            "error_type": type(e).__name__
+        }, 500
 
 
 # Root endpoint

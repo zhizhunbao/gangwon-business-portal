@@ -13,7 +13,8 @@
       "forgotPassword": "비밀번호를 잊으셨나요?",
       "notAdmin": "관리자 계정이 아닙니다",
       "notAdminUser": "관리자가 아니신가요?",
-      "goToMemberLogin": "회원 로그인으로 이동"
+      "goToMemberLogin": "회원 로그인으로 이동",
+      "needAdminAccount": "관리자 계정이 필요하신가요? 시스템 관리자에게 문의하세요."
     }
   }
 }

@@ -13,8 +13,6 @@ import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
 import { ArrowLeftIcon, DocumentIcon, DownloadIcon } from '@shared/components/Icons';
 import { supportService, loggerService, exceptionService } from '@shared/services';
-import './ConsultationDetail.css';
-import './Support.css';
 
 export default function ConsultationDetail() {
   const { t, i18n } = useTranslation();
@@ -88,7 +86,7 @@ export default function ConsultationDetail() {
   };
 
   return (
-    <div className="support consultation-detail-page">
+    <div className="support w-full max-w-full flex flex-col p-0 m-0 overflow-x-hidden relative bg-gradient-to-b from-blue-50/30 via-white to-gray-50/50 min-h-screen">
       <Banner
         bannerType={BANNER_TYPES.SUPPORT}
         sectionClassName="member-banner-section"
@@ -114,60 +112,60 @@ export default function ConsultationDetail() {
             label: t('support.inquiryHistory')
           }
         ]}
-        className="support-submenu"
+        className="support-submenu bg-white/95 shadow-md border-b border-gray-200/50 sticky top-0 z-10 backdrop-blur-md"
         headerSelector=".member-header"
       />
       <PageContainer>
-        <div className="tab-content">
+        <div className="animate-fade-in py-6 px-4 sm:py-8 sm:px-6 lg:px-8 max-w-7xl mx-auto">
           {loading ? (
-            <Card className="loading-card">
-              <div className="loading-container">
-                <div className="loading-spinner"></div>
-                <p className="loading-text">{t('common.loading')}</p>
+            <Card className="shadow-lg border border-gray-200/50 bg-white rounded-2xl overflow-hidden">
+              <div className="flex flex-col items-center justify-center py-16 px-8">
+                <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <p className="mt-6 text-lg font-medium text-gray-600 animate-pulse">{t('common.loading')}</p>
               </div>
             </Card>
           ) : error || !consultation ? (
-            <Card className="error-card">
-              <div className="error-container">
-                <div className="error-icon">⚠️</div>
-                <p className="error-message">{error || t('support.notFound')}</p>
+            <Card className="shadow-lg border border-gray-200/50 bg-white rounded-2xl overflow-hidden">
+              <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
+                <div className="text-6xl mb-4 animate-bounce">⚠️</div>
+                <p className="text-xl font-semibold text-gray-800 mb-6">{error || t('support.notFound')}</p>
                 <Button 
                   variant="primary"
                   onClick={() => navigate('/member/support/inquiry-history')}
-                  className="error-button"
+                  className="mt-4"
                 >
                   {t('common.back')}
                 </Button>
               </div>
             </Card>
           ) : (
-        <div className="consultation-detail-wrapper">
+        <div className="w-full max-w-5xl mx-auto space-y-6 sm:space-y-8 animate-fade-in">
           {/* 页面头部：返回按钮、标题和状态 */}
-          <div className="consultation-header">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200/50 p-4 sm:p-6 lg:p-8 space-y-6">
             <Button
               variant="text"
               onClick={() => navigate('/member/support/inquiry-history')}
-              className="back-button"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 font-medium mb-4 [&_.icon]:w-5 [&_.icon]:h-5 [&_.icon]:transition-transform [&_.icon]:duration-200 [&:hover_.icon]:-translate-x-1"
             >
               <ArrowLeftIcon className="icon" />
               <span>{t('common.back', '返回')}</span>
             </Button>
-              <div className="header-content">
-              <div className="header-title-section">
-                <h1 className="consultation-title">{consultation.subject || consultation.title}</h1>
-                <span className={`status-badge ${consultation.status === 'answered' || consultation.status === 'replied' ? 'status-answered' : 'status-pending'}`}>
+              <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 sm:pb-6 border-b-2 border-gray-200">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 m-0 leading-tight flex-1">{consultation.subject || consultation.title}</h1>
+                <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold shadow-md transition-all duration-300 animate-fade-in flex-shrink-0 ${consultation.status === 'answered' || consultation.status === 'replied' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-green-200' : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-amber-200'}`}>
                   {consultation.status === 'answered' || consultation.status === 'replied' ? '✓' : '⏳'}
-                  <span className="badge-text">
+                  <span className="ml-1">
                     {t(`support.status.${consultation.status}`)}
                   </span>
                 </span>
               </div>
               {/* 咨询基本信息表格 */}
-              <div className="consultation-info-table">
-                <div className="info-row">
-                  <div className="info-cell">
-                    <span className="info-label">{t('support.createdDate')}</span>
-                    <span className="info-value">
+              <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 sm:p-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide">{t('support.createdDate')}</span>
+                    <span className="text-sm sm:text-base text-gray-900 font-medium">
                       {consultation.createdAt ? new Date(consultation.createdAt).toLocaleString(currentLocale, {
                         year: 'numeric',
                         month: '2-digit',
@@ -178,9 +176,9 @@ export default function ConsultationDetail() {
                     </span>
                   </div>
                   {consultation.answeredAt && (
-                    <div className="info-cell">
-                      <span className="info-label">{t('support.answeredDate')}</span>
-                      <span className="info-value">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide">{t('support.answeredDate')}</span>
+                      <span className="text-sm sm:text-base text-gray-900 font-medium">
                         {new Date(consultation.answeredAt).toLocaleString(currentLocale, {
                           year: 'numeric',
                           month: '2-digit',
@@ -193,10 +191,10 @@ export default function ConsultationDetail() {
                   )}
                 </div>
                 {consultation.memberName && (
-                  <div className="info-row">
-                    <div className="info-cell">
-                      <span className="info-label">{t('support.companyName')}</span>
-                      <span className="info-value">{consultation.memberName}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wide">{t('support.companyName')}</span>
+                      <span className="text-sm sm:text-base text-gray-900 font-medium">{consultation.memberName}</span>
                     </div>
                   </div>
                 )}
@@ -205,15 +203,15 @@ export default function ConsultationDetail() {
           </div>
 
           {/* 咨询对话时间线 */}
-          <div className="consultation-timeline">
+          <div className="space-y-6 sm:space-y-8">
             {/* 用户咨询消息 */}
-            <Card className="message-card message-user">
-              <div className="message-header">
-                <div className="message-sender">
-                  <span className="sender-icon">👤</span>
-                  <span className="sender-name">{t('support.user')}</span>
+            <Card className="shadow-lg border-2 rounded-2xl overflow-hidden transition-all duration-300 animate-fade-in border-blue-200 bg-white">
+              <div className="flex items-center justify-between gap-4 px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">👤</span>
+                  <span className="font-semibold text-blue-700 text-sm sm:text-base">{t('support.user')}</span>
                 </div>
-                <span className="message-time">
+                <span className="text-xs sm:text-sm text-gray-500 font-medium">
                   {consultation.createdAt ? new Date(consultation.createdAt).toLocaleString(currentLocale, {
                     year: 'numeric',
                     month: '2-digit',
@@ -223,8 +221,8 @@ export default function ConsultationDetail() {
                   }) : ''}
                 </span>
               </div>
-              <div className="message-content">
-                <div className="message-text">
+              <div className="p-4 sm:p-6 space-y-4">
+                <div className="text-gray-800 leading-relaxed whitespace-pre-wrap text-sm sm:text-base min-h-[80px]">
                   {consultation.content || consultation.message || t('support.noContent')}
                 </div>
               </div>
@@ -232,13 +230,13 @@ export default function ConsultationDetail() {
 
             {/* 管理员回复消息 */}
             {consultation.answer && (
-              <Card className="message-card message-admin">
-                <div className="message-header">
-                  <div className="message-sender">
-                    <span className="sender-icon">💼</span>
-                    <span className="sender-name">{t('support.admin')}</span>
+              <Card className="shadow-lg border-2 rounded-2xl overflow-hidden transition-all duration-300 animate-fade-in border-green-200 bg-white">
+                <div className="flex items-center justify-between gap-4 px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">💼</span>
+                    <span className="font-semibold text-green-700 text-sm sm:text-base">{t('support.admin')}</span>
                   </div>
-                  <span className="message-time">
+                  <span className="text-xs sm:text-sm text-gray-500 font-medium">
                     {consultation.answeredAt ? new Date(consultation.answeredAt).toLocaleString(currentLocale, {
                       year: 'numeric',
                       month: '2-digit',
@@ -248,8 +246,8 @@ export default function ConsultationDetail() {
                     }) : ''}
                   </span>
                 </div>
-                <div className="message-content">
-                  <div className="message-text">
+                <div className="p-4 sm:p-6 space-y-4">
+                  <div className="text-gray-800 leading-relaxed whitespace-pre-wrap text-sm sm:text-base min-h-[80px]">
                     {consultation.answer}
                   </div>
                 </div>
@@ -258,26 +256,26 @@ export default function ConsultationDetail() {
 
             {/* 待回复提示 */}
             {!consultation.answer && (
-              <div className="pending-notice">
-                <div className="pending-icon">⏳</div>
-                <p className="pending-text">{t('support.pendingNotice')}</p>
+              <div className="flex flex-col items-center justify-center p-8 sm:p-12 bg-amber-50 rounded-2xl border-2 border-amber-200 text-center">
+                <div className="text-5xl mb-4 animate-pulse">⏳</div>
+                <p className="text-base sm:text-lg text-gray-700 font-medium">{t('support.pendingNotice')}</p>
               </div>
             )}
           </div>
 
           {/* 底部操作按钮 */}
-          <div className="consultation-actions">
+          <div className="flex flex-col sm:flex-row gap-4 justify-end pt-6 border-t-2 border-gray-200">
             <Button
               variant="secondary"
               onClick={() => navigate('/member/support/inquiry-history')}
-              className="action-button"
+              className="flex-1 sm:flex-none transition-all duration-200 min-w-[120px] hover:scale-105"
             >
               {t('support.backToHistory')}
             </Button>
             <Button
               variant="primary"
               onClick={() => navigate('/member/support/inquiry')}
-              className="action-button"
+              className="flex-1 sm:flex-none transition-all duration-200 min-w-[120px] hover:scale-105"
             >
               {t('support.newInquiry')}
             </Button>

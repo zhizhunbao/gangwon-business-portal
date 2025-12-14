@@ -285,6 +285,11 @@ class Banner(Base):
     banner_type = Column(String(50), nullable=False)  # MAIN, INTRO, PROGRAM, PERFORMANCE, SUPPORT
     image_url = Column(String(500), nullable=False)
     link_url = Column(String(500))  # Optional click-through URL
+    # Multilingual title and subtitle (ko=Korean, zh=Chinese)
+    title_ko = Column(String(200))
+    title_zh = Column(String(200))
+    subtitle_ko = Column(String(500))
+    subtitle_zh = Column(String(500))
     is_active = Column(String(10), default="true")  # "true" or "false" as string
     display_order = Column(Integer, default=0)  # For sorting banners
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())

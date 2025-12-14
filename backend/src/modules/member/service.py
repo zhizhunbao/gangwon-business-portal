@@ -90,9 +90,7 @@ class MemberService:
         if data.employee_count is not None:
             profile.employee_count = data.employee_count
         if data.founding_date is not None:
-            profile.founding_date = datetime.strptime(
-                data.founding_date, "%Y-%m-%d"
-            ).date()
+            profile.founding_date = data.founding_date
         if data.region is not None:
             profile.region = data.region
         if data.address is not None:

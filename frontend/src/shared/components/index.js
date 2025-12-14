@@ -2,27 +2,28 @@
  * Shared Components Export
  */
 
-export * from './Button';
-export * from './Input';
-export * from './Select';
-export * from './Textarea';
-export * from './Card';
-export * from './Badge';
-export * from './Alert';
-export * from './Modal';
-export * from './Loading';
-export * from './Pagination';
-export * from './Table';
-export * from './Tabs';
-export * from './Icons';
-export { default as LanguageSwitcher } from './LanguageSwitcher';
-export { default as ThemeSwitcher } from './ThemeSwitcher';
-export { default as Submenu } from './Submenu';
-export { default as Banner } from './Banner';
-export { default as LazyImage } from './LazyImage';
-export { default as UploadProgress } from './UploadProgress';
-export { default as ErrorBoundary } from './ErrorBoundary';
-export * from './Charts';
-export { TermsModal, TERM_TYPES } from './TermsModal';
-export { AddressSearch } from './AddressSearch';
-
+export * from "./Button";
+export * from "./Input";
+export * from "./Select";
+export * from "./Textarea";
+export * from "./Card";
+export * from "./Badge";
+export * from "./Alert";
+export * from "./Modal";
+export * from "./Loading";
+export * from "./Pagination";
+export * from "./Table";
+export * from "./Tabs";
+export * from "./Icons";
+export { default as LanguageSwitcher } from "./LanguageSwitcher";
+export { default as ThemeSwitcher } from "./ThemeSwitcher";
+export { default as Submenu } from "./Submenu";
+export { default as Banner } from "./Banner";
+export { default as LazyImage } from "./LazyImage";
+export { default as UploadProgress } from "./UploadProgress";
+export { default as ErrorBoundary } from "./ErrorBoundary";
+export * from "./Charts";
+export { TermsModal, TERM_TYPES } from "./TermsModal";
+export { AddressSearch } from "./AddressSearch";
+export { LoginModal } from "./LoginModal";
+export { PasswordStrength } from "./PasswordStrength";

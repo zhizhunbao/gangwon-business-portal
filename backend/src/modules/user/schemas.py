@@ -5,7 +5,7 @@ Pydantic models for request/response validation.
 """
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID
 
 # Region options (支持中文和韩文)
@@ -54,7 +54,7 @@ class MemberRegisterRequest(BaseModel):
     industry: Optional[str] = Field(None, max_length=100, description="Industry sector")
     revenue: Optional[float] = Field(None, ge=0, description="Annual revenue")
     employee_count: Optional[int] = Field(None, ge=0, description="Number of employees")
-    founding_date: Optional[str] = Field(None, description="Founding date (YYYY-MM-DD)")
+    founding_date: Optional[date] = Field(None, description="Founding date (YYYY-MM-DD)")
     website: Optional[str] = Field(None, max_length=255, description="Company website")
     main_business: Optional[str] = Field(None, description="Main business description")
 
@@ -147,7 +147,14 @@ class ProfileUpdateRequest(BaseModel):
     industry: Optional[str] = Field(None, max_length=100)
     revenue: Optional[float] = Field(None, ge=0)
     employee_count: Optional[int] = Field(None, ge=0)
-    founding_date: Optional[str] = Field(None, description="YYYY-MM-DD format")
+    founding_date: Optional[date] = Field(None, description="YYYY-MM-DD format")
     region: Optional[str] = Field(None, max_length=100)
     address: Optional[str] = None
     website: Optional[str] = Field(None, max_length=255)
+
+
+class CheckAvailabilityResponse(BaseModel):
+    """Check availability response schema."""
+
+    available: bool = Field(..., description="Whether the value is available")
+    message: str = Field(..., description="Status message")

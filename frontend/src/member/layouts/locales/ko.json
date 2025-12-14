@@ -7,7 +7,8 @@
     "noNotifications": "알림이 없습니다",
     "profile": "프로필",
     "support": "고객지원",
-    "logout": "로그아웃"
+    "logout": "로그아웃",
+    "login": "로그인"
   },
   "menu": {
     "home": "홈",

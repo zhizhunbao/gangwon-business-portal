@@ -3,7 +3,6 @@
  * 公告预览组件 - 显示最近4条公告
  */
 
-import './NoticesPreview.css';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
@@ -56,39 +55,39 @@ function NoticesPreview() {
   }, [i18n.language]); // 直接依赖 i18n.language，避免 loadNotices 变化导致重复请求
 
   return (
-    <section className="notices-section">
-      <div className="section-header">
-        <h2>{t('home.notices.title', '最新公告')}</h2>
-        <Link to={ROUTES.MEMBER_NOTICES} className="view-all">
+    <section className="notices-section w-full flex-1 flex flex-col bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+      <div className="flex items-center justify-between mb-6 flex-shrink-0 max-md:flex-col max-md:items-start max-md:gap-2">
+        <h2 className="text-2xl font-semibold text-gray-900 m-0">{t('home.notices.title', '最新公告')}</h2>
+        <Link to={ROUTES.MEMBER_NOTICES} className="text-blue-600 no-underline text-sm font-medium transition-colors hover:text-blue-500 hover:underline">
           {t('common.viewAll', '查看全部')}
         </Link>
       </div>
 
       {loading ? (
-        <div className="loading-state">
+        <div className="p-8 text-center text-gray-500">
           <p>{t('common.loading', '加载中...')}</p>
         </div>
       ) : notices.length > 0 ? (
-        <div className="notices-grid">
+        <div className="flex flex-col gap-3 flex-1 overflow-y-auto">
           {notices.map((notice) => (
-            <Card key={notice.id} className="notice-card">
-              <div className="notice-card-link">
-                <div className="notice-card-header">
+            <Card key={notice.id} className="flex-shrink-0 transition-all duration-200">
+              <div className="flex flex-col p-4 cursor-default">
+                <div className="flex items-center justify-between mb-1 gap-2">
                   {notice.important && (
-                    <span className="badge badge-danger">
+                    <span className="inline-block px-2 py-0.5 text-xs font-medium rounded whitespace-nowrap bg-red-100 text-red-600">
                       {t('home.notices.important', '重要')}
                     </span>
                   )}
-                  <span className="notice-card-date">{notice.date}</span>
+                  <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">{notice.date}</span>
                 </div>
-                <h3 className="notice-card-title">{notice.title}</h3>
+                <h3 className="text-sm font-medium text-gray-900 m-0 leading-snug line-clamp-2">{notice.title}</h3>
               </div>
             </Card>
           ))}
         </div>
       ) : (
-        <Card className="empty-state">
-          <p className="notice-card-empty">
+        <Card className="p-8 text-center text-gray-500">
+          <p className="text-sm text-gray-500 m-0 text-center p-4">
             {t('home.notices.empty', '暂无公告')}
           </p>
         </Card>

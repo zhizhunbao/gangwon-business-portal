@@ -42,7 +42,7 @@ class MemberProfileUpdate(BaseModel):
     industry: Optional[str] = Field(None, max_length=100)
     revenue: Optional[float] = Field(None, ge=0)
     employee_count: Optional[int] = Field(None, ge=0)
-    founding_date: Optional[str] = Field(None, description="YYYY-MM-DD format")
+    founding_date: Optional[date] = Field(None, description="YYYY-MM-DD format")
     region: Optional[str] = Field(None, max_length=100)
     address: Optional[str] = None
     website: Optional[str] = Field(None, max_length=255)

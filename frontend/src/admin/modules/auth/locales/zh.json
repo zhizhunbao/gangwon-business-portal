@@ -13,7 +13,8 @@
       "forgotPassword": "忘记密码？",
       "notAdmin": "非管理员账号",
       "notAdminUser": "不是管理员？",
-      "goToMemberLogin": "前往会员登录"
+      "goToMemberLogin": "前往会员登录",
+      "needAdminAccount": "需要管理员账户？请联系系统管理员。"
     }
   }
 }

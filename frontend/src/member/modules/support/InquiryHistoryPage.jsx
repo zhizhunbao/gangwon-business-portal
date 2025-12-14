@@ -8,14 +8,12 @@ import { Banner, Submenu } from '@shared/components';
 import { BANNER_TYPES } from '@shared/utils/constants';
 import { PageContainer } from '@member/layouts';
 import ConsultationHistory from './ConsultationHistory';
-import './InquiryHistoryPage.css';
-import './Support.css';
 
 export default function InquiryHistoryPage() {
   const { t } = useTranslation();
 
   return (
-    <div className="support inquiry-history-page">
+    <div className="support w-full max-w-full flex flex-col p-0 m-0 overflow-x-hidden relative bg-gradient-to-b from-gray-50 to-white min-h-screen">
       <Banner
         bannerType={BANNER_TYPES.SUPPORT}
         sectionClassName="member-banner-section"
@@ -41,11 +39,11 @@ export default function InquiryHistoryPage() {
             label: t('support.inquiryHistory')
           }
         ]}
-        className="support-submenu"
+        className="support-submenu bg-white/95 shadow-sm border-b border-gray-100 sticky top-0 z-10 backdrop-blur-sm"
         headerSelector=".member-header"
       />
       <PageContainer>
-        <div className="tab-content">
+        <div className="animate-fade-in py-8">
           <ConsultationHistory />
         </div>
       </PageContainer>

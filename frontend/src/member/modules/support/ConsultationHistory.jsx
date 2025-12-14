@@ -9,7 +9,6 @@ import { Link } from 'react-router-dom';
 import Card from '@shared/components/Card';
 import { supportService, contentService, loggerService, exceptionService } from '@shared/services';
 import { BANNER_TYPES } from '@shared/utils/constants';
-import './ConsultationHistory.css';
 
 // 生成占位符图片
 const generatePlaceholderImage = (width = 400, height = 200) => {
@@ -83,15 +82,15 @@ export default function ConsultationHistory() {
     <Card>
       <h2>{t('support.inquiryHistory')}</h2>
       {loading ? (
-        <div className="loading">
-          <p>{t('common.loading')}</p>
+        <div className="py-16 px-4 text-center flex flex-col items-center justify-center gap-4 before:content-[''] before:w-12 before:h-12 before:border-4 before:border-blue-200 before:border-t-blue-600 before:rounded-full before:animate-spin">
+          <p className="m-0 text-base text-gray-600 font-medium">{t('common.loading')}</p>
         </div>
       ) : inquiries.length === 0 ? (
-        <div className="no-data">
-          <p>{t('support.noInquiries')}</p>
+        <div className="py-16 px-4 text-center flex flex-col items-center justify-center gap-4 before:content-['📋'] before:text-5xl before:opacity-50">
+          <p className="m-0 text-base text-gray-500">{t('support.noInquiries')}</p>
         </div>
       ) : (
-        <div className="inquiries-list">
+        <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fill,minmax(380px,1fr))] gap-6">
           {inquiries.map((inquiry) => {
             // 确保 inquiry.id 存在
             if (!inquiry.id) {
@@ -106,30 +105,30 @@ export default function ConsultationHistory() {
             <Link 
               key={inquiry.id} 
               to={`/member/support/consultation/${inquiry.id}`} 
-              className="ac-card inquiry-item group"
+              className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden no-underline text-inherit shadow-md relative"
             >
               <div 
-                className="ac-card-img" 
+                className="w-full h-52 bg-cover bg-center bg-no-repeat relative overflow-hidden" 
                 style={{ 
                   backgroundImage: `url('${supportBannerUrl || generatePlaceholderImage()}')`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center'
                 }}
               />
-              <div className="ac-card-body">
-                <div className="inquiry-header">
-                  <h2>{inquiry.subject || inquiry.title}</h2>
-                  <span className={`badge ${inquiry.status === 'answered' ? 'badge-success' : 'badge-warning'}`}>
+              <div className="p-6 flex flex-col flex-1 bg-gradient-to-b from-white to-gray-50">
+                <div className="flex justify-between items-start gap-4 mb-4 md:flex-col md:items-start md:gap-3">
+                  <h2 className="flex-1 m-0 text-xl font-bold text-gray-900 leading-tight line-clamp-2">{inquiry.subject || inquiry.title}</h2>
+                  <span className={`inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-full whitespace-nowrap shadow-sm transition-all duration-200 ${inquiry.status === 'answered' ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200' : 'bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 border border-amber-200'}`}>
                     {t(`support.status.${inquiry.status}`)}
                   </span>
                 </div>
-                <div className="inquiry-meta">
-                  <span>{t('support.createdDate')}: {inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleDateString() : ''}</span>
+                <div className="flex flex-wrap gap-4 mb-6 text-sm text-gray-600 md:flex-col md:gap-2">
+                  <span className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">{t('support.createdDate')}: {inquiry.createdAt ? new Date(inquiry.createdAt).toLocaleDateString() : ''}</span>
                   {inquiry.answeredAt && (
-                    <span>{t('support.answeredDate')}: {new Date(inquiry.answeredAt).toLocaleDateString()}</span>
+                    <span className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 rounded-lg">{t('support.answeredDate')}: {new Date(inquiry.answeredAt).toLocaleDateString()}</span>
                   )}
                 </div>
-                <span className="ac-btn bg-light-grey arrow">{t('common.details')}</span>
+                <span className="inline-block px-6 py-3 text-sm font-semibold uppercase tracking-wider rounded-lg no-underline self-start relative bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 border border-gray-300 shadow-sm after:content-['_→'] after:ml-2 after:inline-block">{t('common.details')}</span>
               </div>
             </Link>
             );

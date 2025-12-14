@@ -247,6 +247,27 @@
 }
 
 /* User Menu */
+.header-login-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+  font-size: 0.875rem;
+  background-color: #3b82f6;
+  color: white;
+  border: 1px solid #2563eb;
+}
+
+.header-login-btn:hover {
+  background-color: #2563eb;
+  border-color: #1d4ed8;
+}
+
+.header-login-btn:active {
+  background-color: #1d4ed8;
+}
+
 .user-menu {
   position: relative;
 }

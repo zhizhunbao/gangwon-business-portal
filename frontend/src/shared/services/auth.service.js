@@ -224,8 +224,14 @@ class AuthService {
   @autoLog('get_current_user', { logResourceId: true })
   async getCurrentUser() {
     const response = await apiService.get(`${API_PREFIX}/auth/me`);
-    setStorage('user_info', response);
-    return response;
+    // Preserve existing role if not returned by API (member endpoints don't return role)
+    const existingUser = this.getCurrentUserFromStorage();
+    const userInfo = {
+      ...response,
+      role: response.role || existingUser?.role || 'member'
+    };
+    setStorage('user_info', userInfo);
+    return userInfo;
   }
   
   /**
@@ -301,6 +307,34 @@ class AuthService {
    */
   getCurrentUserFromStorage() {
     return getStorage('user_info');
+  }
+
+  /**
+   * Check if business number is available
+   * 
+   * @param {string} businessNumber - Business registration number
+   * @returns {Promise<{available: boolean, message: string}>}
+   */
+  async checkBusinessNumber(businessNumber) {
+    // Remove dashes for API call
+    const cleaned = businessNumber.replace(/-/g, '');
+    const response = await apiService.get(
+      `${API_PREFIX}/auth/check-business-number/${encodeURIComponent(cleaned)}`
+    );
+    return response;
+  }
+
+  /**
+   * Check if email is available
+   * 
+   * @param {string} email - Email address
+   * @returns {Promise<{available: boolean, message: string}>}
+   */
+  async checkEmail(email) {
+    const response = await apiService.get(
+      `${API_PREFIX}/auth/check-email/${encodeURIComponent(email)}`
+    );
+    return response;
   }
   
   /**

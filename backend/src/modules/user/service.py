@@ -159,9 +159,9 @@ class AuthService:
             if not data.founding_date and nice_dnb_data.established_date:
                 profile_founding_date = nice_dnb_data.established_date
             elif data.founding_date:
-                profile_founding_date = datetime.strptime(data.founding_date, "%Y-%m-%d").date()
+                profile_founding_date = data.founding_date
         elif data.founding_date:
-            profile_founding_date = datetime.strptime(data.founding_date, "%Y-%m-%d").date()
+            profile_founding_date = data.founding_date
         
         profile = MemberProfile(
             member_id=member.id,
@@ -429,4 +429,76 @@ class AuthService:
         await db.refresh(member)
 
         return member
+
+    async def check_business_number(self, business_number: str, db: AsyncSession) -> dict:
+        """
+        Check if business number is available.
+
+        Args:
+            business_number: Business registration number
+            db: Database session
+
+        Returns:
+            dict with 'available' (bool) and 'message' (str)
+        """
+        # Normalize business number (remove dashes for comparison)
+        from sqlalchemy import func
+        normalized_input = business_number.replace("-", "").replace(" ", "")
+        
+        # Check if business number already exists
+        result = await db.execute(
+            select(Member).where(
+                func.replace(func.replace(Member.business_number, "-", ""), " ", "") == normalized_input
+            )
+        )
+        member = result.scalar_one_or_none()
+        
+        if member:
+            return {
+                "available": False,
+                "message": "Business number already registered"
+            }
+        
+        return {
+            "available": True,
+            "message": "Business number is available"
+        }
+
+    async def check_email(self, email: str, db: AsyncSession) -> dict:
+        """
+        Check if email is available.
+
+        Checks both Member and Admin tables.
+
+        Args:
+            email: Email address
+            db: Database session
+
+        Returns:
+            dict with 'available' (bool) and 'message' (str)
+        """
+        # Check if email exists in Member table
+        result = await db.execute(
+            select(Member).where(Member.email == email)
+        )
+        if result.scalar_one_or_none():
+            return {
+                "available": False,
+                "message": "Email already registered"
+            }
+        
+        # Check if email exists in Admin table
+        result = await db.execute(
+            select(Admin).where(Admin.email == email)
+        )
+        if result.scalar_one_or_none():
+            return {
+                "available": False,
+                "message": "Email already registered"
+            }
+        
+        return {
+            "available": True,
+            "message": "Email is available"
+        }
 

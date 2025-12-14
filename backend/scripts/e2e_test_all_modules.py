@@ -440,6 +440,64 @@ class E2ETestAllModules:
             )
             return result["success"]
         
+        # ===== 模块 2: 注册验证测试 =====
+        
+        def test_check_business_number_available(self) -> bool:
+            """测试检查营业执照号是否可用（新号码应该可用）"""
+            self.tester.log("测试: 检查营业执照号可用性（新号码）")
+            unique_id = str(uuid.uuid4())[:8]
+            result = self.tester.make_request(
+                "GET",
+                f"/api/auth/check-business-number/999-99-{unique_id}",
+            )
+            if not result["success"]:
+                return False
+            # 新号码应该可用
+            response = result.get("response", {})
+            return response.get("available", False) is True
+        
+        def test_check_business_number_duplicate(self) -> bool:
+            """测试检查营业执照号中复（已存在的号码应该不可用）"""
+            self.tester.log("测试: 检查营业执照号中复（已存在号码）")
+            # 使用已知存在的测试会员业务号
+            result = self.tester.make_request(
+                "GET",
+                f"/api/auth/check-business-number/{self.tester.member_username}",
+            )
+            if not result["success"]:
+                return False
+            # 已存在的号码应该不可用
+            response = result.get("response", {})
+            return response.get("available", True) is False
+        
+        def test_check_email_available(self) -> bool:
+            """测试检查邮箱是否可用（新邮箱应该可用）"""
+            self.tester.log("测试: 检查邮箱可用性（新邮箱）")
+            unique_id = str(uuid.uuid4())[:8]
+            result = self.tester.make_request(
+                "GET",
+                f"/api/auth/check-email/newuser{unique_id}@test.example.com",
+            )
+            if not result["success"]:
+                return False
+            # 新邮箱应该可用
+            response = result.get("response", {})
+            return response.get("available", False) is True
+        
+        def test_check_email_duplicate(self) -> bool:
+            """测试检查邮箱中复（已存在的邮箱应该不可用）"""
+            self.tester.log("测试: 检查邮箱中复（已存在邮箱）")
+            # 使用管理员邮箱（已知存在）
+            result = self.tester.make_request(
+                "GET",
+                f"/api/auth/check-email/{self.tester.admin_email}",
+            )
+            if not result["success"]:
+                return False
+            # 已存在的邮箱应该不可用
+            response = result.get("response", {})
+            return response.get("available", True) is False
+        
         def run_all(self) -> Dict[str, bool]:
             """运行所有认证模块测试"""
             results = {}
@@ -474,6 +532,11 @@ class E2ETestAllModules:
             self.restore_test_member_password()
             results["password_reset_request"] = self.test_password_reset_request()
             results["logout"] = self.test_logout()
+            # 模块 2: 注册验证测试
+            results["check_business_number_available"] = self.test_check_business_number_available()
+            results["check_business_number_duplicate"] = self.test_check_business_number_duplicate()
+            results["check_email_available"] = self.test_check_email_available()
+            results["check_email_duplicate"] = self.test_check_email_duplicate()
             return results
     
     # ========== 模块 2: 会员管理模块测试 ==========

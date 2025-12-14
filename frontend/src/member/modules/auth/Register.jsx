@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@shared/hooks';
-import { LanguageSwitcher, AddressSearch, TermsModal, TERM_TYPES } from '@shared/components';
+import { AddressSearch, TermsModal, TERM_TYPES } from '@shared/components';
 import { EyeIcon, EyeOffIcon } from '@shared/components/Icons';
 import { 
   formatBusinessLicense, 
@@ -17,6 +17,7 @@ import {
   parseFormattedNumber
 } from '@shared/utils/format';
 import { validateImageFile, validateFile, ALLOWED_FILE_TYPES } from '@shared/utils/fileValidation';
+import PageContainer from '@member/layouts/PageContainer';
 import './Auth.css';
 
 export default function Register() {
@@ -232,6 +233,12 @@ export default function Register() {
       delete newErrors[fieldName];
       return newErrors;
     });
+    
+    // Reset the file input value to allow selecting the same file again
+    const fileInput = document.getElementById(fieldName);
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
   
   const validateStep = (step) => {
@@ -377,29 +384,25 @@ export default function Register() {
   
   if (success) {
     return (
-      <div className="auth-success-container">
-        <div className="auth-language-switcher">
-          <LanguageSwitcher />
-        </div>
-        <div className="auth-success-card">
-          <div className="auth-alert auth-alert-success">
-            <strong>{t('auth.registerSuccess')}</strong>
-            <p style={{ marginTop: '8px', marginBottom: 0 }}>
-              {t('auth.redirectingToLogin')}
-            </p>
+      <PageContainer>
+        <div className="auth-success-container">
+          <div className="auth-success-card">
+            <div className="auth-alert auth-alert-success">
+              <strong>{t('auth.registerSuccess')}</strong>
+              <p style={{ marginTop: '8px', marginBottom: 0 }}>
+                {t('auth.redirectingToLogin')}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-language-switcher">
-        <LanguageSwitcher />
-      </div>
-      
-      <div className="auth-card auth-card-large">
+    <PageContainer>
+      <div className="auth-container">
+        <div className="auth-card auth-card-large">
         <div className="auth-brand">
           <h2 className="auth-app-name">{t('common.appName')}</h2>
         </div>
@@ -1076,5 +1079,6 @@ export default function Register() {
         onClose={handleCloseTermsModal}
       />
     </div>
+    </PageContainer>
   );
 }

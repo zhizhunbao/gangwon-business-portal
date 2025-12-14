@@ -18,7 +18,7 @@ from ...common.modules.exception import NotFoundError, UnauthorizedError, Valida
 class UploadService:
     """File upload service class."""
 
-    def _validate_file(self, file: UploadFile, file_size: Optional[int] = None, check_size_first: bool = True) -> None:
+    def _validate_file(self, file: UploadFile, file_size: Optional[int] = None, check_size_first: bool = True, file_category: str = "general") -> None:
         """
         Validate uploaded file.
 
@@ -26,6 +26,7 @@ class UploadService:
             file: UploadFile object
             file_size: Optional file size in bytes (if already read)
             check_size_first: If True, check size before reading file content (more efficient)
+            file_category: File category ("image", "document", or "general")
 
         Raises:
             ValidationError: If file validation fails
@@ -43,21 +44,89 @@ class UploadService:
                 except (ValueError, TypeError):
                     pass
         
+        # Determine size limit based on file category
+        if file_category == "image":
+            max_size = settings.MAX_IMAGE_SIZE
+        elif file_category == "document":
+            max_size = settings.MAX_DOCUMENT_SIZE
+        else:
+            max_size = settings.MAX_UPLOAD_SIZE
+        
         # Validate file size
-        if size and size > settings.MAX_UPLOAD_SIZE:
-            max_size_mb = settings.MAX_UPLOAD_SIZE / 1024 / 1024
+        if size and size > max_size:
+            max_size_mb = max_size / 1024 / 1024
             file_size_mb = size / 1024 / 1024
             raise ValidationError(
-                f"File size ({file_size_mb:.2f}MB) exceeds maximum allowed size of {max_size_mb}MB"
+                f"File size ({file_size_mb:.2f}MB) exceeds maximum allowed size of {max_size_mb}MB for {file_category} files"
             )
 
-        # Check file type
+        # Validate file extension
+        if file.filename:
+            file_ext = file.filename.lower().split('.')[-1] if '.' in file.filename else ''
+            
+            if file_category == "image":
+                allowed_extensions = [ext.strip().lower() for ext in settings.ALLOWED_IMAGE_EXTENSIONS.split(",")]
+            elif file_category == "document":
+                allowed_extensions = [ext.strip().lower() for ext in settings.ALLOWED_DOCUMENT_EXTENSIONS.split(",")]
+            else:
+                # For general files, combine both lists
+                image_exts = [ext.strip().lower() for ext in settings.ALLOWED_IMAGE_EXTENSIONS.split(",")]
+                doc_exts = [ext.strip().lower() for ext in settings.ALLOWED_DOCUMENT_EXTENSIONS.split(",")]
+                allowed_extensions = image_exts + doc_exts
+            
+            if file_ext not in allowed_extensions:
+                raise ValidationError(
+                    f"File extension '{file_ext}' is not allowed for {file_category} files. Allowed extensions: {', '.join(allowed_extensions)}"
+                )
+
+        # Validate MIME type
         if file.content_type:
+            # Basic MIME type validation
+            if file_category == "image" and not file.content_type.startswith("image/"):
+                raise ValidationError(f"MIME type '{file.content_type}' is not allowed for image files")
+            elif file_category == "document" and not (
+                file.content_type.startswith("application/") or 
+                file.content_type.startswith("text/") or
+                file.content_type == "application/pdf"
+            ):
+                raise ValidationError(f"MIME type '{file.content_type}' is not allowed for document files")
+            
+            # Additional validation against allowed types list (for backward compatibility)
             allowed_types = [t.strip() for t in settings.ALLOWED_FILE_TYPES.split(",")]
-            if file.content_type not in allowed_types:
+            if file.content_type not in allowed_types and file_category == "general":
                 raise ValidationError(
                     f"File type '{file.content_type}' is not allowed. Allowed types: {settings.ALLOWED_FILE_TYPES}"
                 )
+
+    def _determine_file_category(self, file: UploadFile) -> str:
+        """
+        Determine file category from filename and MIME type.
+
+        Args:
+            file: UploadFile object
+
+        Returns:
+            File category string ("image", "document", or "general")
+        """
+        # Check by MIME type first
+        if file.content_type:
+            if file.content_type.startswith("image/"):
+                return "image"
+            elif file.content_type.startswith("application/") or file.content_type.startswith("text/"):
+                return "document"
+        
+        # Check by file extension
+        if file.filename:
+            file_ext = file.filename.lower().split('.')[-1] if '.' in file.filename else ''
+            image_exts = [ext.strip().lower() for ext in settings.ALLOWED_IMAGE_EXTENSIONS.split(",")]
+            doc_exts = [ext.strip().lower() for ext in settings.ALLOWED_DOCUMENT_EXTENSIONS.split(",")]
+            
+            if file_ext in image_exts:
+                return "image"
+            elif file_ext in doc_exts:
+                return "document"
+        
+        return "general"
 
     def _determine_file_type(self, mime_type: Optional[str]) -> str:
         """

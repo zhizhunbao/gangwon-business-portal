@@ -9,7 +9,6 @@ import { Modal } from '@shared/components';
 import apiService from '@shared/services/api.service';
 import { loggerService, exceptionService } from '@shared/services';
 import { API_PREFIX } from '@shared/utils/constants';
-import './Footer.css';
 
 export default function Footer() {
   const { t } = useTranslation();
@@ -76,35 +75,35 @@ export default function Footer() {
 
   return (
     <>
-      <footer className="member-footer">
-        <div className="footer-content">
-          <div className="footer-left">
-            <p className="footer-copyright">
+      <footer className="bg-white py-4 px-8 mt-auto transition-all duration-300 shadow-[0_-2px_4px_rgba(0,0,0,0.05)] max-md:py-3 max-md:px-4 max-sm:py-2">
+        <div className="max-w-full mx-auto flex justify-between items-center text-sm gap-6 whitespace-nowrap text-gray-600 max-md:gap-3 max-md:text-[0.8125rem] max-sm:text-xs max-sm:gap-2">
+          <div className="flex items-center gap-3 flex-1 whitespace-nowrap overflow-hidden text-ellipsis">
+            <p className="m-0 text-sm leading-[1.4] font-normal whitespace-nowrap text-gray-600 max-sm:text-xs">
               &copy; {currentYear} {t('footer.copyright')}
             </p>
           </div>
-          <div className="footer-right">
-            <div className="footer-links">
+          <div className="flex items-center gap-4 text-right whitespace-nowrap flex-shrink-0 max-md:gap-3">
+            <div className="flex items-center gap-2 whitespace-nowrap max-md:gap-[0.375rem]">
               <a 
                 href="#" 
-                className="footer-link"
+                className="text-sm no-underline transition-colors duration-200 font-medium py-1 text-gray-600 hover:underline hover:text-blue-700 max-sm:text-xs"
                 onClick={handleTermsClick}
               >
                 {t('footer.termsOfService')}
               </a>
-              <span className="footer-link-separator">|</span>
+              <span className="text-sm mx-2 text-gray-300">|</span>
               <a 
                 href="#" 
-                className="footer-link"
+                className="text-sm no-underline transition-colors duration-200 font-medium py-1 text-gray-600 hover:underline hover:text-blue-700 max-sm:text-xs"
                 onClick={handlePrivacyClick}
               >
                 {t('footer.privacyPolicy')}
               </a>
             </div>
-            <span className="footer-link-separator">|</span>
-            <div className="footer-info">
-              <span className="footer-version">
-                {t('footer.version')}: <strong>1.0.0</strong>
+            <span className="text-sm mx-2 text-gray-300">|</span>
+            <div className="flex items-center gap-4">
+              <span className="text-sm flex items-center gap-1 text-gray-600 max-sm:text-xs">
+                {t('footer.version')}: <strong className="font-semibold text-blue-700">1.0.0</strong>
               </span>
             </div>
           </div>
@@ -118,18 +117,18 @@ export default function Footer() {
         size="lg"
       >
         {isLoading ? (
-          <div className="footer-modal-loading">
+          <div className="text-center p-8 text-gray-500">
             {t('footer.loading')}
           </div>
         ) : error ? (
-          <div className="footer-modal-error">
+          <div className="text-center p-8 text-red-600">
             {error}
           </div>
         ) : (
-          <div className="footer-modal-content">
-            <div className="footer-term-content">
+          <div className="max-h-[70vh] overflow-y-auto">
+            <div className="leading-[1.8] text-gray-700">
               {modalContent.split('\n').map((line, index) => (
-                <p key={index}>{line}</p>
+                <p key={index} className="mb-4 last:mb-0">{line}</p>
               ))}
             </div>
           </div>

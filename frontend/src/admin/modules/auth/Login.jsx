@@ -144,7 +144,7 @@ export default function AdminLogin() {
           </form>
         </div>
         
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-2">
           <p className="text-sm text-gray-600">
             {t('admin.auth.notAdminUser')}{' '}
             <button
@@ -154,6 +154,9 @@ export default function AdminLogin() {
             >
               {t('admin.auth.goToMemberLogin')}
             </button>
+          </p>
+          <p className="text-xs text-gray-500">
+            {t('admin.auth.needAdminAccount')}
           </p>
         </div>
       </div>

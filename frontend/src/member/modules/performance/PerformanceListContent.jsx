@@ -8,12 +8,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card, { CardHeader, CardBody } from '@shared/components/Card';
 import Button from '@shared/components/Button';
-import Input from '@shared/components/Input';
 import Select from '@shared/components/Select';
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@shared/components/Table';
 import { performanceService, uploadService, loggerService, exceptionService } from '@shared/services';
 import { DownloadIcon, EditIcon, TrashIcon, SearchIcon } from '@shared/components/Icons';
-import './PerformanceListContent.css';
 
 export default function PerformanceListContent() {
   const { t, i18n } = useTranslation();
@@ -29,7 +27,7 @@ export default function PerformanceListContent() {
 
   useEffect(() => {
     loadPerformances();
-  }, [i18n.language]); // Reload data when language changes
+  }, [i18n.language]);
 
   useEffect(() => {
     filterPerformances();
@@ -43,22 +41,19 @@ export default function PerformanceListContent() {
         quarter: searchFilters.quarter || undefined,
         status: searchFilters.status || undefined,
         page: 1,
-        pageSize: 100 // Load all records for now
+        pageSize: 100
       });
       
       if (response.records) {
         const formatted = response.records.map(r => {
-          // Extract attachments from data_json if available
           let attachments = [];
           if (r.data_json) {
             try {
               const dataJson = typeof r.data_json === 'string' ? JSON.parse(r.data_json) : r.data_json;
               
-              // Check for attachments in different possible locations
               if (dataJson.attachments && Array.isArray(dataJson.attachments)) {
                 attachments = dataJson.attachments;
               } else if (dataJson.intellectualProperty && Array.isArray(dataJson.intellectualProperty)) {
-                // Extract proof documents from intellectual property
                 dataJson.intellectualProperty.forEach(ip => {
                   if (ip.proofDocument && ip.proofDocument.file_id) {
                     attachments.push({
@@ -79,7 +74,6 @@ export default function PerformanceListContent() {
             }
           }
           
-          // Get file info from first attachment if available
           const firstAttachment = attachments.length > 0 ? attachments[0] : null;
           
           return {
@@ -89,12 +83,12 @@ export default function PerformanceListContent() {
             type: r.quarter ? 'quarterly' : 'annual',
             status: r.status,
             submittedDate: r.submittedAt ? new Date(r.submittedAt).toISOString().split('T')[0] : null,
-            approvedDate: null, // Will be populated from reviews if needed
+            approvedDate: null,
             documentType: r.type || '成果报告',
             fileName: firstAttachment?.original_name || firstAttachment?.name || `成果报告_${r.year}_${r.quarter || '年度'}.pdf`,
             fileId: firstAttachment?.file_id || null,
             fileUrl: firstAttachment?.file_url || null,
-            isOwnUpload: true, // All records are owned by current user
+            isOwnUpload: true,
             attachments: attachments
           };
         });
@@ -180,8 +174,6 @@ export default function PerformanceListContent() {
         alert(t('message.fileNotFound', '文件不存在'));
         return;
       }
-
-      // Use upload service to download file
       await uploadService.downloadFile(fileId, fileName);
     } catch (error) {
       loggerService.error('Failed to download file', {
@@ -207,8 +199,6 @@ export default function PerformanceListContent() {
         alert(t('message.fileNotFound', '文件不存在'));
         return;
       }
-
-      // Use upload service to download file by URL
       await uploadService.downloadFileByUrl(fileUrl, fileName);
     } catch (error) {
       loggerService.error('Failed to download file by URL', {
@@ -229,32 +219,29 @@ export default function PerformanceListContent() {
   };
 
   const getStatusBadgeClass = (status) => {
-    // Map backend status to frontend classes
     const statusMap = {
-      draft: 'badge-secondary',
-      submitted: 'badge-info',
-      revision_requested: 'badge-warning',
-      needSupplement: 'badge-warning', // Legacy support
-      approved: 'badge-success',
-      rejected: 'badge-danger'
+      draft: 'bg-gray-50 text-gray-700 border-gray-200',
+      submitted: 'bg-blue-50 text-blue-700 border-blue-200',
+      revision_requested: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      needSupplement: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      approved: 'bg-green-50 text-green-700 border-green-200',
+      rejected: 'bg-red-50 text-red-700 border-red-200'
     };
-    return `badge ${statusMap[status] || 'badge-secondary'}`;
+    return statusMap[status] || 'bg-gray-50 text-gray-700 border-gray-200';
   };
 
   const getStatusLabel = (status) => {
-    // Map backend status to frontend labels
     const statusMap = {
       draft: t('performance.status.draft', '草稿'),
       submitted: t('performance.status.submitted', '已提交'),
       revision_requested: t('performance.status.revisionRequested', '需修改'),
-      needSupplement: t('performance.status.needSupplement', '需补充'), // Legacy support
+      needSupplement: t('performance.status.needSupplement', '需补充'),
       approved: t('performance.status.approved', '已批准'),
       rejected: t('performance.status.rejected', '已驳回')
     };
     return statusMap[status] || status;
   };
 
-  // 生成年度选项
   const yearOptions = [
     { value: '', label: t('common.all', '全部') },
     ...Array.from({ length: 5 }, (_, i) => {
@@ -263,7 +250,6 @@ export default function PerformanceListContent() {
     })
   ];
 
-  // 季度选项
   const quarterOptions = [
     { value: '', label: t('common.all', '全部') },
     { value: '1', label: t('performance.quarter1', '第一季度') },
@@ -272,7 +258,6 @@ export default function PerformanceListContent() {
     { value: '4', label: t('performance.quarter4', '第四季度') }
   ];
 
-  // 状态选项
   const statusOptions = [
     { value: '', label: t('common.all', '全部') },
     { value: 'submitted', label: t('performance.status.submitted', '已提交') },
@@ -281,89 +266,113 @@ export default function PerformanceListContent() {
   ];
 
   return (
-    <div className="performance-list-content">
-      <div className="page-header">
-        <div className="page-title-wrapper">
-          <SearchIcon className="page-title-icon" />
-          <h1>{t('performance.query', '成果查询')}</h1>
+    <div className="performance-list-content w-full max-w-full p-6 pb-8 sm:p-8 sm:pb-10 lg:p-10 lg:pb-12 xl:p-12 xl:pb-14">
+      <div className="mb-6 sm:mb-8 lg:mb-10 flex justify-between items-center gap-4 sm:gap-5 lg:gap-6">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <SearchIcon className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-blue-600" />
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0 tracking-tight">
+            {t('performance.query', '成果查询')}
+          </h1>
         </div>
       </div>
 
       {/* 搜索筛选 */}
-      <Card>
-        <CardHeader>
-          <SearchIcon className="section-icon" />
-          <h2>{t('common.search', '搜索')}</h2>
+      <Card className="mb-6 sm:mb-8 shadow-sm hover:shadow-md transition-all duration-200">
+        <CardHeader className="flex items-center gap-3 sm:gap-4 p-6 pb-4 sm:p-8 sm:pb-5 lg:p-10 lg:pb-6">
+          <SearchIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0" />
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 m-0">
+            {t('common.search', '搜索')}
+          </h2>
         </CardHeader>
-        <CardBody>
-          <div className="search-filters">
-          <div className="form-group">
-            <label>{t('performance.year', '年度')}</label>
-            <Select
-              value={searchFilters.year}
-              onChange={(e) => handleFilterChange('year', e.target.value)}
-              options={yearOptions}
-            />
+        <CardBody className="p-6 sm:p-8 lg:p-10 pt-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
+            <div className="flex flex-col [&_.form-group]:mb-0">
+              <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">
+                {t('performance.year', '年度')}
+              </label>
+              <Select
+                value={searchFilters.year}
+                onChange={(e) => handleFilterChange('year', e.target.value)}
+                options={yearOptions}
+              />
+            </div>
+            <div className="flex flex-col [&_.form-group]:mb-0">
+              <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">
+                {t('performance.quarter', '季度')}
+              </label>
+              <Select
+                value={searchFilters.quarter}
+                onChange={(e) => handleFilterChange('quarter', e.target.value)}
+                options={quarterOptions}
+              />
+            </div>
+            <div className="flex flex-col [&_.form-group]:mb-0">
+              <label className="block text-sm sm:text-base font-medium text-gray-700 mb-2 sm:mb-3">
+                {t('performance.documentStatus', '文档状态')}
+              </label>
+              <Select
+                value={searchFilters.status}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+                options={statusOptions}
+              />
+            </div>
           </div>
-          <div className="form-group">
-            <label>{t('performance.quarter', '季度')}</label>
-            <Select
-              value={searchFilters.quarter}
-              onChange={(e) => handleFilterChange('quarter', e.target.value)}
-              options={quarterOptions}
-            />
-          </div>
-          <div className="form-group">
-            <label>{t('performance.documentStatus', '文档状态')}</label>
-            <Select
-              value={searchFilters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              options={statusOptions}
-            />
-          </div>
-        </div>
         </CardBody>
       </Card>
 
       {/* 成果列表 */}
-      <Card>
-        <div className="results-info">
-          <p>{t('performance.resultsCount', '共{{count}}条记录', { count: filteredPerformances.length })}</p>
+      <Card className="mb-6 sm:mb-8 shadow-sm hover:shadow-md transition-all duration-200">
+        <div className="mb-6 sm:mb-8 lg:mb-10 pb-0 px-6 pt-6 sm:px-8 sm:pt-8 lg:px-10 lg:pt-10">
+          <p className="text-sm sm:text-base text-gray-600 font-medium m-0">
+            {t('performance.resultsCount', '共{{count}}条记录', { count: filteredPerformances.length })}
+          </p>
         </div>
 
         {loading ? (
-          <div className="loading">
-            <p>{t('common.loading', '加载中...')}</p>
+          <div className="text-center py-16 sm:py-20 lg:py-24 px-6 sm:px-8 lg:px-10">
+            <p className="text-base sm:text-lg text-gray-500 m-0">{t('common.loading', '加载中...')}</p>
           </div>
         ) : filteredPerformances.length === 0 ? (
-          <div className="no-data">
-            <p>{t('common.noData', '暂无数据')}</p>
+          <div className="text-center py-16 sm:py-20 lg:py-24 px-6 sm:px-8 lg:px-10">
+            <p className="text-base sm:text-lg text-gray-500 m-0">{t('common.noData', '暂无数据')}</p>
           </div>
         ) : (
-          <div className="table-wrapper">
-            <Table>
-              <TableHead>
+          <div className="overflow-x-auto mb-6 sm:mb-8 lg:mb-10 px-6 pb-6 sm:px-8 sm:pb-8 lg:px-10 lg:pb-10">
+            <Table className="min-w-full">
+              <TableHead className="bg-gray-50">
                 <TableRow>
-                  <TableHeader>{t('performance.documentType', '文档类型')}</TableHeader>
-                  <TableHeader>{t('performance.fileName', '文件名')}</TableHeader>
-                  <TableHeader>{t('performance.documentStatus', '文档状态')}</TableHeader>
-                  <TableHeader>{t('performance.documentConfirm', '文档确认')}</TableHeader>
-                  <TableHeader>{t('common.actions', '操作')}</TableHeader>
+                  <TableHeader className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider bg-gray-50 border-b-2 border-gray-200">
+                    {t('performance.documentType', '文档类型')}
+                  </TableHeader>
+                  <TableHeader className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider bg-gray-50 border-b-2 border-gray-200">
+                    {t('performance.fileName', '文件名')}
+                  </TableHeader>
+                  <TableHeader className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider bg-gray-50 border-b-2 border-gray-200">
+                    {t('performance.documentStatus', '文档状态')}
+                  </TableHeader>
+                  <TableHeader className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider bg-gray-50 border-b-2 border-gray-200">
+                    {t('performance.documentConfirm', '文档确认')}
+                  </TableHeader>
+                  <TableHeader className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 uppercase tracking-wider bg-gray-50 border-b-2 border-gray-200">
+                    {t('common.actions', '操作')}
+                  </TableHeader>
                 </TableRow>
               </TableHead>
-              <TableBody>
+              <TableBody className="bg-white divide-y divide-gray-200">
                 {filteredPerformances.map((perf) => (
-                  <TableRow key={perf.id}>
-                    <TableCell>
+                  <TableRow key={perf.id} className="hover:bg-gray-50 transition-colors duration-150">
+                    <TableCell className="px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base text-gray-900">
                       {perf.year}{t('common.year', '年')} {perf.quarter ? `Q${perf.quarter}` : t('performance.annual', '年度')}
                     </TableCell>
-                    <TableCell>{perf.fileName}</TableCell>
-                    <TableCell>
-                      <span className={getStatusBadgeClass(perf.status)}>
+                    <TableCell className="px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base text-gray-900">
+                      {perf.fileName}
+                    </TableCell>
+                    <TableCell className="px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base text-gray-900">
+                      <span className={`inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold rounded-md border ${getStatusBadgeClass(perf.status)}`}>
                         {getStatusLabel(perf.status)}
                       </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base text-gray-900">
                       {perf.status === 'approved' && (perf.fileId || perf.fileUrl) ? (
                         <Button
                           onClick={() => {
@@ -376,11 +385,11 @@ export default function PerformanceListContent() {
                           variant="secondary"
                           size="small"
                         >
-                          <DownloadIcon className="w-4 h-4" style={{ marginRight: '0.25rem' }} />
+                          <DownloadIcon className="w-4 h-4 mr-1" />
                           {t('performance.download', '下载')}
                         </Button>
                       ) : perf.attachments && perf.attachments.length > 0 ? (
-                        <div className="attachment-buttons">
+                        <div className="flex flex-wrap gap-2 items-center">
                           {perf.attachments.map((attachment, idx) => (
                             <Button
                               key={idx}
@@ -393,20 +402,19 @@ export default function PerformanceListContent() {
                               }}
                               variant="secondary"
                               size="small"
-                              style={{ marginRight: '0.5rem', marginBottom: '0.25rem' }}
+                              className="mr-2 mb-1"
                             >
-                              <DownloadIcon className="w-4 h-4" style={{ marginRight: '0.25rem' }} />
+                              <DownloadIcon className="w-4 h-4 mr-1" />
                               {attachment.original_name || attachment.name || t('performance.download', '下载')}
                             </Button>
                           ))}
                         </div>
                       ) : (
-                        <span className="text-muted">-</span>
+                        <span className="text-gray-400 text-sm sm:text-base">-</span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      <div className="action-buttons">
-                        {/* Allow edit for draft and revision_requested status */}
+                    <TableCell className="px-4 sm:px-6 py-4 sm:py-5 text-sm sm:text-base text-gray-900">
+                      <div className="flex gap-2 sm:gap-3 items-center justify-start">
                         {(perf.status === 'draft' || perf.status === 'revision_requested') && (
                           <>
                             <Button
@@ -414,16 +422,17 @@ export default function PerformanceListContent() {
                               variant="text"
                               size="small"
                               title={t('performance.modify', '修改')}
+                              className="hover:scale-105 transition-transform"
                             >
                               <EditIcon className="w-4 h-4" />
                             </Button>
-                            {/* Only allow delete for draft status */}
                             {perf.status === 'draft' && (
                               <Button
                                 onClick={() => handleDelete(perf.id)}
                                 variant="text"
                                 size="small"
                                 title={t('performance.delete', '删除')}
+                                className="hover:scale-105 transition-transform"
                               >
                                 <TrashIcon className="w-4 h-4" />
                               </Button>

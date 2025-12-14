@@ -25,7 +25,8 @@ from .config import setup_logging
 from .formatter import JSONFormatter
 from .file_writer import file_log_writer
 from .service import LoggingService
-from .router import router as logging_router
+# NOTE: router is imported lazily to avoid circular import with db.session
+# Use get_logging_router() instead of logging_router directly
 from .request import get_trace_id, set_request_context, get_request_context
 from .decorator import auto_log
 
@@ -38,6 +39,13 @@ logger = logging.getLogger(__name__)
 # Create service instance
 logging_service = LoggingService()
 
+
+def get_logging_router():
+    """Lazy import of logging router to avoid circular import."""
+    from .router import router
+    return router
+
+
 __all__ = [
     "logger",
     "setup_logging",
@@ -45,7 +53,7 @@ __all__ = [
     "file_log_writer",
     "LoggingService",
     "logging_service",
-    "logging_router",
+    "get_logging_router",
     "get_trace_id",
     "set_request_context",
     "get_request_context",

@@ -15,7 +15,6 @@ import { Pagination } from '@shared/components';
 import { projectService, loggerService, exceptionService } from '@shared/services';
 import { SearchIcon } from '@shared/components/Icons';
 import ApplicationModal from './ApplicationModal';
-import './ProjectList.css';
 
 export default function ProjectList() {
   const { t, i18n } = useTranslation();
@@ -149,31 +148,31 @@ export default function ProjectList() {
   // 显示列表
   return (
     <>
-      <div className="page-header">
-        <h1>{t('projects.title', '项目')}</h1>
+      <div className="mb-8 p-0 bg-transparent shadow-none">
+        <h1 className="hidden">{t('projects.title', '项目')}</h1>
       </div>
 
         {/* 搜索和分页设置 */}
-        <Card>
-          <div className="search-section">
-            <form onSubmit={handleSearch} className="search-form">
-              <div className="search-input-group">
+        <Card className="p-4 sm:p-5 lg:p-6 mb-4">
+          <div className="flex justify-between items-center gap-4 sm:gap-5 lg:gap-6 flex-wrap [&_.form-group]:mb-0">
+            <form onSubmit={handleSearch} className="flex-shrink-0 min-w-[200px] max-w-[400px] sm:max-w-[500px] lg:max-w-[600px]">
+              <div className="flex gap-3 items-center">
                 <Input
                   type="text"
                   value={searchKeyword}
                   onChange={(e) => setSearchKeyword(e.target.value)}
                   placeholder={t('projects.searchPlaceholder', '按标题/内容搜索')}
-                  className="search-input"
+                  className="flex-1"
                 />
                 <Button type="submit" variant="primary">
-                  <SearchIcon className="project-icon-search" />
+                  <SearchIcon className="w-5 h-5" />
                   {t('common.search', '搜索')}
                 </Button>
               </div>
             </form>
-            <div className="filter-group">
-              <div className="status-filter">
-                <label>{t('projects.statusFilter', '状态筛选')}:</label>
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <label className="text-sm text-gray-700 whitespace-nowrap">{t('projects.statusFilter', '状态筛选')}:</label>
                 <Select
                   value={statusFilter}
                   onChange={handleStatusFilterChange}
@@ -185,8 +184,8 @@ export default function ProjectList() {
                   ]}
                 />
               </div>
-              <div className="page-size-selector">
-                <label>{t('projects.itemsPerPage', '每页显示')}:</label>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <label className="text-sm text-gray-700 whitespace-nowrap">{t('projects.itemsPerPage', '每页显示')}:</label>
                 <Select
                   value={pageSize.toString()}
                   onChange={handlePageSizeChange}
@@ -200,46 +199,46 @@ export default function ProjectList() {
         {/* 项目列表 */}
         {loading ? (
           <Card>
-            <div className="loading">
-              <p>{t('common.loading', '加载中...')}</p>
+            <div className="text-center py-12 px-4">
+              <p className="text-base text-gray-500 m-0">{t('common.loading', '加载中...')}</p>
             </div>
           </Card>
         ) : projects.length === 0 ? (
           <Card>
-            <div className="no-data">
-              <p>{t('common.noData', '暂无数据')}</p>
+            <div className="text-center py-12 px-4">
+              <p className="text-base text-gray-500 m-0">{t('common.noData', '暂无数据')}</p>
             </div>
           </Card>
         ) : (
           <>
-            <div className="announcements-list">
+            <div className="flex flex-col gap-4 sm:gap-5 lg:gap-6 mb-6 sm:mb-8 lg:mb-10">
               {projects.map((project) => {
                 const statusInfo = project.status ? getStatusInfo(project.status) : null;
                 
                 return (
-                  <Card key={project.id} className="announcement-card">
-                    <div className="announcement-header">
-                      <div className="announcement-title-section">
+                  <Card key={project.id} className="p-4 sm:p-5 lg:p-6 transition-shadow duration-200 ease-in-out hover:shadow-md">
+                    <div className="flex justify-between items-start gap-4 mb-4 sm:mb-5 lg:mb-6 pb-4 border-b border-gray-200">
+                      <div className="flex-1 min-w-0">
                         <h2 
-                          className="announcement-title"
+                          className="text-xl font-semibold text-gray-900 m-0 cursor-pointer transition-colors duration-200 ease-in-out leading-snug mb-2 sm:mb-3 lg:mb-4 break-words hover:text-primary-600"
                           onClick={() => handleViewDetail(project)}
                         >
                           {project.title}
                         </h2>
-                        <div className="announcement-meta">
+                        <div className="flex flex-wrap gap-2 sm:gap-3 lg:gap-4 items-center">
                           {statusInfo && (
-                            <Badge variant={statusInfo.variant} className="announcement-status">
+                            <Badge variant={statusInfo.variant} className="text-xs sm:text-sm">
                               {statusInfo.label}
                             </Badge>
                           )}
                           {project.applicationsCount > 0 && (
-                            <Badge variant="info" className="announcement-applications">
+                            <Badge variant="info" className="text-xs sm:text-sm">
                               {t('projects.applicationsCount', '申请数')}: {project.applicationsCount}
                             </Badge>
                           )}
                         </div>
                       </div>
-                      <span className="announcement-date">
+                      <span className="text-sm text-gray-500 whitespace-nowrap flex-shrink-0">
                         {project.startDate && project.endDate 
                           ? `${new Date(project.startDate).toLocaleDateString()} - ${new Date(project.endDate).toLocaleDateString()}`
                           : project.createdAt 
@@ -247,15 +246,15 @@ export default function ProjectList() {
                             : ''}
                       </span>
                     </div>
-                    <div className="announcement-content">
-                      <p>{project.description?.substring(0, 200) || ''}...</p>
+                    <div className="mb-4 sm:mb-5 lg:mb-6">
+                      <p className="text-[0.9375rem] text-gray-700 leading-relaxed m-0 line-clamp-3">{project.description?.substring(0, 200) || ''}...</p>
                       {project.targetAudience && (
-                        <p className="target-audience">
+                        <p className="text-[0.9375rem] text-gray-700 leading-relaxed mt-2">
                           <strong>{t('projects.targetAudience', '目标对象')}:</strong> {project.targetAudience}
                         </p>
                       )}
                     </div>
-                    <div className="announcement-footer">
+                    <div className="flex justify-end pt-4 sm:pt-5 lg:pt-6 border-t border-gray-200">
                       <Button
                         onClick={() => handleApply(project)}
                         variant="primary"
@@ -273,7 +272,7 @@ export default function ProjectList() {
 
             {/* 分页 */}
             {totalPages > 1 && (
-              <div className="pagination-section">
+              <div className="flex justify-center mt-6 sm:mt-8 lg:mt-10 pt-6 sm:pt-8 lg:pt-10">
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
