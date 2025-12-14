@@ -7,11 +7,10 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from uuid import UUID, uuid4
 
 from ...common.modules.config import settings
-from ...common.modules.db.models import Member, MemberProfile, Admin
+from ...common.modules.supabase.service import supabase_service
 from ...common.modules.exception import UnauthorizedError, ValidationError, NotFoundError
 from .schemas import MemberRegisterRequest
 
@@ -74,31 +73,28 @@ class AuthService:
             raise UnauthorizedError("Invalid or expired token")
 
     async def register_member(
-        self, data: MemberRegisterRequest, db: AsyncSession
-    ) -> Member:
+        self, data: MemberRegisterRequest
+    ) -> dict:
         """
         Register a new member.
 
         Args:
             data: Registration data
-            db: Database session
 
         Returns:
-            Created member object
+            Created member dict
 
         Raises:
             ValidationError: If business number or email already exists
         """
         # Check if business number already exists
-        result = await db.execute(
-            select(Member).where(Member.business_number == data.business_number)
-        )
-        if result.scalar_one_or_none():
+        existing_member = await supabase_service.get_member_by_business_number(data.business_number)
+        if existing_member:
             raise ValidationError("Business number already registered")
 
         # Check if email already exists
-        result = await db.execute(select(Member).where(Member.email == data.email))
-        if result.scalar_one_or_none():
+        existing_email = await supabase_service.get_member_by_email(data.email)
+        if existing_email:
             raise ValidationError("Email already registered")
 
         # Verify company information with Nice D&B API
@@ -129,16 +125,22 @@ class AuthService:
             # This ensures consistency with official business registration
             company_name = nice_dnb_data.company_name
         
-        member = Member(
-            business_number=data.business_number,
-            company_name=company_name,
-            email=data.email,
-            password_hash=self.get_password_hash(data.password),
-            status="pending",
-            approval_status="pending",
-        )
-        db.add(member)
-        await db.flush()
+        member_id = str(uuid4())
+        member_data = {
+            "id": member_id,
+            "business_number": data.business_number,
+            "company_name": company_name,
+            "email": data.email,
+            "password_hash": self.get_password_hash(data.password),
+            "status": "pending",
+            "approval_status": "pending",
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat(),
+        }
+        
+        member = await supabase_service.create_member(member_data)
+        if not member:
+            raise ValidationError("Failed to create member")
 
         # Create member profile
         # Use Nice D&B data to auto-fill fields if available and not provided by user
@@ -163,145 +165,123 @@ class AuthService:
         elif data.founding_date:
             profile_founding_date = data.founding_date
         
-        profile = MemberProfile(
-            member_id=member.id,
-            industry=profile_industry,
-            revenue=data.revenue,
-            employee_count=data.employee_count,
-            founding_date=profile_founding_date,
-            region=data.region,
-            address=profile_address,
-            website=data.website,
-        )
-        db.add(profile)
-        await db.commit()
-        await db.refresh(member)
+        profile_data = {
+            "id": str(uuid4()),
+            "member_id": member_id,
+            "industry": profile_industry,
+            "revenue": data.revenue,
+            "employee_count": data.employee_count,
+            "founding_date": profile_founding_date.isoformat() if profile_founding_date else None,
+            "region": data.region,
+            "address": profile_address,
+            "website": data.website,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat(),
+        }
+        
+        profile = await supabase_service.create_member_profile(profile_data)
+        if not profile:
+            raise ValidationError("Failed to create member profile")
 
         # Send registration confirmation email
         from ...common.modules.email import email_service
         await email_service.send_registration_confirmation_email(
-            to_email=member.email,
-            company_name=member.company_name,
-            business_number=member.business_number,
+            to_email=member["email"],
+            company_name=member["company_name"],
+            business_number=member["business_number"],
         )
 
         return member
 
     async def authenticate(
-        self, business_number: str, password: str, db: AsyncSession
-    ) -> Member:
+        self, business_number: str, password: str
+    ) -> dict:
         """
         Authenticate a member.
 
         Args:
             business_number: Business registration number
             password: Plain text password
-            db: Database session
 
         Returns:
-            Authenticated member object
+            Authenticated member dict
 
         Raises:
             UnauthorizedError: If credentials are invalid or account not approved
         """
-        # Normalize business number (remove dashes for comparison)
-        # Database may store with dashes (999-99-99999) but user may input without (9999999999)
-        normalized_input = business_number.replace("-", "").replace(" ", "")
-        
-        # Find member by business number (compare normalized versions)
-        # Use func.replace to normalize database values for comparison
-        from sqlalchemy import func
-        result = await db.execute(
-            select(Member).where(
-                func.replace(func.replace(Member.business_number, "-", ""), " ", "") == normalized_input
-            )
-        )
-        member = result.scalar_one_or_none()
+        # Find member by business number (normalized comparison handled in service)
+        member = await supabase_service.get_member_by_business_number(business_number)
 
-        if not member or not self.verify_password(password, member.password_hash):
+        if not member or not self.verify_password(password, member.get("password_hash", "")):
             raise UnauthorizedError("Invalid credentials")
 
-        if member.approval_status != "approved":
+        if member.get("approval_status") != "approved":
             raise UnauthorizedError("Account pending approval")
 
-        if member.status != "active":
+        if member.get("status") != "active":
             raise UnauthorizedError("Account is suspended")
 
         return member
 
-    async def get_member_by_id(self, member_id: str, db: AsyncSession) -> Member:
+    async def get_member_by_id(self, member_id: str) -> dict:
         """
         Get member by ID.
 
         Args:
             member_id: Member UUID
-            db: Database session
 
         Returns:
-            Member object
+            Member dict
 
         Raises:
             NotFoundError: If member not found
         """
-        from uuid import UUID
-
-        result = await db.execute(select(Member).where(Member.id == UUID(member_id)))
-        member = result.scalar_one_or_none()
+        member = await supabase_service.get_member_by_id(member_id)
         if not member:
             raise NotFoundError("Member")
         return member
 
-    async def is_admin(self, user_id: str, db: AsyncSession) -> bool:
+    async def is_admin(self, user_id: str) -> bool:
         """
         Check if a user is an admin by checking admins table.
 
         Args:
             user_id: User ID (can be admin id or member id)
-            db: Database session
 
         Returns:
             True if user is admin, False otherwise
         """
-        from uuid import UUID
         try:
-            admin_id = UUID(user_id)
-            result = await db.execute(
-                select(Admin).where(Admin.id == admin_id)
-            )
-            admin = result.scalar_one_or_none()
-            if admin and admin.is_active == "true":
+            admin = await supabase_service.get_admin_by_id(user_id)
+            if admin and admin.get("is_active") == "true":
                 return True
         except (ValueError, TypeError):
             pass
         return False
 
     async def authenticate_admin(
-        self, email: str, password: str, db: AsyncSession
-    ) -> Admin:
+        self, email: str, password: str
+    ) -> dict:
         """
         Authenticate an admin user.
 
         Args:
             email: Admin email
             password: Plain text password
-            db: Database session
 
         Returns:
-            Authenticated admin object
+            Authenticated admin dict
 
         Raises:
             UnauthorizedError: If credentials are invalid or user is not admin
         """
         # Find admin by email
-        result = await db.execute(
-            select(Admin).where(Admin.email == email)
-        )
-        admin = result.scalar_one_or_none()
+        admin = await supabase_service.get_admin_by_email(email)
 
-        if not admin or not self.verify_password(password, admin.password_hash):
+        if not admin or not self.verify_password(password, admin.get("password_hash", "")):
             raise UnauthorizedError("Invalid admin credentials")
 
-        if admin.is_active != "true":
+        if admin.get("is_active") != "true":
             raise UnauthorizedError("Account is suspended")
 
         return admin
@@ -318,7 +298,7 @@ class AuthService:
         return secrets.token_urlsafe(32)
 
     async def create_password_reset_request(
-        self, business_number: str, email: str, db: AsyncSession
+        self, business_number: str, email: str
     ) -> str:
         """
         Create a password reset request.
@@ -326,7 +306,6 @@ class AuthService:
         Args:
             business_number: Business registration number
             email: Email address
-            db: Database session
 
         Returns:
             Reset token string
@@ -335,12 +314,9 @@ class AuthService:
             NotFoundError: If member not found or email doesn't match
         """
         # Find member by business number
-        result = await db.execute(
-            select(Member).where(Member.business_number == business_number)
-        )
-        member = result.scalar_one_or_none()
+        member = await supabase_service.get_member_by_business_number(business_number)
 
-        if not member or member.email != email:
+        if not member or member.get("email") != email:
             # Don't reveal whether the member exists (security best practice)
             raise NotFoundError("Member with matching email")
 
@@ -351,107 +327,111 @@ class AuthService:
         token_expires = datetime.utcnow() + timedelta(hours=1)
 
         # Update member record
-        member.reset_token = reset_token
-        member.reset_token_expires = token_expires
-        await db.commit()
+        update_data = {
+            "reset_token": reset_token,
+            "reset_token_expires": token_expires.isoformat(),
+            "updated_at": datetime.utcnow().isoformat(),
+        }
+        
+        await supabase_service.update_member(member["id"], update_data)
 
         return reset_token
 
     async def reset_password_with_token(
-        self, token: str, new_password: str, db: AsyncSession
-    ) -> Member:
+        self, token: str, new_password: str
+    ) -> dict:
         """
         Reset password using a valid token.
 
         Args:
             token: Reset token
             new_password: New password
-            db: Database session
 
         Returns:
-            Updated member object
+            Updated member dict
 
         Raises:
             UnauthorizedError: If token is invalid or expired
             ValidationError: If password is invalid
         """
         # Find member by reset token
-        result = await db.execute(
-            select(Member).where(Member.reset_token == token)
-        )
-        member = result.scalar_one_or_none()
+        member = await supabase_service.get_member_by_reset_token(token)
 
         if not member:
             raise UnauthorizedError("Invalid reset token")
 
         # Check if token has expired
-        if not member.reset_token_expires or member.reset_token_expires < datetime.utcnow():
+        token_expires_str = member.get("reset_token_expires")
+        if not token_expires_str:
+            raise UnauthorizedError("Reset token has expired")
+        
+        try:
+            token_expires = datetime.fromisoformat(token_expires_str.replace('Z', '+00:00'))
+            if token_expires < datetime.utcnow():
+                raise UnauthorizedError("Reset token has expired")
+        except (ValueError, AttributeError):
             raise UnauthorizedError("Reset token has expired")
 
-        # Update password
-        member.password_hash = self.get_password_hash(new_password)
+        # Update password and clear reset token
+        update_data = {
+            "password_hash": self.get_password_hash(new_password),
+            "reset_token": None,
+            "reset_token_expires": None,
+            "updated_at": datetime.utcnow().isoformat(),
+        }
         
-        # Clear reset token
-        member.reset_token = None
-        member.reset_token_expires = None
-        
-        await db.commit()
-        await db.refresh(member)
+        updated_member = await supabase_service.update_member(member["id"], update_data)
+        if not updated_member:
+            raise ValidationError("Failed to update password")
 
-        return member
+        return updated_member
 
     async def change_password(
-        self, member: Member, current_password: str, new_password: str, db: AsyncSession
-    ) -> Member:
+        self, member: dict, current_password: str, new_password: str
+    ) -> dict:
         """
         Change password for authenticated user.
 
         Args:
-            member: Current member object
+            member: Current member dict
             current_password: Current password
             new_password: New password
-            db: Database session
 
         Returns:
-            Updated member object
+            Updated member dict
 
         Raises:
             UnauthorizedError: If current password is incorrect
             ValidationError: If new password is invalid
         """
         # Verify current password
-        if not self.verify_password(current_password, member.password_hash):
+        if not self.verify_password(current_password, member.get("password_hash", "")):
             raise UnauthorizedError("Current password is incorrect")
 
         # Update password
-        member.password_hash = self.get_password_hash(new_password)
-        await db.commit()
-        await db.refresh(member)
+        update_data = {
+            "password_hash": self.get_password_hash(new_password),
+            "updated_at": datetime.utcnow().isoformat(),
+        }
+        
+        updated_member = await supabase_service.update_member(member["id"], update_data)
+        if not updated_member:
+            raise ValidationError("Failed to update password")
 
-        return member
+        return updated_member
 
-    async def check_business_number(self, business_number: str, db: AsyncSession) -> dict:
+    async def check_business_number(self, business_number: str) -> dict:
         """
         Check if business number is available.
 
         Args:
             business_number: Business registration number
-            db: Database session
 
         Returns:
             dict with 'available' (bool) and 'message' (str)
         """
-        # Normalize business number (remove dashes for comparison)
-        from sqlalchemy import func
-        normalized_input = business_number.replace("-", "").replace(" ", "")
-        
-        # Check if business number already exists
-        result = await db.execute(
-            select(Member).where(
-                func.replace(func.replace(Member.business_number, "-", ""), " ", "") == normalized_input
-            )
-        )
-        member = result.scalar_one_or_none()
+        # Check if business number already exists (normalized comparison handled in service)
+        member = await supabase_service.get_member_by_business_number(business_number)
         
         if member:
             return {
@@ -464,7 +444,7 @@ class AuthService:
             "message": "Business number is available"
         }
 
-    async def check_email(self, email: str, db: AsyncSession) -> dict:
+    async def check_email(self, email: str) -> dict:
         """
         Check if email is available.
 
@@ -472,26 +452,21 @@ class AuthService:
 
         Args:
             email: Email address
-            db: Database session
 
         Returns:
             dict with 'available' (bool) and 'message' (str)
         """
         # Check if email exists in Member table
-        result = await db.execute(
-            select(Member).where(Member.email == email)
-        )
-        if result.scalar_one_or_none():
+        member = await supabase_service.get_member_by_email(email)
+        if member:
             return {
                 "available": False,
                 "message": "Email already registered"
             }
         
         # Check if email exists in Admin table
-        result = await db.execute(
-            select(Admin).where(Admin.email == email)
-        )
-        if result.scalar_one_or_none():
+        admin = await supabase_service.get_admin_by_email(email)
+        if admin:
             return {
                 "available": False,
                 "message": "Email already registered"

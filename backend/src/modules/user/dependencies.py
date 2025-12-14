@@ -5,12 +5,9 @@ FastAPI dependencies for authentication and authorization.
 """
 from fastapi import Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from typing import Optional
 
-from ...common.modules.db.session import get_db
-from ...common.modules.db.models import Member, Admin
+from ...common.modules.supabase.service import supabase_service
 from ...common.modules.exception import UnauthorizedError, ForbiddenError
 from ...common.modules.logger import auto_log
 from .service import AuthService
@@ -25,17 +22,15 @@ security = HTTPBearer(auto_error=False)
 @auto_log("get_current_user", log_resource_id=True)
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-    db: AsyncSession = Depends(get_db),
-) -> Member:
+) -> dict:
     """
     Get current authenticated user from JWT token.
 
     Args:
         credentials: HTTP Bearer token credentials
-        db: Database session
 
     Returns:
-        Current authenticated member
+        Current authenticated member dict
 
     Raises:
         UnauthorizedError: If token is invalid or user not found
@@ -58,11 +53,8 @@ async def get_current_user(
         raise UnauthorizedError(f"Could not validate credentials: {str(e)}")
 
     # Get user from database
-    from uuid import UUID
-
     try:
-        result = await db.execute(select(Member).where(Member.id == UUID(user_id)))
-        user = result.scalar_one_or_none()
+        user = await supabase_service.get_member_by_id(user_id)
         if user is None:
             raise UnauthorizedError("User not found")
         
@@ -73,39 +65,97 @@ async def get_current_user(
 
 @auto_log("get_current_active_user", log_resource_id=True)
 async def get_current_active_user(
-    current_user: Member = Depends(get_current_user),
-) -> Member:
+    current_user: dict = Depends(get_current_user),
+) -> dict:
     """
     Get current active user.
 
     Args:
-        current_user: Current authenticated user
+        current_user: Current authenticated user dict
 
     Returns:
-        Active member
+        Active member dict
 
     Raises:
         UnauthorizedError: If user is not active
     """
-    if current_user.status != "active":
+    if current_user.get("status") != "active":
         raise UnauthorizedError("Inactive user")
     return current_user
+
+
+# Temporary compatibility layer for modules that haven't been migrated yet
+class MemberCompat:
+    """Compatibility wrapper to make dict behave like Member object"""
+    def __init__(self, data: dict):
+        self._data = data
+    
+    def __getattr__(self, name):
+        if name in self._data:
+            return self._data[name]
+        raise AttributeError(f"'MemberCompat' object has no attribute '{name}'")
+    
+    @property
+    def id(self):
+        return self._data.get("id")
+    
+    @property
+    def business_number(self):
+        return self._data.get("business_number")
+    
+    @property
+    def company_name(self):
+        return self._data.get("company_name")
+    
+    @property
+    def email(self):
+        return self._data.get("email")
+    
+    @property
+    def status(self):
+        return self._data.get("status")
+    
+    @property
+    def approval_status(self):
+        return self._data.get("approval_status")
+
+
+@auto_log("get_current_active_user_compat", log_resource_id=True)
+async def get_current_active_user_compat(
+    current_user: dict = Depends(get_current_user),
+) -> MemberCompat:
+    """
+    Get current active user (compatibility version for non-migrated modules).
+    
+    This returns a MemberCompat object that behaves like the old Member SQLAlchemy object.
+    Use get_current_active_user for migrated modules.
+
+    Args:
+        current_user: Current authenticated user dict
+
+    Returns:
+        Active member compatibility object
+
+    Raises:
+        UnauthorizedError: If user is not active
+    """
+    if current_user.get("status") != "active":
+        raise UnauthorizedError("Inactive user")
+    return MemberCompat(current_user)
 
 
 @auto_log("get_current_admin_user", log_resource_id=True)
 async def get_current_admin_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-    db: AsyncSession = Depends(get_db),
-) -> Admin:
+) -> dict:
     """
     Get current admin user.
 
     Args:
         credentials: HTTP Bearer token credentials
-        db: Database session
 
     Returns:
-        Admin user
+        Admin user dict
 
     Raises:
         UnauthorizedError: If user is not authenticated or not an admin
@@ -130,17 +180,12 @@ async def get_current_admin_user(
         # Check if role is admin in token
         if role == "admin":
             # Get admin from database
-            from uuid import UUID
             try:
-                admin_id = UUID(user_id)
-                result = await db.execute(
-                    select(Admin).where(Admin.id == admin_id)
-                )
-                admin = result.scalar_one_or_none()
+                admin = await supabase_service.get_admin_by_id(user_id)
                 if admin is None:
                     raise UnauthorizedError("Admin not found")
                 
-                if admin.is_active != "true":
+                if admin.get("is_active") != "true":
                     raise UnauthorizedError("Admin account is inactive")
                 
                 return admin

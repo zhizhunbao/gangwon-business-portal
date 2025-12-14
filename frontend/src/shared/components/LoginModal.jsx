@@ -12,8 +12,7 @@ import { EyeIcon, EyeOffIcon } from "./Icons";
 import { formatBusinessLicense } from "@shared/utils/format";
 import { loggerService, exceptionService } from "@shared/services";
 import { API_PREFIX } from "@shared/utils/constants";
-import "@member/modules/auth/Auth.css";
-import "./LoginModal.css";
+// Auth styles converted to Tailwind classes
 
 export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
   const { t } = useTranslation();
@@ -153,19 +152,19 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
       title={t("auth.login")}
       size="sm"
     >
-      <div className="login-modal-content">
-        {error && <div className="auth-alert auth-alert-error">{error}</div>}
+      <div className="p-0">
+        {error && <div className="px-4 py-3 mb-6 text-red-700 bg-red-100 border-none rounded-md text-sm leading-relaxed">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form" autoComplete="on">
-          <div className="auth-form-group">
-            <label htmlFor="modal-businessNumber">
+        <form onSubmit={handleSubmit} className="mt-0" autoComplete="on">
+          <div className="mb-6 mt-0">
+            <label htmlFor="modal-businessNumber" className="block text-sm font-medium text-gray-700 mb-2">
               {t("auth.businessLicense")}
             </label>
             <input
               id="modal-businessNumber"
               name="businessNumber"
               type="text"
-              className="auth-input"
+              className="w-full py-3 text-base leading-relaxed text-gray-900 bg-transparent border-0 border-b border-gray-300 rounded-none outline-none box-border transition-colors duration-200 focus:border-gray-900 focus:outline-none"
               value={formData.businessNumber}
               onChange={handleBusinessNumberChange}
               required
@@ -173,34 +172,34 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
               placeholder={t("auth.businessLicensePlaceholder")}
               autoComplete="username"
             />
-            <span className="auth-help-text">
+            <span className="block mt-1.5 text-xs text-gray-500">
               {t("auth.businessLicenseHelp")}
             </span>
           </div>
 
-          <div className="auth-form-group">
-            <div className="auth-links">
-              <label htmlFor="modal-password">{t("auth.password")}</label>
-              <div className="auth-link-group">
-                <Link to="/find-id" className="auth-link" onClick={handleClose}>
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2 text-sm">
+              <label htmlFor="modal-password" className="block text-sm font-medium text-gray-700">{t("auth.password")}</label>
+              <div className="flex items-center gap-2">
+                <Link to="/find-id" className="text-gray-900 no-underline text-base font-medium hover:underline" onClick={handleClose}>
                   {t("auth.findId")}
                 </Link>
-                <span className="auth-link-separator">|</span>
+                <span className="text-gray-400 text-xs">|</span>
                 <Link
                   to="/forgot-password"
-                  className="auth-link"
+                  className="text-gray-900 no-underline text-base font-medium hover:underline"
                   onClick={handleClose}
                 >
                   {t("auth.forgotPassword")}
                 </Link>
               </div>
             </div>
-            <div className="auth-password-input-wrapper">
+            <div className="relative flex items-center">
               <input
                 id="modal-password"
                 name="password"
                 type={showPassword ? "text" : "password"}
-                className="auth-input"
+                className="w-full py-3 pr-10 text-base leading-relaxed text-gray-900 bg-transparent border-0 border-b border-gray-300 rounded-none outline-none box-border transition-colors duration-200 focus:border-gray-900 focus:outline-none"
                 value={formData.password}
                 onChange={handlePasswordChange}
                 required
@@ -209,7 +208,7 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
               />
               <button
                 type="button"
-                className="auth-password-toggle"
+                className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-none border-none cursor-pointer p-2 text-gray-500 flex items-center justify-center transition-colors duration-200 hover:text-gray-900 focus:outline-none focus:text-gray-900"
                 onClick={togglePasswordVisibility}
                 aria-label={
                   showPassword ? t("auth.hidePassword") : t("auth.showPassword")
@@ -224,34 +223,37 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
             </div>
           </div>
 
-          <div className="auth-checkbox-group">
+          <div className="flex items-center mb-6">
             <input
               id="modal-remember-me"
               name="remember-me"
               type="checkbox"
-              className="auth-checkbox"
+              className="mr-2 w-4 h-4 cursor-pointer accent-gray-900"
             />
-            <label htmlFor="modal-remember-me" className="auth-checkbox-label">
+            <label htmlFor="modal-remember-me" className="text-sm text-gray-700 cursor-pointer m-0">
               {t("auth.rememberMe")}
             </label>
           </div>
 
           <button
             type="submit"
-            className={`auth-button auth-button-primary ${
-              isLoading ? "auth-button-loading" : ""
+            className={`w-full px-6 py-3.5 text-base font-medium leading-relaxed text-center text-white bg-gray-900 border-none rounded-md cursor-pointer transition-all duration-200 inline-flex items-center justify-center gap-2 box-border hover:bg-gray-700 active:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed ${
+              isLoading ? "relative text-transparent" : ""
             }`}
             disabled={isLoading}
           >
+            {isLoading && (
+              <div className="absolute w-4.5 h-4.5 top-1/2 left-1/2 -ml-2.25 -mt-2.25 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
+            )}
             {!isLoading && t("common.login")}
           </button>
         </form>
 
-        <div className="auth-footer">
+        <div className="mt-6 pt-0 border-t-0 text-center text-base text-gray-500 leading-relaxed">
           {t("auth.noAccount")}{" "}
           <button
             type="button"
-            className="auth-link-button"
+            className="bg-none border-none text-gray-900 cursor-pointer text-base font-medium font-inherit p-0 underline hover:text-gray-700"
             onClick={() => {
               handleClose();
               if (onSwitchToRegister) onSwitchToRegister();

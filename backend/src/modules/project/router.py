@@ -4,7 +4,6 @@ Project router.
 API endpoints for project and application management.
 """
 from fastapi import APIRouter, Depends, status, Query, Response
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from typing import Annotated, Optional
 from math import ceil
@@ -12,11 +11,10 @@ from datetime import datetime
 
 from fastapi import Request
 
-from ...common.modules.db.session import get_db
 from ...common.modules.db.models import Member
 from ...common.modules.audit import audit_log
 from ...common.modules.logger import auto_log
-from ..user.dependencies import get_current_active_user, get_current_admin_user
+from ..user.dependencies import get_current_active_user_compat as get_current_active_user, get_current_admin_user
 from .service import ProjectService
 from .schemas import (
     ProjectCreate,
@@ -51,7 +49,6 @@ service = ProjectService()
 async def list_projects(
     query: Annotated[ProjectListQuery, Depends()],
     request: Request,
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     List all projects with pagination and filtering (public access).
@@ -61,7 +58,7 @@ async def list_projects(
     - **page**: Page number (default: 1)
     - **page_size**: Items per page (default: 20, max: 100)
     """
-    projects, total = await service.list_projects(query, db)
+    projects, total = await service.list_projects(query)
 
     return ProjectListResponsePaginated(
         items=[ProjectListItem.model_validate(p) for p in projects],
@@ -82,12 +79,11 @@ async def list_projects(
 async def get_project(
     project_id: UUID,
     request: Request,
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Get detailed information about a specific project (public access).
     """
-    project = await service.get_project_by_id(project_id, db)
+    project = await service.get_project_by_id(project_id)
     return ProjectResponse.model_validate(project)
 
 
@@ -105,7 +101,6 @@ async def apply_to_project(
     data: ProjectApplicationCreate,
     request: Request,
     current_user: Annotated[Member, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Apply to a project (member only).
@@ -113,24 +108,9 @@ async def apply_to_project(
     Requires authentication. Member must not have already applied to this project.
     """
     application = await service.apply_to_project(
-        current_user.id, project_id, data, db
+        current_user.id, project_id, data
     )
-    # NOTE:
-    # Avoid letting Pydantic introspect SQLAlchemy relationships on async
-    # models (which can trigger lazy-loading errors). We construct the
-    # response explicitly from scalar fields without loading nested
-    # project details, which is sufficient for current API consumers
-    # and keeps the endpoint stable.
-    return ProjectApplicationResponse(
-        id=application.id,
-        member_id=application.member_id,
-        project_id=application.project_id,
-        project=None,
-        status=application.status,
-        application_reason=application.application_reason,
-        submitted_at=application.submitted_at,
-        reviewed_at=application.reviewed_at,
-    )
+    return ProjectApplicationResponse.model_validate(application)
 
 
 @router.get(
@@ -144,7 +124,6 @@ async def get_my_applications(
     query: Annotated[ApplicationListQuery, Depends()],
     request: Request,
     current_user: Annotated[Member, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Get member's own project applications with pagination (member only).
@@ -154,7 +133,7 @@ async def get_my_applications(
     - **page_size**: Items per page
     """
     applications, total = await service.get_my_applications(
-        current_user.id, query, db
+        current_user.id, query
     )
 
     return ApplicationListResponsePaginated(
@@ -182,12 +161,11 @@ async def create_project(
     data: ProjectCreate,
     request: Request,
     current_admin: Annotated[Member, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Create a new project (admin only).
     """
-    project = await service.create_project(data, db)
+    project = await service.create_project(data)
     return ProjectResponse.model_validate(project)
 
 
@@ -204,12 +182,11 @@ async def update_project(
     data: ProjectUpdate,
     request: Request,
     current_admin: Annotated[Member, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Update project details (admin only).
     """
-    project = await service.update_project(project_id, data, db)
+    project = await service.update_project(project_id, data)
     return ProjectResponse.model_validate(project)
 
 
@@ -225,14 +202,13 @@ async def delete_project(
     project_id: UUID,
     request: Request,
     current_admin: Annotated[Member, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Delete a project (admin only).
 
     WARNING: This will cascade delete all applications related to this project.
     """
-    await service.delete_project(project_id, db)
+    await service.delete_project(project_id)
 
 
 @router.get(
@@ -247,7 +223,6 @@ async def list_project_applications(
     query: Annotated[ApplicationListQuery, Depends()],
     request: Request,
     current_admin: Annotated[Member, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     List all applications for a specific project (admin only).
@@ -257,7 +232,7 @@ async def list_project_applications(
     - **page_size**: Items per page
     """
     applications, total = await service.list_project_applications(
-        project_id, query, db
+        project_id, query
     )
 
     return ApplicationListResponsePaginated(
@@ -282,7 +257,6 @@ async def update_application_status(
     data: ApplicationStatusUpdate,
     request: Request,
     current_admin: Annotated[Member, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Update application status (admin only).
@@ -290,20 +264,9 @@ async def update_application_status(
     Change application status to: submitted, under_review, approved, or rejected.
     """
     application = await service.update_application_status(
-        application_id, data.status, db
+        application_id, data.status
     )
-    # See note in apply_to_project: build response explicitly to avoid
-    # async lazy-loading of relationships during serialization.
-    return ProjectApplicationResponse(
-        id=application.id,
-        member_id=application.member_id,
-        project_id=application.project_id,
-        project=None,
-        status=application.status,
-        application_reason=application.application_reason,
-        submitted_at=application.submitted_at,
-        reviewed_at=application.reviewed_at,
-    )
+    return ProjectApplicationResponse.model_validate(application)
 
 
 @router.get(
@@ -317,7 +280,6 @@ async def export_projects(
     query: Annotated[ProjectListQuery, Depends()],
     request: Request,
     current_admin: Annotated[Member, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
     format: str = Query("excel", regex="^(excel|csv)$", description="Export format: excel or csv"),
 ):
     """
@@ -328,7 +290,7 @@ async def export_projects(
     from ...common.modules.export import ExportService
     
     # Get export data
-    export_data = await service.export_projects_data(query, db)
+    export_data = await service.export_projects_data(query)
     
     # Generate export file
     if format == "excel":
@@ -368,7 +330,6 @@ async def export_applications(
     query: Annotated[ApplicationListQuery, Depends()],
     request: Request,
     current_admin: Annotated[Member, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
     format: str = Query("excel", regex="^(excel|csv)$", description="Export format: excel or csv"),
     project_id: Optional[UUID] = Query(None, description="Filter by project ID"),
 ):
@@ -380,7 +341,7 @@ async def export_applications(
     from ...common.modules.export import ExportService
     
     # Get export data
-    export_data = await service.export_applications_data(project_id, query, db)
+    export_data = await service.export_applications_data(project_id, query)
     
     # Generate export file
     if format == "excel":

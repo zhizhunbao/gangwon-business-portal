@@ -71,8 +71,19 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
 // Public Route Component (redirect if already logged in)
 function PublicRoute({ children }) {
   const { isAuthenticated, user } = useAuth();
+  const location = useLocation();
   
   if (isAuthenticated) {
+    // Allow access to admin login if user is not admin (to allow role switching)
+    if (location.pathname === '/admin/login' && user?.role !== 'admin') {
+      return children;
+    }
+    
+    // Allow access to member login if user is not member (to allow role switching)
+    if (location.pathname === '/login' && user?.role !== 'member') {
+      return children;
+    }
+    
     // Redirect to appropriate dashboard based on role
     const redirectPath = user?.role === 'admin' ? '/admin' : '/member';
     return <Navigate to={redirectPath} replace />;

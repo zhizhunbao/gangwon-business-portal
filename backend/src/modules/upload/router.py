@@ -5,14 +5,11 @@ API endpoints for file upload and management.
 """
 from fastapi import APIRouter, Depends, UploadFile, File, Query, status, HTTPException
 from fastapi.responses import RedirectResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, Annotated
 from uuid import UUID
 
 from fastapi import Request
 
-from ...common.modules.db.session import get_db
-from ...common.modules.db.models import Member
 from ...common.modules.audit import audit_log
 from ...common.modules.logger import auto_log
 from ...common.modules.exception import AppException
@@ -41,8 +38,7 @@ def _handle_app_exception(exc: AppException) -> None:
 async def upload_public_file(
     file: Annotated[UploadFile, File(description="File to upload")],
     request: Request,
-    current_user: Annotated[Member, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[dict, Depends(get_current_active_user)],
     resource_type: Annotated[Optional[str], Query(description="Resource type (e.g., 'banner', 'notice')")] = None,
     resource_id: Annotated[Optional[UUID], Query(description="Associated resource ID")] = None,
 ):
@@ -60,12 +56,11 @@ async def upload_public_file(
             user=current_user,
             resource_type=resource_type,
             resource_id=resource_id,
-            db=db,
         )
     except AppException as exc:  # pragma: no cover - exercised via tests
         _handle_app_exception(exc)
     
-    return FileUploadResponse.model_validate(attachment)
+    return FileUploadResponse(**attachment)
 
 
 @router.post(
@@ -80,8 +75,7 @@ async def upload_public_file(
 async def upload_private_file(
     file: Annotated[UploadFile, File(description="File to upload")],
     request: Request,
-    current_user: Annotated[Member, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[dict, Depends(get_current_active_user)],
     resource_type: Annotated[Optional[str], Query(description="Resource type (e.g., 'performance', 'project')")] = None,
     resource_id: Annotated[Optional[UUID], Query(description="Associated resource ID")] = None,
 ):
@@ -100,12 +94,11 @@ async def upload_private_file(
             user=current_user,
             resource_type=resource_type,
             resource_id=resource_id,
-            db=db,
         )
     except AppException as exc:  # pragma: no cover - exercised via tests
         _handle_app_exception(exc)
     
-    return FileUploadResponse.model_validate(attachment)
+    return FileUploadResponse(**attachment)
 
 
 @router.get(
@@ -119,8 +112,7 @@ async def upload_private_file(
 async def download_file(
     file_id: UUID,
     request: Request,
-    current_user: Annotated[Member, Depends(get_current_active_user)] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
+    current_user: Annotated[dict, Depends(get_current_active_user)] = None,
 ):
     """
     Get file download URL.
@@ -135,16 +127,15 @@ async def download_file(
         attachment = await service.get_file(
             file_id=file_id,
             user=current_user,
-            db=db,
         )
     except AppException as exc:
         _handle_app_exception(exc)
     
     return FileDownloadResponse(
-        file_url=attachment.file_url,
-        original_name=attachment.original_name,
-        mime_type=attachment.mime_type,
-        file_size=attachment.file_size,
+        file_url=attachment["file_url"],
+        original_name=attachment["original_name"],
+        mime_type=attachment["mime_type"],
+        file_size=attachment["file_size"],
     )
 
 
@@ -156,8 +147,7 @@ async def download_file(
 @auto_log("redirect_to_file", log_resource_id=True)
 async def redirect_to_file(
     file_id: UUID,
-    current_user: Annotated[Member, Depends(get_current_active_user)] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
+    current_user: Annotated[dict, Depends(get_current_active_user)] = None,
 ):
     """
     Redirect to file download URL.
@@ -171,12 +161,11 @@ async def redirect_to_file(
         attachment = await service.get_file(
             file_id=file_id,
             user=current_user,
-            db=db,
         )
     except AppException as exc:
         _handle_app_exception(exc)
     
-    return RedirectResponse(url=attachment.file_url, status_code=status.HTTP_302_FOUND)
+    return RedirectResponse(url=attachment["file_url"], status_code=status.HTTP_302_FOUND)
 
 
 @router.delete(
@@ -190,8 +179,7 @@ async def redirect_to_file(
 async def delete_file(
     file_id: UUID,
     request: Request,
-    current_user: Annotated[Member, Depends(get_current_active_user)] = None,
-    db: Annotated[AsyncSession, Depends(get_db)] = None,
+    current_user: Annotated[dict, Depends(get_current_active_user)] = None,
 ):
     """
     Delete a file.
@@ -205,7 +193,6 @@ async def delete_file(
         await service.delete_file(
             file_id=file_id,
             user=current_user,
-            db=db,
         )
     except AppException as exc:  # pragma: no cover - tested indirectly
         _handle_app_exception(exc)

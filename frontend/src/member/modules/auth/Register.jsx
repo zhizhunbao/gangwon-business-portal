@@ -18,7 +18,7 @@ import {
 } from '@shared/utils/format';
 import { validateImageFile, validateFile, ALLOWED_FILE_TYPES } from '@shared/utils/fileValidation';
 import PageContainer from '@member/layouts/PageContainer';
-import './Auth.css';
+// Auth styles converted to Tailwind classes
 
 export default function Register() {
   const { t, i18n } = useTranslation();

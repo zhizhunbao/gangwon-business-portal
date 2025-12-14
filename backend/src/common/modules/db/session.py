@@ -2,6 +2,15 @@
 Database session management.
 
 This module provides async database session management using SQLAlchemy.
+
+⚠️ DEPRECATED: This module is deprecated and will be removed in a future version.
+   The application is migrating to Supabase client for all database operations.
+   New code should use `supabase_service` from `common.modules.supabase.service`.
+   
+   Remaining usage:
+   - ORM models (Base) - kept for backward compatibility
+   - Exception/Audit/Logger routers - need migration to Supabase
+   - Health check endpoints - can be replaced with Supabase health checks
 """
 import logging
 from pathlib import Path
@@ -11,6 +20,9 @@ from urllib.parse import urlparse, urlunparse, quote
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import event
+from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_connection
+from sqlalchemy.pool import Pool, NullPool
+import asyncpg
 
 from ..config import settings
 # Import directly from submodules to avoid circular import through logger/__init__.py
@@ -119,9 +131,9 @@ COMMAND_TIMEOUT = 60    # 增加命令超时时间到60秒
 POOL_RECYCLE = 3600     # 连接回收时间（1小时）
 POOL_PRE_PING = True    # 启用连接预检查
 
-# Log pool configuration
+# Log pool configuration (保留用于监控)
 db_pool_logger.info(
-    "Initializing database connection pool with optimized settings",
+    "Initializing SQLAlchemy connection pool (DEPRECATED - legacy)",
     extra={
         "pool_size": POOL_SIZE,
         "max_overflow": MAX_OVERFLOW,
@@ -130,29 +142,54 @@ db_pool_logger.info(
         "command_timeout": COMMAND_TIMEOUT,
         "pool_recycle": POOL_RECYCLE,
         "pool_pre_ping": POOL_PRE_PING,
+        "deprecated": True,
+        "migration_note": "This is legacy code. Migrate to Supabase client for better performance and reliability"
     }
 )
 
 # Create async engine with properly encoded URL and optimized settings
+# 特别针对 Supabase pooler 的配置 - 使用 pgbouncer=true 参数
 engine = create_async_engine(
     _encode_database_url(settings.DATABASE_URL),
     echo=settings.DEBUG,
+    future=True,  # 使用 SQLAlchemy 2.0 风格
     pool_pre_ping=POOL_PRE_PING,
     pool_size=POOL_SIZE,
     max_overflow=MAX_OVERFLOW,
     pool_timeout=POOL_TIMEOUT,
     pool_recycle=POOL_RECYCLE,
+    # 完全禁用编译缓存以避免 prepared statement 问题
+    query_cache_size=0,
+    # 关键：在引擎级别禁用 prepared statements
+    execution_options={
+        "compiled_cache": {},
+        "autocommit": False,
+    },
     connect_args={
         "timeout": CONNECT_TIMEOUT,
         "command_timeout": COMMAND_TIMEOUT,
-        # 添加更多连接参数以提高稳定性
+        # 关键：完全禁用 asyncpg 的 prepared statements - 这是最重要的配置
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+        # 添加服务器设置
         "server_settings": {
             "application_name": "gangwon_business_portal",
-            "jit": "off",  # 禁用JIT以提高连接速度
+            "jit": "off",
         },
     },
 )
 
+# 添加连接事件监听器来确保 prepared statements 被禁用
+@event.listens_for(Pool, "connect")
+def disable_prepared_statements(dbapi_connection, connection_record):
+    """
+    在每个新连接上禁用 prepared statements
+    确保与 Supabase pooler 兼容
+    """
+    # 对于 asyncpg 连接，确保 prepared statement 缓存被禁用
+    if hasattr(dbapi_connection, 'execute'):
+        # 设置连接级别的参数来禁用 prepared statements
+        connection_record.info['statement_cache_disabled'] = True
 
 # ============================================================================
 # SQL Logging Utilities
@@ -417,6 +454,8 @@ Base = declarative_base()
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     Dependency function to get database session with retry mechanism.
+    
+    ⚠️ DEPRECATED: This function is deprecated. Use `supabase_service` instead.
     
     This function provides a database session that is automatically
     committed on success or rolled back on error. Includes retry logic

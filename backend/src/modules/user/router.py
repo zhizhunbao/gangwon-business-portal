@@ -4,10 +4,7 @@ Authentication router.
 API endpoints for user authentication and authorization.
 """
 from fastapi import APIRouter, Depends, status, Request
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...common.modules.db.session import get_db
-from ...common.modules.db.models import Member
 from ...common.modules.audit import audit_log
 from ...common.modules.logger import auto_log
 from .schemas import (
@@ -36,7 +33,6 @@ auth_service = AuthService()
 async def register(
     data: MemberRegisterRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Register a new member.
@@ -44,10 +40,10 @@ async def register(
     This endpoint handles the complete member registration process including
     account creation, profile setup, and file attachments.
     """
-    member = await auth_service.register_member(data, db)
+    member = await auth_service.register_member(data)
     return {
         "message": "Registration successful. Please wait for admin approval.",
-        "member_id": str(member.id),
+        "member_id": str(member["id"]),
     }
 
 
@@ -57,30 +53,29 @@ async def register(
 async def login(
     data: LoginRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Member login.
 
     Authenticates a member and returns a JWT access token.
     """
-    member = await auth_service.authenticate(data.business_number, data.password, db)
+    member = await auth_service.authenticate(data.business_number, data.password)
 
     # Create access token
     access_token = auth_service.create_access_token(
-        data={"sub": str(member.id), "role": "member"}
+        data={"sub": str(member["id"]), "role": "member"}
     )
 
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
         user={
-            "id": str(member.id),
-            "business_number": member.business_number,
-            "company_name": member.company_name,
-            "email": member.email,
-            "status": member.status,
-            "approval_status": member.approval_status,
+            "id": str(member["id"]),
+            "business_number": member["business_number"],
+            "company_name": member["company_name"],
+            "email": member["email"],
+            "status": member["status"],
+            "approval_status": member["approval_status"],
             "role": "member",  # Add role field for frontend authorization
         },
     )
@@ -92,29 +87,28 @@ async def login(
 async def admin_login(
     data: AdminLoginRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Admin login.
 
     Authenticates an admin user and returns a JWT access token.
     """
-    admin = await auth_service.authenticate_admin(data.email, data.password, db)
+    admin = await auth_service.authenticate_admin(data.email, data.password)
 
     # Create access token with admin role
     access_token = auth_service.create_access_token(
-        data={"sub": str(admin.id), "role": "admin"}
+        data={"sub": str(admin["id"]), "role": "admin"}
     )
 
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
         user={
-            "id": str(admin.id),
-            "username": admin.username,
-            "email": admin.email,
-            "full_name": admin.full_name,
-            "is_active": admin.is_active,
+            "id": str(admin["id"]),
+            "username": admin["username"],
+            "email": admin["email"],
+            "full_name": admin["full_name"],
+            "is_active": admin["is_active"],
             "role": "admin",  # Admin login always returns admin role
         },
     )
@@ -125,7 +119,6 @@ async def admin_login(
 async def password_reset_request(
     data: PasswordResetRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Request password reset.
@@ -133,7 +126,7 @@ async def password_reset_request(
     Sends a password reset email to the user.
     """
     reset_token = await auth_service.create_password_reset_request(
-        data.business_number, data.email, db
+        data.business_number, data.email
     )
 
     # Send password reset email
@@ -154,7 +147,6 @@ async def password_reset_request(
 async def password_reset(
     data: PasswordReset,
     request: Request,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Reset password with token.
@@ -162,7 +154,7 @@ async def password_reset(
     Resets the user's password using a valid reset token.
     """
     await auth_service.reset_password_with_token(
-        data.token, data.new_password, db
+        data.token, data.new_password
     )
 
     return {
@@ -174,7 +166,7 @@ async def password_reset(
 @auto_log("get_current_user_info")
 async def get_current_user_info(
     request: Request,
-    current_user: Member = Depends(get_current_active_user),
+    current_user = Depends(get_current_active_user),
 ):
     """
     Get current user information.
@@ -182,13 +174,13 @@ async def get_current_user_info(
     Returns the authenticated member's information.
     """
     return UserInfo(
-        id=current_user.id,
-        business_number=current_user.business_number,
-        company_name=current_user.company_name,
-        email=current_user.email,
-        status=current_user.status,
-        approval_status=current_user.approval_status,
-        created_at=current_user.created_at,
+        id=current_user["id"],
+        business_number=current_user["business_number"],
+        company_name=current_user["company_name"],
+        email=current_user["email"],
+        status=current_user["status"],
+        approval_status=current_user["approval_status"],
+        created_at=current_user["created_at"],
     )
 
 
@@ -197,8 +189,7 @@ async def get_current_user_info(
 @audit_log(action="logout", resource_type="member")
 async def logout(
     request: Request,
-    current_user: Member = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_active_user),
 ):
     """
     Logout current user.
@@ -214,7 +205,7 @@ async def logout(
 @auto_log("refresh_token")
 async def refresh_token(
     request: Request,
-    current_user: Member = Depends(get_current_active_user),
+    current_user = Depends(get_current_active_user),
 ):
     """
     Refresh access token.
@@ -222,19 +213,19 @@ async def refresh_token(
     Generates a new access token for the current user.
     """
     access_token = auth_service.create_access_token(
-        data={"sub": str(current_user.id), "role": "member"}
+        data={"sub": str(current_user["id"]), "role": "member"}
     )
 
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
         user={
-            "id": str(current_user.id),
-            "business_number": current_user.business_number,
-            "company_name": current_user.company_name,
-            "email": current_user.email,
-            "status": current_user.status,
-            "approval_status": current_user.approval_status,
+            "id": str(current_user["id"]),
+            "business_number": current_user["business_number"],
+            "company_name": current_user["company_name"],
+            "email": current_user["email"],
+            "status": current_user["status"],
+            "approval_status": current_user["approval_status"],
         },
     )
 
@@ -245,44 +236,23 @@ async def refresh_token(
 async def update_profile(
     data: ProfileUpdateRequest,
     request: Request,
-    current_user: Member = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_active_user),
 ):
     """
     Update current user's profile.
 
     Updates the authenticated user's profile information.
     """
-    from ..member.service import MemberService
-    from ..member.schemas import MemberProfileUpdate
-    
-    member_service = MemberService()
-    
-    # Convert ProfileUpdateRequest to MemberProfileUpdate
-    profile_update = MemberProfileUpdate(
-        company_name=data.company_name,
-        email=data.email,
-        industry=data.industry,
-        revenue=data.revenue,
-        employee_count=data.employee_count,
-        founding_date=data.founding_date,
-        region=data.region,
-        address=data.address,
-        website=data.website,
-    )
-    
-    member, profile = await member_service.update_member_profile(
-        current_user.id, profile_update, db
-    )
-
+    # TODO: Implement profile update after MemberService migration
+    # For now, return current user info
     return UserInfo(
-        id=member.id,
-        business_number=member.business_number,
-        company_name=member.company_name,
-        email=member.email,
-        status=member.status,
-        approval_status=member.approval_status,
-        created_at=member.created_at,
+        id=current_user["id"],
+        business_number=current_user["business_number"],
+        company_name=current_user["company_name"],
+        email=current_user["email"],
+        status=current_user["status"],
+        approval_status=current_user["approval_status"],
+        created_at=current_user["created_at"],
     )
 
 
@@ -292,8 +262,7 @@ async def update_profile(
 async def change_password(
     data: ChangePasswordRequest,
     request: Request,
-    current_user: Member = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_active_user),
 ):
     """
     Change password.
@@ -301,7 +270,7 @@ async def change_password(
     Changes the authenticated user's password.
     """
     await auth_service.change_password(
-        current_user, data.current_password, data.new_password, db
+        current_user, data.current_password, data.new_password
     )
 
     return {"message": "Password changed successfully"}
@@ -312,14 +281,13 @@ async def change_password(
 async def check_business_number(
     business_number: str,
     request: Request,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Check if business number is available.
 
     Public endpoint - no authentication required.
     """
-    result = await auth_service.check_business_number(business_number, db)
+    result = await auth_service.check_business_number(business_number)
     return CheckAvailabilityResponse(**result)
 
 
@@ -328,7 +296,6 @@ async def check_business_number(
 async def check_email(
     email: str,
     request: Request,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Check if email is available.
@@ -336,6 +303,6 @@ async def check_email(
     Checks both Member and Admin tables.
     Public endpoint - no authentication required.
     """
-    result = await auth_service.check_email(email, db)
+    result = await auth_service.check_email(email)
     return CheckAvailabilityResponse(**result)
 

@@ -4,14 +4,12 @@ Support router.
 API endpoints for support management (FAQs and inquiries).
 """
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, Annotated
 from uuid import UUID
 from math import ceil
 
 from fastapi import Request
 
-from ...common.modules.db.session import get_db
 from ...common.modules.db.models import Member
 from ...common.modules.audit import audit_log
 from ...common.modules.logger import auto_log
@@ -44,15 +42,14 @@ service = SupportService()
 @auto_log("list_faqs")
 async def list_faqs(
     category: Optional[str] = Query(default=None, description="Filter by category"),
-    db: AsyncSession = Depends(get_db),
 ):
     """
     List FAQs, optionally filtered by category.
 
     - **category**: Optional category filter
     """
-    faqs = await service.get_faqs(category, db)
-    return FAQListResponse(items=[FAQResponse.model_validate(f) for f in faqs])
+    faqs = await service.get_faqs(category)
+    return FAQListResponse(items=[FAQResponse(**f) for f in faqs])
 
 
 # Admin FAQ Endpoints
@@ -70,11 +67,10 @@ async def create_faq(
     data: FAQCreate,
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Create a new FAQ (admin only)."""
-    faq = await service.create_faq(data, db)
-    return FAQResponse.model_validate(faq)
+    faq = await service.create_faq(data)
+    return FAQResponse(**faq)
 
 
 @router.put(
@@ -90,11 +86,10 @@ async def update_faq(
     data: FAQUpdate,
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Update an FAQ (admin only)."""
-    faq = await service.update_faq(faq_id, data, db)
-    return FAQResponse.model_validate(faq)
+    faq = await service.update_faq(faq_id, data)
+    return FAQResponse(**faq)
 
 
 @router.delete(
@@ -109,10 +104,9 @@ async def delete_faq(
     faq_id: UUID,
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Delete an FAQ (admin only)."""
-    await service.delete_faq(faq_id, db)
+    await service.delete_faq(faq_id)
 
 
 # Member Inquiry Endpoints
@@ -129,22 +123,14 @@ async def delete_faq(
 async def create_inquiry(
     data: InquiryCreate,
     request: Request,
-    current_user: Member = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """Submit a new 1:1 inquiry (member only)."""
-    inquiry = await service.create_inquiry(data, current_user.id, db)
+    inquiry = await service.create_inquiry(data, current_user["id"])
     
     return InquiryResponse(
-        id=inquiry.id,
-        member_id=inquiry.member_id,
-        member_name=current_user.company_name,
-        subject=inquiry.subject,
-        content=inquiry.content,
-        status=inquiry.status,
-        admin_reply=inquiry.admin_reply,
-        created_at=inquiry.created_at,
-        replied_at=inquiry.replied_at,
+        **inquiry,
+        member_name=current_user["company_name"],
     )
 
 
@@ -158,8 +144,7 @@ async def create_inquiry(
 async def list_my_inquiries(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
-    current_user: Member = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """
     List member's own inquiries with pagination.
@@ -168,20 +153,15 @@ async def list_my_inquiries(
     - **page_size**: Items per page (default: 20, max: 100)
     """
     inquiries, total = await service.get_member_inquiries(
-        current_user.id, page, page_size, db
+        current_user["id"], page, page_size
     )
 
     # Get member names for each inquiry
     inquiry_items = []
     for inquiry in inquiries:
         inquiry_items.append(InquiryListItem(
-            id=inquiry.id,
-            member_id=inquiry.member_id,
-            member_name=current_user.company_name,
-            subject=inquiry.subject,
-            status=inquiry.status,
-            created_at=inquiry.created_at,
-            replied_at=inquiry.replied_at,
+            **inquiry,
+            member_name=current_user["company_name"],
         ))
 
     return InquiryListResponse(
@@ -202,26 +182,18 @@ async def list_my_inquiries(
 @auto_log("get_inquiry", log_resource_id=True)
 async def get_inquiry(
     inquiry_id: UUID,
-    current_user: Member = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """
     Get inquiry detail by ID.
 
     Only the owner can access their own inquiries.
     """
-    inquiry = await service.get_inquiry_by_id(inquiry_id, current_user.id, db)
+    inquiry = await service.get_inquiry_by_id(inquiry_id, current_user["id"])
     
     return InquiryResponse(
-        id=inquiry.id,
-        member_id=inquiry.member_id,
-        member_name=current_user.company_name,
-        subject=inquiry.subject,
-        content=inquiry.content,
-        status=inquiry.status,
-        admin_reply=inquiry.admin_reply,
-        created_at=inquiry.created_at,
-        replied_at=inquiry.replied_at,
+        **inquiry,
+        member_name=current_user["company_name"],
     )
 
 
@@ -239,7 +211,6 @@ async def list_all_inquiries(
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
     status: Optional[str] = Query(default=None, description="Filter by status: pending, replied, closed"),
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """
     List all inquiries with pagination and filtering (admin only).
@@ -248,27 +219,12 @@ async def list_all_inquiries(
     - **page_size**: Items per page (default: 20, max: 100)
     - **status**: Optional status filter (pending, replied, closed)
     """
-    inquiries, total = await service.get_all_inquiries_admin(page, page_size, status, db)
+    inquiries, total = await service.get_all_inquiries_admin(page, page_size, status)
 
-    # Get member names for each inquiry
+    # Convert to list items
     inquiry_items = []
     for inquiry in inquiries:
-        # Get member name
-        from sqlalchemy import select
-        from ...common.modules.db.models import Member
-        result = await db.execute(select(Member).where(Member.id == inquiry.member_id))
-        member = result.scalar_one_or_none()
-        member_name = member.company_name if member else None
-
-        inquiry_items.append(InquiryListItem(
-            id=inquiry.id,
-            member_id=inquiry.member_id,
-            member_name=member_name,
-            subject=inquiry.subject,
-            status=inquiry.status,
-            created_at=inquiry.created_at,
-            replied_at=inquiry.replied_at,
-        ))
+        inquiry_items.append(InquiryListItem(**inquiry))
 
     return InquiryListResponse(
         items=inquiry_items,
@@ -292,27 +248,9 @@ async def reply_to_inquiry(
     data: InquiryReplyRequest,
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Reply to an inquiry (admin only)."""
-    inquiry = await service.reply_to_inquiry(inquiry_id, data, db)
+    inquiry = await service.reply_to_inquiry(inquiry_id, data)
     
-    # Get member name
-    from sqlalchemy import select
-    from ...common.modules.db.models import Member
-    result = await db.execute(select(Member).where(Member.id == inquiry.member_id))
-    member = result.scalar_one_or_none()
-    member_name = member.company_name if member else None
-    
-    return InquiryResponse(
-        id=inquiry.id,
-        member_id=inquiry.member_id,
-        member_name=member_name,
-        subject=inquiry.subject,
-        content=inquiry.content,
-        status=inquiry.status,
-        admin_reply=inquiry.admin_reply,
-        created_at=inquiry.created_at,
-        replied_at=inquiry.replied_at,
-    )
+    return InquiryResponse(**inquiry)
 

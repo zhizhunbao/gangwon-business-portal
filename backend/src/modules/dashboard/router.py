@@ -4,10 +4,8 @@ Dashboard router.
 API endpoints for dashboard statistics.
 """
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 
-from ...common.modules.db.session import get_db
 from ...common.modules.db.models import Member
 from ...common.modules.logger import auto_log
 from ..user.dependencies import get_current_admin_user
@@ -34,7 +32,6 @@ async def get_dashboard_stats(
     ),
     request: Request = None,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Get dashboard statistics for admin.
@@ -57,7 +54,7 @@ async def get_dashboard_stats(
         Dashboard statistics and chart data
     """
     result = await service.get_dashboard_stats(
-        year=year or "all", quarter=quarter or "all", db=db
+        year=year or "all", quarter=quarter or "all"
     )
     return DashboardResponse(**result)
 

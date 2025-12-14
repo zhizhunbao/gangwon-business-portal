@@ -4,12 +4,11 @@ Upload service.
 Business logic for file upload and management.
 """
 from typing import Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 from fastapi import UploadFile
-from uuid import UUID
+from uuid import UUID, uuid4
+from datetime import datetime
 
-from ...common.modules.db.models import Attachment, Member
+from ...common.modules.supabase.service import supabase_service
 from ...common.modules.storage import storage_service
 from ...common.modules.config import settings
 from ...common.modules.exception import NotFoundError, UnauthorizedError, ValidationError
@@ -153,23 +152,21 @@ class UploadService:
     async def upload_public_file(
         self,
         file: UploadFile,
-        user: Member,
+        user: dict,
         resource_type: Optional[str] = None,
         resource_id: Optional[UUID] = None,
-        db: AsyncSession = None,
-    ) -> Attachment:
+    ) -> dict:
         """
         Upload a public file.
 
         Args:
             file: UploadFile object
-            user: Current user
+            user: Current user dict
             resource_type: Optional resource type
             resource_id: Optional resource ID
-            db: Database session
 
         Returns:
-            Attachment object
+            Attachment dict
         """
         # Validate file size first (before reading content)
         self._validate_file(file, check_size_first=True)
@@ -188,8 +185,9 @@ class UploadService:
         project_prefix = "gangwon-portal"
         file_category = resource_type or "files"  # Default category if not specified
         
-        if hasattr(user, 'business_number') and user.business_number:
-            path = f"{project_prefix}/{user.business_number}/{file_category}"
+        user_business_number = user.get('business_number')
+        if user_business_number:
+            path = f"{project_prefix}/{user_business_number}/{file_category}"
         else:
             path = f"{project_prefix}/{file_category}"
 
@@ -202,43 +200,45 @@ class UploadService:
         )
 
         # Create attachment record
-        attachment = Attachment(
-            resource_type=resource_type or "public",
-            resource_id=resource_id or user.id,
-            file_type=self._determine_file_type(upload_result["mime_type"]),
-            file_url=upload_result["url"],
-            original_name=upload_result["original_name"],
-            stored_name=upload_result["stored_name"],
-            file_size=file_size,
-            mime_type=upload_result["mime_type"],
-        )
+        attachment_id = str(uuid4())
+        attachment_data = {
+            "id": attachment_id,
+            "resource_type": resource_type or "public",
+            "resource_id": str(resource_id) if resource_id else user["id"],
+            "file_type": self._determine_file_type(upload_result["mime_type"]),
+            "file_url": upload_result["url"],
+            "original_name": upload_result["original_name"],
+            "stored_name": upload_result["stored_name"],
+            "file_size": file_size,
+            "mime_type": upload_result["mime_type"],
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat(),
+        }
 
-        db.add(attachment)
-        await db.commit()
-        await db.refresh(attachment)
+        attachment = await supabase_service.create_attachment(attachment_data)
+        if not attachment:
+            raise ValidationError("Failed to create attachment record")
 
         return attachment
 
     async def upload_private_file(
         self,
         file: UploadFile,
-        user: Member,
+        user: dict,
         resource_type: Optional[str] = None,
         resource_id: Optional[UUID] = None,
-        db: AsyncSession = None,
-    ) -> Attachment:
+    ) -> dict:
         """
         Upload a private file.
 
         Args:
             file: UploadFile object
-            user: Current user
+            user: Current user dict
             resource_type: Optional resource type
             resource_id: Optional resource ID
-            db: Database session
 
         Returns:
-            Attachment object
+            Attachment dict
         """
         # Validate file size first (before reading content)
         self._validate_file(file, check_size_first=True)
@@ -257,8 +257,9 @@ class UploadService:
         project_prefix = "gangwon-portal"
         file_category = resource_type or "files"  # Default category if not specified
         
-        if hasattr(user, 'business_number') and user.business_number:
-            path = f"{project_prefix}/{user.business_number}/{file_category}"
+        user_business_number = user.get('business_number')
+        if user_business_number:
+            path = f"{project_prefix}/{user_business_number}/{file_category}"
         else:
             path = f"{project_prefix}/{file_category}"
 
@@ -276,47 +277,48 @@ class UploadService:
         file_url = f"private-files/{upload_result['path']}"
 
         # Create attachment record
-        attachment = Attachment(
-            resource_type=resource_type or "private",
-            resource_id=resource_id or user.id,
-            file_type=self._determine_file_type(upload_result["mime_type"]),
-            file_url=file_url,  # Store path for private files
-            original_name=upload_result["original_name"],
-            stored_name=upload_result["stored_name"],
-            file_size=file_size,
-            mime_type=upload_result["mime_type"],
-        )
+        attachment_id = str(uuid4())
+        attachment_data = {
+            "id": attachment_id,
+            "resource_type": resource_type or "private",
+            "resource_id": str(resource_id) if resource_id else user["id"],
+            "file_type": self._determine_file_type(upload_result["mime_type"]),
+            "file_url": file_url,  # Store path for private files
+            "original_name": upload_result["original_name"],
+            "stored_name": upload_result["stored_name"],
+            "file_size": file_size,
+            "mime_type": upload_result["mime_type"],
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat(),
+        }
 
-        db.add(attachment)
-        await db.commit()
-        await db.refresh(attachment)
+        attachment = await supabase_service.create_attachment(attachment_data)
+        if not attachment:
+            raise ValidationError("Failed to create attachment record")
 
         return attachment
 
     async def get_file(
         self,
         file_id: UUID,
-        user: Member,
-        db: AsyncSession = None,
-    ) -> Attachment:
+        user: dict,
+    ) -> dict:
         """
         Get file metadata and generate download URL.
 
         Args:
             file_id: Attachment ID
-            user: Current user
-            db: Database session
+            user: Current user dict
 
         Returns:
-            Attachment object with download URL
+            Attachment dict with download URL
 
         Raises:
             NotFoundError: If file not found
             UnauthorizedError: If user doesn't have permission
         """
         # Get attachment
-        result = await db.execute(select(Attachment).where(Attachment.id == file_id))
-        attachment = result.scalar_one_or_none()
+        attachment = await supabase_service.get_attachment_by_id(str(file_id))
 
         if not attachment:
             raise NotFoundError("File not found")
@@ -326,32 +328,33 @@ class UploadService:
         # For private files, check if user owns the resource or is admin
         from ...modules.user.service import AuthService
         auth_service = AuthService()
-        is_admin = await auth_service.is_admin(str(user.id), db)
+        is_admin = await auth_service.is_admin(user["id"])
 
-        if attachment.resource_type == "public":
+        if attachment.get("resource_type") == "public":
             # Public files are accessible to everyone
             pass
         else:
             # Private files: check ownership or admin
-            if not is_admin and attachment.resource_id != user.id:
+            if not is_admin and attachment.get("resource_id") != user["id"]:
                 # Check if user owns the resource
                 # For now, we check if resource_id matches user.id
                 # In the future, we might need to check the actual resource ownership
                 raise UnauthorizedError("You don't have permission to access this file")
 
         # Generate download URL
-        if attachment.resource_type == "public" or attachment.file_url.startswith("http"):
+        if attachment.get("resource_type") == "public" or attachment.get("file_url", "").startswith("http"):
             # Public file or already has URL
-            download_url = attachment.file_url
+            download_url = attachment.get("file_url")
         else:
             # Private file: generate signed URL
             # Extract bucket and path from stored URL
-            if attachment.file_url.startswith("private-files/"):
+            file_url = attachment.get("file_url", "")
+            if file_url.startswith("private-files/"):
                 bucket = "private-files"
-                path = attachment.file_url.replace("private-files/", "")
+                path = file_url.replace("private-files/", "")
             else:
                 bucket = "private-files"
-                path = attachment.file_url
+                path = file_url
 
             # Generate signed URL (valid for 1 hour)
             try:
@@ -359,26 +362,23 @@ class UploadService:
                 download_url = signed_url
             except Exception:
                 # Fallback to public URL if signed URL generation fails
-                download_url = attachment.file_url
+                download_url = file_url
 
-        # Create a temporary attachment object with download URL
-        # We'll return the attachment with modified file_url
-        attachment.file_url = download_url
+        # Return attachment with modified file_url
+        attachment["file_url"] = download_url
         return attachment
 
     async def delete_file(
         self,
         file_id: UUID,
-        user: Member,
-        db: AsyncSession = None,
+        user: dict,
     ) -> bool:
         """
         Delete a file.
 
         Args:
             file_id: Attachment ID
-            user: Current user
-            db: Database session
+            user: Current user dict
 
         Returns:
             True if successful
@@ -388,8 +388,7 @@ class UploadService:
             UnauthorizedError: If user doesn't have permission
         """
         # Get attachment
-        result = await db.execute(select(Attachment).where(Attachment.id == file_id))
-        attachment = result.scalar_one_or_none()
+        attachment = await supabase_service.get_attachment_by_id(str(file_id))
 
         if not attachment:
             raise NotFoundError("File not found")
@@ -397,44 +396,49 @@ class UploadService:
         # Check permissions
         from ...modules.user.service import AuthService
         auth_service = AuthService()
-        is_admin = await auth_service.is_admin(str(user.id), db)
+        is_admin = await auth_service.is_admin(user["id"])
 
-        if not is_admin and attachment.resource_id != user.id:
+        if not is_admin and attachment.get("resource_id") != user["id"]:
             raise UnauthorizedError("You don't have permission to delete this file")
 
         # Determine bucket and path
         project_prefix = "gangwon-portal"
-        file_category = attachment.resource_type if attachment.resource_type not in ["public", "private"] else "files"
+        resource_type = attachment.get("resource_type")
+        file_category = resource_type if resource_type not in ["public", "private"] else "files"
         
-        if attachment.resource_type == "public" or not attachment.file_url.startswith("private-files/"):
+        file_url = attachment.get("file_url", "")
+        if resource_type == "public" or not file_url.startswith("private-files/"):
             bucket = "public-files"
             # For public files, reconstruct path with project prefix and category
-            if attachment.file_url.startswith("http"):
+            if file_url.startswith("http"):
                 # Public URL - reconstruct path with project prefix and category
-                if hasattr(user, 'business_number') and user.business_number:
-                    path = f"{project_prefix}/{user.business_number}/{file_category}/{attachment.stored_name}"
+                user_business_number = user.get('business_number')
+                if user_business_number:
+                    path = f"{project_prefix}/{user_business_number}/{file_category}/{attachment.get('stored_name')}"
                 else:
-                    path = f"{project_prefix}/{file_category}/{attachment.stored_name}"
+                    path = f"{project_prefix}/{file_category}/{attachment.get('stored_name')}"
             else:
                 # Already a path - use as is if it has project prefix, otherwise reconstruct
-                if attachment.file_url.startswith(project_prefix):
-                    path = attachment.file_url
+                if file_url.startswith(project_prefix):
+                    path = file_url
                 else:
                     # Reconstruct with project prefix and category
-                    if hasattr(user, 'business_number') and user.business_number:
-                        path = f"{project_prefix}/{user.business_number}/{file_category}/{attachment.stored_name}"
+                    user_business_number = user.get('business_number')
+                    if user_business_number:
+                        path = f"{project_prefix}/{user_business_number}/{file_category}/{attachment.get('stored_name')}"
                     else:
-                        path = f"{project_prefix}/{file_category}/{attachment.stored_name}"
+                        path = f"{project_prefix}/{file_category}/{attachment.get('stored_name')}"
         else:
             bucket = "private-files"
             # Remove "private-files/" prefix
-            path = attachment.file_url.replace("private-files/", "").lstrip("/")
+            path = file_url.replace("private-files/", "").lstrip("/")
             # Ensure path has project prefix and category
             if not path.startswith(project_prefix):
-                if hasattr(user, 'business_number') and user.business_number:
-                    path = f"{project_prefix}/{user.business_number}/{file_category}/{attachment.stored_name}"
+                user_business_number = user.get('business_number')
+                if user_business_number:
+                    path = f"{project_prefix}/{user_business_number}/{file_category}/{attachment.get('stored_name')}"
                 else:
-                    path = f"{project_prefix}/{file_category}/{attachment.stored_name}"
+                    path = f"{project_prefix}/{file_category}/{attachment.get('stored_name')}"
 
         # Delete from storage
         # Try to delete, but don't fail if file doesn't exist in storage
@@ -445,8 +449,9 @@ class UploadService:
             pass
 
         # Delete from database
-        await db.delete(attachment)
-        await db.commit()
+        success = await supabase_service.delete_attachment(str(file_id))
+        if not success:
+            raise ValidationError("Failed to delete attachment record")
 
         return True
 

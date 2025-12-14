@@ -77,9 +77,77 @@ export default {
       boxShadow: {
         'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
         'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.3s ease-in-out',
+        'fade-in-up': 'fadeInUp 0.6s ease-out',
+        'fade-in-up-delayed': 'fadeInUp 0.6s ease-out 0.2s both'
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' }
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' }
+        }
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: 'none',
+            color: '#374151',
+            lineHeight: '1.8',
+            h2: {
+              fontSize: '1.75rem',
+              fontWeight: '700',
+              color: '#111827',
+              marginTop: '2rem',
+              marginBottom: '1rem',
+              paddingBottom: '0.5rem',
+              borderBottom: '2px solid #e5e7eb'
+            },
+            'h2:first-child': {
+              marginTop: '0'
+            },
+            h3: {
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              color: '#111827',
+              marginTop: '1.5rem',
+              marginBottom: '1rem'
+            },
+            p: {
+              fontSize: '1rem',
+              color: '#374151',
+              lineHeight: '1.8',
+              marginTop: '0',
+              marginBottom: '1rem'
+            },
+            'ul, ol': {
+              marginTop: '1rem',
+              marginBottom: '1rem',
+              paddingLeft: '2rem'
+            },
+            li: {
+              fontSize: '1rem',
+              color: '#374151',
+              lineHeight: '1.8',
+              marginTop: '0.5rem',
+              marginBottom: '0.5rem'
+            },
+            strong: {
+              fontWeight: '600',
+              color: '#111827'
+            }
+          }
+        }
       }
     }
   },
-  plugins: []
+  plugins: [
+    require('@tailwindcss/typography')
+  ]
 }
 

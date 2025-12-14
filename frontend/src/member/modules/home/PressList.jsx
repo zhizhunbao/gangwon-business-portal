@@ -10,7 +10,7 @@ import LazyImage from '@shared/components/LazyImage';
 import { Pagination } from '@shared/components';
 import { PageContainer } from '@member/layouts';
 import { apiService, loggerService, exceptionService } from '@shared/services';
-import { API_PREFIX, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@shared/utils/constants';
+import { API_PREFIX, DEFAULT_PAGE_SIZE } from '@shared/utils/constants';
 
 // 生成占位符图片
 const generatePlaceholderImage = (width = 400, height = 250) => {
@@ -39,20 +39,19 @@ function PressList() {
     setLoading(true);
     try {
       const params = {
-        page: currentPage,
-        page_size: pageSize,
-        category: 'news' // 只加载新闻资料
+        page: parseInt(currentPage, 10),
+        page_size: parseInt(pageSize, 10)
       };
-      const response = await apiService.get(`${API_PREFIX}/content/notices`, params);
-      if (response.notices) {
-        const formattedNews = response.notices.map(n => ({
+      const response = await apiService.get(`${API_PREFIX}/press`, params);
+      if (response.items) {
+        const formattedNews = response.items.map(n => ({
           id: n.id,
           title: n.title,
-          thumbnailUrl: n.thumbnailUrl || n.imageUrl || null,
-          publishedAt: n.publishedAt ? new Date(n.publishedAt).toISOString().split('T')[0] : ''
+          thumbnailUrl: n.imageUrl || null,
+          publishedAt: n.createdAt ? new Date(n.createdAt).toISOString().split('T')[0] : ''
         }));
         setNewsList(formattedNews);
-        setTotalCount(response.totalCount || response.pagination?.total || formattedNews.length);
+        setTotalCount(response.total || formattedNews.length);
       }
     } catch (error) {
       loggerService.error('Failed to load news', {
@@ -79,10 +78,7 @@ function PressList() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  const handlePageSizeChange = useCallback((newPageSize) => {
-    setPageSize(newPageSize);
-    setCurrentPage(1);
-  }, []);
+
 
   return (
     <PageContainer>
@@ -123,11 +119,8 @@ function PressList() {
             <div className="mt-8 flex justify-center">
               <Pagination
                 currentPage={currentPage}
-                totalItems={totalCount}
-                pageSize={pageSize}
-                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                totalPages={Math.ceil(totalCount / pageSize)}
                 onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
               />
             </div>
           )}

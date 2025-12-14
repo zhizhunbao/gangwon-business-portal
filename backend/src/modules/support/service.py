@@ -3,160 +3,173 @@ Support service.
 
 Business logic for support management (FAQs and inquiries).
 """
-from typing import Optional, List, Tuple
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, desc
+from typing import Optional, List, Tuple, Dict, Any
 from uuid import UUID
 from datetime import datetime
 
-from ...common.modules.db.models import FAQ, Inquiry, Member
 from ...common.modules.exception import NotFoundError, ForbiddenError
+from ...common.modules.supabase.service import supabase_service
 from .schemas import FAQCreate, FAQUpdate, InquiryCreate, InquiryReplyRequest
 
 
 class SupportService:
     """Support service class."""
 
-    # FAQ Management
+    async def _get_member_name(self, member_id: str) -> Optional[str]:
+        """
+        Get member company name by ID.
+        
+        Args:
+            member_id: Member UUID string
+            
+        Returns:
+            Company name or None if not found
+        """
+        if not member_id:
+            return None
+        
+        member_result = supabase_service.client.table('members').select('company_name').eq('id', member_id).execute()
+        return member_result.data[0]['company_name'] if member_result.data else None
+
+    # ============================================================================
+    # FAQ Management - Using Supabase Client
+    # ============================================================================
 
     async def get_faqs(
-        self, category: Optional[str] = None, db: AsyncSession = None
-    ) -> List[FAQ]:
+        self, category: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         Get FAQs, optionally filtered by category.
 
         Args:
             category: Optional category filter
-            db: Database session
 
         Returns:
-            List of FAQ objects ordered by display_order
+            List of FAQ dictionaries ordered by display_order
         """
-        query = select(FAQ)
-
+        query = supabase_service.client.table('faqs').select('*')
+        
         if category:
-            query = query.where(FAQ.category == category)
+            query = query.eq('category', category)
+        
+        query = query.order('display_order', desc=False).order('created_at', desc=False)
+        
+        result = query.execute()
+        return result.data
 
-        query = query.order_by(FAQ.display_order, FAQ.created_at)
-
-        result = await db.execute(query)
-        return result.scalars().all()
-
-    async def create_faq(self, data: FAQCreate, db: AsyncSession) -> FAQ:
+    async def create_faq(self, data: FAQCreate) -> Dict[str, Any]:
         """
         Create a new FAQ.
 
         Args:
             data: FAQ creation data
-            db: Database session
 
         Returns:
-            Created FAQ object
+            Created FAQ dictionary
         """
-        faq = FAQ(
-            category=data.category,
-            question=data.question,
-            answer=data.answer,
-            display_order=data.display_order,
-        )
-        db.add(faq)
-        await db.commit()
-        await db.refresh(faq)
-        return faq
+        faq_data = {
+            'category': data.category,
+            'question': data.question,
+            'answer': data.answer,
+            'display_order': data.display_order,
+        }
+        
+        result = supabase_service.client.table('faqs').insert(faq_data).execute()
+        return result.data[0] if result.data else None
 
     async def update_faq(
-        self, faq_id: UUID, data: FAQUpdate, db: AsyncSession
-    ) -> FAQ:
+        self, faq_id: UUID, data: FAQUpdate
+    ) -> Dict[str, Any]:
         """
         Update an FAQ.
 
         Args:
             faq_id: FAQ UUID
             data: FAQ update data
-            db: Database session
 
         Returns:
-            Updated FAQ object
+            Updated FAQ dictionary
 
         Raises:
             NotFoundError: If FAQ not found
         """
-        query = select(FAQ).where(FAQ.id == faq_id)
-        result = await db.execute(query)
-        faq = result.scalar_one_or_none()
-
-        if not faq:
-            raise NotFoundError("FAQ")
-
-        # Update fields
+        # Build update data (only include non-None fields)
+        update_data = {}
         if data.category is not None:
-            faq.category = data.category
+            update_data['category'] = data.category
         if data.question is not None:
-            faq.question = data.question
+            update_data['question'] = data.question
         if data.answer is not None:
-            faq.answer = data.answer
+            update_data['answer'] = data.answer
         if data.display_order is not None:
-            faq.display_order = data.display_order
+            update_data['display_order'] = data.display_order
+        
+        if not update_data:
+            # No fields to update, just return existing FAQ
+            result = supabase_service.client.table('faqs').select('*').eq('id', str(faq_id)).execute()
+            if not result.data:
+                raise NotFoundError("FAQ")
+            return result.data[0]
+        
+        result = supabase_service.client.table('faqs').update(update_data).eq('id', str(faq_id)).execute()
+        
+        if not result.data:
+            raise NotFoundError("FAQ")
+        
+        return result.data[0]
 
-        await db.commit()
-        await db.refresh(faq)
-        return faq
-
-    async def delete_faq(self, faq_id: UUID, db: AsyncSession) -> None:
+    async def delete_faq(self, faq_id: UUID) -> None:
         """
         Delete an FAQ.
 
         Args:
             faq_id: FAQ UUID
-            db: Database session
 
         Raises:
             NotFoundError: If FAQ not found
         """
-        query = select(FAQ).where(FAQ.id == faq_id)
-        result = await db.execute(query)
-        faq = result.scalar_one_or_none()
-
-        if not faq:
+        # Check if FAQ exists first
+        check_result = supabase_service.client.table('faqs').select('id').eq('id', str(faq_id)).execute()
+        
+        if not check_result.data:
             raise NotFoundError("FAQ")
+        
+        # Delete the FAQ
+        supabase_service.client.table('faqs').delete().eq('id', str(faq_id)).execute()
 
-        await db.delete(faq)
-        await db.commit()
-
-    # Inquiry Management
+    # Inquiry Management - Using Supabase Client
 
     async def create_inquiry(
-        self, data: InquiryCreate, member_id: UUID, db: AsyncSession
-    ) -> Inquiry:
+        self, data: InquiryCreate, member_id: UUID
+    ) -> Dict[str, Any]:
         """
         Create a new inquiry.
 
         Args:
             data: Inquiry creation data
             member_id: Member UUID
-            db: Database session
 
         Returns:
-            Created inquiry object
+            Created inquiry dictionary
         """
-        inquiry = Inquiry(
-            member_id=member_id,
-            subject=data.subject,
-            content=data.content,
-            status="pending",
-        )
-        db.add(inquiry)
-        await db.commit()
-        await db.refresh(inquiry)
-        return inquiry
+        inquiry_data = {
+            'member_id': str(member_id),
+            'subject': data.subject,
+            'content': data.content,
+            'status': 'pending',
+            'admin_reply': None,
+            'replied_at': None
+        }
+        
+        result = supabase_service.client.table('inquiries').insert(inquiry_data).execute()
+        return result.data[0] if result.data else None
 
     async def get_member_inquiries(
         self,
         member_id: UUID,
         page: int = 1,
         page_size: int = 20,
-        db: AsyncSession = None,
-    ) -> Tuple[List[Inquiry], int]:
+    ) -> Tuple[List[Dict[str, Any]], int]:
         """
         Get member's own inquiries with pagination.
 
@@ -164,58 +177,51 @@ class SupportService:
             member_id: Member UUID
             page: Page number (1-indexed)
             page_size: Items per page
-            db: Database session
 
         Returns:
             Tuple of (inquiries list, total count)
         """
-        # Get total count
-        count_query = select(func.count()).select_from(
-            select(Inquiry).where(Inquiry.member_id == member_id).subquery()
-        )
-        total_result = await db.execute(count_query)
-        total = total_result.scalar()
-
+        # Get total count first
+        count_query = supabase_service.client.table('inquiries').select('*', count='exact').eq('member_id', str(member_id))
+        count_result = count_query.execute()
+        total = count_result.count or 0
+        
         # Get paginated results
-        query = (
-            select(Inquiry)
-            .where(Inquiry.member_id == member_id)
-            .order_by(desc(Inquiry.created_at))
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
-        result = await db.execute(query)
-        inquiries = result.scalars().all()
+        query = supabase_service.client.table('inquiries').select('*').eq('member_id', str(member_id))
+        query = query.order('created_at', desc=True).range((page - 1) * page_size, page * page_size - 1)
+        
+        result = query.execute()
+        inquiries = result.data or []
 
         return inquiries, total
 
     async def get_inquiry_by_id(
-        self, inquiry_id: UUID, member_id: Optional[UUID] = None, db: AsyncSession = None
-    ) -> Inquiry:
+        self, inquiry_id: UUID, member_id: Optional[UUID] = None
+    ) -> Dict[str, Any]:
         """
         Get inquiry by ID with ownership verification.
 
         Args:
             inquiry_id: Inquiry UUID
             member_id: Optional member ID for ownership check (if None, admin access)
-            db: Database session
 
         Returns:
-            Inquiry object
+            Inquiry dictionary
 
         Raises:
             NotFoundError: If inquiry not found
             ForbiddenError: If member tries to access another member's inquiry
         """
-        query = select(Inquiry).where(Inquiry.id == inquiry_id)
-        result = await db.execute(query)
-        inquiry = result.scalar_one_or_none()
-
-        if not inquiry:
+        query = supabase_service.client.table('inquiries').select('*').eq('id', str(inquiry_id))
+        result = query.execute()
+        
+        if not result.data:
             raise NotFoundError("Inquiry")
+        
+        inquiry = result.data[0]
 
         # If member_id is provided, verify ownership
-        if member_id is not None and inquiry.member_id != member_id:
+        if member_id is not None and inquiry['member_id'] != str(member_id):
             raise ForbiddenError("You can only access your own inquiries")
 
         return inquiry
@@ -225,8 +231,7 @@ class SupportService:
         page: int = 1,
         page_size: int = 20,
         status: Optional[str] = None,
-        db: AsyncSession = None,
-    ) -> Tuple[List[Inquiry], int]:
+    ) -> Tuple[List[Dict[str, Any]], int]:
         """
         Get all inquiries for admin with pagination and filtering.
 
@@ -234,63 +239,72 @@ class SupportService:
             page: Page number (1-indexed)
             page_size: Items per page
             status: Optional status filter (pending, replied, closed)
-            db: Database session
 
         Returns:
-            Tuple of (inquiries list, total count)
+            Tuple of (inquiries list with member_name, total count)
         """
-        query = select(Inquiry)
-
-        # Apply status filter
+        # Build query with optional status filter
+        count_query = supabase_service.client.table('inquiries').select('*', count='exact')
+        query = supabase_service.client.table('inquiries').select('*')
+        
         if status:
-            query = query.where(Inquiry.status == status)
-
+            count_query = count_query.eq('status', status)
+            query = query.eq('status', status)
+        
         # Get total count
-        count_query = select(func.count()).select_from(query.subquery())
-        total_result = await db.execute(count_query)
-        total = total_result.scalar()
-
+        count_result = count_query.execute()
+        total = count_result.count or 0
+        
         # Get paginated results
-        query = (
-            query.order_by(desc(Inquiry.created_at))
-            .offset((page - 1) * page_size)
-            .limit(page_size)
-        )
-        result = await db.execute(query)
-        inquiries = result.scalars().all()
+        query = query.order('created_at', desc=True).range((page - 1) * page_size, page * page_size - 1)
+        
+        result = query.execute()
+        inquiries = result.data or []
+        
+        # Add member names
+        for inquiry in inquiries:
+            inquiry['member_name'] = await self._get_member_name(inquiry.get('member_id'))
 
         return inquiries, total
 
     async def reply_to_inquiry(
-        self, inquiry_id: UUID, reply_data: InquiryReplyRequest, db: AsyncSession
-    ) -> Inquiry:
+        self, inquiry_id: UUID, reply_data: InquiryReplyRequest
+    ) -> Dict[str, Any]:
         """
         Reply to an inquiry (admin only).
 
         Args:
             inquiry_id: Inquiry UUID
             reply_data: Reply content
-            db: Database session
 
         Returns:
-            Updated inquiry object
+            Updated inquiry dictionary
 
         Raises:
             NotFoundError: If inquiry not found
         """
-        query = select(Inquiry).where(Inquiry.id == inquiry_id)
-        result = await db.execute(query)
-        inquiry = result.scalar_one_or_none()
-
-        if not inquiry:
+        from datetime import datetime, timezone
+        
+        # Check if inquiry exists first
+        check_result = supabase_service.client.table('inquiries').select('id').eq('id', str(inquiry_id)).execute()
+        
+        if not check_result.data:
             raise NotFoundError("Inquiry")
-
+        
         # Update inquiry with reply
-        inquiry.admin_reply = reply_data.admin_reply
-        inquiry.status = "replied"
-        inquiry.replied_at = datetime.utcnow()
-
-        await db.commit()
-        await db.refresh(inquiry)
+        update_data = {
+            'admin_reply': reply_data.admin_reply,
+            'status': 'replied',
+            'replied_at': datetime.now(timezone.utc).isoformat()
+        }
+        
+        result = supabase_service.client.table('inquiries').update(update_data).eq('id', str(inquiry_id)).execute()
+        
+        if not result.data:
+            raise NotFoundError("Inquiry")
+        
+        inquiry = result.data[0]
+        inquiry['member_name'] = await self._get_member_name(inquiry.get('member_id'))
+        
         return inquiry
 

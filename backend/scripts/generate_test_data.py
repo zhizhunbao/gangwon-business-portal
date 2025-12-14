@@ -718,21 +718,147 @@ async def generate_content(session: AsyncSession, members: List['Member'], confi
         "PROFILE": ["profile"],
     }
     
+    # 逼真的韩语公告数据
+    notice_data = [
+        {
+            "title": "2024년 강원도 중소기업 지원사업 신청 안내",
+            "content": """
+            <h3>2024년 강원도 중소기업 지원사업 신청을 안내드립니다.</h3>
+            <p><strong>신청 기간:</strong> 2024년 3월 1일 ~ 4월 30일</p>
+            <p><strong>지원 대상:</strong> 강원도 소재 중소기업 (업력 3년 이상)</p>
+            <p><strong>지원 내용:</strong></p>
+            <ul>
+                <li>기술개발 자금 지원: 최대 5,000만원</li>
+                <li>마케팅 지원: 최대 2,000만원</li>
+                <li>인력 채용 지원: 최대 1,000만원</li>
+            </ul>
+            <p><strong>신청 방법:</strong> 온라인 신청 (강원도 기업지원포털)</p>
+            <p>자세한 내용은 첨부된 공고문을 참조하시기 바랍니다.</p>
+            """
+        },
+        {
+            "title": "디지털 전환 지원 프로그램 참가기업 모집",
+            "content": """
+            <h3>디지털 전환 지원 프로그램 참가기업을 모집합니다.</h3>
+            <p><strong>프로그램 개요:</strong> 중소기업의 디지털 전환을 위한 맞춤형 컨설팅 및 기술 지원</p>
+            <p><strong>모집 대상:</strong></p>
+            <ul>
+                <li>제조업, 서비스업 중소기업</li>
+                <li>연매출 10억원 이상 100억원 이하</li>
+                <li>임직원 10명 이상</li>
+            </ul>
+            <p><strong>지원 내용:</strong></p>
+            <ul>
+                <li>디지털 전환 진단 및 컨설팅</li>
+                <li>IT 시스템 구축 비용 지원 (최대 70%)</li>
+                <li>직원 교육 프로그램 제공</li>
+            </ul>
+            <p>신청 문의: 033-123-4567</p>
+            """
+        },
+        {
+            "title": "2024년 상반기 성과보고서 제출 안내",
+            "content": """
+            <h3>2024년 상반기 성과보고서 제출을 안내드립니다.</h3>
+            <p><strong>제출 기한:</strong> 2024년 7월 31일까지</p>
+            <p><strong>제출 대상:</strong> 2023년 지원사업 참여기업</p>
+            <p><strong>제출 서류:</strong></p>
+            <ol>
+                <li>성과보고서 (양식 다운로드)</li>
+                <li>재무제표 (손익계산서, 대차대조표)</li>
+                <li>고용현황 증명서</li>
+                <li>사업실적 증빙자료</li>
+            </ol>
+            <p><strong>제출 방법:</strong> 온라인 제출 (기업지원포털 > 성과관리)</p>
+            <p>미제출 시 향후 지원사업 참여에 제한이 있을 수 있으니 기한 내 제출 바랍니다.</p>
+            """
+        },
+        {
+            "title": "강원도 기업 해외진출 지원사업 설명회 개최",
+            "content": """
+            <h3>강원도 기업 해외진출 지원사업 설명회를 개최합니다.</h3>
+            <p><strong>일시:</strong> 2024년 5월 15일 (수) 14:00~17:00</p>
+            <p><strong>장소:</strong> 춘천시 중소기업지원센터 대회의실</p>
+            <p><strong>대상:</strong> 해외진출을 희망하는 강원도 소재 기업</p>
+            <p><strong>프로그램:</strong></p>
+            <ul>
+                <li>14:00~14:30 등록 및 접수</li>
+                <li>14:30~15:30 해외진출 지원사업 소개</li>
+                <li>15:30~16:00 성공사례 발표</li>
+                <li>16:00~17:00 개별 상담</li>
+            </ul>
+            <p><strong>신청:</strong> 5월 10일까지 온라인 신청</p>
+            <p>참가비는 무료이며, 참가자 전원에게 해외진출 가이드북을 제공합니다.</p>
+            """
+        },
+        {
+            "title": "시스템 정기점검 안내 (서비스 일시 중단)",
+            "content": """
+            <h3>시스템 정기점검으로 인한 서비스 일시 중단을 안내드립니다.</h3>
+            <p><strong>점검 일시:</strong> 2024년 6월 1일 (토) 02:00~06:00 (4시간)</p>
+            <p><strong>점검 내용:</strong></p>
+            <ul>
+                <li>서버 하드웨어 점검 및 업그레이드</li>
+                <li>데이터베이스 최적화</li>
+                <li>보안 패치 적용</li>
+                <li>시스템 성능 개선</li>
+            </ul>
+            <p><strong>영향 범위:</strong> 전체 서비스 (로그인, 신청, 조회 등)</p>
+            <p>점검 시간 중에는 모든 서비스 이용이 불가하오니 양해 부탁드립니다.</p>
+            <p>점검 완료 후 더욱 안정적인 서비스를 제공하겠습니다.</p>
+            """
+        }
+    ]
+    
     for i in range(data_ranges["notices_count"]):
+        if i < len(notice_data):
+            notice_info = notice_data[i]
+            title = notice_info["title"]
+            content_html = notice_info["content"]
+        else:
+            # 추가 공고는 패턴을 반복
+            base_idx = i % len(notice_data)
+            notice_info = notice_data[base_idx]
+            title = f"{notice_info['title']} ({i+1}차)"
+            content_html = notice_info["content"]
+        
         notice = Notice(
             id=uuid4(),
             board_type="notice",
-            title=fake.sentence(nb_words=5),
-            content_html=f"<p>{fake.text(max_nb_chars=1000)}</p>",
+            title=title,
+            content_html=content_html,
             author_id=admin_member.id,
-            view_count=random.randint(0, 1000),
+            view_count=random.randint(50, 1500),
             created_at=datetime.now(timezone.utc) - timedelta(days=random.randint(0, data_ranges["created_days_ago_max"])),
         )
         session.add(notice)
     
+    # 逼真的韩语 보도자료 데이터
+    press_data = [
+        "강원도, 2024년 스타트업 육성 프로그램 성과 발표",
+        "춘천시 소재 AI 기업, 글로벌 시장 진출 성공",
+        "강원도 중소기업, 친환경 기술 개발로 수출 증대",
+        "평창 동계올림픽 레거시 활용한 관광산업 활성화",
+        "강릉 커피산업 클러스터, 국내 최대 규모로 확장",
+        "원주 의료기기 기업, FDA 승인 획득으로 미국 진출",
+        "태백 에너지 기업, 신재생에너지 분야 혁신상 수상",
+        "삼척 해양바이오 기업, 국제 바이오 박람회 참가",
+        "홍천 농업기술 기업, 스마트팜 솔루션 개발 완료",
+        "횡성 축산업체, 프리미엄 한우 브랜드 해외 수출",
+        "영월 문화콘텐츠 기업, K-컬처 글로벌 확산 기여",
+        "정선 관광기업, 지속가능한 생태관광 모델 구축",
+        "철원 농식품 기업, 유기농 제품 유럽 수출 확대",
+        "화천 IT 기업, 블록체인 기반 물류 시스템 개발",
+        "양구 바이오 기업, 천연 화장품 원료 특허 등록"
+    ]
+    
     for i in range(data_ranges["press_releases_count"]):
-        # Generate news title
-        news_title = fake.sentence(nb_words=4)
+        if i < len(press_data):
+            news_title = press_data[i]
+        else:
+            # 추가 뉴스는 패턴을 반복하며 번호 추가
+            base_idx = i % len(press_data)
+            news_title = f"{press_data[base_idx]} - 후속 보도"
         
         # Generate news image (gradient color block) and upload to Supabase Storage
         try:

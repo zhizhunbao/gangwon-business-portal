@@ -4,14 +4,12 @@ Content management router.
 API endpoints for content management (notices, press releases, banners, system info).
 """
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated, Optional
 from uuid import UUID
 from math import ceil
 
 from fastapi import Request
 
-from ...common.modules.db.session import get_db
 from ...common.modules.db.models import Member
 from ...common.modules.audit import audit_log
 from ...common.modules.logger import auto_log
@@ -53,7 +51,6 @@ async def list_notices(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
     search: Optional[str] = None,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     List notices with pagination and optional search.
@@ -62,10 +59,10 @@ async def list_notices(
     - **page_size**: Items per page (default: 20, max: 100)
     - **search**: Optional search term for title
     """
-    notices, total = await service.get_notices(page, page_size, search, db)
+    notices, total = await service.get_notices(page, page_size, search)
 
     return NoticeListResponse(
-        items=[NoticeListItem.model_validate(n) for n in notices],
+        items=[NoticeListItem(**n) for n in notices],
         total=total,
         page=page,
         page_size=page_size,
@@ -80,12 +77,10 @@ async def list_notices(
     summary="Get latest 5 notices",
 )
 @auto_log("get_latest_notices")
-async def get_latest_notices(
-    db: AsyncSession = Depends(get_db),
-):
+async def get_latest_notices():
     """Get latest 5 notices for homepage."""
-    notices = await service.get_notice_latest5(db)
-    return [NoticeListItem.model_validate(n) for n in notices]
+    notices = await service.get_notice_latest5()
+    return [NoticeListItem(**n) for n in notices]
 
 
 @router.get(
@@ -97,36 +92,15 @@ async def get_latest_notices(
 @auto_log("get_notice", log_resource_id=True)
 async def get_notice(
     notice_id: UUID,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Get notice detail by ID.
 
     View count is automatically incremented.
     """
-    notice = await service.get_notice_by_id(notice_id, db)
+    notice = await service.get_notice_by_id(notice_id)
     
-    # Get author name if available
-    author_name = None
-    if notice.author_id:
-        from sqlalchemy import select
-        from ...common.modules.db.models import Member
-        result = await db.execute(select(Member).where(Member.id == notice.author_id))
-        author = result.scalar_one_or_none()
-        if author:
-            author_name = author.company_name
-    
-    return NoticeResponse(
-        id=notice.id,
-        board_type=notice.board_type,
-        title=notice.title,
-        content_html=notice.content_html,
-        author_id=notice.author_id,
-        author_name=author_name,
-        view_count=notice.view_count or 0,
-        created_at=notice.created_at,
-        updated_at=notice.updated_at,
-    )
+    return NoticeResponse(**notice)
 
 
 # Admin Notice Endpoints
@@ -144,25 +118,17 @@ async def create_notice(
     data: NoticeCreate,
     request: Request,
     current_user = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Create a new notice (admin only)."""
-    notice = await service.create_notice(data, db)
+    notice = await service.create_notice(data)
     
     # Admin users don't have company_name, use full_name or email instead
     author_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Admin')
     
-    return NoticeResponse(
-        id=notice.id,
-        board_type=notice.board_type,
-        title=notice.title,
-        content_html=notice.content_html,
-        author_id=notice.author_id,
-        author_name=author_name,
-        view_count=notice.view_count or 0,
-        created_at=notice.created_at,
-        updated_at=notice.updated_at,
-    )
+    # Create a copy of notice dict and update author_name
+    notice_data = notice.copy()
+    notice_data['author_name'] = author_name
+    return NoticeResponse(**notice_data)
 
 
 @router.put(
@@ -178,32 +144,11 @@ async def update_notice(
     data: NoticeUpdate,
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Update a notice (admin only)."""
-    notice = await service.update_notice(notice_id, data, db)
+    notice = await service.update_notice(notice_id, data)
     
-    # Get author name if available
-    author_name = None
-    if notice.author_id:
-        from sqlalchemy import select
-        from ...common.modules.db.models import Member
-        result = await db.execute(select(Member).where(Member.id == notice.author_id))
-        author = result.scalar_one_or_none()
-        if author:
-            author_name = author.company_name
-    
-    return NoticeResponse(
-        id=notice.id,
-        board_type=notice.board_type,
-        title=notice.title,
-        content_html=notice.content_html,
-        author_id=notice.author_id,
-        author_name=author_name,
-        view_count=notice.view_count or 0,
-        created_at=notice.created_at,
-        updated_at=notice.updated_at,
-    )
+    return NoticeResponse(**notice)
 
 
 @router.delete(
@@ -218,10 +163,9 @@ async def delete_notice(
     notice_id: UUID,
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Delete a notice (admin only)."""
-    await service.delete_notice(notice_id, db)
+    await service.delete_notice(notice_id)
 
 
 # Public Press Release Endpoints
@@ -236,7 +180,6 @@ async def delete_notice(
 async def list_press_releases(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     List press releases with pagination.
@@ -244,10 +187,10 @@ async def list_press_releases(
     - **page**: Page number (default: 1)
     - **page_size**: Items per page (default: 20, max: 100)
     """
-    press_releases, total = await service.get_press_releases(page, page_size, db)
+    press_releases, total = await service.get_press_releases(page, page_size)
 
     return PressListResponse(
-        items=[PressListItem.model_validate(p) for p in press_releases],
+        items=[PressListItem(**p) for p in press_releases],
         total=total,
         page=page,
         page_size=page_size,
@@ -261,33 +204,14 @@ async def list_press_releases(
     tags=["content"],
     summary="Get latest press release",
 )
-async def get_latest_press(
-    db: AsyncSession = Depends(get_db),
-):
+async def get_latest_press():
     """Get latest press release for homepage."""
-    press = await service.get_press_latest1(db)
+    press = await service.get_press_latest1()
     
     if not press:
         return None
     
-    # Get author name if available
-    author_name = None
-    if press.author_id:
-        from sqlalchemy import select
-        from ...common.modules.db.models import Member
-        result = await db.execute(select(Member).where(Member.id == press.author_id))
-        author = result.scalar_one_or_none()
-        if author:
-            author_name = author.company_name
-    
-    return PressReleaseResponse(
-        id=press.id,
-        title=press.title,
-        image_url=press.image_url,
-        author_id=press.author_id,
-        author_name=author_name,
-        created_at=press.created_at,
-    )
+    return PressReleaseResponse(**press)
 
 
 @router.get(
@@ -299,29 +223,11 @@ async def get_latest_press(
 @auto_log("get_press_release", log_resource_id=True)
 async def get_press_release(
     press_id: UUID,
-    db: AsyncSession = Depends(get_db),
 ):
     """Get press release detail by ID."""
-    press = await service.get_press_by_id(press_id, db)
+    press = await service.get_press_by_id(press_id)
     
-    # Get author name if available
-    author_name = None
-    if press.author_id:
-        from sqlalchemy import select
-        from ...common.modules.db.models import Member
-        result = await db.execute(select(Member).where(Member.id == press.author_id))
-        author = result.scalar_one_or_none()
-        if author:
-            author_name = author.company_name
-    
-    return PressReleaseResponse(
-        id=press.id,
-        title=press.title,
-        image_url=press.image_url,
-        author_id=press.author_id,
-        author_name=author_name,
-        created_at=press.created_at,
-    )
+    return PressReleaseResponse(**press)
 
 
 # Admin Press Release Endpoints
@@ -339,22 +245,17 @@ async def create_press_release(
     data: PressReleaseCreate,
     request: Request,
     current_user = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Create a new press release (admin only)."""
-    press = await service.create_press_release(data, db)
+    press = await service.create_press_release(data)
     
     # Admin users don't have company_name, use full_name or email instead
     author_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Admin')
     
-    return PressReleaseResponse(
-        id=press.id,
-        title=press.title,
-        image_url=press.image_url,
-        author_id=press.author_id,
-        author_name=author_name,
-        created_at=press.created_at,
-    )
+    # Create a copy of press dict and update author_name
+    press_data = press.copy()
+    press_data['author_name'] = author_name
+    return PressReleaseResponse(**press_data)
 
 
 @router.put(
@@ -370,29 +271,11 @@ async def update_press_release(
     data: PressReleaseUpdate,
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Update a press release (admin only)."""
-    press = await service.update_press_release(press_id, data, db)
+    press = await service.update_press_release(press_id, data)
     
-    # Get author name if available
-    author_name = None
-    if press.author_id:
-        from sqlalchemy import select
-        from ...common.modules.db.models import Member
-        result = await db.execute(select(Member).where(Member.id == press.author_id))
-        author = result.scalar_one_or_none()
-        if author:
-            author_name = author.company_name
-    
-    return PressReleaseResponse(
-        id=press.id,
-        title=press.title,
-        image_url=press.image_url,
-        author_id=press.author_id,
-        author_name=author_name,
-        created_at=press.created_at,
-    )
+    return PressReleaseResponse(**press)
 
 
 @router.delete(
@@ -407,10 +290,9 @@ async def delete_press_release(
     press_id: UUID,
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Delete a press release (admin only)."""
-    await service.delete_press_release(press_id, db)
+    await service.delete_press_release(press_id)
 
 
 # Public Banner Endpoints
@@ -424,32 +306,21 @@ async def delete_press_release(
 @auto_log("get_banners")
 async def get_banners(
     banner_type: Optional[str] = Query(default=None, description="Banner type: MAIN, INTRO, PROGRAM, PERFORMANCE, SUPPORT"),
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Get active banners, optionally filtered by type.
 
     Only returns active banners for public access.
     """
-    banners = await service.get_banners(banner_type, db)
+    banners = await service.get_banners(banner_type)
     
     # Convert is_active from string to boolean
     banner_responses = []
     for banner in banners:
-        banner_responses.append(BannerResponse(
-            id=banner.id,
-            banner_type=banner.banner_type,
-            image_url=banner.image_url,
-            link_url=banner.link_url,
-            title_ko=banner.title_ko,
-            title_zh=banner.title_zh,
-            subtitle_ko=banner.subtitle_ko,
-            subtitle_zh=banner.subtitle_zh,
-            is_active=banner.is_active == "true",
-            display_order=banner.display_order,
-            created_at=banner.created_at,
-            updated_at=banner.updated_at,
-        ))
+        # Create a copy of banner dict and update is_active
+        banner_data = banner.copy()
+        banner_data['is_active'] = banner.get('is_active') == 'true'
+        banner_responses.append(BannerResponse(**banner_data))
     
     return BannerListResponse(items=banner_responses)
 
@@ -465,28 +336,17 @@ async def get_banners(
 @auto_log("get_all_banners")
 async def get_all_banners(
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Get all banners including inactive (admin only)."""
-    banners = await service.get_all_banners(db)
+    banners = await service.get_all_banners()
     
     # Convert is_active from string to boolean
     banner_responses = []
     for banner in banners:
-        banner_responses.append(BannerResponse(
-            id=banner.id,
-            banner_type=banner.banner_type,
-            image_url=banner.image_url,
-            link_url=banner.link_url,
-            title_ko=banner.title_ko,
-            title_zh=banner.title_zh,
-            subtitle_ko=banner.subtitle_ko,
-            subtitle_zh=banner.subtitle_zh,
-            is_active=banner.is_active == "true",
-            display_order=banner.display_order,
-            created_at=banner.created_at,
-            updated_at=banner.updated_at,
-        ))
+        # Create a copy of banner dict and update is_active
+        banner_data = banner.copy()
+        banner_data['is_active'] = banner.get('is_active') == 'true'
+        banner_responses.append(BannerResponse(**banner_data))
     
     return BannerListResponse(items=banner_responses)
 
@@ -504,25 +364,14 @@ async def create_banner(
     data: BannerCreate,
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Create a new banner (admin only)."""
-    banner = await service.create_banner(data, db)
+    banner = await service.create_banner(data)
     
-    return BannerResponse(
-        id=banner.id,
-        banner_type=banner.banner_type,
-        image_url=banner.image_url,
-        link_url=banner.link_url,
-        title_ko=banner.title_ko,
-        title_zh=banner.title_zh,
-        subtitle_ko=banner.subtitle_ko,
-        subtitle_zh=banner.subtitle_zh,
-        is_active=banner.is_active == "true",
-        display_order=banner.display_order,
-        created_at=banner.created_at,
-        updated_at=banner.updated_at,
-    )
+    # Create a copy of banner dict and update is_active
+    banner_data = banner.copy()
+    banner_data['is_active'] = banner.get('is_active') == 'true'
+    return BannerResponse(**banner_data)
 
 
 @router.put(
@@ -538,25 +387,14 @@ async def update_banner(
     data: BannerUpdate,
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Update a banner (admin only)."""
-    banner = await service.update_banner(banner_id, data, db)
+    banner = await service.update_banner(banner_id, data)
     
-    return BannerResponse(
-        id=banner.id,
-        banner_type=banner.banner_type,
-        image_url=banner.image_url,
-        link_url=banner.link_url,
-        title_ko=banner.title_ko,
-        title_zh=banner.title_zh,
-        subtitle_ko=banner.subtitle_ko,
-        subtitle_zh=banner.subtitle_zh,
-        is_active=banner.is_active == "true",
-        display_order=banner.display_order,
-        created_at=banner.created_at,
-        updated_at=banner.updated_at,
-    )
+    # Create a copy of banner dict and update is_active
+    banner_data = banner.copy()
+    banner_data['is_active'] = banner.get('is_active') == 'true'
+    return BannerResponse(**banner_data)
 
 
 @router.delete(
@@ -571,10 +409,9 @@ async def delete_banner(
     banner_id: UUID,
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Delete a banner (admin only)."""
-    await service.delete_banner(banner_id, db)
+    await service.delete_banner(banner_id)
 
 
 # Public SystemInfo Endpoints
@@ -586,33 +423,14 @@ async def delete_banner(
     summary="Get system information",
 )
 @auto_log("get_system_info")
-async def get_system_info(
-    db: AsyncSession = Depends(get_db),
-):
+async def get_system_info():
     """Get system introduction content."""
-    system_info = await service.get_system_info(db)
+    system_info = await service.get_system_info()
     
     if not system_info:
         return None
     
-    # Get updater name if available
-    updater_name = None
-    if system_info.updated_by:
-        from sqlalchemy import select
-        from ...common.modules.db.models import Member
-        result = await db.execute(select(Member).where(Member.id == system_info.updated_by))
-        updater = result.scalar_one_or_none()
-        if updater:
-            updater_name = updater.company_name
-    
-    return SystemInfoResponse(
-        id=system_info.id,
-        content_html=system_info.content_html,
-        image_url=system_info.image_url,
-        updated_by=system_info.updated_by,
-        updater_name=updater_name,
-        updated_at=system_info.updated_at,
-    )
+    return SystemInfoResponse(**system_info)
 
 
 # Admin SystemInfo Endpoints
@@ -629,20 +447,15 @@ async def update_system_info(
     data: SystemInfoUpdate,
     request: Request,
     current_user = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
 ):
     """Update system introduction content (admin only, upsert pattern)."""
-    system_info = await service.update_system_info(data, current_user.id, db)
+    system_info = await service.update_system_info(data, current_user["id"])
     
     # Admin users don't have company_name, use full_name or email instead
     updater_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Admin')
     
-    return SystemInfoResponse(
-        id=system_info.id,
-        content_html=system_info.content_html,
-        image_url=system_info.image_url,
-        updated_by=system_info.updated_by,
-        updater_name=updater_name,
-        updated_at=system_info.updated_at,
-    )
+    # Create a copy of system_info dict and update updater_name
+    system_info_data = system_info.copy()
+    system_info_data['updater_name'] = updater_name
+    return SystemInfoResponse(**system_info_data)
 

@@ -4,7 +4,6 @@ Performance router.
 API endpoints for performance record management.
 """
 from fastapi import APIRouter, Depends, status, Query, Response
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from typing import Annotated
 from math import ceil
@@ -12,11 +11,10 @@ from datetime import datetime
 
 from fastapi import Request
 
-from ...common.modules.db.session import get_db
 from ...common.modules.db.models import Member, Admin
 from ...common.modules.audit import audit_log
 from ...common.modules.logger import auto_log
-from ..user.dependencies import get_current_active_user, get_current_admin_user
+from ..user.dependencies import get_current_active_user_compat as get_current_active_user, get_current_admin_user
 from .service import PerformanceService
 from .schemas import (
     PerformanceRecordCreate,
@@ -47,7 +45,6 @@ async def list_my_performance_records(
     query: Annotated[PerformanceListQuery, Depends()],
     request: Request,
     current_user: Annotated[Member, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     List member's own performance records with pagination and filtering.
@@ -60,7 +57,7 @@ async def list_my_performance_records(
     - **page_size**: Items per page (default: 20, max: 100)
     """
     records, total = await service.list_performance_records(
-        current_user.id, query, db
+        current_user.id, query
     )
 
     return PerformanceListResponsePaginated(
@@ -83,21 +80,15 @@ async def get_performance_record(
     performance_id: UUID,
     request: Request,
     current_user: Annotated[Member, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Get detailed information about a specific performance record.
 
     Only the owner can access their own records.
     """
-    record = await service.get_performance_by_id(performance_id, current_user.id, db)
+    record = await service.get_performance_by_id(performance_id, current_user.id)
     
-    # NOTE:
-    # Use the helper that builds the response from ORM fields without
-    # traversing relationships. This avoids unexpected serialization
-    # issues with lazy-loaded relations while still returning all fields
-    # required by the current API consumers and tests.
-    return PerformanceRecordResponse.from_orm_without_reviews(record)
+    return PerformanceRecordResponse.model_validate(record)
 
 
 @router.post(
@@ -113,15 +104,14 @@ async def create_performance_record(
     data: PerformanceRecordCreate,
     request: Request,
     current_user: Annotated[Member, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Create a new performance record in draft status.
 
     The record can be edited until it is submitted for review.
     """
-    record = await service.create_performance(current_user.id, data, db)
-    return PerformanceRecordResponse.from_orm_without_reviews(record)
+    record = await service.create_performance(current_user.id, data)
+    return PerformanceRecordResponse.model_validate(record)
 
 
 @router.put(
@@ -137,7 +127,6 @@ async def update_performance_record(
     data: PerformanceRecordUpdate,
     request: Request,
     current_user: Annotated[Member, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Update a performance record (draft or revision_requested only).
@@ -145,9 +134,9 @@ async def update_performance_record(
     Only draft or revision_requested records can be edited.
     """
     record = await service.update_performance(
-        performance_id, current_user.id, data, db
+        performance_id, current_user.id, data
     )
-    return PerformanceRecordResponse.from_orm_without_reviews(record)
+    return PerformanceRecordResponse.model_validate(record)
 
 
 @router.delete(
@@ -162,14 +151,13 @@ async def delete_performance_record(
     performance_id: UUID,
     request: Request,
     current_user: Annotated[Member, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Delete a performance record (draft only).
 
     Only draft records can be deleted.
     """
-    await service.delete_performance(performance_id, current_user.id, db)
+    await service.delete_performance(performance_id, current_user.id)
 
 
 @router.post(
@@ -184,7 +172,6 @@ async def submit_performance_record(
     performance_id: UUID,
     request: Request,
     current_user: Annotated[Member, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Submit a performance record for admin review.
@@ -192,8 +179,8 @@ async def submit_performance_record(
     Changes status from draft/revision_requested to submitted.
     Once submitted, the record cannot be edited unless admin requests revision.
     """
-    record = await service.submit_performance(performance_id, current_user.id, db)
-    return PerformanceRecordResponse.from_orm_without_reviews(record)
+    record = await service.submit_performance(performance_id, current_user.id)
+    return PerformanceRecordResponse.model_validate(record)
 
 
 # Admin endpoints
@@ -210,7 +197,6 @@ async def list_all_performance_records(
     query: Annotated[PerformanceListQuery, Depends()],
     request: Request,
     current_admin: Annotated[Member, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     List all performance records with filtering (admin only).
@@ -223,7 +209,7 @@ async def list_all_performance_records(
     - **page**: Page number
     - **page_size**: Items per page
     """
-    records, total = await service.list_all_performance_records(query, db)
+    records, total = await service.list_all_performance_records(query)
 
     return PerformanceListResponsePaginated(
         items=[PerformanceListItem.model_validate(r) for r in records],
@@ -245,7 +231,6 @@ async def export_performance_data(
     query: Annotated[PerformanceListQuery, Depends()],
     request: Request,
     current_admin: Annotated[Admin, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
     export_format: str = Query("excel", alias="format", regex="^(excel|csv)$", description="Export format: excel or csv"),
 ):
     """
@@ -256,7 +241,7 @@ async def export_performance_data(
     from ...common.modules.export import ExportService
     
     # Get export data
-    export_data = await service.export_performance_data(query, db)
+    export_data = await service.export_performance_data(query)
     
     # Generate export file
     if export_format == "excel":
@@ -296,13 +281,12 @@ async def get_performance_record_admin(
     performance_id: UUID,
     request: Request,
     current_admin: Annotated[Member, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Get detailed information about any performance record (admin only).
     """
-    record = await service.get_performance_by_id_admin(performance_id, db)
-    return PerformanceRecordResponse.from_orm_without_reviews(record)
+    record = await service.get_performance_by_id_admin(performance_id)
+    return PerformanceRecordResponse.model_validate(record)
 
 
 @router.post(
@@ -318,7 +302,6 @@ async def approve_performance_record(
     data: PerformanceApprovalRequest,
     request: Request,
     current_admin: Annotated[Admin, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Approve a performance record (admin only).
@@ -328,9 +311,9 @@ async def approve_performance_record(
     # Note: reviewer_id is not used because admin is not in members table
     # The PerformanceReview.reviewer_id foreign key points to members.id
     record = await service.approve_performance(
-        performance_id, None, data.comments, db  # reviewer_id set to None for admin
+        performance_id, None, data.comments  # reviewer_id set to None for admin
     )
-    return PerformanceRecordResponse.from_orm_without_reviews(record)
+    return PerformanceRecordResponse.model_validate(record)
 
 
 @router.post(
@@ -346,7 +329,6 @@ async def request_fix_performance_record(
     data: PerformanceApprovalRequest,
     request: Request,
     current_admin: Annotated[Admin, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Request revision of a performance record (admin only).
@@ -356,9 +338,9 @@ async def request_fix_performance_record(
     """
     # Note: reviewer_id is not used because admin is not in members table
     record = await service.request_fix_performance(
-        performance_id, None, data.comments, db  # reviewer_id set to None for admin
+        performance_id, None, data.comments  # reviewer_id set to None for admin
     )
-    return PerformanceRecordResponse.from_orm_without_reviews(record)
+    return PerformanceRecordResponse.model_validate(record)
 
 
 @router.post(
@@ -374,7 +356,6 @@ async def reject_performance_record(
     data: PerformanceApprovalRequest,
     request: Request,
     current_admin: Annotated[Admin, Depends(get_current_admin_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
 ):
     """
     Reject a performance record (admin only).
@@ -383,6 +364,6 @@ async def reject_performance_record(
     """
     # Note: reviewer_id is not used because admin is not in members table
     record = await service.reject_performance(
-        performance_id, None, data.comments, db  # reviewer_id set to None for admin
+        performance_id, None, data.comments  # reviewer_id set to None for admin
     )
-    return PerformanceRecordResponse.from_orm_without_reviews(record)
+    return PerformanceRecordResponse.model_validate(record)

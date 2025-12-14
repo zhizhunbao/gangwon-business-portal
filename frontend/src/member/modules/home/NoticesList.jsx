@@ -9,7 +9,7 @@ import Card from '@shared/components/Card';
 import { Pagination } from '@shared/components';
 import { PageContainer } from '@member/layouts';
 import { apiService, loggerService, exceptionService } from '@shared/services';
-import { API_PREFIX, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '@shared/utils/constants';
+import { API_PREFIX, DEFAULT_PAGE_SIZE } from '@shared/utils/constants';
 
 function NoticesList() {
   const { t, i18n } = useTranslation();
@@ -28,23 +28,22 @@ function NoticesList() {
       setError(null);
       try {
         const params = {
-          page: currentPage,
-          page_size: pageSize,
-          category: 'announcement' // 只加载公告，不包括新闻
+          page: parseInt(currentPage, 10),
+          page_size: parseInt(pageSize, 10)
         };
-        const response = await apiService.get(`${API_PREFIX}/content/notices`, params);
+        const response = await apiService.get(`${API_PREFIX}/notices`, params);
         
-        // 处理不同的响应格式
-        const noticesData = response.notices || response.data || [];
+        // 处理后端返回的数据格式
+        const noticesData = response.items || [];
         if (Array.isArray(noticesData)) {
           const formattedNotices = noticesData.map(n => ({
             id: n.id,
             title: n.title,
-            date: n.publishedAt ? new Date(n.publishedAt).toISOString().split('T')[0] : (n.date || ''),
-            important: n.category === 'announcement' && (n.isImportant || false)
+            date: n.createdAt ? new Date(n.createdAt).toISOString().split('T')[0] : '',
+            important: n.boardType === 'notice'
           }));
           setNotices(formattedNotices);
-          setTotalCount(response.totalCount || response.pagination?.total || formattedNotices.length);
+          setTotalCount(response.total || formattedNotices.length);
         } else {
           setNotices([]);
           setTotalCount(0);
@@ -76,10 +75,7 @@ function NoticesList() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handlePageSizeChange = (newPageSize) => {
-    setPageSize(newPageSize);
-    setCurrentPage(1);
-  };
+
 
   return (
     <PageContainer>
@@ -103,21 +99,20 @@ function NoticesList() {
                 setError(null);
                 try {
                   const params = {
-                    page: currentPage,
-                    page_size: pageSize,
-                    category: 'announcement'
+                    page: parseInt(currentPage, 10),
+                    page_size: parseInt(pageSize, 10)
                   };
-                  const response = await apiService.get(`${API_PREFIX}/content/notices`, params);
-                  const noticesData = response.notices || response.data || [];
+                  const response = await apiService.get(`${API_PREFIX}/notices`, params);
+                  const noticesData = response.items || [];
                   if (Array.isArray(noticesData)) {
                     const formattedNotices = noticesData.map(n => ({
                       id: n.id,
                       title: n.title,
-                      date: n.publishedAt ? new Date(n.publishedAt).toISOString().split('T')[0] : (n.date || ''),
-                      important: n.category === 'announcement' && (n.isImportant || false)
+                      date: n.createdAt ? new Date(n.createdAt).toISOString().split('T')[0] : '',
+                      important: n.boardType === 'notice'
                     }));
                     setNotices(formattedNotices);
-                    setTotalCount(response.totalCount || response.pagination?.total || formattedNotices.length);
+                    setTotalCount(response.total || formattedNotices.length);
                   } else {
                     setNotices([]);
                     setTotalCount(0);
@@ -168,11 +163,8 @@ function NoticesList() {
             <div className="mt-6 flex justify-center">
               <Pagination
                 currentPage={currentPage}
-                totalItems={totalCount}
-                pageSize={pageSize}
-                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                totalPages={Math.ceil(totalCount / pageSize)}
                 onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
               />
             </div>
           )}

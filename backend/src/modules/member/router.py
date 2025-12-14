@@ -4,16 +4,14 @@ Member router.
 API endpoints for member management.
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 from math import ceil
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID
 
 from fastapi import Request
 
-from ...common.modules.db.session import get_db
-from ...common.modules.db.models import Member
+from ...common.modules.db.models import Member  # 保留用于类型提示
 from ...common.modules.audit import audit_log
 from ...common.modules.logger import auto_log
 from ...common.modules.integrations.nice_dnb import nice_dnb_client
@@ -38,30 +36,10 @@ member_service = MemberService()
 @auto_log("get_my_profile")
 async def get_my_profile(
     request: Request,
-    current_user: Member = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """Get current member's profile."""
-    member, profile = await member_service.get_member_profile(current_user.id, db)
-
-    return MemberProfileResponse(
-        id=member.id,
-        business_number=member.business_number,
-        company_name=member.company_name,
-        email=member.email,
-        status=member.status,
-        approval_status=member.approval_status,
-        industry=profile.industry if profile else None,
-        revenue=profile.revenue if profile else None,
-        employee_count=profile.employee_count if profile else None,
-        founding_date=profile.founding_date if profile else None,
-        region=profile.region if profile else None,
-        address=profile.address if profile else None,
-        website=profile.website if profile else None,
-        logo_url=profile.logo_url if profile else None,
-        created_at=member.created_at,
-        updated_at=profile.updated_at if profile else member.updated_at,
-    )
+    return await member_service.get_member_profile_response(UUID(current_user["id"]))
 
 
 @router.put("/api/member/profile", response_model=MemberProfileResponse)
@@ -70,32 +48,12 @@ async def get_my_profile(
 async def update_my_profile(
     data: MemberProfileUpdate,
     request: Request,
-    current_user: Member = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_active_user),
 ):
     """Update current member's profile."""
-    member, profile = await member_service.update_member_profile(
-        current_user.id, data, db
+    return await member_service.update_member_profile_response(
+        UUID(current_user["id"]), data
     )
-
-    return MemberProfileResponse(
-            id=member.id,
-            business_number=member.business_number,
-            company_name=member.company_name,
-            email=member.email,
-            status=member.status,
-            approval_status=member.approval_status,
-            industry=profile.industry if profile else None,
-            revenue=profile.revenue if profile else None,
-            employee_count=profile.employee_count if profile else None,
-            founding_date=profile.founding_date if profile else None,
-            region=profile.region if profile else None,
-            address=profile.address if profile else None,
-            website=profile.website if profile else None,
-            logo_url=profile.logo_url if profile else None,
-            created_at=member.created_at,
-            updated_at=profile.updated_at if profile else member.updated_at,
-        )
 
 
 # Admin endpoints
@@ -110,8 +68,7 @@ async def list_members(
     region: Optional[str] = Query(None),
     approval_status: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
-    current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_admin_user),
 ):
     """List members with pagination and filtering (admin only)."""
     query = MemberListQuery(
@@ -124,19 +81,19 @@ async def list_members(
         status=status,
     )
 
-    members, total = await member_service.list_members(query, db)
+    members, total = await member_service.list_members(query)
 
     return MemberListResponsePaginated(
         items=[
             MemberListResponse(
-                id=m.id,
-                business_number=m.business_number,
-                company_name=m.company_name,
-                email=m.email,
-                status=m.status,
-                approval_status=m.approval_status,
-                industry=None,  # TODO: Join with profile
-                created_at=m.created_at,
+                id=UUID(m["id"]),
+                business_number=m["business_number"],
+                company_name=m["company_name"],
+                email=m["email"],
+                status=m["status"],
+                approval_status=m["approval_status"],
+                industry=m.get("profile", {}).get("industry") if m.get("profile") else None,
+                created_at=m.get("created_at"),
             )
             for m in members
         ],
@@ -154,30 +111,10 @@ async def list_members(
 async def get_member(
     member_id: UUID,
     request: Request,
-    current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_admin_user),
 ):
     """Get member details (admin only)."""
-    member, profile = await member_service.get_member_profile(member_id, db)
-
-    return MemberProfileResponse(
-            id=member.id,
-            business_number=member.business_number,
-            company_name=member.company_name,
-            email=member.email,
-            status=member.status,
-            approval_status=member.approval_status,
-            industry=profile.industry if profile else None,
-            revenue=profile.revenue if profile else None,
-            employee_count=profile.employee_count if profile else None,
-            founding_date=profile.founding_date if profile else None,
-            region=profile.region if profile else None,
-            address=profile.address if profile else None,
-            website=profile.website if profile else None,
-            logo_url=profile.logo_url if profile else None,
-            created_at=member.created_at,
-            updated_at=profile.updated_at if profile else member.updated_at,
-        )
+    return await member_service.get_member_profile_response(member_id)
 
 
 @router.put("/api/admin/members/{member_id:uuid}/approve", response_model=dict)
@@ -186,15 +123,14 @@ async def get_member(
 async def approve_member(
     member_id: UUID,
     request: Request,
-    current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_admin_user),
 ):
     """Approve a member registration (admin only)."""
-    member = await member_service.approve_member(member_id, db)
+    member = await member_service.approve_member(member_id)
     
     return {
         "message": "Member approved successfully",
-        "member_id": str(member.id),
+        "member_id": str(member["id"]),
     }
 
 
@@ -205,15 +141,14 @@ async def reject_member(
     member_id: UUID,
     request: Request,
     reason: Optional[str] = Query(None),
-    current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_admin_user),
 ):
     """Reject a member registration (admin only)."""
-    member = await member_service.reject_member(member_id, reason, db)
+    member = await member_service.reject_member(member_id, reason)
     
     return {
         "message": "Member rejected",
-        "member_id": str(member.id),
+        "member_id": str(member["id"]),
     }
 
 
@@ -289,7 +224,6 @@ async def reject_member(
 async def verify_company(
     data: CompanyVerifyRequest,
     request: Request,
-    db: AsyncSession = Depends(get_db),
 ):
     """
     Verify company information using Nice D&B API.
@@ -300,7 +234,6 @@ async def verify_company(
     Args:
         data: Company verification request (business_number, optional company_name)
         request: FastAPI Request object (for audit logging)
-        db: Database session
     
     Returns:
         Company verification result with verification status and company data
@@ -548,8 +481,7 @@ async def export_members(
     region: Optional[str] = Query(None),
     approval_status: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
-    current_user: Member = Depends(get_current_admin_user),
-    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_admin_user),
 ):
     """
     Export members data to Excel or CSV (admin only).
@@ -569,7 +501,7 @@ async def export_members(
     )
     
     # Get export data
-    export_data = await member_service.export_members_data(query, db)
+    export_data = await member_service.export_members_data(query)
     
     # Generate export file
     if format == "excel":
