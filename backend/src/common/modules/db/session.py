@@ -87,16 +87,34 @@ def _encode_database_url(url: str) -> str:
     
     This handles passwords containing special characters like % that need
     to be URL-encoded for SQLAlchemy to parse correctly.
+    Also removes pgbouncer=true parameter as asyncpg doesn't support it.
     
     Args:
         url: Database URL string
         
     Returns:
-        Encoded database URL string
+        Encoded database URL string with pgbouncer parameter removed
     """
     parsed = urlparse(url)
     if not parsed.password:
-        return url
+        # Still need to remove pgbouncer parameter even if no password
+        query_params = []
+        if parsed.query:
+            from urllib.parse import parse_qs, urlencode
+            params = parse_qs(parsed.query)
+            # Remove pgbouncer parameter
+            params.pop('pgbouncer', None)
+            if params:
+                query_params = urlencode(params, doseq=True)
+        
+        return urlunparse((
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            parsed.params,
+            query_params if query_params else '',
+            parsed.fragment
+        ))
     
     # URL-encode the password
     encoded_password = quote(parsed.password, safe='')
@@ -107,13 +125,23 @@ def _encode_database_url(url: str) -> str:
     else:
         netloc = f"{parsed.username}:{encoded_password}@{parsed.hostname}"
     
+    # Remove pgbouncer parameter from query string
+    query_params = []
+    if parsed.query:
+        from urllib.parse import parse_qs, urlencode
+        params = parse_qs(parsed.query)
+        # Remove pgbouncer parameter (asyncpg doesn't support it)
+        params.pop('pgbouncer', None)
+        if params:
+            query_params = urlencode(params, doseq=True)
+    
     # Reconstruct the full URL
     return urlunparse((
         parsed.scheme,
         netloc,
         parsed.path,
         parsed.params,
-        parsed.query,
+        query_params if query_params else '',
         parsed.fragment
     ))
 

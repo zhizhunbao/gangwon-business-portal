@@ -17,9 +17,9 @@ import {
   LogoutIcon,
   ChevronDownIcon,
   DocumentIcon,
-  WarningIcon
+  WarningIcon,
+  NotificationBell
 } from '@shared/components';
-import './Header.css';
 
 export default function Header({ onToggleSidebar }) {
   const { t } = useTranslation();
@@ -78,138 +78,117 @@ export default function Header({ onToggleSidebar }) {
   ];
 
   return (
-    <header className="admin-header">
-      <div className="header-left">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-[1000] shadow-sm md:px-4">
+      <div className="flex items-center gap-4">
         <button 
-          className="sidebar-toggle"
+          className="bg-transparent border-none cursor-pointer p-2 text-gray-500 transition-colors duration-200 flex items-center justify-center rounded-md hover:text-gray-900"
           onClick={onToggleSidebar}
           aria-label="Toggle Sidebar"
         >
-          <MenuIcon />
+          <MenuIcon className="w-6 h-6" />
         </button>
         
-        <Link to="/admin" className="header-logo">
-          <span className="logo-text">{t('admin.header.title')}</span>
+        <Link to="/admin" className="flex items-center gap-2 no-underline text-gray-900 font-semibold text-lg">
+          <span className="whitespace-nowrap md:hidden">{t('admin.header.title')}</span>
         </Link>
       </div>
 
-      <div className="header-center">
-        <div className="header-search">
-          <SearchIcon className="search-icon" />
+      <div className="hidden lg:flex flex-1 justify-center items-center max-w-[600px] mx-8">
+        <div className="relative w-full max-w-[500px]">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4 z-[1]" />
           <input
             type="text"
             placeholder={t('admin.header.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
+            className="w-full py-2.5 pl-10 pr-4 border border-gray-200 rounded-lg text-sm bg-gray-50 transition-all duration-200 focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10"
           />
         </div>
       </div>
 
-      <div className="header-right">
+      <div className="flex items-center gap-3">
         {/* 语言切换 */}
         <LanguageSwitcher />
 
         {/* 日志 */}
         <Link 
           to="/admin/logs"
-          className={`header-icon-btn ${location.pathname.startsWith('/admin/logs') ? 'active' : ''}`}
+          className={`relative bg-transparent border-none cursor-pointer p-2 text-gray-500 transition-all duration-200 rounded-md flex items-center justify-center no-underline ${
+            location.pathname.startsWith('/admin/logs') 
+              ? 'text-blue-500 bg-blue-50 hover:text-blue-600 hover:bg-blue-100' 
+              : 'hover:text-gray-900 hover:bg-gray-100'
+          }`}
           title={t('admin.header.logs') || '应用日志'}
         >
-          <DocumentIcon />
+          <DocumentIcon className="w-5 h-5" />
         </Link>
 
         {/* 异常 */}
         <Link 
           to="/admin/exceptions"
-          className={`header-icon-btn ${location.pathname.startsWith('/admin/exceptions') ? 'active' : ''}`}
+          className={`relative bg-transparent border-none cursor-pointer p-2 text-gray-500 transition-all duration-200 rounded-md flex items-center justify-center no-underline ${
+            location.pathname.startsWith('/admin/exceptions') 
+              ? 'text-blue-500 bg-blue-50 hover:text-blue-600 hover:bg-blue-100' 
+              : 'hover:text-gray-900 hover:bg-gray-100'
+          }`}
           title={t('admin.header.exceptions') || '应用异常'}
         >
-          <WarningIcon />
+          <WarningIcon className="w-5 h-5" />
         </Link>
 
-        {/* 通知 */}
-        <div className="notification-menu" ref={notificationsRef}>
-          <button 
-            className="header-icon-btn" 
-            title={t('admin.header.notifications')}
-            onClick={() => setShowNotifications(!showNotifications)}
-          >
-            <BellIcon />
-            {notifications.length > 0 && (
-              <span className="notification-badge">{notifications.length}</span>
-            )}
-          </button>
-
-          {showNotifications && (
-            <div className="notification-dropdown">
-              <div className="notification-header">
-                <h3>{t('admin.header.notifications')}</h3>
-              </div>
-              <div className="notification-list">
-                {notifications.length > 0 ? (
-                  notifications.map((notification, index) => (
-                    <div key={index} className="notification-item">
-                      <div className="notification-content">
-                        <p className="notification-title">{notification.title}</p>
-                        <p className="notification-time">{notification.time}</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="notification-empty">
-                    {t('admin.header.noNotifications') || '暂无通知'}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        {/* 站内信通知 */}
+        <NotificationBell userType="admin" />
 
         {/* 用户菜单或登录按钮 */}
         {isAuthenticated ? (
-          <div className="user-menu" ref={userMenuRef} data-open={showUserMenu}>
+          <div className="relative" ref={userMenuRef}>
             <button 
-              className="user-menu-trigger"
+              className="flex items-center gap-2 bg-transparent border-none cursor-pointer py-2 px-3 transition-all duration-200 rounded-lg hover:bg-gray-100 active:scale-[0.98]"
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
-              <div className="user-avatar">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-semibold text-sm shadow-[0_2px_4px_-1px_rgba(59,130,246,0.3)]">
                 {user?.name?.charAt(0) || 'A'}
               </div>
-              <span className="user-name">{user?.name || t('admin.header.admin')}</span>
-              <ChevronDownIcon className="dropdown-arrow" />
+              <span className="text-sm font-medium text-gray-700 max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap md:hidden">
+                {user?.name || t('admin.header.admin')}
+              </span>
+              <ChevronDownIcon className={`w-4 h-4 text-gray-500 transition-all duration-200 flex-shrink-0 ${showUserMenu ? 'rotate-180 text-blue-500' : ''}`} />
             </button>
 
             {showUserMenu && (
-              <div className="user-menu-dropdown">
-                <div className="user-info">
-                  <div className="user-avatar-large">
+              <div className="absolute top-[calc(100%+0.5rem)] right-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[240px] z-[1001] overflow-hidden animate-[slideDown_0.2s_ease-out] md:right-[-1rem]">
+                <div className="p-4 flex items-center gap-3 bg-gray-50">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white flex items-center justify-center font-semibold text-lg flex-shrink-0 shadow-[0_2px_4px_-1px_rgba(59,130,246,0.3)]">
                     {user?.name?.charAt(0) || 'A'}
                   </div>
-                  <div className="user-details">
-                    <div className="user-name-large">{user?.name || t('admin.header.admin')}</div>
-                    <div className="user-email">{user?.email || ''}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-gray-900 m-0 mb-1 overflow-hidden text-ellipsis whitespace-nowrap">
+                      {user?.name || t('admin.header.admin')}
+                    </div>
+                    <div className="text-xs text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap">
+                      {user?.email || ''}
+                    </div>
                   </div>
                 </div>
                 
-                <div className="menu-divider" />
+                <div className="h-px bg-gray-200 my-2" />
                 
                 <Link 
                   to="/admin/profile"
-                  className="menu-item"
+                  className="flex items-center gap-3 py-3 px-4 text-gray-700 no-underline bg-transparent border-none w-full text-left cursor-pointer text-sm transition-colors duration-200 hover:bg-gray-100"
                   onClick={() => setShowUserMenu(false)}
                 >
-                  <UserIcon className="menu-icon" />
+                  <UserIcon className="w-[18px] h-[18px] flex-shrink-0" />
                   <span>{t('admin.header.profile')}</span>
                 </Link>
                 
-                <div className="menu-divider" />
+                <div className="h-px bg-gray-200 my-2" />
                 
                 <button 
-                  className="menu-item menu-item-danger"
+                  className="flex items-center gap-3 py-3 px-4 text-red-600 bg-transparent border-none w-full text-left cursor-pointer text-sm transition-colors duration-200 hover:bg-red-50 hover:text-red-700"
                   onClick={handleLogout}
                 >
-                  <LogoutIcon className="menu-icon" />
+                  <LogoutIcon className="w-[18px] h-[18px] flex-shrink-0" />
                   <span>{t('admin.header.logout')}</span>
                 </button>
               </div>
@@ -217,7 +196,7 @@ export default function Header({ onToggleSidebar }) {
           </div>
         ) : (
           <button 
-            className="header-login-btn"
+            className="py-2 px-4 rounded-md cursor-pointer transition-all duration-200 font-medium text-sm bg-blue-500 text-white border border-blue-600 hover:bg-blue-600 hover:border-blue-700 active:bg-blue-700"
             onClick={() => navigate('/admin/login')}
           >
             {t('admin.header.login') || '로그인'}

@@ -19,6 +19,7 @@ class Settings(BaseSettings):
 
     # Database Configuration
     DATABASE_URL: str = "postgresql+asyncpg://user:pass@localhost/db"  # Default for migration generation
+    DIRECT_URL: str | None = None  # Direct connection URL for migrations (Alembic). If not set, uses DATABASE_URL
 
     # Supabase Configuration
     SUPABASE_URL: str = "https://placeholder.supabase.co"  # Default placeholder

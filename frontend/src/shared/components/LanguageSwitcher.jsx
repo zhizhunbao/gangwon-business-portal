@@ -9,7 +9,7 @@ import { GlobeIcon } from './Icons';
 import { setStorage } from '@shared/utils/storage';
 import loggerService from '@shared/services/logger.service';
 import exceptionService from '@shared/services/exception.service';
-import './LanguageSwitcher.css';
+import { cn } from '@shared/utils/helpers';
 
 /**
  * @param {Object} props
@@ -67,18 +67,19 @@ export default function LanguageSwitcher({ variant = 'dark' }) {
     });
   };
 
-  // 根据 variant 选择样式（无背景色）
-  const buttonClasses = variant === 'light'
-    ? 'language-switcher-btn language-switcher-btn-light'
-    : 'language-switcher-btn language-switcher-btn-dark';
-
   return (
     <button
-      className={buttonClasses}
+      className={cn(
+        'px-3 py-1.5 text-sm font-medium rounded-md transition-colors duration-200',
+        'focus:outline-none focus:ring-2 focus:ring-offset-2',
+        variant === 'light'
+          ? 'focus:ring-white text-white hover:opacity-80'
+          : 'focus:ring-primary-500 text-gray-700 dark:text-gray-300 hover:opacity-80'
+      )}
       onClick={toggleLanguage}
       title={`切换到 ${nextLanguage.label} / Switch to ${nextLanguage.label}`}
     >
-      <GlobeIcon className="language-switcher-icon" />
+      <GlobeIcon className="w-5 h-5" />
     </button>
   );
 }

@@ -221,3 +221,57 @@ class DashboardService:
             "salesEmployment": sales_employment_chart,
         }
 
+    async def export_dashboard_data(
+        self,
+        year: Optional[str] = None,
+        quarter: Optional[str] = None,
+    ) -> list[dict]:
+        """
+        Export dashboard statistics data for download.
+
+        Args:
+            year: Year filter ('all' or specific year as string)
+            quarter: Quarter filter ('all', 'Q1', 'Q2', 'Q3', 'Q4')
+
+        Returns:
+            List of dictionaries with dashboard statistics (raw data from database)
+        """
+        # Get dashboard stats
+        stats_data = await self.get_dashboard_stats(year=year, quarter=quarter)
+        
+        # Export raw statistics data
+        export_data = [
+            {
+                "totalMembers": stats_data["stats"]["totalMembers"],
+                "totalSales": float(stats_data["stats"]["totalSales"]),
+                "totalEmployment": stats_data["stats"]["totalEmployment"],
+                "totalIntellectualProperty": stats_data["stats"]["totalIntellectualProperty"],
+            }
+        ]
+        
+        # Add chart data if available
+        if stats_data.get("chartData"):
+            chart_data = stats_data["chartData"]
+            
+            # Add members chart data
+            if chart_data.get("members"):
+                for item in chart_data["members"]:
+                    export_data.append({
+                        "period": item["period"],
+                        "members": item["value"],
+                        "sales": None,
+                        "employment": None,
+                    })
+            
+            # Add sales and employment chart data
+            if chart_data.get("salesEmployment"):
+                for item in chart_data["salesEmployment"]:
+                    export_data.append({
+                        "period": item["period"],
+                        "members": None,
+                        "sales": float(item["sales"]) if isinstance(item["sales"], Decimal) else item["sales"],
+                        "employment": item["employment"],
+                    })
+        
+        return export_data
+

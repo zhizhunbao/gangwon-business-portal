@@ -124,7 +124,7 @@ class PressListResponse(BaseModel):
 class BannerCreate(BaseModel):
     """Banner creation schema."""
     
-    banner_type: str = Field(..., description="Banner type: MAIN, INTRO, PROGRAM, PERFORMANCE, SUPPORT")
+    banner_type: str = Field(..., description="Banner type: main_primary, about, projects, performance, support")
     image_url: str = Field(..., max_length=500, description="Banner image URL")
     link_url: Optional[str] = Field(None, max_length=500, description="Optional click-through URL")
     title_ko: Optional[str] = Field(None, max_length=200, description="Korean title")
@@ -197,3 +197,61 @@ class SystemInfoResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+# Popup Schemas
+
+class PopupCreate(BaseModel):
+    """Popup creation schema."""
+    
+    title: str = Field(..., min_length=1, max_length=255, description="Popup title")
+    content: str = Field(..., description="Popup content")
+    image_url: Optional[str] = Field(None, max_length=500, description="Popup image URL")
+    link_url: Optional[str] = Field(None, max_length=500, description="Optional click-through URL")
+    width: int = Field(default=600, ge=200, le=1200, description="Popup width in pixels")
+    height: int = Field(default=400, ge=200, le=800, description="Popup height in pixels")
+    position: str = Field(default="center", description="Popup position: center, left, right")
+    is_active: bool = Field(default=True, description="Whether popup is active")
+    start_date: Optional[datetime] = Field(None, description="Start date for popup display")
+    end_date: Optional[datetime] = Field(None, description="End date for popup display")
+
+
+class PopupUpdate(BaseModel):
+    """Popup update schema."""
+    
+    title: Optional[str] = Field(None, min_length=1, max_length=255, description="Popup title")
+    content: Optional[str] = Field(None, description="Popup content")
+    image_url: Optional[str] = Field(None, max_length=500, description="Popup image URL")
+    link_url: Optional[str] = Field(None, max_length=500, description="Optional click-through URL")
+    width: Optional[int] = Field(None, ge=200, le=1200, description="Popup width in pixels")
+    height: Optional[int] = Field(None, ge=200, le=800, description="Popup height in pixels")
+    position: Optional[str] = Field(None, description="Popup position: center, left, right")
+    is_active: Optional[bool] = Field(None, description="Whether popup is active")
+    start_date: Optional[datetime] = Field(None, description="Start date for popup display")
+    end_date: Optional[datetime] = Field(None, description="End date for popup display")
+
+
+class PopupResponse(BaseModel):
+    """Popup response schema."""
+    
+    id: UUID
+    title: str
+    content: str
+    image_url: Optional[str]
+    link_url: Optional[str]
+    width: int
+    height: int
+    position: str
+    is_active: bool
+    start_date: Optional[datetime]
+    end_date: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class PopupListResponse(BaseModel):
+    """Popup list response schema."""
+    
+    popups: List[PopupResponse]

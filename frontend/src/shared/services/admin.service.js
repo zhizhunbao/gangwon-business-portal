@@ -49,22 +49,27 @@ class AdminService {
     const response = await this._listMembersInternal(queryParams);
     
     // Map backend response to frontend format
-    if (response && response.items) {
+    // Backend returns: { items: [...], total: ..., page: ..., page_size: ..., total_pages: ... }
+    // axios interceptor already extracts response.data, so response is the data object directly
+    if (response && response.items && Array.isArray(response.items)) {
       const result = {
-        members: response.items.map(item => ({
-          id: item.id,
-          businessNumber: item.business_number,
-          companyName: item.company_name,
-          email: item.email,
-          status: item.status,
-          approvalStatus: item.approval_status,
-          industry: item.industry,
-          createdAt: item.created_at,
-          // Additional fields for compatibility
-          representative: null,
-          address: null,
-          phone: null
-        })),
+        members: response.items.map((item) => {
+          return {
+            id: item.id,
+            businessNumber: item.business_number,
+            companyName: item.company_name,
+            email: item.email,
+            status: item.status,
+            approvalStatus: item.approval_status,
+            industry: item.industry,
+            createdAt: item.created_at,
+            // Additional fields for compatibility
+            // Use nullish coalescing to preserve null values
+            representative: item.representative ?? null,
+            address: item.address ?? null,
+            phone: null
+          };
+        }),
         pagination: {
           total: response.total,
           page: response.page,
@@ -97,7 +102,14 @@ class AdminService {
   
   @autoLog('list_members_admin', { logResultCount: true })
   async _listMembersInternal(queryParams) {
-    return await apiService.get(`${API_PREFIX}/admin/members`, queryParams);
+    try {
+      // apiService.get already returns response.data (via axios interceptor)
+      // So response is already the data object, not { data: {...} }
+      const response = await apiService.get(`${API_PREFIX}/admin/members`, queryParams);
+      return response;
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**
@@ -127,7 +139,8 @@ class AdminService {
         establishedDate: response.founding_date,
         foundingDate: response.founding_date,
         region: response.region,
-        address: response.address,
+        // Use nullish coalescing to preserve null values
+        address: response.address ?? null,
         website: response.website,
         websiteUrl: response.website,
         logo: response.logo_url,
@@ -135,10 +148,11 @@ class AdminService {
         createdAt: response.created_at,
         updatedAt: response.updated_at,
         // Additional fields for compatibility
-        representative: null,
-        representativeName: null,
-        legalNumber: null,
-        phone: null,
+        // Use nullish coalescing to preserve null values
+        representative: response.representative ?? null,
+        representativeName: response.representative ?? null,
+        legalNumber: response.legal_number ?? null,
+        phone: response.phone ?? null,
         category: null,
         description: null
       };
@@ -709,6 +723,33 @@ class AdminService {
   @autoLog('export_applications_admin')
   async _exportApplicationsInternal(queryParams) {
     return await apiService.download(`${API_PREFIX}/admin/applications/export`, queryParams);
+  }
+
+  /**
+   * Export dashboard data to Excel or CSV (Admin)
+   * 导出仪表盘数据到 Excel 或 CSV（管理员）
+   * 
+   * @param {Object} params - Export parameters
+   * @param {string} [params.format='excel'] - Export format: 'excel' or 'csv'
+   * @param {string|number} [params.year='all'] - Filter by year ('all' or specific year)
+   * @param {string} [params.quarter='all'] - Filter by quarter ('all', 'Q1', 'Q2', 'Q3', 'Q4')
+   * @returns {Promise<void>} Downloads the file
+   */
+  async exportDashboard(params = {}) {
+    const queryParams = {
+      format: params.format || 'excel',
+      year: params.year || 'all',
+      quarter: params.quarter || 'all',
+    };
+    
+    return await this._exportDashboardInternal(queryParams);
+  }
+  
+  @autoLog('export_dashboard_admin')
+  async _exportDashboardInternal(queryParams) {
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const filename = `dashboard_${queryParams.year}_${queryParams.quarter}_${timestamp}.${queryParams.format === 'excel' ? 'xlsx' : 'csv'}`;
+    return await apiService.download(`${API_PREFIX}/admin/dashboard/export`, queryParams, filename);
   }
 }
 

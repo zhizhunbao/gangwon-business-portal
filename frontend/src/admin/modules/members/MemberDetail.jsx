@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Button, Badge, Loading } from '@shared/components';
 import { adminService, loggerService, exceptionService } from '@shared/services';
-import './MemberDetail.css';
 
 export default function MemberDetail() {
   const { t } = useTranslation();
@@ -19,6 +18,7 @@ export default function MemberDetail() {
   const [niceDnbData, setNiceDnbData] = useState(null);
   const [niceDnbLoading, setNiceDnbLoading] = useState(false);
   const [niceDnbError, setNiceDnbError] = useState(null);
+
 
   useEffect(() => {
     loadMemberDetail();
@@ -53,8 +53,8 @@ export default function MemberDetail() {
         request_path: window.location.pathname,
         error_code: 'LOAD_MEMBER_DETAIL_ERROR'
       });
-      const errorMessage = error.response?.data?.detail || error.message || t('admin.members.detail.loadFailed', '加载会员详情失败');
-      alert(errorMessage);
+      // Error logged, no alert needed
+      console.error('Load member detail failed:', error);
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ export default function MemberDetail() {
         member_id: id
       });
       loadMemberDetail();
-      alert(t('admin.members.approveSuccess', '批准成功') || '批准成功');
+      // Approval successful
     } catch (error) {
       loggerService.error('Failed to approve member', {
         module: 'MemberDetail',
@@ -87,8 +87,8 @@ export default function MemberDetail() {
         request_path: window.location.pathname,
         error_code: 'APPROVE_MEMBER_ERROR'
       });
-      const errorMessage = error.response?.data?.detail || error.message || t('admin.members.approveFailed', '批准失败');
-      alert(errorMessage);
+      // Error logged, no alert needed
+      console.error('Approve failed:', error);
     }
   };
 
@@ -107,7 +107,7 @@ export default function MemberDetail() {
         member_id: id
       });
       loadMemberDetail();
-      alert(t('admin.members.rejectSuccess', '拒绝成功') || '拒绝成功');
+      // Reject successful
     } catch (error) {
       loggerService.error('Failed to reject member', {
         module: 'MemberDetail',
@@ -120,14 +120,14 @@ export default function MemberDetail() {
         request_path: window.location.pathname,
         error_code: 'REJECT_MEMBER_ERROR'
       });
-      const errorMessage = error.response?.data?.detail || error.message || t('admin.members.rejectFailed', '拒绝失败');
-      alert(errorMessage);
+      // Error logged, no alert needed
+      console.error('Reject failed:', error);
     }
   };
 
   const handleSearchNiceDnb = async () => {
     if (!member || !member.businessNumber) {
-      alert(t('admin.members.detail.noBusinessNumber', '缺少营业执照号，无法查询 Nice D&B 信息'));
+      setNiceDnbError('营业执照号码不可用');
       return;
     }
 
@@ -159,17 +159,14 @@ export default function MemberDetail() {
         request_path: window.location.pathname,
         error_code: 'SEARCH_NICE_DNB_ERROR'
       });
-      const errorMessage = error.response?.data?.detail || error.message || t('admin.members.detail.nicednbSearchFailed', '查询 Nice D&B 信息失败');
+      const errorMessage = error.response?.data?.detail || error.message || t('admin.members.detail.nicednbSearchFailed');
       setNiceDnbError(errorMessage);
-      alert(errorMessage);
     } finally {
       setNiceDnbLoading(false);
     }
   };
 
-  const handleViewPerformance = () => {
-    navigate(`/admin/performance?memberId=${id}`);
-  };
+
 
   if (loading) {
     return <Loading />;
@@ -177,8 +174,8 @@ export default function MemberDetail() {
 
   if (!member) {
     return (
-      <div className="error-message">
-        <p>{t('admin.members.detail.notFound')}</p>
+      <div className="p-12 text-center text-red-600">
+        <p className="mb-6">{t('admin.members.detail.notFound')}</p>
         <Button onClick={() => navigate('/admin/members')}>
           {t('common.back')}
         </Button>
@@ -187,12 +184,12 @@ export default function MemberDetail() {
   }
 
   return (
-    <div className="admin-member-detail">
-      <div className="page-header">
+    <div className="w-full">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <Button variant="outline" onClick={() => navigate('/admin/members')}>
           {t('common.back')}
         </Button>
-        <div className="header-actions">
+        <div className="flex gap-4">
           {member.approvalStatus === 'pending' && (
             <>
               <Button variant="outline" onClick={handleReject}>
@@ -206,151 +203,148 @@ export default function MemberDetail() {
         </div>
       </div>
 
-      <Card className="member-info-card">
-        <div className="card-header">
-          <h2>{t('admin.members.detail.basicInfo')}</h2>
+      <Card className="mb-6 p-6">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900 m-0">{t('admin.members.detail.basicInfo')}</h2>
           <Badge 
             variant={member.approvalStatus === 'approved' ? 'success' : member.approvalStatus === 'pending' ? 'warning' : 'danger'}
           >
-            {t(`members.status.${member.approvalStatus}`)}
+            {t(`admin.members.status.${member.approvalStatus}`)}
           </Badge>
         </div>
 
-        <div className="info-grid">
-          <div className="info-item">
-            <label>{t('admin.members.detail.businessNumber')}</label>
-            <span>{member.businessNumber || '-'}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.businessNumber')}</label>
+            <span className="text-base text-gray-900">{member.businessNumber || '-'}</span>
           </div>
-          <div className="info-item">
-            <label>{t('admin.members.detail.companyName')}</label>
-            <span>{member.companyName || '-'}</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.companyName')}</label>
+            <span className="text-base text-gray-900">{member.companyName || '-'}</span>
           </div>
-          <div className="info-item">
-            <label>{t('admin.members.detail.representative')}</label>
-            <span>{member.representative || member.representativeName || '-'}</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.representative')}</label>
+            <span className="text-base text-gray-900">{member.representative || member.representativeName || '-'}</span>
           </div>
-          <div className="info-item">
-            <label>{t('admin.members.detail.legalNumber')}</label>
-            <span>{member.legalNumber || '-'}</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.legalNumber')}</label>
+            <span className="text-base text-gray-900">{member.legalNumber || '-'}</span>
           </div>
-          <div className="info-item">
-            <label>{t('admin.members.detail.address')}</label>
-            <span>{member.address || '-'}</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.address')}</label>
+            <span className="text-base text-gray-900">{member.address || '-'}</span>
           </div>
-          <div className="info-item">
-            <label>{t('admin.members.detail.industry')}</label>
-            <span>{member.industry || '-'}</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.industry')}</label>
+            <span className="text-base text-gray-900">{member.industry || '-'}</span>
           </div>
-          <div className="info-item">
-            <label>{t('admin.members.detail.phone')}</label>
-            <span>{member.phone || '-'}</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.phone')}</label>
+            <span className="text-base text-gray-900">{member.phone || '-'}</span>
           </div>
-          <div className="info-item">
-            <label>{t('admin.members.detail.email')}</label>
-            <span>{member.email || '-'}</span>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.email')}</label>
+            <span className="text-base text-gray-900">{member.email || '-'}</span>
           </div>
         </div>
 
-        <div className="action-buttons">
-          <Button variant="outline" onClick={handleSearchNiceDnb}>
-            {t('admin.members.detail.searchNiceDnb')}
-          </Button>
-          <Button variant="outline" onClick={handleViewPerformance}>
-            {t('admin.members.detail.viewPerformance')}
-          </Button>
-        </div>
+
       </Card>
 
       {/* Nice D&B 信息卡片 */}
-      <Card className="nicednb-card">
-        <div className="card-header">
-          <h2>{t('admin.members.detail.nicednbInfo')}</h2>
+      <Card className="p-6">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900 m-0">{t('admin.members.detail.nicednbInfo')}</h2>
           <Button 
             onClick={handleSearchNiceDnb}
             disabled={niceDnbLoading || !member?.businessNumber}
+            loading={niceDnbLoading}
             variant="outline"
           >
-            {niceDnbLoading 
-              ? t('common.loading', '加载中...') 
-              : t('admin.members.detail.searchNiceDnb')}
+            {t('admin.members.detail.searchNiceDnb') || '查询 Nice D&B'}
           </Button>
         </div>
 
         {niceDnbLoading && (
-          <div className="nicednb-loading">
-            <p>{t('common.loading', '加载中...')}</p>
-          </div>
+          <Loading text={t('common.loading') || '查询中...'} />
         )}
 
         {niceDnbError && (
-          <div className="nicednb-error">
+          <div className="p-8 text-center text-red-600">
             <p>{niceDnbError}</p>
           </div>
         )}
 
         {!niceDnbData && !niceDnbLoading && !niceDnbError && (
-          <div className="nicednb-placeholder">
-            <p>{t('admin.members.detail.nicednbPlaceholder')}</p>
+          <div className="p-12 text-center text-gray-500">
+            <p className="mb-4">{t('admin.members.detail.nicednbPlaceholder')}</p>
           </div>
         )}
 
         {niceDnbData && niceDnbData.success && niceDnbData.data && (
-          <div className="nicednb-content">
-            <div className="info-grid">
-              <div className="info-item">
-                <label>{t('admin.members.detail.businessNumber')}</label>
-                <span>{niceDnbData.data.businessNumber || '-'}</span>
+          <div className="mt-6">
+            {/* 如果 API 返回的营业执照号与查询时使用的不一致，显示警告 */}
+            {niceDnbData.data.businessNumber && member.businessNumber && 
+             niceDnbData.data.businessNumber.replace(/-/g, '') !== member.businessNumber.replace(/-/g, '') && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                <strong>提示：</strong>查询使用的营业执照号为 <strong>{member.businessNumber}</strong>，但 Nice D&B API 返回的营业执照号为 <strong>{niceDnbData.data.businessNumber}</strong>，两者不一致。
               </div>
-              <div className="info-item">
-                <label>{t('admin.members.detail.companyName')}</label>
-                <span>{niceDnbData.data.companyName || '-'}</span>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.businessNumber')}</label>
+                <span className="text-base text-gray-900">{niceDnbData.data.businessNumber || member.businessNumber || '-'}</span>
               </div>
-              <div className="info-item">
-                <label>{t('admin.members.detail.representative')}</label>
-                <span>{niceDnbData.data.representative || '-'}</span>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.companyName')}</label>
+                <span className="text-base text-gray-900">{niceDnbData.data.companyName || '-'}</span>
               </div>
-              <div className="info-item">
-                <label>{t('admin.members.detail.address')}</label>
-                <span>{niceDnbData.data.address || '-'}</span>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.representative')}</label>
+                <span className="text-base text-gray-900">{niceDnbData.data.representative || '-'}</span>
               </div>
-              <div className="info-item">
-                <label>{t('admin.members.detail.industry')}</label>
-                <span>{niceDnbData.data.industry || '-'}</span>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.address')}</label>
+                <span className="text-base text-gray-900">{niceDnbData.data.address || '-'}</span>
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.industry')}</label>
+                <span className="text-base text-gray-900">{niceDnbData.data.industry || '-'}</span>
               </div>
               {niceDnbData.data.establishedDate && (
-                <div className="info-item">
-                  <label>{t('admin.members.detail.establishedDate', '成立日期')}</label>
-                  <span>{new Date(niceDnbData.data.establishedDate).toLocaleDateString()}</span>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.establishedDate')}</label>
+                  <span className="text-base text-gray-900">{new Date(niceDnbData.data.establishedDate).toLocaleDateString()}</span>
                 </div>
               )}
               {niceDnbData.data.creditGrade && (
-                <div className="info-item">
-                  <label>{t('admin.members.detail.creditGrade', '信用等级')}</label>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.creditGrade')}</label>
                   <Badge variant="info">{niceDnbData.data.creditGrade}</Badge>
                 </div>
               )}
             </div>
 
             {niceDnbData.financials && niceDnbData.financials.length > 0 && (
-              <div className="nicednb-section">
-                <h3>{t('admin.members.detail.financialData', '财务数据')}</h3>
-                <div className="table-wrapper">
-                  <table className="nicednb-table">
+              <div className="mt-8 pt-8 border-t border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('admin.members.detail.financialData')}</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
                     <thead>
                       <tr>
-                        <th>{t('admin.members.detail.year', '年度')}</th>
-                        <th>{t('admin.members.detail.revenue', '营业收入')}</th>
-                        <th>{t('admin.members.detail.profit', '净利润')}</th>
-                        <th>{t('admin.members.detail.assets', '总资产')}</th>
+                        <th className="px-3 py-3 text-left bg-gray-50 font-semibold text-gray-900 border-b border-gray-200">{t('admin.members.detail.year')}</th>
+                        <th className="px-3 py-3 text-left bg-gray-50 font-semibold text-gray-900 border-b border-gray-200">{t('admin.members.detail.revenue')}</th>
+                        <th className="px-3 py-3 text-left bg-gray-50 font-semibold text-gray-900 border-b border-gray-200">{t('admin.members.detail.profit')}</th>
+                        <th className="px-3 py-3 text-left bg-gray-50 font-semibold text-gray-900 border-b border-gray-200">{t('admin.members.detail.assets')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {niceDnbData.financials.map((financial, index) => (
                         <tr key={index}>
-                          <td>{financial.year || '-'}</td>
-                          <td>{financial.revenue ? financial.revenue.toLocaleString() : '-'}</td>
-                          <td>{financial.profit ? financial.profit.toLocaleString() : '-'}</td>
-                          <td>{financial.assets ? financial.assets.toLocaleString() : '-'}</td>
+                          <td className="px-3 py-3 text-gray-700 border-b border-gray-200">{financial.year || '-'}</td>
+                          <td className="px-3 py-3 text-gray-700 border-b border-gray-200">{financial.revenue ? financial.revenue.toLocaleString() : '-'}</td>
+                          <td className="px-3 py-3 text-gray-700 border-b border-gray-200">{financial.profit ? financial.profit.toLocaleString() : '-'}</td>
+                          <td className="px-3 py-3 text-gray-700 border-b border-gray-200">{financial.assets ? financial.assets.toLocaleString() : '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -360,13 +354,13 @@ export default function MemberDetail() {
             )}
 
             {niceDnbData.insights && niceDnbData.insights.length > 0 && (
-              <div className="nicednb-section">
-                <h3>{t('admin.members.detail.insights', '企业洞察')}</h3>
-                <ul className="nicednb-insights">
+              <div className="mt-8 pt-8 border-t border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('admin.members.detail.insights')}</h3>
+                <ul className="list-none p-0 m-0">
                   {niceDnbData.insights.map((insight, index) => (
-                    <li key={index}>
-                      <strong>{insight.title || t('admin.members.detail.insight', '洞察')}:</strong>
-                      <span>{insight.description || '-'}</span>
+                    <li key={index} className="px-3 py-3 mb-2 bg-gray-50 border-l-4 border-green-500 rounded">
+                      <strong className="text-gray-900 mr-2">{insight.title || t('admin.members.detail.insight')}:</strong>
+                      <span className="text-gray-700">{insight.description || '-'}</span>
                     </li>
                   ))}
                 </ul>

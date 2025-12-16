@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import loggerService from "@shared/services/logger.service";
 import exceptionService from "@shared/services/exception.service";
-import "./AddressSearch.css";
+import { cn } from "@shared/utils/helpers";
 
 /**
  * 地址搜索组件
@@ -138,7 +138,7 @@ export function AddressSearch({
     // 创建弹窗容器
     if (!postcodeRef.current) {
       const wrapper = document.createElement("div");
-      wrapper.className = "address-search-popup-wrapper";
+      wrapper.className = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] max-w-[90vw] h-[600px] max-h-[90vh] z-[10000] bg-white rounded-lg shadow-2xl overflow-hidden md:w-[95vw] md:h-[80vh]";
       wrapper.id = "daum-postcode-wrapper";
       document.body.appendChild(wrapper);
       postcodeRef.current = wrapper;
@@ -149,7 +149,7 @@ export function AddressSearch({
 
     // 关闭按钮
     const closeBtn = document.createElement("button");
-    closeBtn.className = "address-search-close-btn";
+    closeBtn.className = "absolute top-2 right-2 w-8 h-8 bg-black/50 text-white border-none rounded-full text-2xl leading-none cursor-pointer z-[10001] flex items-center justify-center transition-colors duration-200 hover:bg-black/70";
     closeBtn.innerHTML = "&times;";
     closeBtn.onclick = () => {
       if (postcodeRef.current) {
@@ -172,19 +172,23 @@ export function AddressSearch({
   }, []);
 
   return (
-    <div className={`address-search-container ${className}`}>
-      <div className="address-search-input-wrapper">
+    <div className={cn("w-full", className)}>
+      <div className="flex gap-2 sm:flex-col">
         <input
           type="text"
           value={value || ""}
           readOnly
-          className="address-search-input"
+          className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm bg-gray-50 cursor-not-allowed disabled:opacity-60 sm:w-full"
           placeholder={t("auth.addressPlaceholder", "주소를 검색하세요")}
           disabled={disabled}
         />
         <button
           type="button"
-          className="address-search-button"
+          className={cn(
+            "px-4 py-2 bg-primary-600 text-white border-none rounded text-sm font-medium cursor-pointer whitespace-nowrap transition-colors duration-200",
+            "hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]",
+            "sm:w-full"
+          )}
           onClick={openAddressSearch}
           disabled={disabled || isLoading}
         >

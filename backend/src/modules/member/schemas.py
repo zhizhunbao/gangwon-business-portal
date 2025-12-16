@@ -25,6 +25,9 @@ class MemberProfileResponse(BaseModel):
     founding_date: Optional[date] = None
     region: Optional[str] = None
     address: Optional[str] = None
+    representative: Optional[str] = None
+    legal_number: Optional[str] = None
+    phone: Optional[str] = None
     website: Optional[str] = None
     logo_url: Optional[str] = None
     created_at: datetime
@@ -58,10 +61,16 @@ class MemberListResponse(BaseModel):
     status: str
     approval_status: str
     industry: Optional[str] = None
+    representative: Optional[str] = None
+    address: Optional[str] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
+        # 确保 None 值也会被包含在 JSON 响应中
+        json_encoders = {
+            type(None): lambda x: None
+        }
 
 
 class MemberListQuery(BaseModel):

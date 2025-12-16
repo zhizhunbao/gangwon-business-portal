@@ -6,7 +6,6 @@ Business logic for file upload and management.
 from typing import Optional
 from fastapi import UploadFile
 from uuid import UUID, uuid4
-from datetime import datetime
 
 from ...common.modules.supabase.service import supabase_service
 from ...common.modules.storage import storage_service
@@ -211,8 +210,7 @@ class UploadService:
             "stored_name": upload_result["stored_name"],
             "file_size": file_size,
             "mime_type": upload_result["mime_type"],
-            "created_at": datetime.utcnow().isoformat(),
-            "updated_at": datetime.utcnow().isoformat(),
+            # Note: uploaded_at is automatically set by database default
         }
 
         attachment = await supabase_service.create_attachment(attachment_data)
@@ -288,8 +286,7 @@ class UploadService:
             "stored_name": upload_result["stored_name"],
             "file_size": file_size,
             "mime_type": upload_result["mime_type"],
-            "created_at": datetime.utcnow().isoformat(),
-            "updated_at": datetime.utcnow().isoformat(),
+            # Note: uploaded_at is automatically set by database default
         }
 
         attachment = await supabase_service.create_attachment(attachment_data)

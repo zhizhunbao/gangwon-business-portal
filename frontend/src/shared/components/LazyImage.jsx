@@ -12,7 +12,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import './LazyImage.css';
+import { cn } from '@shared/utils/helpers';
 
 export default function LazyImage({
   src,
@@ -88,12 +88,13 @@ export default function LazyImage({
       ref={imgRef}
       src={imageSrc}
       alt={alt}
-      className={`lazy-image ${isLoaded ? 'lazy-image-loaded' : ''} ${className}`}
-      style={{
-        opacity: isLoaded ? 1 : 0.7,
-        transition: 'opacity 0.3s ease-in-out',
-        ...style
-      }}
+      className={cn(
+        'block max-w-full h-auto',
+        isLoaded ? 'opacity-100' : 'opacity-70',
+        'transition-opacity duration-300 ease-in-out',
+        className
+      )}
+      style={style}
       onError={handleError}
       loading="lazy"
       decoding="async"

@@ -15,6 +15,14 @@
         "Q4": "第四季度"
       },
       "export": "导出",
+      "exportCsv": "导出CSV",
+      "exportSuccess": "导出成功",
+      "exportFailed": "导出失败",
+      "filter": {
+        "title": "筛选条件",
+        "year": "年份",
+        "quarter": "季度"
+      },
       "stats": {
         "totalMembers": "总企业会员数",
         "totalSales": "总销售额",

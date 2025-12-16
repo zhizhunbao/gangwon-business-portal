@@ -3,8 +3,18 @@
     "members": {
       "title": "기업 회원 관리",
       "export": "엑셀 내보내기",
+      "exportExcel": "엑셀 내보내기",
+      "exportCsv": "CSV 내보내기",
+      "exportSuccess": "내보내기 성공",
+      "exportFailed": "내보내기 실패",
+      "loadFailed": "회원 목록 로드 실패",
       "approve": "승인",
+      "approveSuccess": "승인 성공",
+      "approveFailed": "승인 실패",
       "reject": "거부",
+      "rejectSuccess": "거부 성공",
+      "rejectFailed": "거부 실패",
+      "rejectReason": "거부 사유를 입력하세요 (선택사항)",
       "search": {
         "companyName": "기업명",
         "representative": "대표자명",

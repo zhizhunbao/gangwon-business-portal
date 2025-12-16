@@ -40,6 +40,7 @@ __all__ = [
     "ApplicationLog",
     "ApplicationException",
     "Admin",
+    "Message",
 ]
 
 
@@ -83,6 +84,9 @@ class MemberProfile(Base):
     founding_date = Column(Date)
     region = Column(String(100))
     address = Column(Text)
+    representative = Column(String(100))
+    legal_number = Column(String(20))
+    phone = Column(String(20))
     website = Column(String(255))
     logo_url = Column(String(500))
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
@@ -479,4 +483,34 @@ class Admin(Base):
 
     def __repr__(self):
         return f"<Admin(id={self.id}, username={self.username}, email={self.email})>"
+
+
+class Message(Base):
+    """Message table for member notifications."""
+
+    __tablename__ = "messages"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    sender_id = Column(UUID(as_uuid=True), nullable=True, comment="Admin or member ID who sent the message")
+    recipient_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, comment="Member ID who receives the message")
+    subject = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False)
+    is_read = Column(String(10), nullable=False, server_default="false")
+    is_important = Column(String(10), nullable=False, server_default="false")
+    read_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    recipient = relationship("Member", foreign_keys=[recipient_id])
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_messages_recipient", "recipient_id", "is_read"),
+        Index("idx_messages_sender", "sender_id"),
+        Index("idx_messages_created_at", "created_at"),
+    )
+
+    def __repr__(self):
+        return f"<Message(id={self.id}, recipient_id={self.recipient_id}, subject={self.subject})>"
 

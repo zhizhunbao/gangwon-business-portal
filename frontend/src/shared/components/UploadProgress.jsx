@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import './UploadProgress.css';
+import { cn } from '@shared/utils/helpers';
 
 /**
  * UploadProgress component
@@ -24,19 +24,22 @@ export default function UploadProgress({
   if (!show) return null;
 
   return (
-    <div className={`upload-progress ${className}`}>
+    <div className={cn(
+      'w-full p-3 bg-gray-100 dark:bg-gray-800 rounded-lg my-2',
+      className
+    )}>
       {fileName && (
-        <div className="upload-progress-filename">
+        <div className="text-sm text-gray-800 dark:text-gray-200 mb-2 overflow-hidden text-ellipsis whitespace-nowrap">
           {fileName}
         </div>
       )}
-      <div className="upload-progress-bar-container">
+      <div className="w-full h-2 bg-gray-300 dark:bg-gray-600 rounded overflow-hidden mb-1">
         <div 
-          className="upload-progress-bar"
+          className="h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-300 ease-in-out rounded"
           style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
         />
       </div>
-      <div className="upload-progress-text">
+      <div className="text-xs text-gray-600 dark:text-gray-400 text-right">
         {Math.round(progress)}%
       </div>
     </div>

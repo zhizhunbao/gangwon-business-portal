@@ -3,8 +3,18 @@
     "members": {
       "title": "企业会员管理",
       "export": "导出 Excel",
+      "exportExcel": "导出 Excel",
+      "exportCsv": "导出 CSV",
+      "exportSuccess": "导出成功",
+      "exportFailed": "导出失败",
+      "loadFailed": "加载会员列表失败",
       "approve": "批准",
+      "approveSuccess": "批准成功",
+      "approveFailed": "批准失败",
       "reject": "拒绝",
+      "rejectSuccess": "拒绝成功",
+      "rejectFailed": "拒绝失败",
+      "rejectReason": "请输入拒绝原因（可选）",
       "search": {
         "companyName": "企业名称",
         "representative": "代表人姓名",

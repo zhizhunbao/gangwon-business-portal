@@ -180,6 +180,7 @@ from .modules.content.router import router as content_router
 from .modules.support.router import router as support_router
 from .modules.upload.router import router as upload_router
 from .modules.dashboard.router import router as dashboard_router
+from .modules.messages.router import router as messages_router
 from .common.modules.audit.router import router as audit_router
 from .common.modules.logger import get_logging_router
 from .common.modules.exception import exception_router
@@ -192,6 +193,7 @@ app.include_router(content_router)
 app.include_router(support_router)
 app.include_router(upload_router)
 app.include_router(dashboard_router)
+app.include_router(messages_router)
 app.include_router(audit_router)
 app.include_router(get_logging_router())
 app.include_router(exception_router)

@@ -30,7 +30,6 @@ async def clear_logs_on_startup() -> tuple[list[str], int, int]:
         ("app_logs.log", file_log_writer.application_logs_file),
         ("app_exceptions.log", file_log_writer.application_exceptions_file),
         ("audit_logs.log", file_log_writer.audit_logs_file),
-        ("supabase_operations.log", file_log_writer.supabase_operations_file),
         ("db_pool.log", logs_dir / "db_pool.log"),
     ]
     

@@ -8,7 +8,6 @@ import { useState } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Footer from './Footer';
-import './AdminLayout.css';
 
 export default function AdminLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -27,23 +26,27 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className={`admin-layout ${sidebarCollapsed ? 'sidebar-collapsed' : ''} ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
+    <div className={`flex flex-col min-h-screen bg-gray-50 ${mobileMenuOpen ? 'overflow-hidden' : ''}`}>
       <Header onToggleSidebar={toggleMobileMenu} />
       
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
-        <div className="mobile-menu-overlay" onClick={closeMobileMenu} />
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[998] md:hidden animate-[fadeIn_0.2s_ease-out]" onClick={closeMobileMenu} />
       )}
       
-      <div className="layout-body">
-        <Sidebar collapsed={sidebarCollapsed} mobileOpen={mobileMenuOpen} onClose={closeMobileMenu} />
-        
-        <main className="main-content">
-          <div className="content-wrapper">
-            <Outlet />
-          </div>
+      <div className="flex flex-1 flex-col pt-16">
+        <div className="flex flex-1">
+          <Sidebar collapsed={sidebarCollapsed} mobileOpen={mobileMenuOpen} onClose={closeMobileMenu} />
+          
+          <main className={`flex-1 flex flex-col bg-gray-50 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ml-0 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-64'} relative z-0`}>
+            <div className="flex-1 p-6 max-w-full w-full mx-auto md:p-4">
+              <Outlet />
+            </div>
+          </main>
+        </div>
+        <div className="relative z-[1000]">
           <Footer />
-        </main>
+        </div>
       </div>
     </div>
   );

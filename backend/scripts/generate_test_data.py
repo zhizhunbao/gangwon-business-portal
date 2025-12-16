@@ -115,6 +115,36 @@ async def create_test_account(session: AsyncSession, config: Dict[str, Any], acc
         existing_member.approval_status = "approved"
         existing_member.password_hash = pwd_context.hash(test_password)
         member = existing_member
+        await session.flush()
+        
+        # Check if profile exists, if not create one
+        profile_result = await session.execute(
+            select(MemberProfile).where(MemberProfile.member_id == member.id)
+        )
+        existing_profile = profile_result.scalar_one_or_none()
+        
+        if not existing_profile:
+            # Create profile for existing member
+            profile = MemberProfile(
+                id=uuid4(),
+                member_id=member.id,
+                industry=random.choice(data_defs["industries"]),
+                revenue=Decimal(random.randint(data_ranges["revenue_min"], data_ranges["revenue_max"])),
+                employee_count=random.randint(data_ranges["employee_count_min"], data_ranges["employee_count_max"]),
+                founding_date=fake.date_between(start_date=f"-{data_ranges['founding_date_years_ago']}y", end_date="today"),
+                region=random.choice(data_defs["regions"]),
+                address=fake.address(),
+                representative=fake.name(),
+                legal_number=f"{random.randint(100, 999)}-{random.randint(10, 99)}-{random.randint(10000, 99999)}",
+                phone=f"0{random.randint(2, 9)}-{random.randint(1000, 9999)}-{random.randint(1000, 9999)}",
+                website=test_config["profile"].get("website"),
+                logo_url=None,
+            )
+            session.add(profile)
+            print(f"Created profile for existing test account: {test_business_number}")
+        else:
+            print(f"Profile already exists for test account: {test_business_number}")
+        
         print(f"Updated existing test account: {test_business_number}")
     else:
         # Create new test member
@@ -185,6 +215,22 @@ async def generate_members(session: AsyncSession, config: Dict[str, Any], count:
     else:
         count_adjustment = 1
     
+    # Get status distributions if available
+    status_dist = data_defs.get("member_status_distribution", {})
+    approval_dist = data_defs.get("approval_status_distribution", {})
+    
+    # Helper function to select based on distribution
+    def select_by_distribution(distribution, default_choices):
+        if not distribution:
+            return random.choice(default_choices)
+        rand = random.random()
+        cumulative = 0.0
+        for key, prob in distribution.items():
+            cumulative += prob
+            if rand <= cumulative:
+                return key
+        return random.choice(default_choices)
+    
     # Generate other members
     for i in range(count - count_adjustment):  # Subtract test accounts from count
         business_number = f"{random.randint(1000000000, 9999999999)}"
@@ -201,8 +247,35 @@ async def generate_members(session: AsyncSession, config: Dict[str, Any], count:
         email = fake.unique.email()
         password_hash = pwd_context.hash("password123")
         
-        status = random.choice(statuses)
-        approval_status = random.choice(approval_statuses)
+        # Use distribution if available, otherwise random choice
+        # Ensure status and approval_status are properly set
+        status = select_by_distribution(status_dist, statuses)
+        approval_status = select_by_distribution(approval_dist, approval_statuses)
+        
+        # Ensure logical consistency: if approved, status should be active
+        if approval_status == "approved" and status == "pending":
+            status = "active"
+        # If rejected, status can be pending or suspended
+        elif approval_status == "rejected" and status == "active":
+            status = random.choice(["pending", "suspended"])
+        
+        # Determine company size based on distribution
+        company_size_rand = random.random()
+        company_size_config = None
+        if company_size_rand < data_ranges.get("small_company_ratio", 0.4):
+            company_size_config = data_ranges.get("small_company", {})
+        elif company_size_rand < (data_ranges.get("small_company_ratio", 0.4) + data_ranges.get("medium_company_ratio", 0.45)):
+            company_size_config = data_ranges.get("medium_company", {})
+        else:
+            company_size_config = data_ranges.get("large_company", {})
+        
+        # Use company size specific ranges if available, otherwise use general ranges
+        revenue_min = company_size_config.get("revenue_min", data_ranges["revenue_min"]) if company_size_config else data_ranges["revenue_min"]
+        revenue_max = company_size_config.get("revenue_max", data_ranges["revenue_max"]) if company_size_config else data_ranges["revenue_max"]
+        employee_min = company_size_config.get("employee_count_min", data_ranges["employee_count_min"]) if company_size_config else data_ranges["employee_count_min"]
+        employee_max = company_size_config.get("employee_count_max", data_ranges["employee_count_max"]) if company_size_config else data_ranges["employee_count_max"]
+        
+        created_days_ago_max = data_ranges.get("created_days_ago_max", 365)
         
         member = Member(
             id=uuid4(),
@@ -212,19 +285,55 @@ async def generate_members(session: AsyncSession, config: Dict[str, Any], count:
             password_hash=password_hash,
             status=status,
             approval_status=approval_status,
-            created_at=datetime.now(timezone.utc) - timedelta(days=random.randint(0, 365)),
+            created_at=datetime.now(timezone.utc) - timedelta(days=random.randint(0, created_days_ago_max)),
         )
         members.append(member)
+        
+        # Generate proper Korean address with region
+        selected_region = random.choice(regions) if random.random() > probs["member_profile_region_null"] else None
+        address = None
+        # Ensure most members have address (reduce null probability)
+        if random.random() > (probs["member_profile_address_null"] * 0.5):  # Reduce null probability by half
+            if selected_region:
+                # Generate Korean-style address: "시/도 시/군/구 동/읍/면 번지"
+                # Use Faker's Korean locale to generate proper addresses
+                korean_address = fake.address()
+                # If address doesn't start with region, prepend it
+                if not korean_address.startswith(selected_region):
+                    # Generate a city/district name
+                    city_name = fake.city() if hasattr(fake, 'city') else fake.word()
+                    address = f"{selected_region} {city_name} {korean_address}"
+                else:
+                    address = korean_address
+            else:
+                address = fake.address()
+        
+        # Generate representative name (Korean name)
+        # Ensure most members have representative (95% instead of 90%)
+        representative = fake.name() if random.random() > 0.05 else None
+        
+        # Generate legal number (법인번호) - 13 digits format: XXX-XX-XXXXX
+        legal_number = None
+        if random.random() > 0.2:  # 80% have legal number
+            legal_number = f"{random.randint(100, 999)}-{random.randint(10, 99)}-{random.randint(10000, 99999)}"
+        
+        # Generate phone number (Korean format)
+        phone = None
+        if random.random() > 0.15:  # 85% have phone
+            phone = f"0{random.randint(2, 9)}-{random.randint(1000, 9999)}-{random.randint(1000, 9999)}"
         
         profile = MemberProfile(
             id=uuid4(),
             member_id=member.id,
             industry=random.choice(industries) if random.random() > probs["member_profile_industry_null"] else None,
-            revenue=Decimal(random.randint(data_ranges["revenue_min"], data_ranges["revenue_max"])) if random.random() > probs["member_profile_revenue_null"] else None,
-            employee_count=random.randint(data_ranges["employee_count_min"], data_ranges["employee_count_max"]) if random.random() > probs["member_profile_employee_count_null"] else None,
+            revenue=Decimal(random.randint(revenue_min, revenue_max)) if random.random() > probs["member_profile_revenue_null"] else None,
+            employee_count=random.randint(employee_min, employee_max) if random.random() > probs["member_profile_employee_count_null"] else None,
             founding_date=fake.date_between(start_date=f"-{data_ranges['founding_date_years_ago']}y", end_date="today") if random.random() > probs["member_profile_founding_date_null"] else None,
-            region=random.choice(regions) if random.random() > probs["member_profile_region_null"] else None,
-            address=fake.address() if random.random() > probs["member_profile_address_null"] else None,
+            region=selected_region,
+            address=address,
+            representative=representative,
+            legal_number=legal_number,
+            phone=phone,
             website=f"https://{fake.domain_name()}" if random.random() > probs["member_profile_website_null"] else None,
             logo_url=None,
         )
@@ -712,8 +821,6 @@ async def generate_content(session: AsyncSession, members: List['Member'], confi
         "INTRO": ["about"],
         "PROGRAM": ["projects"],
         "PERFORMANCE": ["performance"],
-        "PROGRAM": ["projects"],
-        "PERFORMANCE": ["performance"],
         "SUPPORT": ["support"],
         "PROFILE": ["profile"],
     }
@@ -1017,6 +1124,68 @@ async def generate_inquiries(session: AsyncSession, members: List['Member'], con
     await session.flush()
 
 
+async def generate_messages(
+    session: AsyncSession,
+    members: List['Member'],
+    admins: List['Admin'],
+    config: Dict[str, Any],
+    count: int = 100,
+):
+    """Generate message test data."""
+    from src.common.modules.db.models import Message
+    
+    data_ranges = config["data_ranges"]["message"]
+    data_defs = config["data_definitions"]
+    
+    # Message subjects and content templates - use from config if available
+    message_subjects = data_defs.get("message_subjects", [
+        "회원가입 승인 완료",
+        "성과 제출 안내",
+        "프로젝트 신청 결과",
+        "시스템 점검 안내",
+        "새로운 지원 사업 안내",
+        "프로필 정보 업데이트 요청",
+        "문의사항 답변",
+        "중요 공지사항",
+        "이벤트 안내",
+        "정기 보고서 제출 요청",
+    ])
+    
+    for i in range(count):
+        recipient = random.choice(members)
+        # Messages can be sent by admins or system (sender_id can be None)
+        sender = random.choice(admins) if admins and random.random() > 0.3 else None
+        
+        is_read = random.random() < data_ranges["is_read_probability"]
+        is_important = random.random() < data_ranges["is_important_probability"]
+        
+        subject = random.choice(message_subjects)
+        content = fake.text(max_nb_chars=500)
+        
+        created_at = datetime.now(timezone.utc) - timedelta(days=random.randint(0, data_ranges["created_days_ago_max"]))
+        read_at = None
+        if is_read:
+            read_at = created_at + timedelta(days=random.randint(1, min(
+                data_ranges["read_days_ago_max"],
+                (datetime.now(timezone.utc) - created_at).days
+            )))
+        
+        message = Message(
+            id=uuid4(),
+            sender_id=sender.id if sender else None,
+            recipient_id=recipient.id,
+            subject=subject,
+            content=content,
+            is_read="true" if is_read else "false",
+            is_important="true" if is_important else "false",
+            read_at=read_at,
+            created_at=created_at,
+        )
+        session.add(message)
+    
+    await session.flush()
+
+
 async def generate_attachments(
     session: AsyncSession,
     performance_records: List['PerformanceRecord'],
@@ -1172,6 +1341,7 @@ async def clear_test_data(session: AsyncSession):
         "member_profiles",
         "members",
         "admins",
+        "messages",
     ]
     
     # Truncate all tables with CASCADE to handle foreign key constraints automatically
@@ -1296,6 +1466,11 @@ async def generate_all(
     await generate_inquiries(session, members, config, inquiry_count)
     print("Generated inquiries")
     
+    print("Generating messages...")
+    messages_count = config["generation_counts"]["messages"]
+    await generate_messages(session, members, admins, config, messages_count)
+    print(f"Generated {messages_count} messages")
+    
     print("Generating attachments...")
     await generate_attachments(session, performance_records, projects, applications, config, attachments_count)
     print("Generated attachments")
@@ -1331,6 +1506,7 @@ async def main():
         Inquiry,
         AuditLog,
         Admin,
+        Message,
     )
     
     # Load configuration from JSON file

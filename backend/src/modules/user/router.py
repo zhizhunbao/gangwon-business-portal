@@ -162,7 +162,7 @@ async def password_reset(
     }
 
 
-@router.get("/me", response_model=UserInfo)
+@router.get("/me")
 @auto_log("get_current_user_info")
 async def get_current_user_info(
     request: Request,
@@ -171,17 +171,32 @@ async def get_current_user_info(
     """
     Get current user information.
 
-    Returns the authenticated member's information.
+    Returns the authenticated user's information (member or admin).
     """
-    return UserInfo(
-        id=current_user["id"],
-        business_number=current_user["business_number"],
-        company_name=current_user["company_name"],
-        email=current_user["email"],
-        status=current_user["status"],
-        approval_status=current_user["approval_status"],
-        created_at=current_user["created_at"],
-    )
+    role = current_user.get("role", "member")
+    
+    if role == "admin":
+        # Return admin information
+        return {
+            "id": str(current_user["id"]),
+            "username": current_user.get("username"),
+            "email": current_user["email"],
+            "full_name": current_user.get("full_name"),
+            "is_active": current_user.get("is_active"),
+            "role": "admin",
+            "created_at": current_user.get("created_at"),
+        }
+    else:
+        # Return member information
+        return UserInfo(
+            id=current_user["id"],
+            business_number=current_user["business_number"],
+            company_name=current_user["company_name"],
+            email=current_user["email"],
+            status=current_user["status"],
+            approval_status=current_user["approval_status"],
+            created_at=current_user["created_at"],
+        )
 
 
 @router.post("/logout", response_model=dict)

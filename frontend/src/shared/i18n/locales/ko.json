@@ -46,6 +46,7 @@
     "of": "/",
     "items": "건",
     "total": "총",
+    "showing": "{{start}}-{{end}} / {{total}}건 표시",
     "from": "부터",
     "to": "까지",
     "date": "날짜",

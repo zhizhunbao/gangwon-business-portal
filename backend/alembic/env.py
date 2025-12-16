@@ -30,8 +30,10 @@ if config.config_file_name is not None:
 from common.modules.config import settings
 
 # Override sqlalchemy.url from environment variable
+# Use DIRECT_URL for migrations (direct connection, port 5432) if available,
+# otherwise fall back to DATABASE_URL
 # Convert async URL to sync URL for Alembic
-database_url = settings.DATABASE_URL
+database_url = settings.DIRECT_URL or settings.DATABASE_URL
 if database_url.startswith("postgresql+asyncpg://"):
     database_url = database_url.replace("postgresql+asyncpg://", "postgresql://")
 

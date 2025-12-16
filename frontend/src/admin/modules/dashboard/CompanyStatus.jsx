@@ -6,13 +6,11 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Card, Select, Loading, MemberGrowthChart, MixedChart } from '@shared/components';
+import { Card, Select, Loading, MemberGrowthChart, MixedChart, Button } from '@shared/components';
 import { BuildingIcon, CurrencyDollarIcon, UsersIcon, DocumentIcon } from '@shared/components/Icons';
-import { apiService, loggerService, exceptionService } from '@shared/services';
+import { apiService, adminService } from '@shared/services';
 import { API_PREFIX } from '@shared/utils/constants';
 import { formatCurrencyCompact } from '@shared/utils/format';
-
-import './Dashboard.css';
 
 export default function CompanyStatus() {
   const { t, i18n } = useTranslation();
@@ -56,11 +54,6 @@ export default function CompanyStatus() {
           setChartData({ members: [], salesEmployment: [] });
         }
       } else {
-        loggerService.warning('Company Status response missing stats', {
-          module: 'CompanyStatus',
-          function: 'loadDashboardStats',
-          response: response
-        });
         setStats({
           totalMembers: 0,
           totalSales: 0,
@@ -70,16 +63,6 @@ export default function CompanyStatus() {
         setChartData({ members: [], salesEmployment: [] });
       }
     } catch (error) {
-      loggerService.error('Failed to load company status stats', {
-        module: 'CompanyStatus',
-        function: 'loadDashboardStats',
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_path: window.location.pathname,
-        error_code: 'LOAD_COMPANY_STATUS_ERROR'
-      });
       setStats({
         totalMembers: 0,
         totalSales: 0,
@@ -125,31 +108,81 @@ export default function CompanyStatus() {
     }))
   ];
 
+  const handleExport = async (format = 'excel') => {
+    try {
+      setLoading(true);
+      const params = {
+        format,
+        year: selectedYear === 'all' ? 'all' : selectedYear,
+        quarter: selectedQuarter
+      };
+      
+      // 使用 adminService.exportDashboard，装饰器会自动处理日志记录
+      await adminService.exportDashboard(params);
+    } catch (error) {
+      // 错误日志已由装饰器记录，静默处理错误
+      console.error('Export failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="company-status">
-      <div className="dashboard-header">
-        <h2 className="page-title">{t('admin.dashboard.companyStatus.title')}</h2>
-        <div className="header-actions">
-          <Select
-            inline
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-            options={yearOptions}
-            placeholder={null}
-          />
-          <Select
-            inline
-            value={selectedQuarter}
-            onChange={(e) => setSelectedQuarter(e.target.value)}
-            options={[
-              { value: 'all', label: t('admin.dashboard.quarter.all') },
-              { value: 'Q1', label: t('admin.dashboard.quarter.Q1') },
-              { value: 'Q2', label: t('admin.dashboard.quarter.Q2') },
-              { value: 'Q3', label: t('admin.dashboard.quarter.Q3') },
-              { value: 'Q4', label: t('admin.dashboard.quarter.Q4') }
-            ]}
-            placeholder={null}
-          />
+    <div className="w-full">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900 mb-4">{t('admin.dashboard.companyStatus.title', '企业状态')}</h1>
+        
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                {t('admin.dashboard.filter.year', '年份')}:
+              </label>
+              <Select
+                inline
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                options={yearOptions}
+                placeholder={null}
+                className="w-32 text-base"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                {t('admin.dashboard.filter.quarter', '季度')}:
+              </label>
+              <Select
+                inline
+                value={selectedQuarter}
+                onChange={(e) => setSelectedQuarter(e.target.value)}
+                options={[
+                  { value: 'all', label: t('admin.dashboard.quarter.all') },
+                  { value: 'Q1', label: t('admin.dashboard.quarter.Q1') },
+                  { value: 'Q2', label: t('admin.dashboard.quarter.Q2') },
+                  { value: 'Q3', label: t('admin.dashboard.quarter.Q3') },
+                  { value: 'Q4', label: t('admin.dashboard.quarter.Q4') }
+                ]}
+                placeholder={null}
+                className="w-28 text-base"
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-2 ml-4">
+            <Button 
+              onClick={() => handleExport('excel')} 
+              variant="outline"
+              disabled={loading}
+            >
+              {t('admin.dashboard.companyStatus.export', '导出 Excel')}
+            </Button>
+            <Button 
+              onClick={() => handleExport('csv')} 
+              variant="outline"
+              disabled={loading}
+            >
+              {t('admin.dashboard.exportCsv', '导出 CSV')}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -158,29 +191,29 @@ export default function CompanyStatus() {
       ) : (
         <>
           {/* 统计卡片 */}
-          <div className="stats-grid">
-            <Card className="stat-card">
-              <div className="stat-icon">
-                <BuildingIcon className="w-8 h-8" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="flex items-center gap-6 p-6 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative overflow-hidden hover:-translate-y-1 hover:shadow-lg hover:border-gray-300 before:content-[''] before:absolute before:top-0 before:left-0 before:w-1 before:h-full before:bg-gradient-to-b before:from-blue-500 before:to-blue-600 before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100 md:p-4 md:flex-col md:items-start md:gap-4">
+              <div className="w-16 h-16 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white text-[28px] flex-shrink-0 shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3)] md:w-12 md:h-12 md:text-2xl">
+                <BuildingIcon className="w-8 h-8 text-white md:w-6 md:h-6" />
               </div>
-              <div className="stat-content">
-                <h3 className="stat-label">{t('admin.dashboard.stats.totalMembers')}</h3>
-                <p className="stat-value">{stats.totalMembers.toLocaleString()}</p>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm text-gray-500 m-0 mb-2 font-medium uppercase tracking-wide flex items-center flex-wrap gap-1 md:text-xs">{t('admin.dashboard.stats.totalMembers')}</h3>
+                <p className="text-[30px] font-bold text-gray-900 m-0 leading-tight md:text-xl">{stats.totalMembers.toLocaleString()}</p>
               </div>
             </Card>
 
-            <Card className="stat-card">
-              <div className="stat-icon">
-                <CurrencyDollarIcon className="w-8 h-8" />
+            <Card className="flex items-center gap-6 p-6 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative overflow-hidden hover:-translate-y-1 hover:shadow-lg hover:border-gray-300 before:content-[''] before:absolute before:top-0 before:left-0 before:w-1 before:h-full before:bg-gradient-to-b before:from-blue-500 before:to-blue-600 before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100 md:p-4 md:flex-col md:items-start md:gap-4">
+              <div className="w-16 h-16 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white text-[28px] flex-shrink-0 shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3)] md:w-12 md:h-12 md:text-2xl">
+                <CurrencyDollarIcon className="w-8 h-8 text-white md:w-6 md:h-6" />
               </div>
-              <div className="stat-content">
-                <h3 className="stat-label">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm text-gray-500 m-0 mb-2 font-medium uppercase tracking-wide flex items-center flex-wrap gap-1 md:text-xs">
                   {t('admin.dashboard.stats.totalSales')} 
-                  <span className="stat-unit">
+                  <span className="text-xs font-normal text-gray-400 normal-case tracking-normal not-italic">
                     {' '}({currentLanguage === 'ko' ? '단위' : '单位'}: {currentLanguage === 'ko' ? '만원' : '万元'})
                   </span>
                 </h3>
-                <p className="stat-value">
+                <p className="text-[30px] font-bold text-gray-900 m-0 leading-tight md:text-xl">
                   {formatCurrencyCompact(stats.totalSales, { 
                     language: currentLanguage,
                     showCurrency: false,
@@ -190,31 +223,31 @@ export default function CompanyStatus() {
               </div>
             </Card>
 
-            <Card className="stat-card">
-              <div className="stat-icon">
-                <UsersIcon className="w-8 h-8" />
+            <Card className="flex items-center gap-6 p-6 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative overflow-hidden hover:-translate-y-1 hover:shadow-lg hover:border-gray-300 before:content-[''] before:absolute before:top-0 before:left-0 before:w-1 before:h-full before:bg-gradient-to-b before:from-blue-500 before:to-blue-600 before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100 md:p-4 md:flex-col md:items-start md:gap-4">
+              <div className="w-16 h-16 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white text-[28px] flex-shrink-0 shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3)] md:w-12 md:h-12 md:text-2xl">
+                <UsersIcon className="w-8 h-8 text-white md:w-6 md:h-6" />
               </div>
-              <div className="stat-content">
-                <h3 className="stat-label">{t('admin.dashboard.stats.totalEmployment')}</h3>
-                <p className="stat-value">{stats.totalEmployment.toLocaleString()}</p>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm text-gray-500 m-0 mb-2 font-medium uppercase tracking-wide flex items-center flex-wrap gap-1 md:text-xs">{t('admin.dashboard.stats.totalEmployment')}</h3>
+                <p className="text-[30px] font-bold text-gray-900 m-0 leading-tight md:text-xl">{stats.totalEmployment.toLocaleString()}</p>
               </div>
             </Card>
 
-            <Card className="stat-card">
-              <div className="stat-icon">
-                <DocumentIcon className="w-8 h-8" />
+            <Card className="flex items-center gap-6 p-6 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] relative overflow-hidden hover:-translate-y-1 hover:shadow-lg hover:border-gray-300 before:content-[''] before:absolute before:top-0 before:left-0 before:w-1 before:h-full before:bg-gradient-to-b before:from-blue-500 before:to-blue-600 before:opacity-0 before:transition-opacity before:duration-300 hover:before:opacity-100 md:p-4 md:flex-col md:items-start md:gap-4">
+              <div className="w-16 h-16 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white text-[28px] flex-shrink-0 shadow-[0_4px_6px_-1px_rgba(59,130,246,0.3)] md:w-12 md:h-12 md:text-2xl">
+                <DocumentIcon className="w-8 h-8 text-white md:w-6 md:h-6" />
               </div>
-              <div className="stat-content">
-                <h3 className="stat-label">{t('admin.dashboard.stats.totalIP')}</h3>
-                <p className="stat-value">{stats.totalIntellectualProperty.toLocaleString()}</p>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm text-gray-500 m-0 mb-2 font-medium uppercase tracking-wide flex items-center flex-wrap gap-1 md:text-xs">{t('admin.dashboard.stats.totalIP')}</h3>
+                <p className="text-[30px] font-bold text-gray-900 m-0 leading-tight md:text-xl">{stats.totalIntellectualProperty.toLocaleString()}</p>
               </div>
             </Card>
           </div>
 
           {/* 图表区域 */}
-          <div className="charts-section">
-            <Card className="chart-card">
-              <h2 className="chart-title">{t('admin.dashboard.charts.members')}</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <Card className="p-6 transition-shadow duration-300 hover:shadow-md md:p-4">
+              <h2 className="text-lg font-semibold text-gray-800 m-0 mb-6 md:text-base md:mb-4">{t('admin.dashboard.charts.members')}</h2>
               <MemberGrowthChart
                 key={`members-${selectedYear}-${selectedQuarter}`}
                 data={membersChartData}
@@ -222,8 +255,8 @@ export default function CompanyStatus() {
               />
             </Card>
 
-            <Card className="chart-card">
-              <h2 className="chart-title">{t('admin.dashboard.charts.salesEmployment')}</h2>
+            <Card className="p-6 transition-shadow duration-300 hover:shadow-md md:p-4">
+              <h2 className="text-lg font-semibold text-gray-800 m-0 mb-6 md:text-base md:mb-4">{t('admin.dashboard.charts.salesEmployment')}</h2>
               {salesEmploymentData.length > 0 ? (
                 <MixedChart
                   key={`sales-employment-${selectedYear}-${selectedQuarter}`}
@@ -273,7 +306,7 @@ export default function CompanyStatus() {
                   ]}
                 />
               ) : (
-                <div className="chart-placeholder">
+                <div className="h-[300px] flex items-center justify-center bg-gray-50 rounded-lg text-gray-500">
                   <p>{t('admin.dashboard.charts.noData')}</p>
                 </div>
               )}

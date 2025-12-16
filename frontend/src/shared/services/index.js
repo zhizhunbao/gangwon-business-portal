@@ -11,6 +11,7 @@ export { default as projectService } from './project.service';
 export { default as contentService } from './content.service';
 export { default as supportService } from './support.service';
 export { default as uploadService } from './upload.service';
+export { default as messageService } from './message.service';
 export { default as loggerService, LOG_LEVELS } from './logger.service';
 export { default as exceptionService } from './exception.service';
 

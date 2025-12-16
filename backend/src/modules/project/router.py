@@ -148,6 +148,39 @@ async def get_my_applications(
 # Admin endpoints
 
 
+@router.get(
+    "/api/admin/projects",
+    response_model=ProjectListResponsePaginated,
+    tags=["admin-projects"],
+    summary="List all projects (Admin)",
+)
+@auto_log("list_projects_admin", log_result_count=True)
+async def list_projects_admin(
+    query: Annotated[ProjectListQuery, Depends()],
+    request: Request,
+    current_admin: Annotated[Member, Depends(get_current_admin_user)],
+):
+    """
+    List all projects with pagination and filtering (admin only).
+    
+    Admin can see all projects including drafts and inactive ones.
+    
+    - **status**: Filter by status (active, inactive, archived)
+    - **search**: Search in title and description
+    - **page**: Page number (default: 1)
+    - **page_size**: Items per page (default: 20, max: 100)
+    """
+    projects, total = await service.list_projects(query)
+
+    return ProjectListResponsePaginated(
+        items=[ProjectListItem.model_validate(p) for p in projects],
+        total=total,
+        page=query.page,
+        page_size=query.page_size,
+        total_pages=ceil(total / query.page_size) if total > 0 else 0,
+    )
+
+
 @router.post(
     "/api/admin/projects",
     response_model=ProjectResponse,

@@ -223,7 +223,7 @@ const contentService = {
   /**
    * 获取活跃横幅（公开）
    * @param {Object} params - 查询参数
-   * @param {string} params.bannerType - 横幅类型（可选：MAIN, INTRO, PROGRAM, PERFORMANCE, SUPPORT）
+   * @param {string} params.bannerType - 横幅类型（main_primary, about, projects, performance, support）
    * @returns {Promise<Array>} 横幅列表
    */
   async getBanners(params = {}) {
@@ -313,6 +313,90 @@ const contentService = {
     
     const response = await updateSystemInfoInternal(payload);
     return toCamelCase(response);
+  },
+
+  // ========== 弹窗 (Popups) ==========
+
+  /**
+   * 获取活跃弹窗（公开）
+   * @returns {Promise<Object|null>} 弹窗详情或 null
+   */
+  async getActivePopup() {
+    const response = await getActivePopupInternal();
+    return response ? toCamelCase(response) : null;
+  },
+
+  /**
+   * 获取所有弹窗（管理员）
+   * @returns {Promise<Array>} 弹窗列表
+   */
+  async getAllPopups() {
+    const response = await getAllPopupsInternal();
+    return (response.popups || []).map(toCamelCase);
+  },
+
+  /**
+   * 获取弹窗详情（管理员）
+   * @param {string} popupId - 弹窗ID
+   * @returns {Promise<Object>} 弹窗详情
+   */
+  async getPopup(popupId) {
+    const response = await getPopupInternal(popupId);
+    return toCamelCase(response);
+  },
+
+  /**
+   * 创建弹窗（管理员）
+   * @param {Object} data - 弹窗数据
+   * @param {string} data.title - 标题
+   * @param {string} data.content - 内容
+   * @param {string} data.imageUrl - 图片URL（可选）
+   * @param {string} data.linkUrl - 链接URL（可选）
+   * @param {number} data.width - 宽度（默认：600）
+   * @param {number} data.height - 高度（默认：400）
+   * @param {string} data.position - 位置（center, left, right，默认：center）
+   * @param {boolean} data.isActive - 是否活跃（默认：true）
+   * @param {string} data.startDate - 开始日期（可选）
+   * @param {string} data.endDate - 结束日期（可选）
+   * @returns {Promise<Object>} 创建的弹窗
+   */
+  async createPopup(data) {
+    const payload = toSnakeCase({
+      title: data.title,
+      content: data.content,
+      imageUrl: data.imageUrl,
+      linkUrl: data.linkUrl,
+      width: data.width || 600,
+      height: data.height || 400,
+      position: data.position || 'center',
+      isActive: data.isActive !== undefined ? data.isActive : true,
+      startDate: data.startDate || null,
+      endDate: data.endDate || null
+    });
+    
+    const response = await createPopupInternal(payload);
+    return toCamelCase(response);
+  },
+
+  /**
+   * 更新弹窗（管理员）
+   * @param {string} popupId - 弹窗ID
+   * @param {Object} data - 更新数据
+   * @returns {Promise<Object>} 更新后的弹窗
+   */
+  async updatePopup(popupId, data) {
+    const payload = toSnakeCase(data);
+    const response = await updatePopupInternal(popupId, payload);
+    return toCamelCase(response);
+  },
+
+  /**
+   * 删除弹窗（管理员）
+   * @param {string} popupId - 弹窗ID
+   * @returns {Promise<void>}
+   */
+  async deletePopup(popupId) {
+    await deletePopupInternal(popupId);
   }
 };
 
@@ -428,6 +512,42 @@ const getSystemInfoInternal = autoLog('get_system_info', { serviceName: 'Content
 const updateSystemInfoInternal = autoLog('update_system_info', { serviceName: 'ContentService', methodName: 'updateSystemInfo' })(
   async (data) => {
     return await apiService.put(`${API_PREFIX}/admin/content/system-info`, data);
+  }
+);
+
+const getActivePopupInternal = autoLog('get_active_popup', { serviceName: 'ContentService', methodName: 'getActivePopup' })(
+  async () => {
+    return await apiService.get(`${API_PREFIX}/popup`);
+  }
+);
+
+const getAllPopupsInternal = autoLog('get_all_popups', { logResultCount: true, serviceName: 'ContentService', methodName: 'getAllPopups' })(
+  async () => {
+    return await apiService.get(`${API_PREFIX}/admin/content/popups`);
+  }
+);
+
+const getPopupInternal = autoLog('get_popup', { logResourceId: true, serviceName: 'ContentService', methodName: 'getPopup' })(
+  async (popupId) => {
+    return await apiService.get(`${API_PREFIX}/admin/content/popups/${popupId}`);
+  }
+);
+
+const createPopupInternal = autoLog('create_popup', { logResourceId: true, serviceName: 'ContentService', methodName: 'createPopup' })(
+  async (data) => {
+    return await apiService.post(`${API_PREFIX}/admin/content/popups`, data);
+  }
+);
+
+const updatePopupInternal = autoLog('update_popup', { logResourceId: true, serviceName: 'ContentService', methodName: 'updatePopup' })(
+  async (popupId, data) => {
+    return await apiService.put(`${API_PREFIX}/admin/content/popups/${popupId}`, data);
+  }
+);
+
+const deletePopupInternal = autoLog('delete_popup', { logResourceId: true, serviceName: 'ContentService', methodName: 'deletePopup' })(
+  async (popupId) => {
+    return await apiService.delete(`${API_PREFIX}/admin/content/popups/${popupId}`);
   }
 );
 

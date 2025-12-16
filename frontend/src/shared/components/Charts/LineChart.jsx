@@ -6,7 +6,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import BaseChart from './BaseChart';
-import './BaseChart.css';
 
 /**
  * LineChart - 折线图组件

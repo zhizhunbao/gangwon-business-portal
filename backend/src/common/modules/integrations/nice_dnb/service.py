@@ -221,6 +221,7 @@ class NiceDnBClient:
                         "business_number": business_number,
                         "api_url": api_url,
                         "method": "POST",
+                        "response_data": str(data)[:500],  # Log first 500 chars of response
                     }
                 )
 
@@ -246,6 +247,7 @@ class NiceDnBClient:
                                 "business_number": business_number,
                                 "api_url": api_url,
                                 "method": "GET",
+                                "response_data": str(data)[:500],  # Log first 500 chars of response
                             }
                         )
 
@@ -331,10 +333,21 @@ class NiceDnBClient:
         if not data_body:
             data_body = api_data
 
+        # Log the bizNo from API response for debugging
+        api_biz_no = data_body.get("bizNo")
+        logger.info(
+            f"Parsing Nice D&B API response",
+            extra={
+                "query_business_number": business_number,
+                "api_biz_no": api_biz_no,
+                "data_body_keys": list(data_body.keys())[:10] if isinstance(data_body, dict) else None,
+            }
+        )
+
         # Extract company basic information
         # Based on actual API response fields: cmpNm, ceoNm, addr, indNm, etc.
         company_data = NiceDnBCompanyData(
-            business_number=data_body.get("bizNo") or business_number,
+            business_number=api_biz_no if api_biz_no else business_number,
             company_name=(
                 data_body.get("cmpNm")  # Korean company name (회사명)
                 or data_body.get("cmpEnm")  # English company name

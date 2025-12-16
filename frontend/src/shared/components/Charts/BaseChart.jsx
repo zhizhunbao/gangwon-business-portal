@@ -6,6 +6,7 @@
 import React from 'react';
 import ReactECharts from 'echarts-for-react';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@shared/utils/helpers';
 
 /**
  * BaseChart - 基础图表组件
@@ -53,22 +54,26 @@ export default function BaseChart({
   if (!option || Object.keys(option).length === 0) {
     return (
       <div 
-        className={`base-chart-empty ${className}`}
+        className={cn(
+          "flex items-center justify-center min-h-[200px] md:min-h-[150px] sm:min-h-[120px]",
+          "bg-gray-50 border border-gray-200 rounded-lg",
+          className
+        )}
         style={chartStyle}
       >
-        <div className="empty-content">
-          <p>{t('admin.dashboard.charts.noData', '暂无数据')}</p>
+        <div className="text-center text-gray-500">
+          <p className="m-0 text-sm md:text-xs sm:text-[11px]">{t('admin.dashboard.charts.noData', '暂无数据')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`base-chart ${className}`} style={{ width }}>
+    <div className={cn("relative w-full md:overflow-x-auto", className)} style={{ width }}>
       {loading && (
-        <div className="chart-loading">
-          <div className="loading-spinner"></div>
-          <p>{defaultLoadingText}</p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-10 md:p-4">
+          <div className="w-8 h-8 md:w-6 md:h-6 border-[3px] md:border-2 border-gray-200 border-t-primary-600 rounded-full animate-spin mb-2" />
+          <p className="m-0 text-gray-600 text-sm md:text-xs">{defaultLoadingText}</p>
         </div>
       )}
       <ReactECharts

@@ -4,7 +4,6 @@ This module provides thread-safe asynchronous file writing for:
 - app_logs.log - Combined backend and frontend application logs (merged for easier debugging)
 - app_exceptions.log - Combined backend and frontend exceptions (merged for easier debugging)
 - audit_logs.log - Audit logs (compliance and security tracking)
-- supabase_operations.log - Supabase database operations log (queries, performance tracking)
 
 Uses queue-based asynchronous writing to avoid blocking the main thread.
 """
@@ -53,7 +52,6 @@ class FileLogWriter:
         # Merged exceptions (backend + frontend) for easier debugging with trace_id correlation
         self.application_exceptions_file = self.logs_dir / "app_exceptions.log"
         self.audit_logs_file = self.logs_dir / "audit_logs.log"
-        self.supabase_operations_file = self.logs_dir / "supabase_operations.log"
         self.db_pool_file = self.logs_dir / "db_pool.log"
 
         # Initialize log files (create empty files if they don't exist)
@@ -61,7 +59,6 @@ class FileLogWriter:
             self.application_logs_file,
             self.application_exceptions_file,
             self.audit_logs_file,
-            self.supabase_operations_file,
             self.db_pool_file,
         ]:
             if not log_file.exists():
@@ -420,66 +417,6 @@ class FileLogWriter:
                         f.write(formatted_entry + "\n")
             except Exception as e:
                 logging.error(f"Failed to write audit log to file: {e}")
-
-    def write_supabase_operation(
-        self,
-        source: str,  # backend
-        level: str,  # DEBUG, INFO, WARNING, ERROR
-        message: str,
-        module: Optional[str] = None,
-        function: Optional[str] = None,
-        trace_id: Optional[str] = None,
-        user_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        request_method: Optional[str] = None,
-        request_path: Optional[str] = None,
-        extra_data: Optional[dict[str, Any]] = None,
-    ) -> None:
-        """Write a Supabase operation log entry to supabase_operations.log file.
-
-        Args:
-            source: Source of the log (backend)
-            level: Log level (DEBUG/INFO/WARNING/ERROR)
-            message: Log message
-            module: Module name
-            function: Function name
-            trace_id: Request trace ID
-            user_id: User ID
-            ip_address: IP address
-            user_agent: User agent string
-            request_method: HTTP method
-            request_path: Request path
-            extra_data: Additional context data (operation_name, table_name, operation_type, execution_time_ms, etc.)
-        """
-        log_data = {
-            "trace_id": trace_id,
-            "user_id": str(user_id) if user_id else None,
-            "ip_address": ip_address,
-            "user_agent": user_agent,
-            "request_method": request_method,
-            "request_path": request_path,
-        }
-        # Remove None values
-        log_data = {k: v for k, v in log_data.items() if v is not None}
-        if extra_data:
-            log_data["extra_data"] = extra_data
-
-        formatted_entry = self._format_log_entry(level, message, source=source, extra_data=log_data)
-
-        # Enqueue Supabase operation log entry for asynchronous writing
-        try:
-            self.log_queue.put((self.supabase_operations_file, formatted_entry), block=False)
-        except queue.Full:
-            # If queue is full, fallback to synchronous write to avoid losing logs
-            logging.warning("Log queue is full, falling back to synchronous write")
-            try:
-                with self.write_lock:
-                    self._rotate_file_if_needed(self.supabase_operations_file)
-                    with open(self.supabase_operations_file, "a", encoding="utf-8") as f:
-                        f.write(formatted_entry + "\n")
-            except Exception as e:
-                logging.error(f"Failed to write Supabase operation log to file: {e}")
 
     def write_db_pool_log(
         self,

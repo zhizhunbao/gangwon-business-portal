@@ -49,7 +49,17 @@
       "의료/바이오",
       "교육",
       "문화/예술",
-      "농업/수산업"
+      "농업/수산업",
+      "식음료",
+      "화학/소재",
+      "자동차/부품",
+      "전자/반도체",
+      "에너지/환경",
+      "관광/숙박",
+      "부동산",
+      "미디어/광고",
+      "운송/물류",
+      "기계/장비"
     ],
     "regions": [
       "서울",
@@ -71,13 +81,40 @@
     ],
     "member_statuses": ["pending", "active", "suspended"],
     "approval_statuses": ["pending", "approved", "rejected"],
+    "member_status_distribution": {
+      "active": 0.7,
+      "pending": 0.25,
+      "suspended": 0.05
+    },
+    "approval_status_distribution": {
+      "approved": 0.75,
+      "pending": 0.2,
+      "rejected": 0.05
+    },
     "performance_types": ["sales", "support", "ip"],
     "performance_statuses": ["draft", "submitted", "approved", "rejected", "revision_requested"],
     "project_statuses": ["active", "inactive", "archived"],
     "application_statuses": ["submitted", "under_review", "approved", "rejected"],
     "inquiry_statuses": ["pending", "replied", "closed"],
     "banner_types": ["MAIN", "INTRO", "PROGRAM", "PERFORMANCE", "SUPPORT", "PROFILE"],
-    "faq_categories": ["회원가입", "성과관리", "프로젝트", "기타"],
+    "faq_categories": ["회원가입", "성과관리", "프로젝트", "기업프로필", "문의/지원", "기타"],
+    "message_subjects": [
+      "회원가입 승인 완료",
+      "성과 제출 안내",
+      "프로젝트 신청 결과",
+      "시스템 점검 안내",
+      "새로운 지원 사업 안내",
+      "프로필 정보 업데이트 요청",
+      "문의사항 답변",
+      "중요 공지사항",
+      "이벤트 안내",
+      "정기 보고서 제출 요청",
+      "승인 완료 안내",
+      "반려 사유 안내",
+      "수정 요청 안내",
+      "신청 접수 확인",
+      "결과 발표 안내"
+    ],
     "audit_actions": ["login", "logout", "create", "update", "delete", "view", "approve", "reject"],
     "audit_resource_types": [
       "member",
@@ -114,7 +151,29 @@
       "revenue_max": 1000000000,
       "employee_count_min": 1,
       "employee_count_max": 500,
-      "founding_date_years_ago": 20
+      "founding_date_years_ago": 20,
+      "created_days_ago_max": 730,
+      "small_company_ratio": 0.4,
+      "medium_company_ratio": 0.45,
+      "large_company_ratio": 0.15,
+      "small_company": {
+        "revenue_min": 1000000,
+        "revenue_max": 100000000,
+        "employee_count_min": 1,
+        "employee_count_max": 50
+      },
+      "medium_company": {
+        "revenue_min": 100000000,
+        "revenue_max": 500000000,
+        "employee_count_min": 50,
+        "employee_count_max": 200
+      },
+      "large_company": {
+        "revenue_min": 500000000,
+        "revenue_max": 1000000000,
+        "employee_count_min": 200,
+        "employee_count_max": 500
+      }
     },
     "test_account": {
       "revenue_min": 10000000,
@@ -178,6 +237,13 @@
       "created_days_ago_max": 90,
       "replied_days_ago_max": 30
     },
+    "message": {
+      "count": 100,
+      "created_days_ago_max": 90,
+      "read_days_ago_max": 30,
+      "is_read_probability": 0.4,
+      "is_important_probability": 0.2
+    },
     "attachment": {
       "file_size_min": 10000,
       "file_size_max": 5000000,
@@ -185,6 +251,10 @@
     },
     "audit_log": {
       "created_days_ago_max": 365
+    },
+    "system_info": {
+      "created_days_ago_max": 365,
+      "updated_days_ago_max": 30
     }
   },
   "generation_counts": {
@@ -194,7 +264,9 @@
     "projects": 35,
     "project_applications": 150,
     "attachments": 100,
-    "audit_logs": 1000
+    "audit_logs": 1000,
+    "messages": 100,
+    "system_infos": 1
   },
   "probabilities": {
     "member_profile_industry_null": 0.1,

@@ -5,7 +5,6 @@
 import { forwardRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@shared/utils/helpers';
-import './Select.css';
 
 export const Select = forwardRef(function Select({
   label,
@@ -25,9 +24,13 @@ export const Select = forwardRef(function Select({
       <select
         ref={ref}
         className={cn(
-          'input',
-          inline && 'input-inline',
-          error && 'input-error',
+          'px-3 py-2 border rounded-md shadow-sm',
+          'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
+          'transition-colors duration-200',
+          inline ? 'inline-block w-auto' : 'w-full',
+          error 
+            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+            : 'border-gray-300',
           className
         )}
         {...props}
@@ -40,10 +43,10 @@ export const Select = forwardRef(function Select({
         ))}
       </select>
       {error && (
-        <p className="form-error">{error}</p>
+        <p className="mt-1.5 text-sm text-red-600">{error}</p>
       )}
       {help && !error && (
-        <p className="form-help">{help}</p>
+        <p className="mt-1.5 text-sm text-gray-500">{help}</p>
       )}
     </>
   );
@@ -53,9 +56,12 @@ export const Select = forwardRef(function Select({
   }
 
   return (
-    <div className="form-group">
+    <div className="mb-4">
       {label && (
-        <label className={cn('form-label', required && 'form-label-required')}>
+        <label className={cn(
+          'block text-sm font-medium text-gray-700 mb-1.5',
+          required && 'after:content-["*"] after:text-red-500 after:ml-1'
+        )}>
           {label}
         </label>
       )}

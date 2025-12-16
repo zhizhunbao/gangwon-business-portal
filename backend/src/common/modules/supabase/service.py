@@ -150,8 +150,12 @@ class SupabaseService:
         if status:
             query = query.eq('status', status)
         
-        # 获取总数（先执行一次查询获取总数）
-        count_query = query.select('*', count='exact')
+        # 获取总数（创建新的查询来获取总数）
+        count_query = self.client.table('members').select('*', count='exact')
+        if approval_status:
+            count_query = count_query.eq('approval_status', approval_status)
+        if status:
+            count_query = count_query.eq('status', status)
         count_result = count_query.execute()
         total = count_result.count or 0
         
@@ -166,6 +170,7 @@ class SupabaseService:
         
         # 获取每个会员的档案信息
         member_ids = [str(m['id']) for m in members]
+        
         profiles_map = {}
         
         if member_ids:
@@ -176,7 +181,8 @@ class SupabaseService:
                 .execute()
             
             for profile in profiles_result.data or []:
-                profiles_map[str(profile['member_id'])] = profile
+                profile_member_id = str(profile['member_id'])
+                profiles_map[profile_member_id] = profile
         
         # 合并会员和档案数据，并应用搜索和筛选
         filtered_members = []
@@ -202,11 +208,24 @@ class SupabaseService:
                 if not profile or profile.get('region') != region:
                     continue
             
-            # 添加档案信息到会员对象
+            # 添加档案信息到会员对象，并将常用字段提升到顶层
             if profile:
                 member['profile'] = profile
+                # 将常用字段提升到顶层，方便前端访问
+                member['address'] = profile.get('address')
+                member['representative'] = profile.get('representative')
+                member['legal_number'] = profile.get('legal_number')
+                member['phone'] = profile.get('phone')
+                member['industry'] = profile.get('industry')
+                member['region'] = profile.get('region')
             else:
                 member['profile'] = None
+                member['address'] = None
+                member['representative'] = None
+                member['legal_number'] = None
+                member['phone'] = None
+                member['industry'] = None
+                member['region'] = None
             
             filtered_members.append(member)
         
@@ -276,6 +295,16 @@ class SupabaseService:
             .limit(1)\
             .execute()
         profile = result.data[0] if result.data else None
+        
+        # 将常用字段提升到 member 对象顶层，方便前端访问
+        if profile:
+            member['address'] = profile.get('address')
+            member['representative'] = profile.get('representative')
+            member['representativeName'] = profile.get('representative')  # 兼容前端使用的字段名
+            member['legalNumber'] = profile.get('legal_number')
+            member['phone'] = profile.get('phone')
+            member['industry'] = profile.get('industry')
+            member['region'] = profile.get('region')
         
         return member, profile
     

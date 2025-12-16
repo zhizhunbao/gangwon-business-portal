@@ -11,7 +11,7 @@ import { Alert } from './Alert';
 import contentService from '@shared/services/content.service';
 import loggerService from '@shared/services/logger.service';
 import exceptionService from '@shared/services/exception.service';
-import './TermsModal.css';
+import { cn } from '@shared/utils/helpers';
 
 /**
  * 条款类型
@@ -171,30 +171,42 @@ export function TermsModal({ isOpen, termType, onClose }) {
       title={title}
       size="lg"
     >
-      <div className="terms-modal-content">
+      <div className="flex flex-col h-full">
         {loading && (
-          <div className="terms-modal-loading">
+          <div className="flex justify-center items-center p-8 min-h-[200px]">
             <Loading />
           </div>
         )}
 
         {error && (
-          <Alert type="error" className="terms-modal-error">
+          <Alert variant="error" className="my-4">
             {error}
           </Alert>
         )}
 
         {!loading && !error && content && (
           <div 
-            className="terms-modal-body"
+            className={cn(
+              "flex-1 overflow-y-auto p-4 max-h-[60vh] leading-relaxed text-gray-900",
+              "[&::-webkit-scrollbar]:w-2",
+              "[&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded",
+              "[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded",
+              "[&::-webkit-scrollbar-thumb]:hover:bg-gray-400",
+              "[&_h2]:mt-0 [&_h2]:mb-4 [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-gray-900",
+              "[&_h3]:mt-6 [&_h3]:mb-3 [&_h3]:text-xl [&_h3]:font-semibold",
+              "[&_p]:my-3",
+              "[&_ul]:my-3 [&_ul]:pl-8",
+              "[&_ol]:my-3 [&_ol]:pl-8",
+              "[&_li]:my-2"
+            )}
             dangerouslySetInnerHTML={{ __html: content }}
           />
         )}
 
-        <div className="terms-modal-footer">
+        <div className="flex justify-end p-4 border-t border-gray-200 mt-auto">
           <button
             type="button"
-            className="terms-modal-close-btn"
+            className="px-6 py-2 bg-primary-600 text-white border-none rounded text-sm font-medium cursor-pointer transition-colors duration-200 hover:bg-primary-700 active:scale-[0.98]"
             onClick={onClose}
           >
             {t('common.close', '닫기')}

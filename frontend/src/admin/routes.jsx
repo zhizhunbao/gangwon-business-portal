@@ -15,6 +15,7 @@ const MemberDetail = lazy(() => import('./modules/members/MemberDetail'));
 const PerformanceList = lazy(() => import('./modules/performance/PerformanceList'));
 const ProjectList = lazy(() => import('./modules/projects/ProjectList'));
 const ContentManagement = lazy(() => import('./modules/content/ContentManagement'));
+const Messages = lazy(() => import('./modules/messages/Messages'));
 const Settings = lazy(() => import('./modules/settings'));
 const Reports = lazy(() => import('./modules/reports'));
 const AuditLogList = lazy(() => import('./modules/audit-logs/AuditLogList'));
@@ -91,6 +92,16 @@ export default function AdminRoutes() {
           element={
             <LazyRoute>
               <ContentManagement />
+            </LazyRoute>
+          } 
+        />
+        
+        {/* 站内信 */}
+        <Route 
+          path="messages" 
+          element={
+            <LazyRoute>
+              <Messages />
             </LazyRoute>
           } 
         />

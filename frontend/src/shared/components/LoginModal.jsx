@@ -200,6 +200,7 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
                 name="password"
                 type={showPassword ? "text" : "password"}
                 className="w-full py-3 pr-10 text-base leading-relaxed text-gray-900 bg-transparent border-0 border-b border-gray-300 rounded-none outline-none box-border transition-colors duration-200 focus:border-gray-900 focus:outline-none"
+                style={{ letterSpacing: showPassword ? 'normal' : '-0.02em' }}
                 value={formData.password}
                 onChange={handlePasswordChange}
                 required

@@ -15,6 +15,14 @@
         "Q4": "4분기"
       },
       "export": "내보내기",
+      "exportCsv": "CSV 내보내기",
+      "exportSuccess": "내보내기 성공",
+      "exportFailed": "내보내기 실패",
+      "filter": {
+        "title": "필터 조건",
+        "year": "연도",
+        "quarter": "분기"
+      },
       "stats": {
         "totalMembers": "총 기업 회원 수",
         "totalSales": "총 매출액",

@@ -46,6 +46,7 @@
     "of": "/",
     "items": "条",
     "total": "共",
+    "showing": "显示 {{start}}-{{end}} 共 {{total}} 条",
     "from": "从",
     "to": "到",
     "date": "日期",

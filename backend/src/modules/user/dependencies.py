@@ -30,7 +30,7 @@ async def get_current_user(
         credentials: HTTP Bearer token credentials
 
     Returns:
-        Current authenticated member dict
+        Current authenticated user dict (member or admin)
 
     Raises:
         UnauthorizedError: If token is invalid or user not found
@@ -47,16 +47,25 @@ async def get_current_user(
     try:
         payload = auth_service.decode_token(token)
         user_id: str = payload.get("sub")
+        role: str = payload.get("role", "member")
+        
         if user_id is None:
             raise UnauthorizedError("Invalid token payload")
     except Exception as e:
         raise UnauthorizedError(f"Could not validate credentials: {str(e)}")
 
-    # Get user from database
+    # Get user from database based on role
     try:
-        user = await supabase_service.get_member_by_id(user_id)
+        if role == "admin":
+            user = await supabase_service.get_admin_by_id(user_id)
+        else:
+            user = await supabase_service.get_member_by_id(user_id)
+        
         if user is None:
             raise UnauthorizedError("User not found")
+        
+        # Add role to user dict for consistency
+        user["role"] = role
         
         return user
     except ValueError:
@@ -74,13 +83,23 @@ async def get_current_active_user(
         current_user: Current authenticated user dict
 
     Returns:
-        Active member dict
+        Active user dict (member or admin)
 
     Raises:
         UnauthorizedError: If user is not active
     """
-    if current_user.get("status") != "active":
-        raise UnauthorizedError("Inactive user")
+    role = current_user.get("role", "member")
+    
+    # Check active status based on user type
+    if role == "admin":
+        # Admins use is_active field (string "true" or "false")
+        if current_user.get("is_active") != "true":
+            raise UnauthorizedError("Inactive user")
+    else:
+        # Members use status field
+        if current_user.get("status") != "active":
+            raise UnauthorizedError("Inactive user")
+    
     return current_user
 
 
@@ -142,6 +161,63 @@ async def get_current_active_user_compat(
     if current_user.get("status") != "active":
         raise UnauthorizedError("Inactive user")
     return MemberCompat(current_user)
+
+
+@auto_log("get_current_member_user", log_resource_id=True)
+async def get_current_member_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+) -> MemberCompat:
+    """
+    Get current member user.
+
+    Args:
+        credentials: HTTP Bearer token credentials
+
+    Returns:
+        Member compatibility object
+
+    Raises:
+        UnauthorizedError: If user is not authenticated or not a member
+        ForbiddenError: If user is authenticated but not a member
+    """
+    auth_service = AuthService()
+
+    # When no Authorization header is provided, return 401
+    if credentials is None:
+        raise UnauthorizedError("Not authenticated")
+
+    token = credentials.credentials
+
+    try:
+        payload = auth_service.decode_token(token)
+        user_id: str = payload.get("sub")
+        role: str = payload.get("role", "member")
+        
+        if user_id is None:
+            raise UnauthorizedError("Invalid token payload")
+        
+        # Check if role is member in token (or default to member)
+        if role == "member" or role is None:
+            # Get member from database
+            try:
+                member = await supabase_service.get_member_by_id(user_id)
+                if member is None:
+                    raise UnauthorizedError("Member not found")
+                
+                if member.get("status") != "active":
+                    raise UnauthorizedError("Member account is inactive")
+                
+                return MemberCompat(member)
+            except ValueError:
+                raise UnauthorizedError("Invalid member ID format")
+        else:
+            # User is authenticated but not a member (e.g., admin)
+            raise ForbiddenError("Member access required")
+            
+    except ForbiddenError:
+        raise
+    except Exception as e:
+        raise UnauthorizedError(f"Could not validate credentials: {str(e)}")
 
 
 @auto_log("get_current_admin_user", log_resource_id=True)

@@ -3,14 +3,37 @@
  */
 
 import { cn } from '@shared/utils/helpers';
-import './Pagination.css';
 
 export function Pagination({ 
-  currentPage, 
-  totalPages, 
+  currentPage: currentPageProp, 
+  current,
+  totalPages: totalPagesProp,
+  total,
+  pageSize,
   onPageChange,
+  onChange,
   className 
 }) {
+  // Support both prop naming conventions
+  const currentPage = currentPageProp ?? current ?? 1;
+  const onPageChangeHandler = onPageChange ?? onChange;
+  
+  // Calculate totalPages from total and pageSize if needed
+  let totalPages = totalPagesProp;
+  if (totalPages === undefined && total !== undefined && pageSize !== undefined) {
+    totalPages = Math.ceil(total / pageSize);
+  }
+  
+  // Ensure totalPages is a valid number
+  if (!Number.isFinite(totalPages) || totalPages < 1) {
+    totalPages = 1;
+  }
+  
+  // Ensure currentPage is valid
+  const validCurrentPage = Number.isFinite(currentPage) && currentPage >= 1 
+    ? Math.min(currentPage, totalPages) 
+    : 1;
+  
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
@@ -20,13 +43,13 @@ export function Pagination({
         pages.push(i);
       }
     } else {
-      if (currentPage <= 3) {
+      if (validCurrentPage <= 3) {
         for (let i = 1; i <= 4; i++) {
           pages.push(i);
         }
         pages.push('...');
         pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
+      } else if (validCurrentPage >= totalPages - 2) {
         pages.push(1);
         pages.push('...');
         for (let i = totalPages - 3; i <= totalPages; i++) {
@@ -35,9 +58,9 @@ export function Pagination({
       } else {
         pages.push(1);
         pages.push('...');
-        pages.push(currentPage - 1);
-        pages.push(currentPage);
-        pages.push(currentPage + 1);
+        pages.push(validCurrentPage - 1);
+        pages.push(validCurrentPage);
+        pages.push(validCurrentPage + 1);
         pages.push('...');
         pages.push(totalPages);
       }
@@ -47,50 +70,91 @@ export function Pagination({
   };
   
   const handlePrevious = () => {
-    if (currentPage > 1) {
-      onPageChange(currentPage - 1);
+    if (validCurrentPage > 1 && onPageChangeHandler) {
+      onPageChangeHandler(validCurrentPage - 1);
     }
   };
   
   const handleNext = () => {
-    if (currentPage < totalPages) {
-      onPageChange(currentPage + 1);
+    if (validCurrentPage < totalPages && onPageChangeHandler) {
+      onPageChangeHandler(validCurrentPage + 1);
     }
   };
   
   return (
-    <nav className={cn('pagination', className)}>
+    <nav className={cn(
+      'flex items-center justify-center flex-wrap gap-2',
+      'md:gap-1',
+      className
+    )}>
       <button
         onClick={handlePrevious}
-        disabled={currentPage === 1}
-        className="pagination-btn pagination-btn-nav"
+        disabled={validCurrentPage === 1}
+        className={cn(
+          'px-3 py-2 text-sm font-medium border rounded-md',
+          'min-w-[44px] min-h-[44px]',
+          'flex items-center justify-center',
+          'transition-all duration-200',
+          'md:px-2 md:text-xs md:min-w-[40px] md:min-h-[40px]',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
+          'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+        )}
       >
         이전
       </button>
       
-      {getPageNumbers().map((page, index) => (
-        page === '...' ? (
-          <span key={`ellipsis-${index}`} className="pagination-ellipsis">
+      {getPageNumbers().map((page, index) => {
+        // Ensure page is a valid number for key
+        const pageKey = typeof page === 'number' && Number.isFinite(page) 
+          ? `page-${page}` 
+          : `ellipsis-${index}`;
+        
+        return page === '...' ? (
+          <span
+            key={pageKey}
+            className={cn(
+              'px-3 py-2 text-gray-500',
+              'min-w-[44px] min-h-[44px]',
+              'flex items-center justify-center',
+              'md:px-2 md:text-xs md:min-w-[32px] md:min-h-[32px]',
+              'hidden sm:flex'
+            )}
+          >
             ...
           </span>
         ) : (
           <button
-            key={page}
-            onClick={() => onPageChange(page)}
+            key={pageKey}
+            onClick={() => onPageChangeHandler && onPageChangeHandler(page)}
             className={cn(
-              'pagination-btn',
-              currentPage === page ? 'pagination-btn-active' : 'pagination-btn-inactive'
+              'px-4 py-2 text-sm font-medium border rounded-md',
+              'min-w-[44px] min-h-[44px]',
+              'flex items-center justify-center',
+              'transition-all duration-200',
+              'md:px-3 md:text-xs md:min-w-[40px] md:min-h-[40px]',
+              validCurrentPage === page
+                ? 'bg-primary-600 text-white border-primary-600'
+                : 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50 hidden sm:flex',
+              validCurrentPage === page && 'flex'
             )}
           >
             {page}
           </button>
-        )
-      ))}
+        );
+      })}
       
       <button
         onClick={handleNext}
-        disabled={currentPage === totalPages}
-        className="pagination-btn pagination-btn-nav"
+        disabled={validCurrentPage === totalPages}
+        className={cn(
+          'px-3 py-2 text-sm font-medium border rounded-md',
+          'min-w-[44px] min-h-[44px]',
+          'flex items-center justify-center',
+          'transition-all duration-200',
+          'md:px-2 md:text-xs md:min-w-[40px] md:min-h-[40px]',
+          'disabled:opacity-50 disabled:cursor-not-allowed',
+          'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+        )}
       >
         다음
       </button>

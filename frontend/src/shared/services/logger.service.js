@@ -145,4 +145,74 @@ class LoggerService {
 }
 
 const loggerService = new LoggerService();
+
+/**
+ * Auto-logging decorator for service methods
+ * @param {string} operationName - Name of the operation being logged
+ * @param {Object} options - Logging options
+ * @param {boolean} options.logResultCount - Whether to log result count
+ * @param {string} options.serviceName - Name of the service
+ * @param {string} options.methodName - Name of the method
+ * @returns {Function} Decorator function
+ */
+export function autoLog(operationName, options = {}) {
+  return function(targetFunction) {
+    return async function(...args) {
+      const startTime = Date.now();
+      const { serviceName, methodName, logResultCount } = options;
+      
+      try {
+        // Log start of operation
+        loggerService.debug(`Starting ${operationName}`, {
+          module: serviceName,
+          function: methodName,
+          operation: operationName,
+          args: args.length > 0 ? 'provided' : 'none'
+        });
+        
+        const result = await targetFunction.apply(this, args);
+        const duration = Date.now() - startTime;
+        
+        // Log successful completion
+        const logData = {
+          module: serviceName,
+          function: methodName,
+          operation: operationName,
+          duration_ms: duration,
+          status: 'success'
+        };
+        
+        if (logResultCount && result) {
+          if (Array.isArray(result)) {
+            logData.result_count = result.length;
+          } else if (result.items && Array.isArray(result.items)) {
+            logData.result_count = result.items.length;
+          } else if (result.total !== undefined) {
+            logData.result_count = result.total;
+          }
+        }
+        
+        loggerService.info(`Completed ${operationName}`, logData);
+        
+        return result;
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        
+        // Log error
+        loggerService.error(`Failed ${operationName}`, {
+          module: serviceName,
+          function: methodName,
+          operation: operationName,
+          duration_ms: duration,
+          status: 'error',
+          error_message: error.message,
+          error_type: error.constructor.name
+        });
+        
+        throw error;
+      }
+    };
+  };
+}
+
 export default loggerService;
