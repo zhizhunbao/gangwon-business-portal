@@ -300,6 +300,10 @@ export const router = createBrowserRouter(
       element: <RootLayout />,
       children: [
         {
+          path: "/",
+          element: <Navigate to="/member" replace />,
+        },
+        {
           path: "/admin/login",
           element: (
             <LazyRoute>
