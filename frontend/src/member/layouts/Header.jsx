@@ -9,7 +9,6 @@ import { useState, useRef, useEffect } from "react";
 import useAuthStore from "@shared/stores/authStore";
 import LanguageSwitcher from "@shared/components/LanguageSwitcher";
 import { LoginModal } from "@shared/components";
-import { loggerService, exceptionService } from "@shared/services";
 import {
   BellIcon,
   UserIcon,
@@ -22,6 +21,7 @@ import {
   DocumentIcon,
   MenuIcon,
   XIcon,
+  NotificationBell,
 } from "@shared/components";
 
 function Header() {
@@ -30,13 +30,11 @@ function Header() {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuthStore();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const [pendingPath, setPendingPath] = useState(null);
   const userMenuRef = useRef(null);
-  const notificationsRef = useRef(null);
   const mobileMenuRef = useRef(null);
 
   // 一级导航菜单
@@ -103,6 +101,16 @@ function Header() {
 
   // 菜单激活状态计算
   const isMenuActive = (item) => {
+    // 首页模块（首页入口 + 首页内“查看全部”落地页）都应该保持高亮
+    if (item.key === "home") {
+      return (
+        location.pathname === "/member/home" ||
+        location.pathname === "/member" ||
+        location.pathname.startsWith("/member/notices") ||
+        location.pathname.startsWith("/member/press") ||
+        location.pathname.startsWith("/member/news")
+      );
+    }
     if (item.exact) {
       return location.pathname === item.path;
     }
@@ -113,12 +121,6 @@ function Header() {
     const handleClickOutside = (event) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setShowUserMenu(false);
-      }
-      if (
-        notificationsRef.current &&
-        !notificationsRef.current.contains(event.target)
-      ) {
-        setShowNotifications(false);
       }
       if (
         mobileMenuRef.current &&
@@ -133,37 +135,19 @@ function Header() {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      setShowUserMenu(false);
-      await logout();
-      navigate("/login", { replace: true });
-    } catch (error) {
-      loggerService.error("Logout error", {
-        module: "MemberHeader",
-        function: "handleLogout",
-        error_message: error.message,
-        error_code: error.code,
-      });
-      exceptionService.recordException(error, {
-        request_path: window.location.pathname,
-        error_code: error.code || "LOGOUT_FAILED",
-      });
-      const { clearAuth } = useAuthStore.getState();
-      clearAuth();
-      navigate("/login", { replace: true });
-    }
+    setShowUserMenu(false);
+    await logout();
+    navigate("/login", { replace: true });
   };
 
-  const notifications = [];
-
   return (
-    <header className="fixed top-0 left-0 right-0 flex items-center justify-between px-8 z-[1000] h-[70px] max-md:h-[60px] max-md:px-4 border-b-[3px] border-[#001a33] shadow-md"
+    <header className="member-header fixed top-0 left-0 right-0 flex items-center justify-between px-8 z-[1000] h-[70px] max-md:h-[60px] max-md:px-4 border-b-[3px] border-[#001a33] shadow-md"
       style={{ background: 'linear-gradient(135deg, #002244 0%, #001a33 100%)' }}>
       <div className="flex items-center gap-4 flex-shrink-0">
         <button
           className="hidden max-md:flex bg-transparent border-none cursor-pointer py-2 px-3 text-white transition-all duration-200 rounded items-center justify-center mr-2 hover:bg-white/10"
           onClick={() => setShowMobileMenu(!showMobileMenu)}
-          aria-label="Toggle Menu"
+          aria-label={t("header.toggleMenu")}
         >
           {showMobileMenu ? <XIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
         </button>
@@ -253,45 +237,10 @@ function Header() {
           <LanguageSwitcher variant="light" />
         </div>
 
-        {/* 通知 */}
-        <div className="relative" ref={notificationsRef}>
-          <button
-            className="relative bg-transparent border-none cursor-pointer py-2 px-3 text-white transition-all duration-200 rounded flex items-center justify-center hover:opacity-80"
-            title={t("header.notifications")}
-            onClick={() => setShowNotifications(!showNotifications)}
-          >
-            <BellIcon className="w-5 h-5" />
-            {notifications.length > 0 && (
-              <span className="absolute top-0.5 right-0.5 bg-red-500 text-white text-[0.625rem] font-semibold px-1.5 py-0.5 rounded-[10px] min-w-[18px] h-[18px] flex items-center justify-center border-2 border-white">
-                {notifications.length}
-              </span>
-            )}
-          </button>
-
-          {showNotifications && (
-            <div className="absolute top-[calc(100%+0.5rem)] right-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[320px] max-w-[400px] max-h-[500px] z-[1001] overflow-hidden max-md:-right-4 max-md:min-w-[280px]">
-              <div className="p-4 border-b border-gray-200">
-                <h3 className="m-0 text-base font-semibold text-gray-900">{t("header.notifications")}</h3>
-              </div>
-              <div className="max-h-[400px] overflow-y-auto">
-                {notifications.length > 0 ? (
-                  notifications.map((notification, index) => (
-                    <div key={index} className="p-4 border-b border-gray-100 cursor-pointer transition-colors duration-200 hover:bg-gray-50 last:border-b-0">
-                      <div className="flex flex-col gap-1">
-                        <p className="m-0 text-sm text-gray-900 font-medium">{notification.title}</p>
-                        <p className="m-0 text-xs text-gray-500">{notification.time}</p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-8 text-center text-gray-400 text-sm">
-                    {t("header.noNotifications")}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        {/* 通知 - 下拉列表形式 */}
+        {isAuthenticated && (
+          <NotificationBell userType="member" variant="dark" />
+        )}
 
         {/* 用户菜单或登录按钮 */}
         {isAuthenticated ? (
@@ -367,7 +316,7 @@ function Header() {
               style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
               onClick={() => setShowLoginModal(true)}
             >
-              {t("header.login") || "로그인"}
+              {t("header.login")}
             </button>
           </div>
         )}

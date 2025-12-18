@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '@shared/components/Card';
 import LazyImage from '@shared/components/LazyImage';
-import { contentService, loggerService, exceptionService } from '@shared/services';
+import { contentService } from '@shared/services';
+import { formatDate } from '@shared/utils/format';
 import { ROUTES } from '@shared/utils/constants';
 
 // 生成占位符图片
@@ -26,35 +27,20 @@ function PressPreview() {
 
   const loadNews = useCallback(async () => {
     setLoading(true);
-    try {
-      // 使用 contentService 获取最新1条新闻稿
-      const newsItem = await contentService.getLatestPressRelease();
-      
-      if (newsItem) {
-        setNews({
-          id: newsItem.id,
-          title: newsItem.title,
-          thumbnailUrl: newsItem.imageUrl, // 后端返回的是 imageUrl
-          publishedAt: newsItem.createdAt ? new Date(newsItem.createdAt).toISOString().split('T')[0] : ''
-        });
-      } else {
-        setNews(null);
-      }
-    } catch (error) {
-      loggerService.error('Failed to load news', {
-        module: 'PressPreview',
-        function: 'loadNews',
-        error_message: error.message,
-        error_code: error.code
+    // 使用 contentService 获取最新1条新闻稿
+    const newsItem = await contentService.getLatestPressRelease();
+    
+    if (newsItem) {
+      setNews({
+        id: newsItem.id,
+        title: newsItem.title,
+        thumbnailUrl: newsItem.imageUrl || newsItem.image_url || null,
+        publishedAt: (newsItem.createdAt || newsItem.created_at) ? formatDate((newsItem.createdAt || newsItem.created_at), 'yyyy-MM-dd', i18n.language) : ''
       });
-      exceptionService.recordException(error, {
-        request_path: window.location.pathname,
-        error_code: error.code || 'LOAD_NEWS_FAILED'
-      });
+    } else {
       setNews(null);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }, [i18n.language]);
 
   useEffect(() => {

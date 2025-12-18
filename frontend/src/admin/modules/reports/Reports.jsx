@@ -14,18 +14,18 @@ export default function Reports() {
   const [activeTab, setActiveTab] = useState('custom');
 
   const tabs = useMemo(() => [
-    { key: 'custom', label: t('admin.reports.tabs.custom', '自定义报表') },
-    { key: 'templates', label: t('admin.reports.tabs.templates', '报表模板') }
+    { key: 'custom', label: t('admin.reports.tabs.custom') },
+    { key: 'templates', label: t('admin.reports.tabs.templates') }
   ], [t]);
 
   return (
     <div className="w-full">
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-semibold text-gray-900 m-0 mb-1">
-          {t('admin.reports.title', '统计报表')}
+          {t('admin.reports.title')}
         </h1>
         <p className="text-gray-600 text-sm m-0">
-          {t('admin.reports.description', '生成自定义报表。实时统计请查看仪表板。')}
+          {t('admin.reports.description')}
         </p>
       </div>
 

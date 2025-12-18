@@ -5,11 +5,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { Card, Button, Badge, Alert, Pagination, Modal, ModalFooter } from '@shared/components';
-import { messageService } from '@shared/services';
+import { messagesService } from '@shared/services';
+import { formatDateTime } from '@shared/utils/format';
 
 export default function MessageList() {
   const { t, i18n } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -24,32 +27,21 @@ export default function MessageList() {
 
   const loadMessages = useCallback(async () => {
     setLoading(true);
+    setMessage(null);
     const params = {
       page: currentPage,
       pageSize: pageSize,
       isRead: filter === 'read' ? true : filter === 'unread' ? false : undefined,
     };
     
-    const response = await messageService.getMessages(params);
+    const response = await messagesService.getMessages(params);
     setMessages(response.items || []);
     setTotalCount(response.total || 0);
     setUnreadCount(response.unreadCount || 0);
     setLoading(false);
   }, [currentPage, filter, pageSize, t]);
 
-  useEffect(() => {
-    loadMessages();
-  }, [loadMessages]);
-
-  const handleMessageClick = (msg) => {
-    setSelectedMessage(msg);
-    // Mark as read if unread - update locally without reloading
-    if (!msg.isRead) {
-      handleMarkAsRead(msg.id, msg);
-    }
-  };
-
-  const handleMarkAsRead = async (messageId, messageData = null) => {
+  const handleMarkAsRead = useCallback(async (messageId, messageData = null) => {
     // Update locally first for instant UI feedback
     if (messageData) {
       setMessages(prev => prev.map(msg => 
@@ -64,7 +56,7 @@ export default function MessageList() {
     }
     
     // Update on server in background (don't wait for it)
-    messageService.updateMessage(messageId, { isRead: true }).catch(() => {
+    messagesService.updateMessage(messageId, { isRead: true }).catch(() => {
       // Revert on error
       if (messageData) {
         setMessages(prev => prev.map(msg => 
@@ -73,6 +65,54 @@ export default function MessageList() {
         setUnreadCount(prev => prev + 1);
       }
     });
+  }, [selectedMessage]);
+
+  useEffect(() => {
+    loadMessages();
+  }, [loadMessages]);
+
+  // Handle message selection from URL parameter
+  useEffect(() => {
+    const messageId = searchParams.get('messageId');
+    if (messageId && messages.length > 0) {
+      const msg = messages.find(m => m.id === messageId);
+      if (msg) {
+        setSelectedMessage(msg);
+        // Mark as read if unread
+        if (!msg.isRead) {
+          handleMarkAsRead(msg.id, msg);
+        }
+        // Remove the parameter from URL after selecting
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete('messageId');
+        setSearchParams(newSearchParams, { replace: true });
+      } else {
+        // If message not found in current page, try to load it directly
+        messagesService.getMessage(messageId).then(msg => {
+          if (msg) {
+            setSelectedMessage(msg);
+            if (!msg.isRead) {
+              handleMarkAsRead(msg.id, msg);
+            }
+          }
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete('messageId');
+          setSearchParams(newSearchParams, { replace: true });
+        }).catch(() => {
+          const newSearchParams = new URLSearchParams(searchParams);
+          newSearchParams.delete('messageId');
+          setSearchParams(newSearchParams, { replace: true });
+        });
+      }
+    }
+  }, [searchParams, messages, handleMarkAsRead]);
+
+  const handleMessageClick = (msg) => {
+    setSelectedMessage(msg);
+    // Mark as read if unread - update locally without reloading
+    if (!msg.isRead) {
+      handleMarkAsRead(msg.id, msg);
+    }
   };
 
   const handleDelete = (messageId) => {
@@ -81,28 +121,17 @@ export default function MessageList() {
 
   const confirmDelete = async () => {
     const { messageId } = deleteConfirm;
-    await messageService.deleteMessage(messageId);
+    await messagesService.deleteMessage(messageId);
     await loadMessages();
     if (selectedMessage?.id === messageId) {
       setSelectedMessage(null);
     }
     setDeleteConfirm({ open: false, messageId: null });
     setMessageVariant('success');
-    setMessage(t('admin.messages.deleted', '删除成功'));
+    setMessage(t('admin.messages.deleted'));
     setTimeout(() => setMessage(null), 3000);
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleString(i18n.language === 'zh' ? 'zh-CN' : 'ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   return (
     <div className="w-full">
@@ -116,16 +145,16 @@ export default function MessageList() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 m-0 mb-1">
-              {t('admin.messages.list.title', '消息列表')}
+              {t('admin.messages.list.title')}
             </h2>
             <p className="text-gray-600 text-sm m-0">
-              {t('admin.messages.list.description', '查看和管理所有站内信消息。')}
+              {t('admin.messages.list.description')}
             </p>
           </div>
           <div className="flex items-center gap-4">
             {unreadCount > 0 && (
               <Badge variant="error" className="text-sm">
-                {t('admin.messages.unreadCount', '未读')}: {unreadCount}
+                {t('admin.messages.unreadCount')}: {unreadCount}
               </Badge>
             )}
           </div>
@@ -138,21 +167,21 @@ export default function MessageList() {
             size="sm"
             onClick={() => setFilter('all')}
           >
-            {t('admin.messages.filters.all', '全部')}
+            {t('admin.messages.filters.all')}
           </Button>
           <Button
             variant={filter === 'unread' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setFilter('unread')}
           >
-            {t('admin.messages.filters.unread', '未读')}
+            {t('admin.messages.filters.unread')}
           </Button>
           <Button
             variant={filter === 'read' ? 'primary' : 'outline'}
             size="sm"
             onClick={() => setFilter('read')}
           >
-            {t('admin.messages.filters.read', '已读')}
+            {t('admin.messages.filters.read')}
           </Button>
         </div>
       </div>
@@ -163,10 +192,10 @@ export default function MessageList() {
           <Card className="h-[600px] flex flex-col">
             <div className="flex-1 overflow-y-auto">
               {loading ? (
-                <div className="p-8 text-center text-gray-500">{t('common.loading', '加载中...')}</div>
+                <div className="p-8 text-center text-gray-500">{t('common.loading')}</div>
               ) : messages.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
-                  {t('admin.messages.empty', '暂无消息')}
+                  {t('admin.messages.empty')}
                 </div>
               ) : (
                 <ul className="divide-y divide-gray-200">
@@ -185,17 +214,17 @@ export default function MessageList() {
                               {msg.subject}
                             </span>
                             {msg.isImportant && (
-                              <Badge variant="error" size="sm">{t('admin.messages.important', '重要')}</Badge>
+                              <Badge variant="error" size="sm">{t('admin.messages.important')}</Badge>
                             )}
                             {!msg.isRead && (
                               <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                             )}
                           </div>
                           <p className="text-xs text-gray-500 truncate">
-                            {msg.recipientName || t('admin.messages.recipient', '收件人')}
+                            {msg.recipientName || t('admin.messages.recipient')}
                           </p>
                           <p className="text-xs text-gray-400 mt-1">
-                            {formatDate(msg.createdAt)}
+                            {formatDateTime(msg.createdAt, 'yyyy-MM-dd HH:mm', i18n.language)}
                           </p>
                         </div>
                       </div>
@@ -230,29 +259,29 @@ export default function MessageList() {
                           {selectedMessage.subject}
                         </h2>
                         {selectedMessage.isImportant && (
-                          <Badge variant="error">{t('admin.messages.important', '重要')}</Badge>
+                          <Badge variant="error">{t('admin.messages.important')}</Badge>
                         )}
                         {!selectedMessage.isRead && (
-                          <Badge variant="info">{t('admin.messages.unread', '未读')}</Badge>
+                          <Badge variant="info">{t('admin.messages.unread')}</Badge>
                         )}
                       </div>
                       <div className="text-sm text-gray-600 space-y-1">
                         <p>
-                          <span className="font-medium">{t('admin.messages.from', '发件人')}:</span>{' '}
-                          {selectedMessage.senderName || t('admin.messages.system', '系统')}
+                          <span className="font-medium">{t('admin.messages.from')}:</span>{' '}
+                          {selectedMessage.senderName || t('admin.messages.system')}
                         </p>
                         <p>
-                          <span className="font-medium">{t('admin.messages.to', '收件人')}:</span>{' '}
+                          <span className="font-medium">{t('admin.messages.to')}:</span>{' '}
                           {selectedMessage.recipientName || '-'}
                         </p>
                         <p>
-                          <span className="font-medium">{t('admin.messages.date', '时间')}:</span>{' '}
-                          {formatDate(selectedMessage.createdAt)}
+                          <span className="font-medium">{t('admin.messages.date')}:</span>{' '}
+                          {formatDateTime(selectedMessage.createdAt, 'yyyy-MM-dd HH:mm', i18n.language)}
                         </p>
                         {selectedMessage.readAt && (
                           <p>
-                            <span className="font-medium">{t('admin.messages.readAt', '已读时间')}:</span>{' '}
-                            {formatDate(selectedMessage.readAt)}
+                            <span className="font-medium">{t('admin.messages.readAt')}:</span>{' '}
+                            {formatDateTime(selectedMessage.readAt, 'yyyy-MM-dd HH:mm', i18n.language)}
                           </p>
                         )}
                       </div>
@@ -270,20 +299,20 @@ export default function MessageList() {
                       variant="outline"
                       onClick={() => handleMarkAsRead(selectedMessage.id, selectedMessage)}
                     >
-                      {t('admin.messages.markAsRead', '标记为已读')}
+                      {t('admin.messages.markAsRead')}
                     </Button>
                   )}
                   <Button
                     variant="outline"
                     onClick={() => handleDelete(selectedMessage.id)}
                   >
-                    {t('common.delete', '删除')}
+                    {t('common.delete')}
                   </Button>
                 </div>
               </>
             ) : (
               <div className="flex-1 flex items-center justify-center text-gray-400">
-                {t('admin.messages.selectMessage', '请选择一条消息查看详情')}
+                {t('admin.messages.selectMessage')}
               </div>
             )}
           </Card>
@@ -294,12 +323,12 @@ export default function MessageList() {
       <Modal
         isOpen={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, messageId: null })}
-        title={t('admin.messages.confirmDelete', '确定要删除这条消息吗？')}
+        title={t('admin.messages.confirmDelete')}
         size="sm"
       >
         <div className="py-4">
           <p className="text-gray-600">
-            {t('admin.messages.deleteWarning', '此操作不可撤销，确定要继续吗？')}
+            {t('admin.messages.deleteWarning')}
           </p>
         </div>
         <ModalFooter>
@@ -307,13 +336,13 @@ export default function MessageList() {
             variant="outline"
             onClick={() => setDeleteConfirm({ open: false, messageId: null })}
           >
-            {t('common.cancel', '取消')}
+            {t('common.cancel')}
           </Button>
           <Button
             variant="primary"
             onClick={confirmDelete}
           >
-            {t('common.delete', '删除')}
+            {t('common.delete')}
           </Button>
         </ModalFooter>
       </Modal>

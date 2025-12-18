@@ -50,7 +50,7 @@
         "yearPlaceholder": "选择年度"
       },
       "search": "搜索关键词",
-      "searchPlaceholder": "请输入企业名称、营业执照号、年度等关键词",
+      "searchPlaceholder": "搜索企业名称、营业执照号、年度、类型、状态等",
       "noRecords": "暂无业绩数据",
       "detail": {
         "basicInfo": "基本信息",

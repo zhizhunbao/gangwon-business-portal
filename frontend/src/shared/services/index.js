@@ -11,7 +11,7 @@ export { default as projectService } from './project.service';
 export { default as contentService } from './content.service';
 export { default as supportService } from './support.service';
 export { default as uploadService } from './upload.service';
-export { default as messageService } from './message.service';
+export { default as messagesService } from './messages.service';
 // loggerService is now exported from utils/loggerHandler.js
 export { default as loggerService, LOG_LEVELS, autoLog } from '@shared/utils/loggerHandler';
 // exceptionService is now exported from errorHandler.js

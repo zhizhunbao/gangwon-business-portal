@@ -18,7 +18,9 @@ export const Select = forwardRef(function Select({
   ...props
 }, ref) {
   const { t } = useTranslation();
-  const defaultPlaceholder = placeholder !== null ? (placeholder || t('common.pleaseSelect')) : null;
+  // 检查 options 的第一个选项是否已经是 value='' 的"全部"
+  const hasAllOption = options.length > 0 && options[0].value === '' && options[0].label === t('common.all', '全部');
+  const defaultPlaceholder = placeholder !== null ? (placeholder || (hasAllOption ? null : t('common.all', '全部'))) : null;
   const selectElement = (
     <>
       <select

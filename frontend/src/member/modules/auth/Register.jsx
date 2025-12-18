@@ -343,43 +343,37 @@ export default function Register() {
       return;
     }
     
-    try {
-      // Prepare form data for submission
-      const submitData = new FormData();
-      
-      // Add all form fields
-      Object.keys(formData).forEach(key => {
-        if (key === 'logo' || key === 'businessLicenseFile') {
-          if (formData[key]) {
-            submitData.append(key, formData[key]);
-          }
-        } else if (key === 'cooperationFields') {
-          formData.cooperationFields.forEach(field => {
-            submitData.append('cooperationFields[]', field);
-          });
-        } else if (key === 'sales' || key === 'employeeCount') {
-          submitData.append(key, parseFormattedNumber(formData[key]) || 0);
-        } else if (!key.startsWith('agree') && key !== 'passwordConfirm') {
+    // Prepare form data for submission
+    const submitData = new FormData();
+    
+    // Add all form fields
+    Object.keys(formData).forEach(key => {
+      if (key === 'logo' || key === 'businessLicenseFile') {
+        if (formData[key]) {
           submitData.append(key, formData[key]);
         }
-      });
-      
-      // Convert businessNumber (camelCase) to business_number (snake_case) for backend API
-      submitData.set('business_number', formData.businessNumber?.replace(/-/g, '') || '');
-      
-      // Call register - it will handle file uploads and field mapping
-      const response = await register(submitData);
-      
-      // Show success message
-      setSuccess(true);
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
-    } catch (err) {
-      // Handle error response
-      const errorMessage = err.message || err.detail || err.response?.data?.detail || err.response?.data?.message || t('auth.registerFailed');
-      setError(errorMessage);
-    }
+      } else if (key === 'cooperationFields') {
+        formData.cooperationFields.forEach(field => {
+          submitData.append('cooperationFields[]', field);
+        });
+      } else if (key === 'sales' || key === 'employeeCount') {
+        submitData.append(key, parseFormattedNumber(formData[key]) || 0);
+      } else if (!key.startsWith('agree') && key !== 'passwordConfirm') {
+        submitData.append(key, formData[key]);
+      }
+    });
+    
+    // Convert businessNumber (camelCase) to business_number (snake_case) for backend API
+    submitData.set('business_number', formData.businessNumber?.replace(/-/g, '') || '');
+    
+    // Call register - it will handle file uploads and field mapping
+    await register(submitData);
+    
+    // Show success message
+    setSuccess(true);
+    setTimeout(() => {
+      navigate('/login');
+    }, 2000);
   };
   
   if (success) {

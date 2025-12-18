@@ -12,12 +12,15 @@ import {
   ModalFooter,
   Input, 
   Select,
-  Pagination
+  Pagination,
+  Card
 } from '@shared/components';
+import { SearchIcon } from '@shared/components/Icons';
 import { supportService } from '@shared/services';
+import { formatDate } from '@shared/utils/format';
 
 export default function FAQManagement() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   // 状态管理
   const [faqs, setFaqs] = useState([]);
@@ -70,7 +73,7 @@ export default function FAQManagement() {
       label: t('admin.content.faq.createdAt', '创建时间'),
       key: 'createdAt',
       width: 150,
-      render: (date) => date ? new Date(date).toLocaleDateString() : '-'
+      render: (date) => date ? formatDate(date, 'yyyy-MM-dd', i18n.language) : '-'
     },
     {
       label: t('common.actions', '操作'),
@@ -124,7 +127,6 @@ export default function FAQManagement() {
       setFaqs(filteredFaqs);
       setTotal(filteredFaqs.length);
     } catch (error) {
-      console.error('Failed to fetch FAQs:', error);
       setFaqs([]);
       setTotal(0);
     } finally {
@@ -136,12 +138,6 @@ export default function FAQManagement() {
   useEffect(() => {
     fetchFaqs();
   }, [searchTerm]);
-
-  // 处理搜索
-  const handleSearch = () => {
-    setCurrentPage(1);
-    fetchFaqs();
-  };
 
   // 处理新增
   const handleAdd = () => {
@@ -184,36 +180,34 @@ export default function FAQManagement() {
 
   return (
     <div>
-      <div className="mb-4">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-4">
+      <div className="mb-6 sm:mb-8 lg:mb-10 min-h-[48px] flex items-center justify-between">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0">
           {t('admin.content.faq.title', 'FAQ管理')}
         </h1>
-        
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <Button onClick={handleAdd}>
+          {t('admin.content.faq.addFaq', '添加FAQ')}
+        </Button>
+      </div>
+
+      {/* 搜索和筛选 */}
+      <Card className="p-4 sm:p-5 lg:p-6 mb-4">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-[200px] max-w-md">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                <SearchIcon className="h-5 w-5 text-gray-400" />
               </div>
               <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                 placeholder={t('admin.content.faq.searchPlaceholder', '搜索问题、答案或分类...')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
           </div>
-          <div className="flex items-center space-x-2 md:ml-4 w-full md:w-auto">
-            <Button onClick={handleAdd}>
-              {t('admin.content.faq.addFaq', '添加FAQ')}
-            </Button>
-          </div>
         </div>
-      </div>
+      </Card>
 
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
         {loading ? (

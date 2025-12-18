@@ -30,7 +30,7 @@ export default function Home() {
       />
       
       {/* 三列布局：公告事项、新闻稿、主横幅(2) */}
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+      <PageContainer className="pb-8" fullWidth={false}>
         <div className="grid grid-cols-1 md:grid-cols-[repeat(3,minmax(0,425px))] justify-center gap-6 lg:gap-8 auto-rows-[475px]">
           {/* 公告事项 */}
           <div className="flex h-full">
@@ -52,7 +52,7 @@ export default function Home() {
             />
           </div>
         </div>
-      </div>
+      </PageContainer>
     </div>
   );
 }

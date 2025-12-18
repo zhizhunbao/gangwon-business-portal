@@ -3,11 +3,12 @@
  * 业绩管理列表
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, Table, Button, Badge, Modal, Textarea, Pagination, Alert } from '@shared/components';
+import { Card, Table, Button, Badge, Modal, Textarea, Pagination, Alert, SearchInput } from '@shared/components';
 import { adminService, uploadService } from '@shared/services';
+import { formatBusinessLicense, formatDateTime } from '@shared/utils/format';
 
 export default function PerformanceList() {
   const { t, i18n } = useTranslation();
@@ -25,50 +26,90 @@ export default function PerformanceList() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [reviewComment, setReviewComment] = useState('');
   const [rejectComment, setRejectComment] = useState('');
-  const [records, setRecords] = useState([]);
+  const [allRecords, setAllRecords] = useState([]); // 存储所有数据
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [message, setMessage] = useState(null);
   const [messageVariant, setMessageVariant] = useState('success');
 
-  useEffect(() => {
-    // Reset to first page when search keyword or memberId changes
-    setCurrentPage(1);
-  }, [searchKeyword, memberId]);
-
-  useEffect(() => {
-    loadPerformanceRecords();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchKeyword, memberId, currentPage, pageSize]);
-
-
-  const loadPerformanceRecords = async () => {
+  // 一次性加载所有业绩记录数据
+  const loadAllPerformanceRecords = useCallback(async () => {
     setLoading(true);
     const params = {
       memberId: memberId || undefined,
-      page: currentPage,
-      pageSize: pageSize,
-      searchKeyword: searchKeyword.trim() || undefined
+      page: 1,
+      pageSize: 10000 // 加载所有数据
     };
     const response = await adminService.listPerformanceRecords(params);
-    if (response.items || response.records) {
-      const items = response.items || response.records || [];
-      
-      setRecords(items);
-      setTotalCount(response.total || items.length);
-      setTotalPages(response.total_pages || Math.ceil((response.total || items.length) / pageSize));
+    if (response && response.records) {
+      setAllRecords(response.records);
+    } else {
+      setAllRecords([]);
     }
     setLoading(false);
-  };
+  }, [memberId]);
+
+  useEffect(() => {
+    loadAllPerformanceRecords();
+  }, [loadAllPerformanceRecords]);
+
+  // 前端模糊搜索和过滤 - 匹配所有列
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(record => {
+      // 搜索关键词过滤
+      if (searchKeyword) {
+        const keyword = searchKeyword.toLowerCase();
+        const searchKeywordNormalized = searchKeyword.replace(/-/g, '').toLowerCase();
+        
+        // 将所有字段值转换为可搜索的字符串
+        const searchableText = [
+          // 企业信息
+          record.memberCompanyName || '',
+          (record.memberBusinessNumber || '').replace(/-/g, ''),
+          // 年度和季度
+          record.year ? String(record.year) : '',
+          record.quarter ? `Q${record.quarter}` : t('performance.annual', '年度'),
+          // 类型（搜索原始值和翻译值）
+          record.type || '',
+          record.type ? t(`performance.type.${record.type}`, record.type) : '',
+          // 状态（搜索原始值和翻译值）
+          record.status || '',
+          record.status ? t(`performance.status.${record.status}`, record.status) : '',
+          // 提交时间
+          record.submittedAt ? formatDateTime(record.submittedAt, 'yyyy-MM-dd HH:mm', currentLanguage) : '',
+          // ID（用于精确搜索）
+          record.id || '',
+        ].join(' ').toLowerCase();
+        
+        // 同时检查原始关键词和去除连字符后的关键词
+        if (!searchableText.includes(keyword) && 
+            !searchableText.includes(searchKeywordNormalized)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [allRecords, searchKeyword, t, currentLanguage]);
+
+  // 分页后的数据
+  const records = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    return filteredRecords.slice(start, end);
+  }, [filteredRecords, currentPage, pageSize]);
+
+  // 更新总数
+  useEffect(() => {
+    setTotalCount(filteredRecords.length);
+  }, [filteredRecords]);
 
   const handleApprove = async (record) => {
     await adminService.approvePerformance(record.id);
     setMessageVariant('success');
     setMessage(t('admin.performance.approveSuccess', '批准成功') || '批准成功');
     setTimeout(() => setMessage(null), 3000);
-    loadPerformanceRecords();
+    loadAllPerformanceRecords();
   };
 
   const handleRequestRevision = async () => {
@@ -86,7 +127,7 @@ export default function PerformanceList() {
     setShowReviewModal(false);
     setReviewComment('');
     setSelectedRecord(null);
-    loadPerformanceRecords();
+    loadAllPerformanceRecords();
   };
 
   const handleReject = async () => {
@@ -104,7 +145,7 @@ export default function PerformanceList() {
     setShowRejectModal(false);
     setRejectComment('');
     setSelectedRecord(null);
-    loadPerformanceRecords();
+    loadAllPerformanceRecords();
   };
 
   const handleViewDetail = (recordId) => {
@@ -155,7 +196,7 @@ export default function PerformanceList() {
     {
       key: 'memberBusinessNumber',
       label: t('admin.performance.table.businessNumber', '营业执照号'),
-      render: (value) => value || '-'
+      render: (value) => value ? formatBusinessLicense(value) : '-'
     },
     {
       key: 'year',
@@ -212,15 +253,7 @@ export default function PerformanceList() {
       label: t('admin.performance.table.submittedAt', '提交时间'),
       render: (value) => {
         if (!value) return '-';
-        const date = new Date(value);
-        const locale = currentLanguage === 'zh' ? 'zh-CN' : 'ko-KR';
-        return new Intl.DateTimeFormat(locale, {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
-        }).format(date);
+        return formatDateTime(value, 'yyyy-MM-dd HH:mm', currentLanguage);
       }
     },
     {
@@ -300,26 +333,14 @@ export default function PerformanceList() {
         
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <div className="flex-1 min-w-[200px] max-w-md">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                placeholder={t('admin.performance.searchPlaceholder', '请输入企业名称、营业执照号、年度等关键词')}
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    setCurrentPage(1);
-                    loadPerformanceRecords();
-                  }
-                }}
-              />
-            </div>
+            <SearchInput
+              value={searchKeyword}
+              onChange={(value) => {
+                setSearchKeyword(value);
+                setCurrentPage(1);
+              }}
+              placeholder={t('admin.performance.searchPlaceholder', '搜索所有列：企业名称、营业执照号、年度、季度、类型、状态等')}
+            />
           </div>
           <div className="flex items-center space-x-2 md:ml-4 w-full md:w-auto">
             <Button 
@@ -365,9 +386,9 @@ export default function PerformanceList() {
                   data={records}
                 />
               </div>
-              {totalCount > 0 && (
-                <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4 md:flex-nowrap">
-                  <div className="flex items-center text-sm text-gray-700 w-full md:w-auto text-center md:text-left">
+              {totalCount > pageSize && (
+                <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center text-sm text-gray-700">
                     <span>
                       {t('common.showing', { 
                         start: ((currentPage - 1) * pageSize) + 1, 
@@ -376,14 +397,12 @@ export default function PerformanceList() {
                       }) || `显示 ${((currentPage - 1) * pageSize) + 1}-${Math.min(currentPage * pageSize, totalCount)} 共 ${totalCount} 条`}
                     </span>
                   </div>
-                  <div className="w-full md:w-auto flex justify-center">
-                    <Pagination
-                      current={currentPage}
-                      total={totalCount}
-                      pageSize={pageSize}
-                      onChange={setCurrentPage}
-                    />
-                  </div>
+                  <Pagination
+                    current={currentPage}
+                    total={totalCount}
+                    pageSize={pageSize}
+                    onChange={setCurrentPage}
+                  />
                 </div>
               )}
             </>

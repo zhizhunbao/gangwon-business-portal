@@ -4,7 +4,9 @@
       "title": "프로젝트 관리",
       "create": "프로젝트 생성",
       "noProjects": "프로젝트 데이터가 없습니다",
-      "searchPlaceholder": "프로젝트명, 접수 대상 등 키워드를 입력하세요",
+      "noProjectsHint": "첫 번째 프로젝트를 생성하거나 페이지를 새로고침하세요",
+      "noMatchingProjects": "현재 필터 조건에 맞는 프로젝트가 없습니다",
+      "searchPlaceholder": "프로젝트명, 목표기업, 사업자등록번호 등 검색",
       "status": {
         "active": "진행중",
         "inactive": "종료됨",
@@ -17,6 +19,7 @@
         "targetCompany": "목표 기업",
         "targetCompanyName": "목표 기업명",
         "targetBusinessNumber": "사업자등록번호",
+        "publicRecruitment": "공개 모집",
         "startDate": "시작일",
         "endDate": "종료일",
         "status": "상태",
@@ -56,7 +59,11 @@
         "targetCompanyNamePlaceholder": "예: 삼성전자주식회사 (선택사항)",
         "targetBusinessNumber": "사업자등록번호",
         "targetBusinessNumberPlaceholder": "예: 123-45-67890 (선택사항)"
-      }
+      },
+      "confirmDelete": "이 프로젝트를 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
+      "exportExcel": "Excel 내보내기",
+      "exportCsv": "CSV 내보내기",
+      "exportSuccess": "내보내기 성공"
     },
     "applications": {
       "title": "신청 관리",

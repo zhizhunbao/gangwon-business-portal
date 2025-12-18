@@ -78,6 +78,13 @@ class PerformanceRecordResponse(BaseModel):
         )
 
 
+class AttachmentListItem(BaseModel):
+    """Attachment item for list view."""
+    id: UUID
+    original_name: Optional[str] = None
+    file_size: Optional[int] = None
+
+
 class PerformanceListItem(BaseModel):
     """Performance list item schema (simplified for list view)."""
 
@@ -90,6 +97,9 @@ class PerformanceListItem(BaseModel):
     submitted_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
+    data_json: Optional[dict[str, Any]] = None
+    reviews: list[PerformanceReviewResponse] = Field(default_factory=list)
+    attachments: list[AttachmentListItem] = Field(default_factory=list)
     member_company_name: Optional[str] = None
     member_business_number: Optional[str] = None
 
@@ -100,8 +110,6 @@ class PerformanceListItem(BaseModel):
 class PerformanceListQuery(BaseModel):
     """Performance list query parameters."""
 
-    page: int = Field(1, ge=1, description="Page number")
-    page_size: int = Field(20, ge=1, le=100, description="Items per page")
     year: Optional[int] = Field(None, description="Filter by year")
     quarter: Optional[int] = Field(None, ge=1, le=4, description="Filter by quarter")
     status: Optional[str] = Field(None, description="Filter by status")

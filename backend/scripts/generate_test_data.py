@@ -270,42 +270,13 @@ async def generate_members(session: AsyncSession, config: Dict[str, Any], count:
                business_number.replace("-", "") == normalized_modify):
             business_number = f"{random.randint(1000000000, 9999999999)}"
         
-        # 使用真实的韩国企业名称
-        korean_company_names = [
-            # 제조업
-            "한국정밀기계주식회사", "대한금속공업주식회사", "서울플라스틱주식회사", "부산화학공업주식회사",
-            "인천철강주식회사", "광주전자부품주식회사", "대구섬유주식회사", "울산석유화학주식회사",
-            "경기정밀주식회사", "강원기계공업주식회사", "충북전자주식회사", "충남화학주식회사",
-            
-            # IT/소프트웨어
-            "코리아소프트주식회사", "디지털코리아주식회사", "한국정보시스템주식회사", "서울IT솔루션주식회사",
-            "부산소프트웨어주식회사", "대구정보기술주식회사", "인천디지털주식회사", "광주테크놀로지주식회사",
-            "스마트시스템코리아주식회사", "이노베이션소프트주식회사", "퓨처테크놀로지주식회사", "어드밴스드IT주식회사",
-            
-            # 건설업
-            "한국건설주식회사", "대한건축주식회사", "서울건설주식회사", "부산건축주식회사",
-            "인천토목주식회사", "대구건설주식회사", "광주건축주식회사", "울산건설주식회사",
-            "경기건설주식회사", "강원건축주식회사", "충북토목주식회사", "충남건설주식회사",
-            
-            # 서비스업
-            "한국물류주식회사", "대한유통주식회사", "서울서비스주식회사", "부산물류주식회사",
-            "인천유통주식회사", "대구서비스주식회사", "광주물류주식회사", "울산유통주식회사",
-            "코리아로지스틱스주식회사", "글로벌서비스주식회사", "프리미엄물류주식회사", "스마트유통주식회사",
-            
-            # 바이오/의료
-            "한국바이오주식회사", "대한의료기기주식회사", "서울제약주식회사", "부산바이오텍주식회사",
-            "바이오메드코리아주식회사", "메디컬시스템주식회사", "헬스케어솔루션주식회사", "라이프사이언스주식회사",
-            
-            # 에너지/환경
-            "한국에너지주식회사", "그린에너지코리아주식회사", "친환경시스템주식회사", "신재생에너지주식회사",
-            "클린테크놀로지주식회사", "에코시스템주식회사", "환경솔루션주식회사", "그린테크주식회사",
-            
-            # 농업/식품
-            "한국농산주식회사", "대한식품주식회사", "서울농업주식회사", "부산수산주식회사",
-            "코리아푸드주식회사", "프레시푸드주식회사", "오가닉팜주식회사", "스마트팜시스템주식회사"
-        ]
+        # 使用配置文件中的江原道企业名称，如果没有则使用默认列表
+        gangwon_company_names = config.get("gangwon_company_names", [
+            "강원테크솔루션주식회사", "춘천바이오주식회사", "원주정밀기계주식회사",
+            "강릉수산식품주식회사", "속초관광개발주식회사", "평창친환경농업주식회사"
+        ])
         
-        company_name = random.choice(korean_company_names)
+        company_name = random.choice(gangwon_company_names)
         email = fake.unique.email()
         password_hash = pwd_context.hash("password123")
         
@@ -351,24 +322,22 @@ async def generate_members(session: AsyncSession, config: Dict[str, Any], count:
         )
         members.append(member)
         
-        # Generate proper Korean address with region
-        selected_region = random.choice(regions) if random.random() > probs["member_profile_region_null"] else None
+        # Generate proper Gangwon address using config
+        gangwon_regions = data_defs.get("gangwon_regions", ["춘천시", "원주시", "강릉시"])
+        gangwon_addresses = config.get("gangwon_addresses", {})
+        
+        # 所有企业都在江原道
+        selected_region = "강원"
+        selected_city = random.choice(gangwon_regions)
         address = None
-        # Ensure most members have address (reduce null probability)
-        if random.random() > (probs["member_profile_address_null"] * 0.5):  # Reduce null probability by half
-            if selected_region:
-                # Generate Korean-style address: "시/도 시/군/구 동/읍/면 번지"
-                # Use Faker's Korean locale to generate proper addresses
-                korean_address = fake.address()
-                # If address doesn't start with region, prepend it
-                if not korean_address.startswith(selected_region):
-                    # Generate a city/district name
-                    city_name = fake.city() if hasattr(fake, 'city') else fake.word()
-                    address = f"{selected_region} {city_name} {korean_address}"
-                else:
-                    address = korean_address
+        
+        # 使用配置文件中的地址，如果没有则生成
+        if random.random() > probs["member_profile_address_null"]:
+            if selected_city in gangwon_addresses and gangwon_addresses[selected_city]:
+                address = random.choice(gangwon_addresses[selected_city])
             else:
-                address = fake.address()
+                # 生成江原道格式的地址
+                address = f"강원특별자치도 {selected_city} {fake.street_name()} {random.randint(1, 500)}"
         
         # Generate representative name (Korean name)
         # 真实的韩国人名列表
@@ -409,7 +378,7 @@ async def generate_members(session: AsyncSession, config: Dict[str, Any], count:
             representative=representative,
             legal_number=legal_number,
             phone=phone,
-            website=f"https://{fake.domain_name()}" if random.random() > probs["member_profile_website_null"] else None,
+            website=f"https://www.{company_name.replace('주식회사', '').replace(' ', '-').lower()}.kr" if random.random() > probs["member_profile_website_null"] else None,
             logo_url=None,
         )
         session.add(member)

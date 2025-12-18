@@ -60,7 +60,7 @@ export default function Sidebar({ collapsed, mobileOpen = false, onClose }) {
       key: 'messages',
       path: '/admin/messages',
       icon: EnvelopeIcon,
-      label: t('admin.menu.messages', '站内信')
+      label: t('admin.menu.messages')
     },
     {
       key: 'reports',

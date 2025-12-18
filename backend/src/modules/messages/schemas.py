@@ -134,6 +134,16 @@ class ThreadWithMessagesResponse(BaseModel):
     messages: List[ThreadMessageResponse]
 
 
+class ThreadListResponse(BaseModel):
+    """Thread list response schema."""
+    
+    items: List[ThreadResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
 # Broadcast-related schemas
 
 class BroadcastCreate(BaseModel):

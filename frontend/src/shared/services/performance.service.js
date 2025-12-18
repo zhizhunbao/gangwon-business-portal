@@ -61,6 +61,9 @@ class PerformanceService {
           submittedAt: item.submitted_at,
           createdAt: item.created_at,
           updatedAt: item.updated_at,
+          data_json: item.data_json,
+          reviews: item.reviews || [],
+          attachments: item.attachments || [],
         })),
         pagination: {
           total: response.total,
@@ -100,7 +103,7 @@ class PerformanceService {
    * Get performance record details by ID
    * 获取绩效记录详情
    *
-   * @param {string} recordId - Performance record ID (UUID)
+   * @param {string} recordId - Performance record ID (UUID, corresponds to backend performance_id)
    * @returns {Promise<Object>} Performance record details
    */
   async getRecord(recordId) {
@@ -178,7 +181,7 @@ class PerformanceService {
    * Update a performance record (draft or revision_requested only)
    * 更新绩效记录（仅限草稿或需要修改状态）
    *
-   * @param {string} recordId - Performance record ID (UUID)
+   * @param {string} recordId - Performance record ID (UUID, corresponds to backend performance_id)
    * @param {Object} data - Performance data to update
    * @param {number} [data.year] - Year
    * @param {number} [data.quarter] - Quarter (1-4)
@@ -235,7 +238,7 @@ class PerformanceService {
    * Delete a performance record (draft only)
    * 删除绩效记录（仅限草稿状态）
    *
-   * @param {string} recordId - Performance record ID (UUID)
+   * @param {string} recordId - Performance record ID (UUID, corresponds to backend performance_id)
    * @returns {Promise<void>}
    */
   async deleteRecord(recordId) {
@@ -246,7 +249,7 @@ class PerformanceService {
    * Submit a performance record for review
    * 提交绩效记录以供审核
    *
-   * @param {string} recordId - Performance record ID (UUID)
+   * @param {string} recordId - Performance record ID (UUID, corresponds to backend performance_id)
    * @returns {Promise<Object>} Updated performance record
    */
   async submitRecord(recordId) {

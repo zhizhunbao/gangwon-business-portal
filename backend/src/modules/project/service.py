@@ -38,10 +38,25 @@ class ProjectService:
             Tuple of (projects list, total count)
         """
         projects, total = await supabase_service.list_projects_with_filters(
-            status=query.status.value if query.status else None,
-            search=query.search,
-            page=query.page,
-            page_size=query.page_size,
+            order_by="created_at",
+            order_desc=True,
+        )
+        return projects, total
+    
+    async def list_projects_admin(
+        self, query: ProjectListQuery
+    ) -> tuple[list[dict], int]:
+        """
+        List all projects with pagination and filtering (admin access).
+        Admin can see all projects including drafts and inactive ones.
+
+        Args:
+            query: Query parameters
+
+        Returns:
+            Tuple of (projects list, total count)
+        """
+        projects, total = await supabase_service.list_projects_with_filters(
             order_by="created_at",
             order_desc=True,
         )
@@ -132,10 +147,6 @@ class ProjectService:
             Tuple of (applications list, total count)
         """
         applications, total = await supabase_service.list_project_applications_with_filters(
-            member_id=str(member_id),
-            status=query.status.value if query.status else None,
-            page=query.page,
-            page_size=query.page_size,
             order_by="submitted_at",
             order_desc=True,
         )
@@ -241,10 +252,6 @@ class ProjectService:
         await self.get_project_by_id(project_id)
 
         applications, total = await supabase_service.list_project_applications_with_filters(
-            project_id=str(project_id),
-            status=query.status.value if query.status else None,
-            page=query.page,
-            page_size=query.page_size,
             order_by="submitted_at",
             order_desc=True,
         )
@@ -264,10 +271,6 @@ class ProjectService:
             Tuple of (applications list, total count)
         """
         applications, total = await supabase_service.list_project_applications_with_filters(
-            project_id=str(project_id) if project_id else None,
-            status=query.status.value if query.status else None,
-            page=query.page,
-            page_size=query.page_size,
             order_by="submitted_at",
             order_desc=True,
         )

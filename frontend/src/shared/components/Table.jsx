@@ -190,7 +190,7 @@ export function Table({
   return (
     <div className="overflow-x-auto md:-mx-4 md:px-4">
       <table className={cn(
-        'min-w-full divide-y divide-gray-200',
+        'w-full divide-y divide-gray-200',
         className
       )} {...props}>
         {children}

@@ -3,16 +3,17 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@shared/hooks';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
+import { Alert, Loading } from '@shared/components';
 import Input from '@shared/components/Input';
 import Textarea from '@shared/components/Textarea';
 import Select from '@shared/components/Select';
-import { Badge } from '@shared/components';
-import { memberService, loggerService, exceptionService } from '@shared/services';
+import { Badge, Modal, ModalFooter } from '@shared/components';
+import { memberService, uploadService } from '@shared/services';
 import {
   UserIcon,
   BuildingIcon,
@@ -24,9 +25,7 @@ import {
   TeamIcon,
   GlobeIcon,
   EditIcon,
-  CheckCircleIcon,
-  XIcon,
-  WarningIcon
+  CheckCircleIcon
 } from '@shared/components/Icons';
 import { formatNumber, parseFormattedNumber } from '@shared/utils/format';
 import { validateImageFile } from '@shared/utils/fileValidation';
@@ -36,135 +35,238 @@ export default function PerformanceCompanyInfo() {
   const { isAuthenticated } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [logoError, setLogoError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [message, setMessage] = useState(null);
+  const [messageVariant, setMessageVariant] = useState('success');
   const [companyData, setCompanyData] = useState({
     companyName: '', businessNumber: '', corporationNumber: '', establishedDate: '',
     representativeName: '', phone: '', address: '', region: '', category: '', industry: '',
-    description: '', website: '', logo: null, businessField: '', sales: '', employeeCount: '',
-    mainBusiness: '', cooperationFields: [], approvalStatus: 'pending'
+    description: '', website: '', logo: null, logoPreview: null, businessField: '', sales: '', employeeCount: '',
+    mainBusiness: '', cooperationFields: [], approvalStatus: null
   });
 
-  useEffect(() => { if (isAuthenticated) loadProfile(); }, [isAuthenticated, i18n.language]);
+  // 使用 ref 存储 logoPreview URL，便于清理
+  const logoPreviewRef = useRef(null);
 
-  const loadProfile = async () => {
+  // 清理 logo 预览 URL 的辅助函数
+  const cleanupLogoPreview = useCallback(() => {
+    if (logoPreviewRef.current) {
+      URL.revokeObjectURL(logoPreviewRef.current);
+      logoPreviewRef.current = null;
+    }
+  }, []);
+
+  const loadProfile = useCallback(async () => {
     if (!isAuthenticated) return;
     setLoading(true);
-    try {
-      const profile = await memberService.getProfile();
-      if (profile) {
-        setCompanyData({
-          companyName: profile.companyName || '', businessNumber: profile.businessNumber || '',
-          corporationNumber: profile.corporationNumber || '',
-          establishedDate: profile.establishedDate || profile.foundingDate || '',
-          representativeName: profile.representativeName || '', phone: profile.phone || '',
-          address: profile.address || '', region: profile.region || '', category: profile.category || '',
-          industry: profile.industry || '', description: profile.description || '',
-          website: profile.website || profile.websiteUrl || '', logo: profile.logo || profile.logoUrl || null,
-          businessField: profile.businessField || '',
-          sales: profile.sales || profile.revenue ? formatNumber(profile.sales || profile.revenue) : '',
-          employeeCount: profile.employeeCount ? formatNumber(profile.employeeCount) : '',
-          mainBusiness: profile.mainBusiness || '', cooperationFields: profile.cooperationFields || [],
-          approvalStatus: profile.approvalStatus || 'pending'
-        });
-      }
-    } catch (error) {
-      loggerService.error('Failed to load profile', { module: 'PerformanceCompanyInfo', function: 'loadProfile', error_message: error.message });
-    } finally { setLoading(false); }
-  };
+    cleanupLogoPreview();
+    
+    const profile = await memberService.getProfile();
+    setCompanyData({
+      companyName: profile.companyName || '', 
+      businessNumber: profile.businessNumber || '',
+      corporationNumber: profile.corporationNumber || '',
+      establishedDate: profile.establishedDate || profile.foundingDate || '',
+      representativeName: profile.representativeName || '', 
+      phone: profile.phone || '',
+      address: profile.address || '', 
+      region: profile.region || '', 
+      category: profile.category || '',
+      industry: profile.industry || '', 
+      description: profile.description || '',
+      website: profile.website || profile.websiteUrl || '', 
+      logo: profile.logo || profile.logoUrl || null,
+      logoPreview: null,
+      businessField: profile.businessField || '',
+      sales: profile.sales || profile.revenue ? formatNumber(profile.sales || profile.revenue) : '',
+      employeeCount: profile.employeeCount ? formatNumber(profile.employeeCount) : '',
+      mainBusiness: profile.mainBusiness || '', 
+      cooperationFields: profile.cooperationFields || [],
+      approvalStatus: profile.approvalStatus || null
+    });
+    setLoading(false);
+  }, [isAuthenticated, cleanupLogoPreview]);
 
-  const handleChange = (field, value) => {
+  useEffect(() => { 
+    if (isAuthenticated) loadProfile(); 
+  }, [isAuthenticated, loadProfile]);
+
+  // 清理 logo 预览 URL
+  useEffect(() => {
+    return () => {
+      cleanupLogoPreview();
+    };
+  }, [cleanupLogoPreview]);
+
+  const validateField = useCallback((field, value) => {
+    const errors = { ...fieldErrors };
+    
+    if (field === 'phone' && value && !/^[\d\s\-+()]+$/.test(value)) {
+      errors.phone = t('performance.companyInfo.validation.invalidPhone', '请输入有效的电话号码');
+    } else if (field === 'website' && value && !/^https?:\/\/.+/.test(value)) {
+      errors.website = t('performance.companyInfo.validation.invalidWebsite', '请输入有效的网站地址');
+    } else if (field === 'email' && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      errors.email = t('performance.companyInfo.validation.invalidEmail', '请输入有效的邮箱地址');
+    } else {
+      delete errors[field];
+    }
+    
+    setFieldErrors(errors);
+  }, [fieldErrors, t]);
+
+  const handleChange = useCallback((field, value) => {
     if (field === 'sales' || field === 'employeeCount') {
       const numValue = parseFormattedNumber(value);
       if (!isNaN(numValue) || value === '') {
         setCompanyData(prev => ({ ...prev, [field]: value === '' ? '' : formatNumber(numValue) }));
-        return;
       }
+      return;
     }
+    
     setCompanyData(prev => ({ ...prev, [field]: value }));
-  };
+    if (['phone', 'website', 'email'].includes(field)) validateField(field, value);
+  }, [validateField]);
 
-  const handleCooperationFieldChange = (field, checked) => {
-    const fields = companyData.cooperationFields || [];
-    setCompanyData(prev => ({
-      ...prev,
-      cooperationFields: checked ? [...fields, field] : fields.filter(f => f !== field)
-    }));
-  };
-
-  const handleSave = async () => {
-    try {
-      const saveData = {
-        companyName: companyData.companyName, email: companyData.email || undefined,
-        industry: companyData.industry || undefined,
-        revenue: companyData.sales ? parseFormattedNumber(companyData.sales) : undefined,
-        employeeCount: companyData.employeeCount ? parseFormattedNumber(companyData.employeeCount) : undefined,
-        foundingDate: companyData.establishedDate || undefined, region: companyData.region || undefined,
-        address: companyData.address || undefined, website: companyData.website || undefined
+  const handleCooperationFieldChange = useCallback((field, checked) => {
+    setCompanyData(prev => {
+      const fields = prev.cooperationFields || [];
+      return {
+        ...prev,
+        cooperationFields: checked ? [...fields, field] : fields.filter(f => f !== field)
       };
-      await memberService.updateProfile(saveData);
-      setIsEditing(false);
-      alert(t('message.saveSuccess', 'Save successful'));
-      loadProfile();
-    } catch (error) {
-      loggerService.error('Failed to save profile', { module: 'PerformanceCompanyInfo', function: 'handleSave', error_message: error.message });
-      alert(error.response?.data?.detail || error.message || t('message.saveFailed', 'Save failed'));
+    });
+  }, []);
+
+  // 必填字段列表和对应的显示名称
+  const requiredFieldsMap = useMemo(() => ({
+    companyName: t('member.companyName', 'Company Name'),
+    establishedDate: t('member.establishedDate', 'Established Date'),
+    representativeName: t('member.representativeName', 'Representative'),
+    phone: t('member.phone', 'Phone'),
+    address: t('member.address', 'Address')
+  }), [t]);
+
+  const requiredFields = useMemo(() => Object.keys(requiredFieldsMap), [requiredFieldsMap]);
+
+  const handleSave = useCallback(async () => {
+    const missingFields = requiredFields.filter(field => !companyData[field]);
+    
+    if (Object.keys(fieldErrors).length > 0) {
+      setMessageVariant('error');
+      setMessage(t('performance.companyInfo.validation.fieldErrors', '请修正表单错误'));
+      return;
     }
-  };
+    
+    if (missingFields.length > 0) {
+      setMessageVariant('error');
+      setMessage(t('performance.companyInfo.validation.missingRequiredFields', '请填写所有必填项'));
+      return;
+    }
 
-  const handleCancel = () => { setIsEditing(false); loadProfile(); };
+    setSaving(true);
+    const saveData = {
+      companyName: companyData.companyName,
+      email: companyData.email,
+      industry: companyData.industry,
+      revenue: companyData.sales ? parseFormattedNumber(companyData.sales) : null,
+      employeeCount: companyData.employeeCount ? parseFormattedNumber(companyData.employeeCount) : null,
+      foundingDate: companyData.establishedDate,
+      region: companyData.region,
+      address: companyData.address,
+      website: companyData.website,
+      corporationNumber: companyData.corporationNumber,
+      representativeName: companyData.representativeName,
+      phone: companyData.phone,
+      logoUrl: companyData.logo
+    };
 
-  const handleLogoUpload = (e) => {
+    await memberService.updateProfile(saveData);
+    setIsEditing(false);
+    setMessageVariant('success');
+    setMessage(t('performance.companyInfo.message.saveSuccess', '保存成功'));
+    setTimeout(() => setMessage(null), 3000);
+    setSaving(false);
+    loadProfile();
+  }, [companyData, fieldErrors, requiredFields, t, loadProfile]);
+
+  const handleCancel = useCallback(() => {
+    setIsEditing(false);
+    setFieldErrors({});
+    cleanupLogoPreview();
+    loadProfile();
+  }, [cleanupLogoPreview, loadProfile]);
+
+  const handleLogoFileSelect = useCallback(async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
     const validation = validateImageFile(file);
     if (!validation.valid) {
-      setLogoError(validation.error || t('profile.logoUploadError', 'Upload failed'));
+      setMessageVariant('error');
+      setMessage(validation.error);
       e.target.value = '';
       return;
     }
-    setLogoError('');
-    setCompanyData(prev => ({ ...prev, logo: file }));
-  };
+    
+    setUploadingLogo(true);
+    const uploadResponse = await uploadService.uploadPublic(file);
+    setCompanyData(prev => ({ ...prev, logo: uploadResponse.file_url || uploadResponse.url }));
+    setMessageVariant('success');
+    setMessage(t('performance.companyInfo.message.logoUploadSuccess', 'Logo上传成功'));
+    setTimeout(() => setMessage(null), 3000);
+    setUploadingLogo(false);
+    e.target.value = '';
+  }, [t]);
 
-  const regionOptions = [
-    { value: 'chuncheon', label: t('profile.regions.chuncheon', 'Chuncheon') },
-    { value: 'wonju', label: t('profile.regions.wonju', 'Wonju') },
-    { value: 'gangneung', label: t('profile.regions.gangneung', 'Gangneung') },
-    { value: 'donghae', label: t('profile.regions.donghae', 'Donghae') },
-    { value: 'taebaek', label: t('profile.regions.taebaek', 'Taebaek') },
-    { value: 'sokcho', label: t('profile.regions.sokcho', 'Sokcho') },
-    { value: 'samcheok', label: t('profile.regions.samcheok', 'Samcheok') }
-  ];
 
-  const categoryOptions = [
-    { value: 'tech', label: t('profile.categories.tech', 'Technology') },
-    { value: 'manufacturing', label: t('profile.categories.manufacturing', 'Manufacturing') },
-    { value: 'service', label: t('profile.categories.service', 'Service') },
-    { value: 'retail', label: t('profile.categories.retail', 'Retail') },
-    { value: 'other', label: t('profile.categories.other', 'Other') }
-  ];
 
-  const industryOptions = [
-    { value: 'software', label: t('profile.industries.software', 'Software') },
-    { value: 'hardware', label: t('profile.industries.hardware', 'Hardware') },
-    { value: 'biotechnology', label: t('profile.industries.biotechnology', 'Biotechnology') },
-    { value: 'healthcare', label: t('profile.industries.healthcare', 'Healthcare') },
-    { value: 'education', label: t('profile.industries.education', 'Education') },
-    { value: 'finance', label: t('profile.industries.finance', 'Finance') },
-    { value: 'other', label: t('profile.industries.other', 'Other') }
-  ];
+  const regionOptions = useMemo(() => [
+    { value: 'chuncheon', label: t('performance.companyInfo.profile.regions.chuncheon', '春川') },
+    { value: 'wonju', label: t('performance.companyInfo.profile.regions.wonju', '原州') },
+    { value: 'gangneung', label: t('performance.companyInfo.profile.regions.gangneung', '江陵') },
+    { value: 'donghae', label: t('performance.companyInfo.profile.regions.donghae', '东海') },
+    { value: 'taebaek', label: t('performance.companyInfo.profile.regions.taebaek', '太白') },
+    { value: 'sokcho', label: t('performance.companyInfo.profile.regions.sokcho', '束草') },
+    { value: 'samcheok', label: t('performance.companyInfo.profile.regions.samcheok', '三陟') }
+  ], [t, i18n.language]);
+
+  const categoryOptions = useMemo(() => [
+    { value: 'tech', label: t('performance.companyInfo.profile.categories.tech', '科技') },
+    { value: 'manufacturing', label: t('performance.companyInfo.profile.categories.manufacturing', '制造业') },
+    { value: 'service', label: t('performance.companyInfo.profile.categories.service', '服务业') },
+    { value: 'retail', label: t('performance.companyInfo.profile.categories.retail', '零售业') },
+    { value: 'other', label: t('performance.companyInfo.profile.categories.other', '其他') }
+  ], [t, i18n.language]);
+
+  const industryOptions = useMemo(() => [
+    { value: 'software', label: t('performance.companyInfo.profile.industries.software', '软件') },
+    { value: 'hardware', label: t('performance.companyInfo.profile.industries.hardware', '硬件') },
+    { value: 'biotechnology', label: t('performance.companyInfo.profile.industries.biotechnology', '生物技术') },
+    { value: 'healthcare', label: t('performance.companyInfo.profile.industries.healthcare', '医疗保健') },
+    { value: 'education', label: t('performance.companyInfo.profile.industries.education', '教育') },
+    { value: 'finance', label: t('performance.companyInfo.profile.industries.finance', '金融') },
+    { value: 'other', label: t('performance.companyInfo.profile.industries.other', '其他') }
+  ], [t, i18n.language]);
+
+  const cooperationFieldOptions = useMemo(() => [
+    { value: 'field1', label: t('performance.companyInfo.profile.cooperationFields.field1', '技术合作') },
+    { value: 'field2', label: t('performance.companyInfo.profile.cooperationFields.field2', '市场拓展') },
+    { value: 'field3', label: t('performance.companyInfo.profile.cooperationFields.field3', '人才培养') }
+  ], [t, i18n.language]);
 
   if (!isAuthenticated) {
     return (
-      <div className="performance-company-info w-full max-w-full p-6 pb-8 sm:p-8 sm:pb-10 lg:p-10 lg:pb-12">
-        <div className="mb-6 sm:mb-8 lg:mb-10">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0">{t('performance.companyInfo', 'Company Info')}</h1>
+      <div className="performance-company-info w-full max-w-full">
+        <div className="mb-6 sm:mb-8 lg:mb-10 min-h-[48px] flex items-center">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0">{t('performance.companyInfo.title', '企业信息')}</h1>
         </div>
         <Card>
           <div className="text-center p-12">
             <div className="mb-6 flex justify-center"><UserIcon className="w-16 h-16 text-gray-400" /></div>
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">{t('profile.loginRequired', 'Login Required')}</h2>
-            <p className="text-gray-500 mb-8">{t('profile.loginRequiredDesc', 'Please login to view company info.')}</p>
+            <h2 className="text-2xl font-bold mb-4 text-gray-900">{t('performance.companyInfo.profile.loginRequired', '需要登录')}</h2>
+            <p className="text-gray-500 mb-8">{t('performance.companyInfo.profile.loginRequiredDesc', '请先登录以查看企业信息')}</p>
             <div className="flex gap-4 justify-center">
               <Link to="/login"><Button variant="primary">{t('common.login', 'Login')}</Button></Link>
               <Link to="/member/register"><Button variant="secondary">{t('common.register', 'Register')}</Button></Link>
@@ -177,25 +279,51 @@ export default function PerformanceCompanyInfo() {
 
 
   return (
-    <div className="performance-company-info w-full max-w-full p-6 pb-8 sm:p-8 sm:pb-10 lg:p-10 lg:pb-12">
-      <div className="mb-6 sm:mb-8 lg:mb-10 flex justify-between items-center gap-4 sm:gap-6">
-        <div className="flex-1 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <BuildingIcon className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0">{t('performance.companyInfo', 'Company Info')}</h1>
-          </div>
-          {loading && <div className="text-sm text-gray-500 flex items-center gap-2"><span className="w-4 h-4 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></span>Loading...</div>}
+    <div className="performance-company-info w-full max-w-full">
+      {message && (
+        <div className="mb-4">
+          <Alert variant={messageVariant}>
+            {message}
+          </Alert>
+        </div>
+      )}
+      {/* 标题栏 */}
+      <div className="mb-6 sm:mb-8 lg:mb-10 flex justify-between items-center gap-4 sm:gap-6 min-h-[48px]">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0">{t('performance.companyInfo.title', '企业信息')}</h1>
+          {companyData.approvalStatus && (
+            <Badge 
+              variant={
+                companyData.approvalStatus === 'approved' ? 'success' :
+                companyData.approvalStatus === 'pending' ? 'warning' :
+                companyData.approvalStatus === 'rejected' ? 'danger' : 'gray'
+              }
+              className="text-xs sm:text-sm"
+            >
+              {companyData.approvalStatus === 'approved' && t('member.approved', 'Approved')}
+              {companyData.approvalStatus === 'pending' && t('member.pending', 'Pending')}
+              {companyData.approvalStatus === 'rejected' && t('member.rejected', 'Rejected')}
+            </Badge>
+          )}
         </div>
         {!isEditing ? (
-          <Button onClick={() => setIsEditing(true)} variant="primary" className="flex items-center gap-2">
-            <EditIcon className="w-4 h-4" />{t('common.edit', 'Edit')}
+          <Button
+            onClick={() => setIsEditing(true)}
+            variant="primary"
+            disabled={loading || saving}
+          >
+            {t('common.edit', 'Edit')}
           </Button>
         ) : (
           <div className="flex gap-3 sm:gap-4 flex-shrink-0">
-            <Button onClick={handleSave} variant="primary" className="flex items-center gap-2">
-              <CheckCircleIcon className="w-4 h-4" />{t('common.save', 'Save')}
+            <Button
+              onClick={handleSave}
+              variant="primary"
+              disabled={saving}
+            >
+              {t('common.save', 'Save')}
             </Button>
-            <Button onClick={handleCancel} variant="secondary">{t('common.cancel', 'Cancel')}</Button>
+            <Button onClick={handleCancel} variant="secondary" disabled={saving}>{t('common.cancel', 'Cancel')}</Button>
           </div>
         )}
       </div>
@@ -203,40 +331,142 @@ export default function PerformanceCompanyInfo() {
       {/* Basic Info */}
       <Card className="mb-6 sm:mb-8 shadow-sm hover:shadow-md transition-all p-0">
         <div className="flex items-center gap-3 sm:gap-4 border-b border-gray-200 p-6 sm:p-8 lg:p-10 pb-4 sm:pb-5 lg:pb-6">
-          <BuildingIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 m-0">{t('profile.sections.basicInfo', 'Basic Info')}</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 m-0">{t('performance.companyInfo.sections.basicInfo', '基本信息')}</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 p-6 sm:p-8 lg:p-10">
+        <div className="p-6 sm:p-8 lg:p-10">
+          {/* Logo Section */}
+          <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
+            <label className="block text-sm sm:text-base font-medium text-gray-700 mb-3 sm:mb-4">{t('performance.companyInfo.sections.logo', '企业Logo')}</label>
+            <div className="flex flex-col items-start gap-4">
+              {isEditing ? (
+                <>
+                  <input 
+                    type="file" 
+                    id="logo-upload" 
+                    accept="image/*" 
+                    onChange={handleLogoFileSelect} 
+                    className="hidden"
+                    disabled={uploadingLogo}
+                  />
+                  {uploadingLogo ? (
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 border-2 border-blue-300 rounded-lg flex flex-col items-center justify-center bg-blue-50">
+                      <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-2"></div>
+                      <span className="text-xs text-blue-600">{t('common.uploading', '上传中...')}</span>
+                    </div>
+                  ) : (companyData.logoPreview || companyData.logo) ? (
+                    <div 
+                      className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 border-2 border-gray-200 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer"
+                      onClick={() => document.getElementById('logo-upload')?.click()}
+                      title={t('performance.companyInfo.profile.clickToChangeLogo', '点击更换Logo')}
+                    >
+                      <img 
+                        src={companyData.logoPreview || companyData.logo} 
+                        alt="Company Logo" 
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          e.target.src = '';
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div 
+                      className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 text-gray-500 text-xs sm:text-sm hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer"
+                      onClick={() => document.getElementById('logo-upload')?.click()}
+                      title={t('performance.companyInfo.profile.clickToUploadLogo', '点击上传Logo')}
+                    >
+                      {t('performance.companyInfo.profile.noLogo', '无Logo')}
+                    </div>
+                  )}
+                  <small className="text-xs text-gray-500">{t('performance.companyInfo.profile.logoHint', '支持 JPG, PNG, GIF 格式，最大 10MB')}</small>
+                </>
+              ) : (
+                <>
+                  {(companyData.logo) ? (
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 border-2 border-gray-200 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50">
+                      <img 
+                        src={companyData.logo} 
+                        alt="Company Logo" 
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          e.target.src = '';
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 text-gray-500 text-xs sm:text-sm">
+                      {t('performance.companyInfo.profile.noLogo', '无Logo')}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+          {/* Basic Info Fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           <div className="flex flex-col">
-            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">{t('member.companyName', 'Company Name')} *</label>
-            <Input value={companyData.companyName} onChange={(e) => handleChange('companyName', e.target.value)} disabled={!isEditing} required />
+            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">{t('member.companyName', 'Company Name')} <span className="text-red-600">*</span></label>
+            <Input 
+              value={companyData.companyName} 
+              onChange={(e) => handleChange('companyName', e.target.value)} 
+              disabled={!isEditing} 
+              required 
+              error={fieldErrors.companyName}
+            />
           </div>
           <div className="flex flex-col">
-            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">{t('member.businessLicense', 'Business License')} *</label>
+            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">{t('member.businessLicense', 'Business License')} <span className="text-red-600">*</span></label>
             <Input value={companyData.businessNumber} disabled={true} />
-            <small className="mt-2 text-xs text-gray-500">{t('profile.businessLicenseHint', 'Cannot be modified')}</small>
+            <small className="mt-2 text-xs text-gray-500">{t('performance.companyInfo.profile.businessLicenseHint', '营业执照号不可修改')}</small>
           </div>
           <div className="flex flex-col">
             <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">{t('member.corporationNumber', 'Corporation Number')}</label>
-            <Input value={companyData.corporationNumber} onChange={(e) => handleChange('corporationNumber', e.target.value)} disabled={!isEditing} />
+            <Input 
+              value={companyData.corporationNumber} 
+              onChange={(e) => handleChange('corporationNumber', e.target.value)} 
+              disabled={!isEditing}
+              error={fieldErrors.corporationNumber}
+            />
           </div>
           <div className="flex flex-col">
-            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <CalendarIcon className="w-4 h-4 text-gray-500" />{t('member.establishedDate', 'Established Date')} *
+            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
+              {t('member.establishedDate', 'Established Date')} <span className="text-red-600">*</span>
             </label>
-            <Input type="date" value={companyData.establishedDate} onChange={(e) => handleChange('establishedDate', e.target.value)} disabled={!isEditing} required />
+            <Input 
+              type="date" 
+              value={companyData.establishedDate} 
+              onChange={(e) => handleChange('establishedDate', e.target.value)} 
+              disabled={!isEditing} 
+              required
+              error={fieldErrors.establishedDate}
+            />
           </div>
           <div className="flex flex-col">
-            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <UserIcon className="w-4 h-4 text-gray-500" />{t('member.representativeName', 'Representative')} *
+            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
+              {t('member.representativeName', 'Representative')} <span className="text-red-600">*</span>
             </label>
-            <Input value={companyData.representativeName} onChange={(e) => handleChange('representativeName', e.target.value)} disabled={!isEditing} required />
+            <Input 
+              value={companyData.representativeName} 
+              onChange={(e) => handleChange('representativeName', e.target.value)} 
+              disabled={!isEditing} 
+              required
+              error={fieldErrors.representativeName}
+            />
           </div>
           <div className="flex flex-col">
-            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <PhoneIcon className="w-4 h-4 text-gray-500" />{t('member.phone', 'Phone')} *
+            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
+              {t('member.phone', 'Phone')} <span className="text-red-600">*</span>
             </label>
-            <Input type="tel" value={companyData.phone} onChange={(e) => handleChange('phone', e.target.value)} disabled={!isEditing} required />
+            <Input 
+              type="tel" 
+              value={companyData.phone} 
+              onChange={(e) => handleChange('phone', e.target.value)} 
+              disabled={!isEditing} 
+              required
+              error={fieldErrors.phone}
+            />
+          </div>
           </div>
         </div>
       </Card>
@@ -244,50 +474,61 @@ export default function PerformanceCompanyInfo() {
       {/* Address Info */}
       <Card className="mb-6 sm:mb-8 shadow-sm hover:shadow-md transition-all p-0">
         <div className="flex items-center gap-3 sm:gap-4 border-b border-gray-200 p-6 sm:p-8 lg:p-10 pb-4 sm:pb-5 lg:pb-6">
-          <LocationIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 m-0">{t('profile.sections.addressInfo', 'Address Info')}</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 m-0">{t('performance.companyInfo.sections.addressInfo', '地址信息')}</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 p-6 sm:p-8 lg:p-10">
           <div className="flex flex-col col-span-1 sm:col-span-2">
-            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <LocationIcon className="w-4 h-4 text-gray-500" />{t('member.address', 'Address')} *
+            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
+              {t('member.address', 'Address')} <span className="text-red-600">*</span>
             </label>
-            <Input value={companyData.address} onChange={(e) => handleChange('address', e.target.value)} disabled={!isEditing} required />
+            <Input 
+              value={companyData.address} 
+              onChange={(e) => handleChange('address', e.target.value)} 
+              disabled={!isEditing} 
+              required
+              error={fieldErrors.address}
+            />
           </div>
-          <Select label={t('member.region', 'Region')} value={companyData.region} onChange={(e) => handleChange('region', e.target.value)} options={regionOptions} disabled={!isEditing} required />
+          <Select label={t('member.region', 'Region')} value={companyData.region} onChange={(e) => handleChange('region', e.target.value)} options={regionOptions} disabled={!isEditing} required placeholder={null} />
         </div>
       </Card>
 
       {/* Business Info */}
       <Card className="mb-6 sm:mb-8 shadow-sm hover:shadow-md transition-all p-0">
         <div className="flex items-center gap-3 sm:gap-4 border-b border-gray-200 p-6 sm:p-8 lg:p-10 pb-4 sm:pb-5 lg:pb-6">
-          <BriefcaseIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 m-0">{t('profile.sections.businessInfo', 'Business Info')}</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 m-0">{t('performance.companyInfo.sections.businessInfo', '业务信息')}</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 p-6 sm:p-8 lg:p-10">
-          <Select label={t('member.category', 'Category')} value={companyData.category} onChange={(e) => handleChange('category', e.target.value)} options={categoryOptions} disabled={!isEditing} required />
-          <Select label={t('member.industry', 'Industry')} value={companyData.industry} onChange={(e) => handleChange('industry', e.target.value)} options={industryOptions} disabled={!isEditing} required />
+          <Select label={t('member.category', 'Category')} value={companyData.category} onChange={(e) => handleChange('category', e.target.value)} options={categoryOptions} disabled={!isEditing} required placeholder={null} />
+          <Select label={t('member.industry', 'Industry')} value={companyData.industry} onChange={(e) => handleChange('industry', e.target.value)} options={industryOptions} disabled={!isEditing} required placeholder={null} />
           <div className="flex flex-col">
             <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">{t('member.businessField', 'Business Field')}</label>
-            <Select value={companyData.businessField} onChange={(e) => handleChange('businessField', e.target.value)} options={categoryOptions} disabled={!isEditing} />
+            <Select value={companyData.businessField} onChange={(e) => handleChange('businessField', e.target.value)} options={categoryOptions} disabled={!isEditing} placeholder={null} />
           </div>
           <div className="flex flex-col">
-            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <CurrencyDollarIcon className="w-4 h-4 text-gray-500" />{t('member.sales', 'Sales')}
+            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
+              {t('member.sales', 'Sales')}
             </label>
             <Input type="text" value={companyData.sales} onChange={(e) => handleChange('sales', e.target.value)} disabled={!isEditing} placeholder="0" />
           </div>
           <div className="flex flex-col">
-            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <TeamIcon className="w-4 h-4 text-gray-500" />{t('member.employeeCount', 'Employees')}
+            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
+              {t('member.employeeCount', 'Employees')}
             </label>
             <Input type="text" value={companyData.employeeCount} onChange={(e) => handleChange('employeeCount', e.target.value)} disabled={!isEditing} placeholder="0" />
           </div>
           <div className="flex flex-col col-span-1 sm:col-span-2">
-            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2 flex items-center gap-2">
-              <GlobeIcon className="w-4 h-4 text-gray-500" />{t('member.website', 'Website')}
+            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
+              {t('member.website', 'Website')}
             </label>
-            <Input type="url" value={companyData.website} onChange={(e) => handleChange('website', e.target.value)} disabled={!isEditing} placeholder="https://example.com" />
+            <Input 
+              type="url" 
+              value={companyData.website} 
+              onChange={(e) => handleChange('website', e.target.value)} 
+              disabled={!isEditing} 
+              placeholder="https://example.com"
+              error={fieldErrors.website}
+            />
           </div>
           <div className="flex flex-col col-span-1 sm:col-span-2">
             <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">{t('member.mainBusiness', 'Main Business')}</label>
@@ -302,10 +543,15 @@ export default function PerformanceCompanyInfo() {
             <div className="flex flex-col col-span-1 sm:col-span-2">
               <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">{t('member.cooperationFields', 'Cooperation Fields')}</label>
               <div className="flex flex-col gap-3 mt-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                {['field1', 'field2', 'field3'].map(field => (
-                  <label key={field} className="flex items-center gap-3 cursor-pointer p-2 rounded-md hover:bg-white transition-colors">
-                    <input type="checkbox" checked={companyData.cooperationFields.includes(field)} onChange={(e) => handleCooperationFieldChange(field, e.target.checked)} className="w-4 h-4 text-blue-600 border-gray-300 rounded" />
-                    <span className="text-sm text-gray-700">{field}</span>
+                {cooperationFieldOptions.map(option => (
+                  <label key={option.value} className="flex items-center gap-3 cursor-pointer p-2 rounded-md hover:bg-white transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={companyData.cooperationFields.includes(option.value)} 
+                      onChange={(e) => handleCooperationFieldChange(option.value, e.target.checked)} 
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded" 
+                    />
+                    <span className="text-sm text-gray-700">{option.label}</span>
                   </label>
                 ))}
               </div>
@@ -315,78 +561,20 @@ export default function PerformanceCompanyInfo() {
             <div className="flex flex-col col-span-1 sm:col-span-2">
               <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">{t('member.cooperationFields', 'Cooperation Fields')}</label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {companyData.cooperationFields.map((field, index) => (
-                  <span key={index} className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md">{field}</span>
-                ))}
+                {companyData.cooperationFields.map((field, index) => {
+                  const fieldOption = cooperationFieldOptions.find(opt => opt.value === field);
+                  return (
+                    <span key={index} className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md">
+                      {fieldOption ? fieldOption.label : field}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
       </Card>
 
-
-      {/* Logo */}
-      <Card className="mb-6 sm:mb-8 shadow-sm hover:shadow-md transition-all p-0">
-        <div className="flex items-center gap-3 sm:gap-4 border-b border-gray-200 p-6 sm:p-8 lg:p-10 pb-4 sm:pb-5 lg:pb-6">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 m-0">{t('profile.sections.logo', 'Logo')}</h2>
-        </div>
-        <div className="flex flex-col gap-4 sm:gap-6 items-start p-6 sm:p-8 lg:p-10">
-          {companyData.logo ? (
-            <div className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 border-2 border-gray-200 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50 hover:border-blue-300 hover:shadow-md transition-all">
-              <img src={companyData.logo} alt="Company Logo" className="w-full h-full object-contain" />
-            </div>
-          ) : (
-            <div className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 text-gray-500 text-sm hover:border-blue-400 hover:bg-blue-50 transition-all">
-              {t('profile.noLogo', 'No Logo')}
-            </div>
-          )}
-          {isEditing && (
-            <div className="flex flex-col gap-2">
-              <input type="file" id="logo-upload" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-              <Button onClick={() => document.getElementById('logo-upload').click()} variant="secondary">{t('common.upload', 'Upload')}</Button>
-              <small className="text-xs text-gray-500">{t('profile.logoHint', 'JPG, PNG, GIF, max 10MB')}</small>
-              {logoError && <div className="text-red-500 text-sm mt-2">{logoError}</div>}
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {/* Approval Status */}
-      <Card className="mb-6 sm:mb-8 shadow-sm hover:shadow-md transition-all p-0 bg-gradient-to-br from-green-50 to-blue-50 border-green-200">
-        <div className="flex items-center gap-3 sm:gap-4 border-b border-gray-200 p-6 sm:p-8 lg:p-10 pb-4 sm:pb-5 lg:pb-6">
-          <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 m-0">{t('profile.sections.approvalStatus', 'Approval Status')}</h2>
-        </div>
-        <div className="flex flex-col gap-4 p-6 sm:p-8 lg:p-10">
-          {companyData.approvalStatus === 'approved' && (
-            <>
-              <div className="flex items-center gap-2">
-                <CheckCircleIcon className="w-5 h-5 text-green-600" />
-                <Badge variant="success">{t('member.approved', 'Approved')}</Badge>
-              </div>
-              <p className="text-sm text-gray-600 m-0">{t('profile.approvalStatusDesc.approved', 'Your company info has been approved.')}</p>
-            </>
-          )}
-          {companyData.approvalStatus === 'pending' && (
-            <>
-              <div className="flex items-center gap-2">
-                <WarningIcon className="w-5 h-5 text-yellow-600" />
-                <Badge variant="warning">{t('member.pending', 'Pending')}</Badge>
-              </div>
-              <p className="text-sm text-gray-600 m-0">{t('profile.approvalStatusDesc.pending', 'Your company info is under review.')}</p>
-            </>
-          )}
-          {companyData.approvalStatus === 'rejected' && (
-            <>
-              <div className="flex items-center gap-2">
-                <XIcon className="w-5 h-5 text-red-600" />
-                <Badge variant="danger">{t('member.rejected', 'Rejected')}</Badge>
-              </div>
-              <p className="text-sm text-gray-600 m-0">{t('profile.approvalStatusDesc.rejected', 'Your company info was rejected. Please modify and resubmit.')}</p>
-            </>
-          )}
-        </div>
-      </Card>
     </div>
   );
 }

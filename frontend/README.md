@@ -265,6 +265,78 @@ module-name/
   - 国际化文件（`locales/` 目录，包含 `ko.json` 和 `zh.json`）
   - 导出文件（`index.js`）
 
+### 组件与 Service 分层规范
+
+**组件 (Component)** 只负责：
+- UI 渲染
+- 用户交互事件绑定
+- 调用 Service 方法
+- 管理 UI 状态（loading、表单数据等）
+
+**Service 层** 负责：
+- API 调用
+- 数据格式转换（前端格式 ↔ 后端格式）
+- 业务逻辑封装（如批量上传、数据校验等）
+
+示例：
+```javascript
+// ❌ 错误：业务逻辑写在组件里
+const handleFileUpload = async (e) => {
+  const files = Array.from(e.target.files);
+  const uploadedFiles = [];
+  for (const file of files) {
+    const response = await uploadService.uploadPublic(file);
+    uploadedFiles.push({
+      file_id: response.file_id || response.id,
+      file_url: response.file_url || response.url,
+      original_name: file.name,
+      file_size: file.size
+    });
+  }
+  setFormData(prev => ({ ...prev, attachments: uploadedFiles }));
+};
+
+// ✅ 正确：业务逻辑放在 Service 里
+// upload.service.js
+async uploadAttachments(files) {
+  const uploadedFiles = [];
+  for (const file of files) {
+    const response = await this.uploadPublic(file);
+    uploadedFiles.push({
+      file_id: response.file_id || response.id,
+      file_url: response.file_url || response.url,
+      original_name: file.name,
+      file_size: file.size
+    });
+  }
+  return uploadedFiles;
+}
+
+// Component.jsx
+const handleFileUpload = async (e) => {
+  const files = Array.from(e.target.files);
+  const uploadedFiles = await uploadService.uploadAttachments(files);
+  setFormData(prev => ({ ...prev, attachments: uploadedFiles }));
+};
+```
+
+### Service 文件规范
+
+Service 文件位于 `src/shared/services/`：
+- `api.service.js` - 基础 HTTP 请求封装
+- `auth.service.js` - 认证相关
+- `member.service.js` - 会员相关
+- `admin.service.js` - 管理员相关
+- `performance.service.js` - 绩效相关
+- `upload.service.js` - 文件上传相关
+- `project.service.js` - 项目相关
+- `content.service.js` - 内容管理相关
+
+每个 Service 应包含：
+- API 调用方法
+- 数据格式转换方法（如 `convertFormDataToBackendFormat`）
+- 业务逻辑封装方法（如 `uploadAttachments`）
+
 ### 样式规范
 
 - 使用 Tailwind CSS 工具类
@@ -275,6 +347,102 @@ module-name/
   - `secondary`: 绿色系
   - `gray`: 灰色系
 - 支持自定义阴影和间距
+
+### UI 组件规范
+
+#### 状态徽章 (Status Badge)
+
+使用统一的徽章样式显示状态：
+
+```jsx
+<span className="inline-block px-1.5 py-0.5 rounded text-xs sm:text-sm font-medium bg-green-100 text-green-800">
+  已批准
+</span>
+```
+
+颜色规范：
+- 草稿: `bg-gray-100 text-gray-800`
+- 已提交: `bg-blue-100 text-blue-800`
+- 需修改: `bg-yellow-100 text-yellow-800`
+- 已批准: `bg-green-100 text-green-800`
+- 已驳回: `bg-red-100 text-red-800`
+
+#### 列表操作按钮
+
+使用文字链接样式，按钮之间用 `|` 分隔：
+
+```jsx
+<div className="flex items-center space-x-2">
+  <button className="text-primary-600 hover:text-primary-900 font-medium text-sm">
+    编辑
+  </button>
+  <span className="text-gray-300">|</span>
+  <button className="text-red-600 hover:text-red-900 font-medium text-sm">
+    删除
+  </button>
+</div>
+```
+
+颜色规范：
+- 查看/编辑: `text-primary-600 hover:text-primary-900`
+- 警告操作: `text-yellow-600 hover:text-yellow-900`
+- 危险操作: `text-red-600 hover:text-red-900`
+- 成功操作: `text-green-600 hover:text-green-900`
+
+#### 分页组件
+
+分页组件放在列表底部，左侧显示统计信息，右侧显示分页控件：
+
+```jsx
+{totalPages > 1 && (
+  <div className="sticky bottom-0 mt-auto py-3">
+    <div className="flex justify-between items-center px-1 sm:px-0">
+      <div className="text-xs text-gray-500 whitespace-nowrap">
+        每页显示: {pageSize} · 共: {total}
+      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
+    </div>
+  </div>
+)}
+```
+
+#### 日期格式
+
+统一使用 `YYYY-MM-DD` 格式：
+
+```javascript
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+```
+
+#### 季度显示
+
+使用中文格式：第一季度、第二季度、第三季度、第四季度
+
+```javascript
+const quarterLabels = {
+  1: '第一季度',
+  2: '第二季度',
+  3: '第三季度',
+  4: '第四季度'
+};
+```
+
+#### 表格规范
+
+- 不设置固定列宽，让表格自适应
+- 避免使用 `overflow-x-auto` 产生横向滚动条
+- 表头使用 `TableHeader`，内容使用 `TableCell`
 
 ## API 代理配置
 

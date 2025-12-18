@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { Badge } from '@shared/components';
-import { messageService } from '@shared/services';
+import { messagesService } from '@shared/services';
 
 export default function UnreadBadge({ className = '', size = 'sm' }) {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -13,7 +13,7 @@ export default function UnreadBadge({ className = '', size = 'sm' }) {
 
   const loadUnreadCount = async () => {
     setLoading(true);
-    const count = await messageService.getUnreadCount();
+    const count = await messagesService.getUnreadCount();
     setUnreadCount(count);
     setLoading(false);
   };

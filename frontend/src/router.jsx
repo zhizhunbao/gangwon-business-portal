@@ -211,8 +211,18 @@ const MemberSupportInquiryHistory = lazy(() =>
     default: m.default,
   }))
 );
-const MemberSupportConsultationDetail = lazy(() =>
-  import("@member/modules/support/ConsultationDetail").then((m) => ({
+const MemberSupportInquiryDetail = lazy(() =>
+  import("@member/modules/support/InquiryDetail").then((m) => ({
+    default: m.default,
+  }))
+);
+const MemberNotifications = lazy(() =>
+  import("@member/modules/notifications/NotificationsPage").then((m) => ({
+    default: m.default,
+  }))
+);
+const MemberNotificationDetail = lazy(() =>
+  import("@member/modules/notifications/NotificationDetailPage").then((m) => ({
     default: m.default,
   }))
 );
@@ -292,11 +302,17 @@ export const router = createBrowserRouter(
         {
           path: "/admin/login",
           element: (
-            <PublicRoute>
-              <LazyRoute>
-                <AdminLogin />
-              </LazyRoute>
-            </PublicRoute>
+            <LazyRoute>
+              <AdminLogin />
+            </LazyRoute>
+          ),
+        },
+        {
+          path: "/login",
+          element: (
+            <LazyRoute>
+              <Login />
+            </LazyRoute>
           ),
         },
         {
@@ -456,11 +472,31 @@ export const router = createBrowserRouter(
               ),
             },
             {
-              path: "support/consultation/:id",
+              path: "support/inquiry/:id",
               element: (
                 <ProtectedRoute allowedRoles={["member"]}>
                   <LazyRoute>
-                    <MemberSupportConsultationDetail />
+                    <MemberSupportInquiryDetail />
+                  </LazyRoute>
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "support/notifications",
+              element: (
+                <ProtectedRoute allowedRoles={["member"]}>
+                  <LazyRoute>
+                    <MemberNotifications />
+                  </LazyRoute>
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "support/notifications/:id",
+              element: (
+                <ProtectedRoute allowedRoles={["member"]}>
+                  <LazyRoute>
+                    <MemberNotificationDetail />
                   </LazyRoute>
                 </ProtectedRoute>
               ),

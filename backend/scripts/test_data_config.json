@@ -1,18 +1,5 @@
 {
   "accounts": {
-    "admin": {
-      "business_number": "000-00-00000",
-      "email": "admin@k-talk.kr",
-      "password": "password123",
-      "company_name": "관리자 (Administrator)",
-      "profile": {
-        "industry": "IT/소프트웨어",
-        "revenue": 0,
-        "employee_count": 1,
-        "region": "서울",
-        "address": "서울시 강남구"
-      }
-    },
     "admin_user": {
       "username": "admin",
       "email": "admin@k-talk.kr",
@@ -21,56 +8,58 @@
     },
     "test": {
       "business_number": "999-99-99999",
-      "email": "test@example.com",
+      "email": "test@gangwon-tech.kr",
       "password": "password123",
-      "company_name": "테스트 회사 (Test Company)",
+      "company_name": "강원테크솔루션주식회사",
       "profile": {
-        "website": "https://test-company.example.com"
+        "industry": "IT/소프트웨어",
+        "revenue": 50000000,
+        "employee_count": 25,
+        "region": "강원",
+        "address": "강원특별자치도 춘천시 후석로 123",
+        "website": "https://gangwon-tech.kr"
       }
     },
     "test_modify": {
       "business_number": "888-88-88888",
-      "email": "test-modify@example.com",
+      "email": "info@chuncheon-bio.kr",
       "password": "password123",
-      "company_name": "테스트 수정 회사 (Test Modify Company)",
+      "company_name": "춘천바이오주식회사",
       "profile": {
-        "website": "https://test-modify-company.example.com"
+        "industry": "의료/바이오",
+        "revenue": 120000000,
+        "employee_count": 45,
+        "region": "강원",
+        "address": "강원특별자치도 춘천시 동면 바이오밸리로 456",
+        "website": "https://chuncheon-bio.kr"
       }
     },
     "nice_1": {
       "business_number": "1108801231",
-      "email": "nice1@example.com",
+      "email": "nice1@gangwon-precision.kr",
       "password": "password123",
-      "company_name": "Nice DNB Test Company 1",
+      "company_name": "강원정밀기계주식회사",
       "profile": {
-        "website": "https://nice1-company.example.com"
+        "industry": "제조업",
+        "revenue": 250000000,
+        "employee_count": 85,
+        "region": "강원",
+        "address": "강원특별자치도 원주시 문막읍 산업단지로 123",
+        "website": "https://gangwon-precision.kr"
       }
     },
     "nice_2": {
       "business_number": "7788602046",
-      "email": "nice2@example.com",
+      "email": "nice2@sokcho-tourism.kr",
       "password": "password123",
-      "company_name": "Nice DNB Test Company 2",
+      "company_name": "속초관광개발주식회사",
       "profile": {
-        "website": "https://nice2-company.example.com"
-      }
-    },
-    "special_1": {
-      "business_number": "9999999999",
-      "email": "special1@example.com",
-      "password": "password123",
-      "company_name": "Special Test Company 1",
-      "profile": {
-        "website": "https://special1-company.example.com"
-      }
-    },
-    "special_2": {
-      "business_number": "8888888888",
-      "email": "special2@example.com",
-      "password": "password123",
-      "company_name": "Special Test Company 2",
-      "profile": {
-        "website": "https://special2-company.example.com"
+        "industry": "관광/숙박",
+        "revenue": 180000000,
+        "employee_count": 120,
+        "region": "강원",
+        "address": "강원특별자치도 속초시 설악산로 789",
+        "website": "https://sokcho-tourism.kr"
       }
     }
   },
@@ -81,104 +70,91 @@
       "건설업",
       "유통/물류",
       "서비스업",
-      "금융업",
       "의료/바이오",
-      "교육",
-      "문화/예술",
       "농업/수산업",
       "식음료",
-      "화학/소재",
-      "자동차/부품",
-      "전자/반도체",
-      "에너지/환경",
       "관광/숙박",
-      "부동산",
-      "미디어/광고",
-      "운송/물류",
-      "기계/장비"
+      "에너지/환경",
+      "문화/예술",
+      "교육"
+    ],
+    "gangwon_regions": [
+      "춘천시",
+      "원주시",
+      "강릉시",
+      "동해시",
+      "태백시",
+      "속초시",
+      "삼척시",
+      "홍천군",
+      "횡성군",
+      "영월군",
+      "평창군",
+      "정선군",
+      "철원군",
+      "화천군",
+      "양구군",
+      "인제군",
+      "고성군",
+      "양양군"
     ],
     "regions": [
-      "서울",
-      "부산",
-      "대구",
-      "인천",
-      "광주",
-      "대전",
-      "울산",
-      "경기",
-      "강원",
-      "충북",
-      "충남",
-      "전북",
-      "전남",
-      "경북",
-      "경남",
-      "제주"
+      "강원"
     ],
     "member_statuses": ["pending", "active", "suspended"],
     "approval_statuses": ["pending", "approved", "rejected"],
     "member_status_distribution": {
-      "active": 0.7,
-      "pending": 0.25,
+      "active": 0.75,
+      "pending": 0.20,
       "suspended": 0.05
     },
     "approval_status_distribution": {
-      "approved": 0.75,
-      "pending": 0.2,
+      "approved": 0.80,
+      "pending": 0.15,
       "rejected": 0.05
     },
     "performance_types": ["sales", "support", "ip"],
     "performance_statuses": ["draft", "submitted", "approved", "rejected", "revision_requested"],
     "performance_status_distribution": {
-      "draft": 0.15,
-      "submitted": 0.35,
-      "approved": 0.25,
-      "rejected": 0.1,
-      "revision_requested": 0.15
+      "draft": 0.10,
+      "submitted": 0.30,
+      "approved": 0.40,
+      "rejected": 0.08,
+      "revision_requested": 0.12
     },
     "project_statuses": ["active", "inactive", "archived"],
     "project_status_distribution": {
-      "active": 0.5,
-      "inactive": 0.4,
-      "archived": 0.1
+      "active": 0.50,
+      "inactive": 0.35,
+      "archived": 0.15
     },
     "project_target_audiences": [
-      "중소기업",
-      "제조업 기업",
-      "IT/소프트웨어 기업",
-      "스타트업",
-      "수출기업",
-      "기술혁신 기업",
-      "사회적 기업",
-      "여성기업",
-      "청년창업기업",
-      "농업/수산업 기업",
-      "서비스업 기업",
-      "건설업 기업",
-      "에너지/환경 기업",
-      "바이오/의료 기업",
-      "문화/예술 기업"
+      "강원도 소재 중소기업",
+      "강원도 제조업 기업",
+      "강원도 IT/소프트웨어 기업",
+      "강원도 스타트업",
+      "강원도 관광/숙박업 기업",
+      "강원도 농업/수산업 기업",
+      "강원도 바이오/의료 기업",
+      "강원도 청년창업기업",
+      "강원도 여성기업"
     ],
     "application_statuses": ["submitted", "under_review", "approved", "rejected"],
-    "inquiry_statuses": ["pending", "replied", "closed"],
+    "inquiry_statuses": ["pending", "replied"],
+    "inquiry_categories": ["general", "support", "performance"],
     "banner_types": ["MAIN", "INTRO", "PROGRAM", "PERFORMANCE", "SUPPORT", "PROFILE"],
     "faq_categories": ["회원가입", "성과관리", "프로젝트", "기업프로필", "문의/지원", "기타"],
     "message_subjects": [
-      "회원가입 승인 완료",
-      "성과 제출 안내",
-      "프로젝트 신청 결과",
-      "시스템 점검 안내",
-      "새로운 지원 사업 안내",
-      "프로필 정보 업데이트 요청",
-      "문의사항 답변",
-      "중요 공지사항",
-      "이벤트 안내",
-      "정기 보고서 제출 요청",
-      "승인 완료 안내",
-      "반려 사유 안내",
-      "수정 요청 안내",
-      "신청 접수 확인",
-      "결과 발표 안내"
+      "회원가입 승인 완료 안내",
+      "2024년 1분기 성과 제출 안내",
+      "프로젝트 신청 결과 안내",
+      "시스템 정기 점검 안내",
+      "강원도 기업 지원사업 안내",
+      "기업 프로필 업데이트 요청",
+      "문의사항 답변 완료",
+      "중요 공지사항 안내",
+      "성과 승인 완료 안내",
+      "성과 보완 요청 안내"
     ],
     "audit_actions": ["login", "logout", "create", "update", "delete", "view", "approve", "reject"],
     "audit_resource_types": [
@@ -193,129 +169,121 @@
     ],
     "user_agents": [
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
     ],
-    "file_types": ["image", "document"],
+    "file_types": ["document"],
     "mime_types": {
-      "image": [
-        "image/jpeg",
-        "image/png",
-        "image/gif"
-      ],
       "document": [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        "application/pdf"
       ]
     }
   },
   "data_ranges": {
     "member": {
-      "revenue_min": 1000000,
-      "revenue_max": 1000000000,
+      "revenue_min": 10000000,
+      "revenue_max": 500000000,
       "employee_count_min": 1,
-      "employee_count_max": 500,
-      "founding_date_years_ago": 20,
-      "created_days_ago_max": 730,
-      "small_company_ratio": 0.4,
-      "medium_company_ratio": 0.45,
-      "large_company_ratio": 0.15,
+      "employee_count_max": 200,
+      "founding_date_years_ago": 15,
+      "created_days_ago_max": 365,
+      "small_company_ratio": 0.50,
+      "medium_company_ratio": 0.40,
+      "large_company_ratio": 0.10,
       "small_company": {
-        "revenue_min": 1000000,
+        "revenue_min": 10000000,
         "revenue_max": 100000000,
         "employee_count_min": 1,
-        "employee_count_max": 50
+        "employee_count_max": 30
       },
       "medium_company": {
         "revenue_min": 100000000,
-        "revenue_max": 500000000,
-        "employee_count_min": 50,
-        "employee_count_max": 200
+        "revenue_max": 300000000,
+        "employee_count_min": 30,
+        "employee_count_max": 100
       },
       "large_company": {
-        "revenue_min": 500000000,
-        "revenue_max": 1000000000,
-        "employee_count_min": 200,
-        "employee_count_max": 500
+        "revenue_min": 300000000,
+        "revenue_max": 500000000,
+        "employee_count_min": 100,
+        "employee_count_max": 200
       }
     },
     "test_account": {
-      "revenue_min": 10000000,
-      "revenue_max": 100000000,
+      "revenue_min": 30000000,
+      "revenue_max": 150000000,
       "employee_count_min": 10,
-      "employee_count_max": 100,
-      "founding_date_years_ago": 10
+      "employee_count_max": 50,
+      "founding_date_years_ago": 8
     },
     "performance": {
       "sales": {
-        "revenue_min": 1000000,
-        "revenue_max": 100000000,
-        "employees_min": 10,
-        "employees_max": 500,
+        "revenue_min": 10000000,
+        "revenue_max": 200000000,
+        "employees_min": 5,
+        "employees_max": 150,
         "new_contracts_min": 0,
-        "new_contracts_max": 50
+        "new_contracts_max": 30
       },
       "support": {
-        "support_amount_min": 500000,
-        "support_amount_max": 50000000,
+        "support_amount_min": 1000000,
+        "support_amount_max": 100000000,
         "programs_min": 1,
-        "programs_max": 10,
-        "beneficiaries_min": 5,
-        "beneficiaries_max": 200
+        "programs_max": 5,
+        "beneficiaries_min": 1,
+        "beneficiaries_max": 50
       },
       "ip": {
         "patents_min": 0,
-        "patents_max": 20,
+        "patents_max": 10,
         "trademarks_min": 0,
-        "trademarks_max": 15,
+        "trademarks_max": 5,
         "copyrights_min": 0,
-        "copyrights_max": 10
+        "copyrights_max": 3
       },
-      "year_range": 2,
+      "year_range": 3,
       "submitted_days_ago_max": 180,
       "created_days_ago_max": 365,
       "review_days_min": 1,
-      "review_days_max": 30
+      "review_days_max": 14
     },
     "project": {
-      "start_date_days_ago": 365,
-      "start_date_days_ahead": 365,
-      "duration_days_min": 30,
+      "start_date_days_ago": 180,
+      "start_date_days_ahead": 180,
+      "duration_days_min": 60,
       "duration_days_max": 365,
-      "created_days_ago_max": 180
+      "created_days_ago_max": 90
     },
     "application": {
-      "submitted_days_ago_max": 90,
-      "review_days_min": 1,
-      "review_days_max": 30
+      "submitted_days_ago_max": 60,
+      "review_days_min": 3,
+      "review_days_max": 14
     },
     "content": {
-      "notices_count": 20,
-      "press_releases_count": 15,
+      "notices_count": 15,
+      "press_releases_count": 10,
       "banners_per_type": 2,
-      "faqs_count": 25,
-      "created_days_ago_max": 180
+      "faqs_count": 20,
+      "created_days_ago_max": 120
     },
     "inquiry": {
-      "count": 30,
-      "created_days_ago_max": 90,
-      "replied_days_ago_max": 30
+      "count": 20,
+      "created_days_ago_max": 60,
+      "replied_days_ago_max": 14
     },
     "message": {
-      "count": 100,
-      "created_days_ago_max": 90,
-      "read_days_ago_max": 30,
-      "is_read_probability": 0.4,
-      "is_important_probability": 0.2
+      "count": 50,
+      "created_days_ago_max": 60,
+      "read_days_ago_max": 14,
+      "is_read_probability": 0.6,
+      "is_important_probability": 0.15
     },
     "attachment": {
-      "file_size_min": 10000,
-      "file_size_max": 5000000,
-      "uploaded_days_ago_max": 180
+      "file_size_min": 50000,
+      "file_size_max": 2000000,
+      "uploaded_days_ago_max": 90
     },
     "audit_log": {
-      "created_days_ago_max": 365
+      "created_days_ago_max": 180
     },
     "system_info": {
       "created_days_ago_max": 365,
@@ -323,29 +291,110 @@
     }
   },
   "generation_counts": {
-    "members": 4,
+    "members": 30,
     "admins": 1,
-    "performance_records": 200,
-    "projects": 35,
-    "project_applications": 150,
-    "attachments": 100,
-    "audit_logs": 1000,
-    "messages": 100,
+    "performance_records": 100,
+    "projects": 20,
+    "project_applications": 80,
+    "attachments": 0,
+    "audit_logs": 500,
+    "messages": 50,
     "system_infos": 1
   },
   "probabilities": {
-    "member_profile_industry_null": 0.1,
-    "member_profile_revenue_null": 0.2,
-    "member_profile_employee_count_null": 0.2,
-    "member_profile_founding_date_null": 0.2,
-    "member_profile_region_null": 0.1,
-    "member_profile_address_null": 0.1,
-    "member_profile_website_null": 0.3,
-    "performance_review_comments_null": 0.3,
-    "banner_link_url_null": 0.3,
-    "banner_is_active": 0.8,
-    "audit_log_member_null": 0.1,
-    "audit_log_resource_type_null": 0.3
+    "member_profile_industry_null": 0.05,
+    "member_profile_revenue_null": 0.10,
+    "member_profile_employee_count_null": 0.10,
+    "member_profile_founding_date_null": 0.10,
+    "member_profile_region_null": 0.0,
+    "member_profile_address_null": 0.05,
+    "member_profile_website_null": 0.20,
+    "performance_review_comments_null": 0.20,
+    "banner_link_url_null": 0.20,
+    "banner_is_active": 0.85,
+    "audit_log_member_null": 0.05,
+    "audit_log_resource_type_null": 0.10
+  },
+  "gangwon_company_names": [
+    "강원테크솔루션주식회사",
+    "춘천바이오주식회사",
+    "원주정밀기계주식회사",
+    "강릉수산식품주식회사",
+    "속초관광개발주식회사",
+    "평창친환경농업주식회사",
+    "동해에너지주식회사",
+    "태백광업주식회사",
+    "홍천목재산업주식회사",
+    "횡성한우식품주식회사",
+    "영월관광레저주식회사",
+    "정선카지노리조트주식회사",
+    "철원DMZ관광주식회사",
+    "화천산천어축제주식회사",
+    "양구청정농업주식회사",
+    "인제자연휴양주식회사",
+    "고성통일전망대주식회사",
+    "양양서핑리조트주식회사",
+    "춘천IT밸리주식회사",
+    "원주의료기기주식회사",
+    "강릉커피산업주식회사",
+    "속초해양수산주식회사",
+    "평창동계스포츠주식회사",
+    "삼척해양관광주식회사",
+    "강원스마트팜주식회사",
+    "춘천닭갈비프랜차이즈주식회사",
+    "원주한지공예주식회사",
+    "강릉단오문화주식회사",
+    "속초아바이마을주식회사",
+    "평창대관령목장주식회사"
+  ],
+  "gangwon_addresses": {
+    "춘천시": [
+      "강원특별자치도 춘천시 중앙로 123",
+      "강원특별자치도 춘천시 후석로 456",
+      "강원특별자치도 춘천시 공지로 789",
+      "강원특별자치도 춘천시 퇴계로 101"
+    ],
+    "원주시": [
+      "강원특별자치도 원주시 시청로 234",
+      "강원특별자치도 원주시 원일로 567",
+      "강원특별자치도 원주시 단구로 890"
+    ],
+    "강릉시": [
+      "강원특별자치도 강릉시 경강로 345",
+      "강원특별자치도 강릉시 하슬라로 678",
+      "강원특별자치도 강릉시 율곡로 901"
+    ],
+    "속초시": [
+      "강원특별자치도 속초시 중앙로 456",
+      "강원특별자치도 속초시 설악산로 789"
+    ],
+    "동해시": [
+      "강원특별자치도 동해시 천곡로 567",
+      "강원특별자치도 동해시 해안로 890"
+    ],
+    "태백시": [
+      "강원특별자치도 태백시 황지로 678",
+      "강원특별자치도 태백시 태백로 901"
+    ],
+    "삼척시": [
+      "강원특별자치도 삼척시 중앙로 789",
+      "강원특별자치도 삼척시 해안로 012"
+    ],
+    "평창군": [
+      "강원특별자치도 평창군 평창읍 올림픽로 123",
+      "강원특별자치도 평창군 대관령면 대관령로 456"
+    ],
+    "홍천군": [
+      "강원특별자치도 홍천군 홍천읍 중앙로 234"
+    ],
+    "횡성군": [
+      "강원특별자치도 횡성군 횡성읍 태기로 345"
+    ],
+    "영월군": [
+      "강원특별자치도 영월군 영월읍 단종로 456"
+    ],
+    "정선군": [
+      "강원특별자치도 정선군 정선읍 봉양로 567"
+    ]
   }
 }
-

@@ -33,6 +33,8 @@ import performanceKo from '@member/modules/performance/locales/ko.json';
 import performanceZh from '@member/modules/performance/locales/zh.json';
 import supportKo from '@member/modules/support/locales/ko.json';
 import supportZh from '@member/modules/support/locales/zh.json';
+import notificationsKo from '@member/modules/notifications/locales/ko.json';
+import notificationsZh from '@member/modules/notifications/locales/zh.json';
 
 // Admin module locales
 import adminLayoutKo from '@admin/layouts/locales/ko.json';
@@ -88,7 +90,8 @@ const memberKo = mergeModules(
   aboutKo,
   projectsKo,
   performanceKo,
-  supportKo
+  supportKo,
+  notificationsKo
 );
 
 const memberZh = mergeModules(
@@ -98,7 +101,8 @@ const memberZh = mergeModules(
   aboutZh,
   projectsZh,
   performanceZh,
-  supportZh
+  supportZh,
+  notificationsZh
 );
 
 // Merge all admin module translations

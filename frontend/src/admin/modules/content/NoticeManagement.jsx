@@ -7,10 +7,11 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Input, RichTextEditor, Alert, Card, Modal, ModalFooter } from '@shared/components';
 import { contentService } from '@shared/services';
+import { formatDate } from '@shared/utils/format';
 import { validateNoticeForm } from './utils';
 
 export default function NoticeManagement() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   // State
   const [notices, setNotices] = useState([]);
@@ -159,7 +160,7 @@ export default function NoticeManagement() {
                       <span>{notice.title}</span>
                     </div>
                     <p className="m-0 text-gray-500 text-sm">
-                      {notice.createdAt ? new Date(notice.createdAt).toLocaleDateString() : ''} | {t('admin.content.notices.views', '浏览')}: {notice.viewCount || 0}
+                      {notice.createdAt ? formatDate(notice.createdAt, 'yyyy-MM-dd', i18n.language) : ''} | {t('admin.content.notices.views', '浏览')}: {notice.viewCount || 0}
                     </p>
                   </div>
                   <Button

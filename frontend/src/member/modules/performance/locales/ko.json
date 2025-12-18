@@ -2,7 +2,6 @@
   "performance": {
     "title": "성과 관리",
     "subtitle": "기업 성과 데이터 입력 및 관리",
-    "companyInfo": "기업 정보",
     "query": "성과 조회",
     "input": "성과 입력",
     "searchPlaceholder": "연도 또는 분기로 검색",
@@ -19,6 +18,12 @@
     "quarter4": "4분기",
     "quarterly": "분기",
     "annual": "연간",
+    "quarterLabels": {
+      "first": "1분기",
+      "second": "2분기",
+      "third": "3분기",
+      "fourth": "4분기"
+    },
     "selectQuarter": "분기 선택",
     "quarterHint": "분기를 선택하지 않으면 연간 성과로 처리됩니다.",
     "type": "성과 유형",
@@ -50,13 +55,23 @@
     "status": {
       "draft": "임시저장",
       "submitted": "제출 완료",
+      "revision_requested": "수정 필요",
+      "revisionRequested": "수정 필요",
       "needSupplement": "보완 필요",
-      "approved": "승인 완료"
+      "approved": "승인 완료",
+      "rejected": "거부됨"
     },
     "submittedDate": "제출일",
     "approvedDate": "승인일",
     "reviewer": "검토자",
     "reviewComments": "검토 의견",
+    "viewComments": "검토 의견 보기",
+    "noComments": "검토 의견이 없습니다",
+    "downloadApprovedOnly": "승인된 문서만 다운로드할 수 있습니다",
+    "fileCount": "{{count}}개 파일",
+    "attachmentList": "첨부파일 목록",
+    "submitSuccess": "제출 성공",
+    "submitFailed": "제출 실패",
     "sections": {
       "basicInfo": "기본 정보",
       "salesEmployment": "매출 고용",
@@ -133,6 +148,68 @@
         "domestic": "국내 신청",
         "pct": "PCT 해외 신청",
         "general": "일반 해외 신청"
+      }
+    },
+    "companyInfo": {
+      "title": "기업 정보",
+      "sections": {
+        "basicInfo": "기본 정보",
+        "addressInfo": "주소 정보",
+        "businessInfo": "사업 정보",
+        "logo": "기업 로고"
+      },
+      "validation": {
+        "fillRequiredFields": "필수 항목을 확인한 뒤 다시 시도해주세요",
+        "missingRequiredFields": "다음 필수 항목을 입력해주세요: {{fields}}",
+        "fieldErrors": "다음 오류를 수정해주세요: {{errors}}",
+        "invalidPhone": "유효한 전화번호를 입력해주세요",
+        "invalidWebsite": "유효한 웹사이트 주소를 입력해주세요",
+        "invalidEmail": "유효한 이메일 주소를 입력해주세요"
+      },
+      "message": {
+        "saveSuccess": "저장되었습니다",
+        "logoUploadError": "로고 업로드 실패",
+        "logoUploadSuccess": "로고 업로드 성공"
+      },
+      "profile": {
+        "noLogo": "로고 없음",
+        "logoHint": "JPG, PNG, GIF 형식 지원, 최대 10MB",
+        "clickToUploadLogo": "로고 업로드하려면 클릭하세요",
+        "clickToChangeLogo": "로고 변경하려면 클릭하세요",
+        "logoUploadConfirm": "이 로고를 업로드하시겠습니까?",
+        "businessLicenseHint": "사업자등록번호는 수정할 수 없습니다",
+        "loginRequired": "로그인 필요",
+        "loginRequiredDesc": "기업 정보를 보려면 먼저 로그인해주세요",
+        "regions": {
+          "chuncheon": "춘천",
+          "wonju": "원주",
+          "gangneung": "강릉",
+          "donghae": "동해",
+          "taebaek": "태백",
+          "sokcho": "속초",
+          "samcheok": "삼척"
+        },
+        "categories": {
+          "tech": "기술",
+          "manufacturing": "제조업",
+          "service": "서비스업",
+          "retail": "소매업",
+          "other": "기타"
+        },
+        "industries": {
+          "software": "소프트웨어",
+          "hardware": "하드웨어",
+          "biotechnology": "생명공학",
+          "healthcare": "의료",
+          "education": "교육",
+          "finance": "금융",
+          "other": "기타"
+        },
+        "cooperationFields": {
+          "field1": "기술 협력",
+          "field2": "시장 확대",
+          "field3": "인재 양성"
+        }
       }
     }
   }

@@ -101,19 +101,15 @@ class UploadService {
     // If the URL is absolute (e.g. Supabase storage URL), use browser download directly
     // to avoid CORS issues that can cause Axios "Network Error".
     if (typeof fileUrl === "string" && /^https?:\/\//i.test(fileUrl)) {
-      try {
-        const link = document.createElement("a");
-        link.href = fileUrl;
-        if (filename) {
-          link.download = filename;
-        }
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        return;
-      } catch (e) {
-        // Fallback to XHR download if direct link download fails for some reason
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      if (filename) {
+        link.download = filename;
       }
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
     }
 
     await apiService.download(fileUrl, {}, filename);
@@ -130,19 +126,15 @@ class UploadService {
   async downloadFileByUrl(fileUrl, filename = null) {
     // Same handling as _downloadFileInternal: prefer direct download for absolute URLs
     if (typeof fileUrl === "string" && /^https?:\/\//i.test(fileUrl)) {
-      try {
-        const link = document.createElement("a");
-        link.href = fileUrl;
-        if (filename) {
-          link.download = filename;
-        }
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        return;
-      } catch (e) {
-        // Fallback to XHR download if needed
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      if (filename) {
+        link.download = filename;
       }
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
     }
 
     await apiService.download(fileUrl, {}, filename);
@@ -157,6 +149,28 @@ class UploadService {
    */
   async deleteFile(fileId) {
     await apiService.delete(`${API_PREFIX}/upload/${fileId}`);
+  }
+
+  /**
+   * Upload files and return formatted attachment list
+   * 上传文件并返回格式化的附件列表
+   *
+   * @param {File[]} files - Files to upload
+   * @returns {Promise<Array>} Formatted attachment list
+   */
+  async uploadAttachments(files) {
+    const uploadedFiles = [];
+    for (const file of files) {
+      const response = await this.uploadPublic(file);
+      uploadedFiles.push({
+        file_id: response.file_id || response.id,
+        file_url: response.file_url || response.url,
+        original_name: file.name,
+        stored_name: response.stored_name,
+        file_size: file.size
+      });
+    }
+    return uploadedFiles;
   }
 
   /**

@@ -7,7 +7,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Button, Badge, Alert, Loading } from '@shared/components';
-import { messageService } from '@shared/services';
+import { messagesService } from '@shared/services';
+import { formatDateTime } from '@shared/utils/format';
 import MessageComposer from './MessageComposer';
 
 export default function MessageThread() {
@@ -31,7 +32,7 @@ export default function MessageThread() {
     if (!threadId) return;
     
     setLoading(true);
-    const response = await messageService.getThread(threadId);
+    const response = await messagesService.getThread(threadId);
     setThread(response.thread);
     setMessages(response.messages || []);
     
@@ -39,7 +40,7 @@ export default function MessageThread() {
     const unreadMessages = response.messages?.filter(msg => !msg.isRead && msg.senderType !== 'admin') || [];
     if (unreadMessages.length > 0) {
       await Promise.all(
-        unreadMessages.map(msg => messageService.updateMessage(msg.id, { isRead: true }))
+        unreadMessages.map(msg => messagesService.updateMessage(msg.id, { isRead: true }))
       );
     }
     setLoading(false);
@@ -54,30 +55,30 @@ export default function MessageThread() {
   }, [messages]);
 
   const handleSendMessage = async (messageData) => {
-    const newMessage = await messageService.createThreadMessage(threadId, messageData);
+    const newMessage = await messagesService.createThreadMessage(threadId, messageData);
     setMessages(prev => [...prev, newMessage]);
     setShowComposer(false);
     setMessageVariant('success');
-    setMessage(t('admin.messages.thread.messageSent', '消息发送成功'));
+    setMessage(t('admin.messages.thread.messageSent'));
     setTimeout(() => setMessage(null), 3000);
   };
 
   const handleCloseThread = async () => {
-    if (!window.confirm(t('admin.messages.thread.confirmClose', '确定要关闭这个会话吗？'))) {
+    if (!window.confirm(t('admin.messages.thread.confirmClose'))) {
       return;
     }
     
-    await messageService.updateThread(threadId, { status: 'closed' });
+    await messagesService.updateThread(threadId, { status: 'closed' });
     setThread(prev => ({ ...prev, status: 'closed' }));
     setMessageVariant('success');
-    setMessage(t('admin.messages.thread.closed', '会话已关闭'));
+    setMessage(t('admin.messages.thread.closed'));
   };
 
   const handleReopenThread = async () => {
-    await messageService.updateThread(threadId, { status: 'open' });
+    await messagesService.updateThread(threadId, { status: 'open' });
     setThread(prev => ({ ...prev, status: 'open' }));
     setMessageVariant('success');
-    setMessage(t('admin.messages.thread.reopened', '会话已重新打开'));
+    setMessage(t('admin.messages.thread.reopened'));
   };
 
   const formatDate = (dateStr) => {
@@ -85,34 +86,24 @@ export default function MessageThread() {
     const date = new Date(dateStr);
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
-    const locale = i18n.language === 'zh' ? 'zh-CN' : 'ko-KR';
     
     if (diffInHours < 24) {
-      return date.toLocaleTimeString(locale, {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      // 24小时内：显示时间 HH:mm
+      return formatDateTime(date, 'HH:mm', i18n.language);
     } else if (diffInHours < 24 * 7) {
-      return date.toLocaleDateString(locale, {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+      // 7天内：显示日期+时间 MM-dd HH:mm
+      return formatDateTime(date, 'MM-dd HH:mm', i18n.language);
     } else {
-      return date.toLocaleDateString(locale, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
+      // 超过7天：显示日期 yyyy-MM-dd
+      return formatDateTime(date, 'yyyy-MM-dd', i18n.language);
     }
   };
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      open: { variant: 'success', label: t('admin.messages.thread.status.open', '进行中') },
-      resolved: { variant: 'info', label: t('admin.messages.thread.status.resolved', '已解决') },
-      closed: { variant: 'secondary', label: t('admin.messages.thread.status.closed', '已关闭') }
+      open: { variant: 'success', label: t('admin.messages.thread.status.open') },
+      resolved: { variant: 'info', label: t('admin.messages.thread.status.resolved') },
+      closed: { variant: 'secondary', label: t('admin.messages.thread.status.closed') }
     };
     
     const config = statusMap[status] || statusMap.open;
@@ -121,9 +112,9 @@ export default function MessageThread() {
 
   const getCategoryBadge = (category) => {
     const categoryMap = {
-      support: { variant: 'info', label: t('admin.messages.category.support', '技术支持') },
-      performance: { variant: 'warning', label: t('admin.messages.category.performance', '绩效咨询') },
-      general: { variant: 'secondary', label: t('admin.messages.category.general', '一般问题') }
+      support: { variant: 'info', label: t('admin.messages.category.support') },
+      performance: { variant: 'warning', label: t('admin.messages.category.performance') },
+      general: { variant: 'secondary', label: t('admin.messages.category.general') }
     };
     
     const config = categoryMap[category] || categoryMap.general;
@@ -138,9 +129,9 @@ export default function MessageThread() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <p className="text-gray-500 mb-4">{t('admin.messages.thread.notFound', '会话不存在')}</p>
+          <p className="text-gray-500 mb-4">{t('admin.messages.thread.notFound')}</p>
           <Button onClick={() => navigate('/admin/messages')}>
-            {t('admin.messages.thread.backToList', '返回消息列表')}
+            {t('admin.messages.thread.backToList')}
           </Button>
         </div>
       </div>
@@ -158,14 +149,14 @@ export default function MessageThread() {
               size="sm"
               onClick={() => navigate('/admin/messages')}
             >
-              ← {t('admin.messages.thread.back', '返回')}
+              ← {t('admin.messages.thread.back')}
             </Button>
             <div>
               <h2 className="text-lg font-semibold text-gray-900 m-0 mb-1">
                 {thread.subject}
               </h2>
               <p className="text-gray-600 text-sm m-0">
-                {t('admin.messages.thread.description', '查看和管理消息会话详情。')}
+                {t('admin.messages.thread.description')}
               </p>
             </div>
           </div>
@@ -180,19 +171,19 @@ export default function MessageThread() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
               <span className="font-medium text-gray-700">
-                {t('admin.messages.thread.member', '会员')}:
+                {t('admin.messages.thread.member')}:
               </span>
               <span className="ml-2 text-gray-900">{thread.memberName}</span>
             </div>
             <div>
               <span className="font-medium text-gray-700">
-                {t('admin.messages.thread.created', '创建时间')}:
+                {t('admin.messages.thread.created')}:
               </span>
               <span className="ml-2 text-gray-900">{formatDate(thread.createdAt)}</span>
             </div>
             <div>
               <span className="font-medium text-gray-700">
-                {t('admin.messages.thread.lastMessage', '最后消息')}:
+                {t('admin.messages.thread.lastMessage')}:
               </span>
               <span className="ml-2 text-gray-900">{formatDate(thread.lastMessageAt)}</span>
             </div>
@@ -211,7 +202,7 @@ export default function MessageThread() {
         <div className="h-96 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-500">
-              {t('admin.messages.thread.noMessages', '暂无消息')}
+              {t('admin.messages.thread.noMessages')}
             </div>
           ) : (
             messages.map((msg, index) => (
@@ -228,7 +219,7 @@ export default function MessageThread() {
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-medium">
-                      {msg.senderType === 'admin' ? t('admin.messages.thread.admin', '管理员') : thread.memberName}
+                      {msg.senderType === 'admin' ? t('admin.messages.thread.admin') : thread.memberName}
                     </span>
                     <span className={`text-xs ${msg.senderType === 'admin' ? 'text-blue-100' : 'text-gray-500'}`}>
                       {formatDate(msg.createdAt)}
@@ -241,7 +232,7 @@ export default function MessageThread() {
                     <div className="mt-2 pt-2 border-t border-opacity-20">
                       {msg.attachments.map((attachment, idx) => (
                         <div key={idx} className="text-xs">
-                          {t('common.attachment', '📎')} {attachment.fileName}
+                          {t('common.attachment')} {attachment.fileName}
                         </div>
                       ))}
                     </div>
@@ -263,13 +254,13 @@ export default function MessageThread() {
                 variant="primary"
                 onClick={() => setShowComposer(true)}
               >
-                {t('admin.messages.thread.reply', '回复')}
+                {t('admin.messages.thread.reply')}
               </Button>
               <Button
                 variant="outline"
                 onClick={handleCloseThread}
               >
-                {t('admin.messages.thread.close', '关闭会话')}
+                {t('admin.messages.thread.close')}
               </Button>
             </>
           ) : (
@@ -277,13 +268,13 @@ export default function MessageThread() {
               variant="primary"
               onClick={handleReopenThread}
             >
-              {t('admin.messages.thread.reopen', '重新打开')}
+              {t('admin.messages.thread.reopen')}
             </Button>
           )}
         </div>
         
         <div className="text-sm text-gray-500">
-          {t('admin.messages.thread.messageCount', '共 {{count}} 条消息', { count: messages.length })}
+          {t('admin.messages.thread.messageCount', { count: messages.length })}
         </div>
       </div>
 

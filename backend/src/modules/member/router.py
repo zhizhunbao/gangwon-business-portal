@@ -39,7 +39,7 @@ async def get_my_profile(
     current_user: dict = Depends(get_current_active_user),
 ):
     """Get current member's profile."""
-    return await member_service.get_member_profile_response(UUID(current_user["id"]))
+    return await member_service.get_member_profile_response(UUID(str(current_user["id"])))
 
 
 @router.put("/api/member/profile", response_model=MemberProfileResponse)
@@ -52,7 +52,7 @@ async def update_my_profile(
 ):
     """Update current member's profile."""
     return await member_service.update_member_profile_response(
-        UUID(current_user["id"]), data
+        UUID(str(current_user["id"])), data
     )
 
 
@@ -61,8 +61,6 @@ async def update_my_profile(
 @auto_log("list_members", log_result_count=True)
 async def list_members(
     request: Request,
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
     search: Optional[str] = Query(None),
     industry: Optional[str] = Query(None),
     region: Optional[str] = Query(None),
@@ -70,10 +68,8 @@ async def list_members(
     status: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_admin_user),
 ):
-    """List members with pagination and filtering (admin only)."""
+    """List members (admin only)."""
     query = MemberListQuery(
-        page=page,
-        page_size=page_size,
         search=search,
         industry=industry,
         region=region,
@@ -86,7 +82,7 @@ async def list_members(
     return MemberListResponsePaginated(
         items=[
             MemberListResponse(
-                id=UUID(m["id"]),
+                id=UUID(str(m["id"])),
                 business_number=m["business_number"],
                 company_name=m["company_name"],
                 email=m["email"],
@@ -100,9 +96,9 @@ async def list_members(
             for m in members
         ],
         total=total,
-        page=page,
-        page_size=page_size,
-        total_pages=ceil(total / page_size) if total > 0 else 0,
+        page=1,
+        page_size=total if total > 0 else 1,
+        total_pages=1,
     )
 
 
@@ -515,6 +511,7 @@ async def export_members(
     region: Optional[str] = Query(None),
     approval_status: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
+    language: Optional[str] = Query("ko", description="Language for column headers: 'ko' or 'zh'"),
     current_user: dict = Depends(get_current_admin_user),
 ):
     """
@@ -537,11 +534,75 @@ async def export_members(
     # Get export data
     export_data = await member_service.export_members_data(query)
     
+    # Define column headers based on language
+    column_mapping = {
+        "ko": {
+            "id": "ID",
+            "business_number": "사업자번호",
+            "company_name": "기업명",
+            "email": "이메일",
+            "status": "상태",
+            "approval_status": "승인상태",
+            "industry": "업종",
+            "revenue": "매출액",
+            "employee_count": "직원수",
+            "founding_date": "설립일",
+            "region": "지역",
+            "address": "주소",
+            "website": "웹사이트",
+            "logo_url": "로고 URL",
+            "created_at": "가입일",
+            "updated_at": "수정일",
+        },
+        "zh": {
+            "id": "ID",
+            "business_number": "营业执照号",
+            "company_name": "企业名称",
+            "email": "邮箱",
+            "status": "状态",
+            "approval_status": "审批状态",
+            "industry": "行业",
+            "revenue": "营业收入",
+            "employee_count": "员工数",
+            "founding_date": "成立日期",
+            "region": "地区",
+            "address": "地址",
+            "website": "网站",
+            "logo_url": "标志 URL",
+            "created_at": "注册时间",
+            "updated_at": "更新时间",
+        },
+    }
+    
+    # Get headers based on language (default to Korean)
+    lang = language if language in column_mapping else "ko"
+    header_labels = column_mapping[lang]
+    
+    # Reorganize data with internationalized column names
+    if export_data:
+        # Get the keys from the first data row
+        data_keys = list(export_data[0].keys())
+        # Create header list in the same order as data keys
+        header_list = [header_labels.get(key, key) for key in data_keys]
+        
+        # Reorganize data: map field keys to header labels
+        reorganized_data = []
+        for row in export_data:
+            reorganized_row = {}
+            for key in data_keys:
+                header_label = header_labels.get(key, key)
+                reorganized_row[header_label] = row.get(key, "")
+            reorganized_data.append(reorganized_row)
+    else:
+        header_list = list(header_labels.values())
+        reorganized_data = []
+    
     # Generate export file
     if format == "excel":
         excel_bytes = ExportService.export_to_excel(
-            data=export_data,
+            data=reorganized_data,
             sheet_name="Members",
+            headers=header_list if reorganized_data else None,
             title=f"Members Export - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         )
         return Response(
@@ -553,7 +614,8 @@ async def export_members(
         )
     else:  # CSV
         csv_content = ExportService.export_to_csv(
-            data=export_data,
+            data=reorganized_data,
+            headers=header_list if reorganized_data else None,
         )
         return Response(
             content=csv_content,

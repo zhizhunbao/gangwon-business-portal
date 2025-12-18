@@ -16,17 +16,17 @@ export default function Messages() {
   const [activeTab, setActiveTab] = useState('list');
 
   const tabs = useMemo(() => [
-    { key: 'list', label: t('admin.messages.tabs.list', '消息列表') },
-    { key: 'send', label: t('admin.messages.tabs.send', '发送消息') },
-    { key: 'broadcast', label: t('admin.messages.tabs.broadcast', '群发消息') },
-    { key: 'analytics', label: t('admin.messages.tabs.analytics', '消息统计') }
+    { key: 'list', label: t('admin.messages.tabs.list') },
+    { key: 'send', label: t('admin.messages.tabs.send') },
+    { key: 'broadcast', label: t('admin.messages.tabs.broadcast') },
+    { key: 'analytics', label: t('admin.messages.tabs.analytics') }
   ], [t]);
 
   return (
     <div className="admin-messages">
       <div className="mb-6">
         <h1 className="text-xl md:text-2xl font-semibold text-gray-900 m-0">
-          {t('admin.messages.title', '站内信管理')}
+          {t('admin.messages.title')}
         </h1>
       </div>
 

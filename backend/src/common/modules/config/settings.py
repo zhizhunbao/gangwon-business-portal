@@ -79,11 +79,11 @@ class Settings(BaseSettings):
     ALLOWED_DOCUMENT_EXTENSIONS: str = "pdf,doc,docx,xls,xlsx,ppt,pptx,txt"
 
     # Logging Configuration
-    LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
-    LOG_FILE: str | None = None  # Path to log file (None = auto-detect backend/logs/app.log)
+    LOG_LEVEL: str = "DEBUG"  # DEBUG, INFO, WARNING, ERROR, CRITICAL (default: DEBUG to capture all logs)
+    LOG_FILE: str | None = None  # Path to system log file (None = auto-detect backend/logs/system.log)
     LOG_FILE_MAX_BYTES: int = 10485760  # 10MB per log file
     LOG_FILE_BACKUP_COUNT: int = 5  # Number of backup files to keep
-    LOG_ENABLE_FILE: bool = False  # Enable file logging (default: False - console only, can enable in production if needed)
+    LOG_ENABLE_FILE: bool = True  # Enable system log file (default: True - writes to system.log)
     LOG_ENABLE_CONSOLE: bool = True  # Enable console logging
     LOG_CLEAR_ON_STARTUP: bool = True  # Clear logs and database records on startup (default: True)
     LOG_SENSITIVE_FIELDS: List[str] = [
@@ -93,6 +93,12 @@ class Settings(BaseSettings):
         "api_key",
         "authorization",
     ]  # Fields to mask in logs
+    
+    # Database Logging Configuration (Supabase API)
+    LOG_DB_ENABLED: bool = True  # Enable database logging (default: True)
+    LOG_DB_MIN_LEVEL: str = "WARNING"  # Minimum log level to write to database (WARNING/ERROR/CRITICAL)
+    LOG_DB_BATCH_SIZE: int = 50  # Batch size for database inserts (reduce database overhead)
+    LOG_DB_BATCH_INTERVAL: float = 5.0  # Batch interval in seconds (flush batch after this time)
 
     class Config:
         # Try .env.local first (for local development), then .env

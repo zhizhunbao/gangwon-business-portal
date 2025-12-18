@@ -4,7 +4,9 @@
       "title": "项目管理",
       "create": "创建项目",
       "noProjects": "暂无项目数据",
-      "searchPlaceholder": "请输入项目名称、申请对象等关键词",
+      "noProjectsHint": "请创建第一个项目，或尝试刷新页面",
+      "noMatchingProjects": "当前筛选条件下没有匹配的项目",
+      "searchPlaceholder": "搜索项目名称、目标企业、营业执照号等",
       "status": {
         "active": "进行中",
         "inactive": "已结束",
@@ -17,6 +19,7 @@
         "targetCompany": "目标企业",
         "targetCompanyName": "目标企业名称",
         "targetBusinessNumber": "营业执照号",
+        "publicRecruitment": "公开招募",
         "startDate": "开始日期",
         "endDate": "截止日期",
         "status": "状态",

@@ -6,9 +6,9 @@
 import { cn } from '@shared/utils/helpers';
 
 const sizeClasses = {
-  default: 'max-w-[1400px] px-4 py-4 pb-[4.5rem] sm:px-6 lg:px-8',
-  large: 'max-w-[1600px] px-4 py-4 pb-[4.5rem] sm:px-6 lg:px-8',
-  small: 'max-w-[1200px] px-6 py-6 pb-[4.5rem] sm:px-8',
+  default: 'max-w-[1400px] px-4 py-4 pb-[4.5rem] sm:px-6 lg:px-8 min-h-[calc(100vh-280px)]',
+  large: 'max-w-[1600px] px-4 py-4 pb-[4.5rem] sm:px-6 lg:px-8 min-h-[calc(100vh-280px)]',
+  small: 'max-w-[1200px] px-6 py-6 pb-[4.5rem] sm:px-8 min-h-[calc(100vh-280px)]',
 };
 
 /**

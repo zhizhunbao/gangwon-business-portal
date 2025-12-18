@@ -155,9 +155,12 @@ class SupportService:
         Returns:
             Created inquiry dictionary
         """
+        inquiry_id = str(uuid4())
+        
         inquiry_data = {
-            'id': str(uuid4()),
+            'id': inquiry_id,
             'member_id': str(member_id),
+            'category': data.category or 'general',
             'subject': data.subject,
             'content': data.content,
             'status': 'pending',
@@ -166,7 +169,43 @@ class SupportService:
         }
         
         result = supabase_service.client.table('inquiries').insert(inquiry_data).execute()
-        return result.data[0] if result.data else None
+        inquiry = result.data[0] if result.data else None
+        
+        # Save attachments if provided
+        if inquiry and data.attachments:
+            attachments_data = []
+            for att in data.attachments[:3]:  # Max 3 attachments
+                # Use stored_name if provided, otherwise derive from file_url or use original_name
+                stored_name = att.stored_name
+                if not stored_name and att.file_url:
+                    # Extract filename from URL
+                    stored_name = att.file_url.split('/')[-1] if '/' in att.file_url else att.original_name
+                if not stored_name:
+                    stored_name = att.original_name
+                    
+                attachments_data.append({
+                    'id': str(uuid4()),
+                    'resource_type': 'inquiry',
+                    'resource_id': inquiry_id,
+                    'file_id': att.file_id,
+                    'file_url': att.file_url,
+                    'original_name': att.original_name,
+                    'stored_name': stored_name,
+                    'file_size': att.file_size
+                })
+            
+            if attachments_data:
+                supabase_service.client.table('attachments').insert(attachments_data).execute()
+                inquiry['attachments'] = [
+                    {
+                        'file_id': a['file_id'],
+                        'file_url': a['file_url'],
+                        'original_name': a['original_name'],
+                        'file_size': a['file_size']
+                    } for a in attachments_data
+                ]
+        
+        return inquiry
 
     async def get_member_inquiries(
         self,
@@ -210,7 +249,7 @@ class SupportService:
             member_id: Optional member ID for ownership check (if None, admin access)
 
         Returns:
-            Inquiry dictionary
+            Inquiry dictionary with attachments
 
         Raises:
             NotFoundError: If inquiry not found
@@ -227,6 +266,19 @@ class SupportService:
         # If member_id is provided, verify ownership
         if member_id is not None and inquiry['member_id'] != str(member_id):
             raise ForbiddenError("You can only access your own inquiries")
+
+        # Get attachments for this inquiry
+        attachments_result = supabase_service.client.table('attachments').select('*').eq('resource_type', 'inquiry').eq('resource_id', str(inquiry_id)).execute()
+        
+        inquiry['attachments'] = [
+            {
+                'file_id': att.get('file_id') or str(att.get('id')),
+                'file_url': att.get('file_url'),
+                'original_name': att.get('original_name'),
+                'stored_name': att.get('stored_name'),
+                'file_size': att.get('file_size')
+            } for att in (attachments_result.data or [])
+        ]
 
         return inquiry
 

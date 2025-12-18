@@ -121,7 +121,7 @@ export default function Header({ onToggleSidebar }) {
           <WarningIcon className="w-5 h-5" />
         </Link> */}
 
-        {/* 站内信通知 */}
+        {/* 通知中心 */}
         <NotificationBell userType="admin" />
 
         {/* 用户菜单或登录按钮 */}
@@ -155,17 +155,6 @@ export default function Header({ onToggleSidebar }) {
                     </div>
                   </div>
                 </div>
-                
-                <div className="h-px bg-gray-200 my-2" />
-                
-                <Link 
-                  to="/admin/profile"
-                  className="flex items-center gap-3 py-3 px-4 text-gray-700 no-underline bg-transparent border-none w-full text-left cursor-pointer text-sm transition-colors duration-200 hover:bg-gray-100"
-                  onClick={() => setShowUserMenu(false)}
-                >
-                  <UserIcon className="w-[18px] h-[18px] flex-shrink-0" />
-                  <span>{t('admin.header.profile')}</span>
-                </Link>
                 
                 <div className="h-px bg-gray-200 my-2" />
                 

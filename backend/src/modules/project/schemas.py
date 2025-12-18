@@ -99,8 +99,6 @@ class ProjectListItem(BaseModel):
 
 class ProjectListQuery(BaseModel):
     """Query parameters for listing projects."""
-    page: int = Field(1, ge=1, description="Page number")
-    page_size: int = Field(20, ge=1, le=100, description="Items per page")
     status: Optional[ProjectStatus] = Field(None, description="Filter by status")
     search: Optional[str] = Field(None, description="Search in title and description")
 
@@ -153,8 +151,6 @@ class ProjectApplicationListItem(BaseModel):
 
 class ApplicationListQuery(BaseModel):
     """Query parameters for listing applications."""
-    page: int = Field(1, ge=1)
-    page_size: int = Field(20, ge=1, le=100)
     status: Optional[ApplicationStatus] = Field(None, description="Filter by status")
 
 

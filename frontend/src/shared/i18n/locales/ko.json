@@ -30,6 +30,11 @@
     "view": "보기",
     "download": "다운로드",
     "upload": "업로드",
+    "uploading": "업로드 중...",
+    "clickToUpload": "파일을 업로드하려면 클릭하세요",
+    "uploadSuccess": "업로드 성공",
+    "uploadFailed": "업로드 실패",
+    "add": "추가",
     "filter": "필터",
     "sort": "정렬",
     "export": "내보내기",
@@ -52,6 +57,7 @@
     "date": "날짜",
     "startDate": "시작일",
     "endDate": "종료일",
+    "createdAt": "생성 시간",
     "year": "년",
     "quarter": "분기",
     "status": "상태",
@@ -74,7 +80,9 @@
       "mb": "MB",
       "gb": "GB"
     },
-    "attachment": "📎"
+    "attachment": "📎",
+    "resultsCount": "총 {{count}}건",
+    "itemsPerPage": "페이지당 표시"
   },
   "nav": {
     "home": "홈",
@@ -164,7 +172,7 @@
       "goToMemberLogin": "회원 로그인으로 이동"
     },
     "messages": {
-      "title": "쪽지 관리",
+      "title": "알림 센터",
       "tabs": {
         "list": "쪽지 목록",
         "send": "쪽지 보내기",
@@ -419,8 +427,7 @@
     "draft": "임시저장",
     "submitted": "제출 완료",
     "needSupplement": "보완 필요",
-    "approved": "승인 완료",
-    "companyInfo": "기업 정보"
+    "approved": "승인 완료"
   },
   "profile": {
     "loginRequired": "로그인이 필요합니다",
@@ -480,7 +487,37 @@
     "author": "작성자",
     "createdDate": "작성일",
     "views": "조회수",
-    "attachments": "첨부파일"
+    "viewsLabel": "회 조회",
+    "attachments": "첨부파일",
+    "faqSearchPlaceholder": "질문 또는 답변 검색...",
+    "selectCategory": "카테고리 선택",
+    "noFaqResults": "일치하는 질문을 찾을 수 없습니다",
+    "newInquiry": "문의하기",
+    "categoryLabel": "문의 분류",
+    "subjectLabel": "문의 제목",
+    "subjectPlaceholder": "문의 제목을 입력하세요",
+    "contentLabel": "문의 내용",
+    "contentPlaceholder": "문의 내용을 상세히 작성해주세요",
+    "fillAllFields": "모든 필수 항목을 입력해주세요",
+    "submitFailed": "제출에 실패했습니다. 다시 시도해주세요",
+    "maxAttachmentsReached": "최대 {{max}}개의 첨부파일만 업로드할 수 있습니다",
+    "uploadFailed": "파일 업로드에 실패했습니다. 다시 시도해주세요",
+    "addAttachment": "첨부파일 추가",
+    "attachmentHint": "PDF, Word, Excel, 이미지 형식 지원, 파일당 최대 10MB",
+    "category": {
+      "general": "일반 문의",
+      "support": "기술 지원",
+      "performance": "실적 문의"
+    },
+    "faqCategory": {
+      "registration": "회원가입",
+      "general": "일반",
+      "performance": "성과관리",
+      "project": "프로젝트",
+      "profile": "기업프로필",
+      "support": "문의/지원",
+      "other": "기타"
+    }
   },
   "validation": {
     "required": "{{field}}을(를) 입력해주세요",

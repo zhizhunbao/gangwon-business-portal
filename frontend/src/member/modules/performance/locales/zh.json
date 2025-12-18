@@ -2,7 +2,6 @@
   "performance": {
     "title": "成果管理",
     "subtitle": "录入和管理企业成果数据",
-    "companyInfo": "企业信息",
     "query": "成果查询",
     "input": "成果输入",
     "searchPlaceholder": "按年度或季度搜索",
@@ -19,6 +18,12 @@
     "quarter4": "第四季度",
     "quarterly": "季度",
     "annual": "年度",
+    "quarterLabels": {
+      "first": "第一季度",
+      "second": "第二季度",
+      "third": "第三季度",
+      "fourth": "第四季度"
+    },
     "selectQuarter": "选择季度",
     "quarterHint": "不选择季度则视为年度成果",
     "type": "成果类型",
@@ -50,13 +55,23 @@
     "status": {
       "draft": "草稿",
       "submitted": "已提交",
+      "revision_requested": "需修改",
+      "revisionRequested": "需修改",
       "needSupplement": "需补充",
-      "approved": "已批准"
+      "approved": "已批准",
+      "rejected": "已驳回"
     },
     "submittedDate": "提交日期",
     "approvedDate": "批准日期",
     "reviewer": "审核人",
     "reviewComments": "审核意见",
+    "viewComments": "查看审核意见",
+    "noComments": "暂无审核意见",
+    "downloadApprovedOnly": "只有已批准的文档才能下载",
+    "fileCount": "{{count}}个文件",
+    "attachmentList": "附件列表",
+    "submitSuccess": "提交成功",
+    "submitFailed": "提交失败",
     "sections": {
       "basicInfo": "基本信息",
       "salesEmployment": "销售额雇佣",
@@ -133,6 +148,68 @@
         "domestic": "国内申请",
         "pct": "PCT海外申请",
         "general": "一般海外申请"
+      }
+    },
+    "companyInfo": {
+      "title": "企业信息",
+      "sections": {
+        "basicInfo": "基本信息",
+        "addressInfo": "地址信息",
+        "businessInfo": "业务信息",
+        "logo": "企业Logo"
+      },
+      "validation": {
+        "fillRequiredFields": "请检查必填项是否已填写完整",
+        "missingRequiredFields": "请填写以下必填项：{{fields}}",
+        "fieldErrors": "请修正以下错误：{{errors}}",
+        "invalidPhone": "请输入有效的电话号码",
+        "invalidWebsite": "请输入有效的网站地址",
+        "invalidEmail": "请输入有效的邮箱地址"
+      },
+      "message": {
+        "saveSuccess": "保存成功",
+        "logoUploadError": "Logo上传失败",
+        "logoUploadSuccess": "Logo上传成功"
+      },
+      "profile": {
+        "noLogo": "无Logo",
+        "logoHint": "支持 JPG, PNG, GIF 格式，最大 10MB",
+        "clickToUploadLogo": "点击上传Logo",
+        "clickToChangeLogo": "点击更换Logo",
+        "logoUploadConfirm": "确认上传此Logo吗？",
+        "businessLicenseHint": "营业执照号不可修改",
+        "loginRequired": "需要登录",
+        "loginRequiredDesc": "请先登录以查看企业信息",
+        "regions": {
+          "chuncheon": "春川",
+          "wonju": "原州",
+          "gangneung": "江陵",
+          "donghae": "东海",
+          "taebaek": "太白",
+          "sokcho": "束草",
+          "samcheok": "三陟"
+        },
+        "categories": {
+          "tech": "科技",
+          "manufacturing": "制造业",
+          "service": "服务业",
+          "retail": "零售业",
+          "other": "其他"
+        },
+        "industries": {
+          "software": "软件",
+          "hardware": "硬件",
+          "biotechnology": "生物技术",
+          "healthcare": "医疗保健",
+          "education": "教育",
+          "finance": "金融",
+          "other": "其他"
+        },
+        "cooperationFields": {
+          "field1": "技术合作",
+          "field2": "市场拓展",
+          "field3": "人才培养"
+        }
       }
     }
   }

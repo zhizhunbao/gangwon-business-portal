@@ -27,6 +27,7 @@ from .schemas import (
     ThreadResponse,
     ThreadWithMessagesResponse,
     ThreadMessageResponse,
+    ThreadListResponse,
     BroadcastCreate,
     BroadcastResponse,
     MessageAnalyticsResponse,
@@ -237,6 +238,98 @@ async def get_member_unread_count(
     return UnreadCountResponse(unread_count=count)
 
 
+# Thread Endpoints (must be before /{message_id} to avoid route conflicts)
+
+@router.get(
+    "/api/member/messages/threads",
+    response_model=ThreadListResponse,
+    tags=["messages", "threads", "member"],
+    summary="List member threads",
+)
+@auto_log("list_member_threads", log_result_count=True)
+async def list_member_threads(
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    status: Optional[str] = Query(None, description="Filter by status: open, resolved, closed"),
+    current_user: Member = Depends(get_current_member_user),
+):
+    """
+    List member's threads with pagination.
+    
+    - **page**: Page number (default: 1)
+    - **page_size**: Items per page (default: 20, max: 100)
+    - **status**: Optional status filter (open, resolved, closed)
+    """
+    threads, total = await service.get_member_threads(
+        current_user.id,
+        page=page,
+        page_size=page_size,
+        status=status,
+    )
+    
+    return ThreadListResponse(
+        items=[ThreadResponse(**thread) for thread in threads],
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=ceil(total / page_size) if total > 0 else 0,
+    )
+
+
+@router.post(
+    "/api/member/messages/threads",
+    response_model=ThreadResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["messages", "threads", "member"],
+    summary="Create message thread (member)",
+)
+@auto_log("create_thread", log_resource_id=True)
+async def create_thread(
+    data: ThreadCreate,
+    current_user: Member = Depends(get_current_member_user),
+):
+    """Create a new message thread (member)."""
+    thread = await service.create_thread(data, current_user.id)
+    return ThreadResponse(**thread)
+
+
+@router.get(
+    "/api/member/messages/threads/{thread_id}",
+    response_model=ThreadWithMessagesResponse,
+    tags=["messages", "threads", "member"],
+    summary="Get thread with messages (member)",
+)
+@auto_log("get_member_thread", log_resource_id=True)
+async def get_member_thread(
+    thread_id: UUID,
+    current_user: Member = Depends(get_current_member_user),
+):
+    """Get thread with all messages (member)."""
+    result = await service.get_thread_with_messages(thread_id, current_user.id)
+    return ThreadWithMessagesResponse(
+        thread=ThreadResponse(**result['thread']),
+        messages=[ThreadMessageResponse(**msg) for msg in result['messages']]
+    )
+
+
+@router.post(
+    "/api/member/messages/threads/{thread_id}/messages",
+    response_model=ThreadMessageResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["messages", "threads", "member"],
+    summary="Send message in thread (member)",
+)
+@auto_log("create_member_thread_message", log_resource_id=True)
+async def create_member_thread_message(
+    thread_id: UUID,
+    data: ThreadMessageCreate,
+    current_user: Member = Depends(get_current_member_user),
+):
+    """Send a message in an existing thread (member)."""
+    message = await service.create_thread_message(thread_id, data, current_user.id, "member")
+    return ThreadMessageResponse(**message)
+
+
 @router.get(
     "/api/member/messages/{message_id}",
     response_model=MessageResponse,
@@ -287,24 +380,7 @@ async def delete_member_message(
     await service.delete_message(message_id, current_user.id)
 
 
-# Thread Endpoints
-
-@router.post(
-    "/api/member/messages/threads",
-    response_model=ThreadResponse,
-    status_code=status.HTTP_201_CREATED,
-    tags=["messages", "threads", "member"],
-    summary="Create message thread (member)",
-)
-@auto_log("create_thread", log_resource_id=True)
-async def create_thread(
-    data: ThreadCreate,
-    current_user: Member = Depends(get_current_member_user),
-):
-    """Create a new message thread (member)."""
-    thread = await service.create_thread(data, current_user.id)
-    return ThreadResponse(**thread)
-
+# Thread Endpoints (Admin)
 
 @router.get(
     "/api/admin/messages/threads/{thread_id}",
@@ -319,25 +395,6 @@ async def get_thread(
 ):
     """Get thread with all messages (admin)."""
     result = await service.get_thread_with_messages(thread_id, current_user["id"])
-    return ThreadWithMessagesResponse(
-        thread=ThreadResponse(**result['thread']),
-        messages=[ThreadMessageResponse(**msg) for msg in result['messages']]
-    )
-
-
-@router.get(
-    "/api/member/messages/threads/{thread_id}",
-    response_model=ThreadWithMessagesResponse,
-    tags=["messages", "threads", "member"],
-    summary="Get thread with messages (member)",
-)
-@auto_log("get_member_thread", log_resource_id=True)
-async def get_member_thread(
-    thread_id: UUID,
-    current_user: Member = Depends(get_current_member_user),
-):
-    """Get thread with all messages (member)."""
-    result = await service.get_thread_with_messages(thread_id, current_user.id)
     return ThreadWithMessagesResponse(
         thread=ThreadResponse(**result['thread']),
         messages=[ThreadMessageResponse(**msg) for msg in result['messages']]
@@ -359,24 +416,6 @@ async def create_thread_message(
 ):
     """Send a message in an existing thread (admin)."""
     message = await service.create_thread_message(thread_id, data, current_user["id"], "admin")
-    return ThreadMessageResponse(**message)
-
-
-@router.post(
-    "/api/member/messages/threads/{thread_id}/messages",
-    response_model=ThreadMessageResponse,
-    status_code=status.HTTP_201_CREATED,
-    tags=["messages", "threads", "member"],
-    summary="Send message in thread (member)",
-)
-@auto_log("create_member_thread_message", log_resource_id=True)
-async def create_member_thread_message(
-    thread_id: UUID,
-    data: ThreadMessageCreate,
-    current_user: Member = Depends(get_current_member_user),
-):
-    """Send a message in an existing thread (member)."""
-    message = await service.create_thread_message(thread_id, data, current_user.id, "member")
     return ThreadMessageResponse(**message)
 
 

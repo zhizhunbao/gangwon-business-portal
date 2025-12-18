@@ -63,9 +63,9 @@ async def list_projects(
     return ProjectListResponsePaginated(
         items=[ProjectListItem.model_validate(p) for p in projects],
         total=total,
-        page=query.page,
-        page_size=query.page_size,
-        total_pages=ceil(total / query.page_size) if total > 0 else 0,
+        page=1,
+        page_size=total if total > 0 else 1,
+        total_pages=1,
     )
 
 
@@ -139,9 +139,9 @@ async def get_my_applications(
     return ApplicationListResponsePaginated(
         items=[ProjectApplicationListItem.model_validate(a) for a in applications],
         total=total,
-        page=query.page,
-        page_size=query.page_size,
-        total_pages=ceil(total / query.page_size) if total > 0 else 0,
+        page=1,
+        page_size=total if total > 0 else 1,
+        total_pages=1,
     )
 
 
@@ -170,14 +170,14 @@ async def list_projects_admin(
     - **page**: Page number (default: 1)
     - **page_size**: Items per page (default: 20, max: 100)
     """
-    projects, total = await service.list_projects(query)
+    projects, total = await service.list_projects_admin(query)
 
     return ProjectListResponsePaginated(
         items=[ProjectListItem.model_validate(p) for p in projects],
         total=total,
-        page=query.page,
-        page_size=query.page_size,
-        total_pages=ceil(total / query.page_size) if total > 0 else 0,
+        page=1,
+        page_size=total if total > 0 else 1,
+        total_pages=1,
     )
 
 
@@ -290,9 +290,9 @@ async def list_all_applications(
     return ApplicationListResponsePaginated(
         items=[ProjectApplicationListItem.model_validate(a) for a in applications],
         total=total,
-        page=query.page,
-        page_size=query.page_size,
-        total_pages=ceil(total / query.page_size) if total > 0 else 0,
+        page=1,
+        page_size=total if total > 0 else 1,
+        total_pages=1,
     )
 
 
@@ -323,9 +323,9 @@ async def list_project_applications(
     return ApplicationListResponsePaginated(
         items=[ProjectApplicationListItem.model_validate(a) for a in applications],
         total=total,
-        page=query.page,
-        page_size=query.page_size,
-        total_pages=ceil(total / query.page_size) if total > 0 else 0,
+        page=1,
+        page_size=total if total > 0 else 1,
+        total_pages=1,
     )
 
 

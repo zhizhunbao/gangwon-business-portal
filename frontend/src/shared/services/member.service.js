@@ -37,12 +37,12 @@ class MemberService {
         websiteUrl: response.website,
         logo: response.logo_url,
         logoUrl: response.logo_url,
+        phone: response.phone,
+        representativeName: response.representative,
+        corporationNumber: response.legal_number,
         createdAt: response.created_at,
         updatedAt: response.updated_at,
         // Additional fields for compatibility
-        corporationNumber: null, // Not in backend response yet
-        representativeName: null, // Not in backend response yet
-        phone: null, // Not in backend response yet
         category: null, // Not in backend response yet
         description: null, // Not in backend response yet
         businessField: null, // Not in backend response yet
@@ -128,6 +128,18 @@ class MemberService {
     }
     if (data.website !== undefined || data.websiteUrl !== undefined) {
       requestData.website = data.website || data.websiteUrl;
+    }
+    if (data.phone !== undefined) {
+      requestData.phone = data.phone;
+    }
+    if (data.logoUrl !== undefined) {
+      requestData.logo_url = data.logoUrl;
+    }
+    if (data.representativeName !== undefined) {
+      requestData.representative_name = data.representativeName;
+    }
+    if (data.corporationNumber !== undefined) {
+      requestData.corporation_number = data.corporationNumber;
     }
 
     const response = await this._updateProfileInternal(requestData);

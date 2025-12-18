@@ -11,6 +11,7 @@ from typing import Optional, Any, TYPE_CHECKING
 from uuid import UUID
 
 from .file_writer import file_log_writer
+from .db_writer import db_log_writer
 
 # Use TYPE_CHECKING to avoid circular import
 if TYPE_CHECKING:
@@ -45,7 +46,11 @@ class LoggingService:
         extra_data: Optional[dict[str, Any]] = None,
     ) -> None:
         """
-        Create an application log entry (file only).
+        Create an application log entry (file + database).
+
+        Writes to:
+        - File log (always, for debugging and backup)
+        - Database (async batch write, only for important logs: WARNING/ERROR/CRITICAL by default)
 
         Args:
             source: Source of the log (backend/frontend)
@@ -65,7 +70,7 @@ class LoggingService:
             duration_ms: Request duration in milliseconds
             extra_data: Additional context data
         """
-        # Write to file log
+        # Write to file log (always, for debugging and backup)
         try:
             file_log_writer.write_log(
                 source=source,
@@ -87,6 +92,30 @@ class LoggingService:
             )
         except Exception:
             # Don't fail if file write fails
+            pass
+        
+        # Enqueue for database write (async, non-blocking, only important logs)
+        try:
+            db_log_writer.enqueue_log(
+                source=source,
+                level=level,
+                message=message,
+                module=module,
+                function=function,
+                line_number=line_number,
+                trace_id=trace_id,
+                user_id=user_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                request_method=request_method,
+                request_path=request_path,
+                request_data=request_data,
+                response_status=response_status,
+                duration_ms=duration_ms,
+                extra_data=extra_data,
+            )
+        except Exception:
+            # Don't fail if database enqueue fails (graceful degradation)
             pass
 
     async def list_logs(

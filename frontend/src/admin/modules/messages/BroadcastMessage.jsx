@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, Button, Input, RichTextEditor, Alert, Checkbox } from '@shared/components';
-import { messageService, adminService, uploadService } from '@shared/services';
+import { messagesService, adminService, uploadService } from '@shared/services';
 
 export default function BroadcastMessage() {
   const { t } = useTranslation();
@@ -103,15 +103,15 @@ export default function BroadcastMessage() {
     const newErrors = {};
     
     if (!formData.subject?.trim()) {
-      newErrors.subject = t('validation.required', { field: t('admin.messages.broadcast.subject', '主题') });
+      newErrors.subject = t('validation.required', { field: t('admin.messages.broadcast.subject') });
     }
     
     if (!formData.content?.trim()) {
-      newErrors.content = t('validation.required', { field: t('admin.messages.broadcast.content', '内容') });
+      newErrors.content = t('validation.required', { field: t('admin.messages.broadcast.content') });
     }
     
     if (!formData.sendToAll && formData.selectedMembers.length === 0) {
-      newErrors.selectedMembers = t('admin.messages.broadcast.noRecipients', '请选择收件人');
+      newErrors.selectedMembers = t('admin.messages.broadcast.noRecipients');
     }
     
     setErrors(newErrors);
@@ -140,10 +140,10 @@ export default function BroadcastMessage() {
       }))
     };
     
-    await messageService.createBroadcast(broadcastData);
+    await messagesService.createBroadcast(broadcastData);
     
     setMessageVariant('success');
-    setMessage(t('admin.messages.broadcast.sent', '群发消息发送成功'));
+    setMessage(t('admin.messages.broadcast.sent'));
     
     // Reset form
     setFormData({
@@ -174,9 +174,9 @@ export default function BroadcastMessage() {
   };
 
   const categoryOptions = [
-    { value: 'general', label: t('admin.messages.category.general', '一般通知') },
-    { value: 'announcement', label: t('admin.messages.category.announcement', '重要公告') },
-    { value: 'system', label: t('admin.messages.category.system', '系统通知') }
+    { value: 'general', label: t('admin.messages.category.general') },
+    { value: 'announcement', label: t('admin.messages.category.announcement') },
+    { value: 'system', label: t('admin.messages.category.system') }
   ];
 
   const recipientCount = formData.sendToAll ? members.length : formData.selectedMembers.length;
@@ -191,10 +191,10 @@ export default function BroadcastMessage() {
 
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900 m-0 mb-1">
-          {t('admin.messages.broadcast.title', '群发消息')}
+          {t('admin.messages.broadcast.title')}
         </h2>
         <p className="text-gray-600 text-sm m-0">
-          {t('admin.messages.broadcast.description', '向所有会员或指定会员发送群发消息。')}
+          {t('admin.messages.broadcast.description')}
         </p>
       </div>
 
@@ -205,18 +205,18 @@ export default function BroadcastMessage() {
             <div className="p-6">
               <form onSubmit={handleSubmit} className="space-y-6">
               <Input
-                label={t('admin.messages.broadcast.subject', '主题')}
+                label={t('admin.messages.broadcast.subject')}
                 value={formData.subject}
                 onChange={handleFieldChange('subject')}
                 required
                 error={errors.subject}
-                placeholder={t('admin.messages.broadcast.subjectPlaceholder', '请输入消息主题')}
+                placeholder={t('admin.messages.broadcast.subjectPlaceholder')}
                 maxLength={255}
               />
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('admin.messages.broadcast.category', '分类')}
+                  {t('admin.messages.broadcast.category')}
                 </label>
                 <select
                   value={formData.category}
@@ -232,21 +232,21 @@ export default function BroadcastMessage() {
               </div>
 
               <RichTextEditor
-                label={t('admin.messages.broadcast.content', '内容')}
+                label={t('admin.messages.broadcast.content')}
                 value={formData.content}
                 onChange={handleFieldChange('content')}
                 required
                 error={errors.content}
-                placeholder={t('admin.messages.broadcast.contentPlaceholder', '请输入群发消息内容...')}
+                placeholder={t('admin.messages.broadcast.contentPlaceholder')}
                 height="300px"
               />
 
               {/* File Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('admin.messages.broadcast.attachments', '附件')} 
+                  {t('admin.messages.broadcast.attachments')} 
                   <span className="text-gray-500 text-xs ml-1">
-                    ({t('admin.messages.broadcast.maxFiles', '最多5个文件，每个不超过10MB')})
+                    ({t('admin.messages.broadcast.maxFiles')})
                   </span>
                 </label>
                 
@@ -272,8 +272,8 @@ export default function BroadcastMessage() {
                       </svg>
                       <p className="mt-2 text-sm">
                         {uploadingFiles.length > 0
-                          ? t('admin.messages.broadcast.uploading', '上传中...')
-                          : t('admin.messages.broadcast.clickToUpload', '点击上传文件')
+                          ? t('admin.messages.broadcast.uploading')
+                          : t('admin.messages.broadcast.clickToUpload')
                         }
                       </p>
                     </div>
@@ -324,7 +324,7 @@ export default function BroadcastMessage() {
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="isImportant" className="text-sm text-gray-700 cursor-pointer">
-                  {t('admin.messages.broadcast.markAsImportant', '标记为重要消息')}
+                  {t('admin.messages.broadcast.markAsImportant')}
                 </label>
               </div>
 
@@ -346,7 +346,7 @@ export default function BroadcastMessage() {
                     setMessage(null);
                   }}
                 >
-                  {t('common.reset', '重置')}
+                  {t('common.reset')}
                 </Button>
                 <Button
                   type="submit"
@@ -354,7 +354,7 @@ export default function BroadcastMessage() {
                   loading={saving}
                   disabled={recipientCount === 0}
                 >
-                  {t('admin.messages.broadcast.send', '发送给 {{count}} 人', { count: recipientCount })}
+                  {t('admin.messages.broadcast.send', { count: recipientCount })}
                 </Button>
               </div>
             </form>
@@ -367,7 +367,7 @@ export default function BroadcastMessage() {
           <Card>
             <div className="p-6 space-y-4">
               <h3 className="text-lg font-medium text-gray-900">
-                {t('admin.messages.broadcast.recipients', '收件人')}
+                {t('admin.messages.broadcast.recipients')}
               </h3>
 
               <div className="space-y-3">
@@ -381,7 +381,7 @@ export default function BroadcastMessage() {
                     className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                   />
                   <label htmlFor="sendToAll" className="text-sm text-gray-700 cursor-pointer">
-                    {t('admin.messages.broadcast.sendToAll', '发送给所有会员')} ({members.length})
+                    {t('admin.messages.broadcast.sendToAll')} ({members.length})
                   </label>
                 </div>
 
@@ -395,7 +395,7 @@ export default function BroadcastMessage() {
                     className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                   />
                   <label htmlFor="sendToSelected" className="text-sm text-gray-700 cursor-pointer">
-                    {t('admin.messages.broadcast.sendToSelected', '发送给指定会员')}
+                    {t('admin.messages.broadcast.sendToSelected')}
                   </label>
                 </div>
               </div>
@@ -404,7 +404,7 @@ export default function BroadcastMessage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-700">
-                      {t('admin.messages.broadcast.selectedCount', '已选择 {{count}} 人', { count: formData.selectedMembers.length })}
+                      {t('admin.messages.broadcast.selectedCount', { count: formData.selectedMembers.length })}
                     </span>
                     <Button
                       type="button"
@@ -413,8 +413,8 @@ export default function BroadcastMessage() {
                       onClick={() => handleSelectAll(formData.selectedMembers.length !== members.length)}
                     >
                       {formData.selectedMembers.length === members.length 
-                        ? t('admin.messages.broadcast.deselectAll', '取消全选')
-                        : t('admin.messages.broadcast.selectAll', '全选')
+                        ? t('admin.messages.broadcast.deselectAll')
+                        : t('admin.messages.broadcast.selectAll')
                       }
                     </Button>
                   </div>
@@ -426,7 +426,7 @@ export default function BroadcastMessage() {
                   <div className="max-h-64 overflow-y-auto space-y-2">
                     {loading ? (
                       <div className="text-center text-gray-500 py-4">
-                        {t('common.loading', '加载中...')}
+                        {t('common.loading')}
                       </div>
                     ) : (
                       members.map(member => (

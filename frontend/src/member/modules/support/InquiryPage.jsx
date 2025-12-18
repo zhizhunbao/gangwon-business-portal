@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { Banner, Submenu } from '@shared/components';
 import { BANNER_TYPES } from '@shared/utils/constants';
 import { PageContainer } from '@member/layouts';
-import ConsultationForm from './ConsultationForm';
+import InquiryForm from './InquiryForm';
 
 export default function InquiryPage() {
   const { t } = useTranslation();
@@ -20,7 +20,7 @@ export default function InquiryPage() {
   };
 
   return (
-    <div className="support w-full max-w-full flex flex-col p-0 m-0 overflow-x-hidden relative bg-gradient-to-b from-gray-50 to-white min-h-screen">
+    <div className="support w-full max-w-full flex flex-col p-0 m-0 overflow-x-hidden relative">
       <Banner
         bannerType={BANNER_TYPES.SUPPORT}
         sectionClassName="member-banner-section"
@@ -44,14 +44,20 @@ export default function InquiryPage() {
             path: '/member/support/inquiry-history',
             exact: true,
             label: t('support.inquiryHistory')
+          },
+          {
+            key: 'support-notifications',
+            path: '/member/support/notifications',
+            exact: true,
+            label: t('support.notifications')
           }
         ]}
         className="support-submenu bg-white/95 shadow-sm border-b border-gray-100 sticky top-0 z-10 backdrop-blur-sm"
         headerSelector=".member-header"
       />
       <PageContainer>
-        <div className="animate-fade-in py-8">
-          <ConsultationForm onSubmitSuccess={handleSubmitSuccess} />
+        <div className="w-full">
+          <InquiryForm onSubmitSuccess={handleSubmitSuccess} />
         </div>
       </PageContainer>
     </div>

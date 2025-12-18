@@ -5,6 +5,7 @@ Business logic for performance record management operations.
 """
 from typing import Optional
 from uuid import UUID
+import uuid
 from datetime import datetime
 import json
 
@@ -30,14 +31,6 @@ class PerformanceService:
             Tuple of (performance records list, total count)
         """
         records, total = await supabase_service.list_performance_records_with_filters(
-            member_id=str(member_id),
-            year=query.year,
-            quarter=query.quarter,
-            status=query.status,
-            type=query.type,
-            search_keyword=query.search_keyword,
-            page=query.page,
-            page_size=query.page_size,
             order_by="created_at",
             order_desc=True,
         )
@@ -65,7 +58,8 @@ class PerformanceService:
         if not record:
             raise NotFoundError("Performance record")
 
-        if UUID(record["member_id"]) != member_id:
+        # Compare as strings to handle both UUID objects and string IDs
+        if str(record["member_id"]) != str(member_id):
             raise ForbiddenError("You don't have permission to access this record")
 
         return record
@@ -87,6 +81,7 @@ class PerformanceService:
             ValidationError: If validation fails
         """
         record_data = {
+            "id": str(uuid.uuid4()),
             "member_id": str(member_id),
             "year": data.year,
             "quarter": data.quarter,
@@ -215,14 +210,6 @@ class PerformanceService:
         """
         # 现在 list_performance_records_with_filters 已经包含了 member 信息的批量获取
         records, total = await supabase_service.list_performance_records_with_filters(
-            member_id=str(query.member_id) if query.member_id else None,
-            year=query.year,
-            quarter=query.quarter,
-            status=query.status,
-            type=query.type,
-            search_keyword=query.search_keyword,
-            page=query.page,
-            page_size=query.page_size,
             order_by="updated_at",  # 按更新时间倒序，最新的在前面
             order_desc=True,
         )

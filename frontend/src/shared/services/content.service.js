@@ -3,7 +3,7 @@
  * 内容管理服务 - 封装公告、新闻稿、横幅、系统信息等 API
  */
 
-import { apiService } from "./index";
+import apiService from "./api.service";
 import { API_PREFIX } from "@shared/utils/constants";
 
 /**
@@ -270,7 +270,7 @@ const contentService = {
 
   /**
    * 更新横幅（管理员）
-   * @param {string} bannerId - 横幅ID
+   * @param {string} bannerId - 横幅ID (UUID, corresponds to backend banner_id)
    * @param {Object} data - 更新数据
    * @returns {Promise<Object>} 更新后的横幅
    */
@@ -282,7 +282,7 @@ const contentService = {
 
   /**
    * 删除横幅（管理员）
-   * @param {string} bannerId - 横幅ID
+   * @param {string} bannerId - 横幅ID (UUID, corresponds to backend banner_id)
    * @returns {Promise<void>}
    */
   async deleteBanner(bannerId) {

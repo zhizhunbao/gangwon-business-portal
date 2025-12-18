@@ -139,8 +139,9 @@ apiClient.interceptors.response.use(
         duration_ms: duration,
       });
 
-      // Performance Warning
-      if (duration > 2000) {
+      // Performance Warning - 对于某些端点使用更高的阈值（threads 端点通常较慢）
+      const slowThreshold = url?.includes('/threads/') ? 3000 : 2000;
+      if (duration > slowThreshold) {
         loggerService.warn(`Slow API Warning: ${method} ${url}`, {
           module: "API",
           request_method: method,

@@ -1,0 +1,22 @@
+{
+  "notifications": {
+    "title": "通知中心",
+    "all": "全部通知",
+    "empty": "暂无通知",
+    "notFound": "通知不存在",
+    "important": "重要",
+    "markAsRead": "标记已读",
+    "markAllAsRead": "全部标记已读",
+    "backToList": "返回通知列表",
+    "from": "发送者",
+    "time": "时间",
+    "system": "系统",
+    "unread": "未读",
+    "read": "已读",
+    "searchPlaceholder": "搜索通知标题或内容...",
+    "noMatching": "没有匹配的通知",
+    "detail": "通知详情",
+    "subject": "标题",
+    "status": "状态"
+  }
+}

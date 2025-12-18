@@ -8,9 +8,10 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, Button, Badge, Loading } from '@shared/components';
 import { adminService } from '@shared/services';
+import { formatDate } from '@shared/utils/format';
 
 export default function MemberDetail() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -218,7 +219,7 @@ export default function MemberDetail() {
                   <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.establishedDate')}</label>
                   <span className="text-base text-gray-900">
                     {niceDnbData.data.establishedDate 
-                      ? new Date(niceDnbData.data.establishedDate).toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
+                      ? formatDate(niceDnbData.data.establishedDate, 'yyyy-MM-dd', i18n.language)
                       : '-'}
                   </span>
                 </div>

@@ -8,7 +8,6 @@ from supabase import create_client, Client
 from supabase.client import ClientOptions
 
 from ..config import settings
-from .decorator import log_db_pool_operation
 
 
 class SupabaseClient:
@@ -24,7 +23,6 @@ class SupabaseClient:
         return cls._instance
     
     @classmethod
-    @log_db_pool_operation(operation_name="supabase_client_initialized", log_level="INFO")
     def _create_client(cls) -> Client:
         """创建 Supabase 客户端"""
         url = settings.SUPABASE_URL
@@ -57,7 +55,7 @@ supabase_client = get_supabase_client()
 
 
 # 健康检查
-@log_db_pool_operation(operation_name="supabase_health_check", log_level="INFO")
+
 async def check_supabase_health() -> Dict[str, Any]:
     """
     检查 Supabase 连接健康状态

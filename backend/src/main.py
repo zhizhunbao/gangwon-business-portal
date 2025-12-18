@@ -34,13 +34,28 @@ async def lifespan(app: FastAPI):
     """Application lifespan events."""
     # Startup: handle log cleanup and logging
     from .common.modules.logger.startup import handle_startup_logging
+    from .common.modules.logger.db_writer import db_log_writer
+    from .common.modules.logger.file_writer import file_log_writer
     
     await handle_startup_logging()
     
     yield
     
-    # Shutdown
+    # Shutdown: gracefully close log writers
     logger.info("Shutting down application")
+    try:
+        # Close database log writer (flush remaining logs)
+        await db_log_writer.close(timeout=10.0)
+        logger.info("Database log writer closed")
+    except Exception as e:
+        logger.warning(f"Error closing database log writer: {e}")
+    
+    try:
+        # Close file log writer (flush remaining logs)
+        file_log_writer.close(timeout=10.0)
+        logger.info("File log writer closed")
+    except Exception as e:
+        logger.warning(f"Error closing file log writer: {e}")
 
 
 # Create FastAPI app
@@ -223,27 +238,24 @@ async def readiness_check():
 
 @app.get("/db-status")
 async def database_status():
-    """Database connection pool status endpoint."""
-    from .common.modules.db.session import check_db_health, get_pool_status
+    """Database connection status endpoint."""
+    from sqlalchemy import text
+    from .common.modules.db.session import AsyncSessionLocal
     
     try:
-        # Get pool statistics
-        pool_stats = get_pool_status()
-        
-        # Perform health check
-        health_check = await check_db_health()
+        # Test connection
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
         
         return {
             "timestamp": time.time(),
-            "pool_statistics": pool_stats,
-            "health_check": health_check,
-            "status": health_check.get("status", "unknown")
+            "status": "healthy"
         }
     except Exception as e:
         logger.error(f"Database status check failed: {str(e)}")
         return {
             "timestamp": time.time(),
-            "status": "error",
+            "status": "unhealthy",
             "error": str(e),
             "error_type": type(e).__name__
         }, 500
@@ -261,12 +273,16 @@ async def root():
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
+
+    # 支持 Render 等平台的 PORT 环境变量
+    port = int(os.environ.get("PORT", 8000))
 
     uvicorn.run(
         "src.main:app",
         host="0.0.0.0",
-        port=8000,
+        port=port,
         # reload=settings.DEBUG,  # 注释掉热部署，避免测试时服务器重启导致连接断开
         reload=False,
     )

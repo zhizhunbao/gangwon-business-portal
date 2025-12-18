@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { Modal, Badge, Button, Textarea, Alert } from '@shared/components';
 import { DocumentIcon } from '@shared/components/Icons';
 import useAuthStore from '@shared/stores/authStore';
-import { projectService, loggerService, exceptionService } from '@shared/services';
+import { projectService } from '@shared/services';
 
 export default function ApplicationModal({ 
   isOpen, 
@@ -107,21 +107,10 @@ export default function ApplicationModal({
       
       // 关闭弹窗
       onClose();
-    } catch (error) {
-      loggerService.error('Failed to submit application', {
-        module: 'ApplicationModal',
-        function: 'handleSubmitApplication',
-        project_id: project.id,
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_path: window.location.pathname,
-        error_code: error.code || 'SUBMIT_APPLICATION_FAILED',
-        context_data: { project_id: project.id }
-      });
-      const errorMessage = error?.response?.data?.detail || error?.message || t('message.submitFailed', '提交失败');
-      setFormMessage(errorMessage);
+    } catch (err) {
+      const message = err?.response?.data?.message || err?.message || t('common.unknownError', '发生未知错误，请稍后再试');
+      setFormError(message);
+      setFormMessage(message);
     } finally {
       setSubmitting(false);
     }

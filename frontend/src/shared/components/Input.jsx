@@ -10,6 +10,7 @@ export const Input = forwardRef(function Input({
   error,
   help,
   required,
+  inline = false,
   className,
   type,
   ...props
@@ -33,6 +34,40 @@ export const Input = forwardRef(function Input({
     }
   };
 
+  const inputEl = (
+    <input
+      ref={actualRef}
+      type={type}
+      className={cn(
+        'px-3 py-2 border rounded-md shadow-sm',
+        'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
+        'transition-colors duration-200',
+        inline ? 'inline-block w-auto' : 'w-full',
+        type === 'date' && 'cursor-pointer',
+        error
+          ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+          : 'border-gray-300',
+        className
+      )}
+      onClick={handleClick}
+      {...props}
+    />
+  );
+
+  if (inline) {
+    return (
+      <>
+        {inputEl}
+        {error && (
+          <p className="mt-1.5 text-sm text-red-600">{error}</p>
+        )}
+        {help && !error && (
+          <p className="mt-1.5 text-sm text-gray-500">{help}</p>
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="mb-4">
       {label && (
@@ -43,22 +78,7 @@ export const Input = forwardRef(function Input({
           {label}
         </label>
       )}
-      <input
-        ref={actualRef}
-        type={type}
-        className={cn(
-          'w-full px-3 py-2 border rounded-md shadow-sm',
-          'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500',
-          'transition-colors duration-200',
-          type === 'date' && 'cursor-pointer',
-          error 
-            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-            : 'border-gray-300',
-          className
-        )}
-        onClick={handleClick}
-        {...props}
-      />
+      {inputEl}
       {error && (
         <p className="mt-1.5 text-sm text-red-600">{error}</p>
       )}

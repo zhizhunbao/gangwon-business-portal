@@ -8,6 +8,9 @@
       "exportSuccess": "导出成功",
       "exportFailed": "导出失败",
       "loadFailed": "加载会员列表失败",
+      "noMembers": "暂无会员数据",
+      "noMembersHint": "请尝试刷新页面",
+      "noMatchingMembers": "当前筛选条件下没有匹配的会员",
       "approve": "批准",
       "approveSuccess": "批准成功",
       "approveFailed": "批准失败",
@@ -19,7 +22,7 @@
         "companyName": "企业名称",
         "representative": "代表人姓名",
         "businessField": "业务领域",
-        "placeholder": "请输入搜索关键词"
+        "placeholder": "搜索企业名称、代表、营业执照号、地址、行业等"
       },
       "status": {
         "pending": "待审批",

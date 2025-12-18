@@ -19,10 +19,21 @@
     "uploadedFiles": "已上传文件",
     "uploadAtLeastOneFile": "请至少上传一个附件",
     "status": {
+      "active": "进行中",
+      "inactive": "未激活",
+      "archived": "已归档",
       "recruiting": "招募中",
       "ongoing": "进行中",
       "closed": "已结束"
     },
+    "statusFilter": "状态筛选",
+    "applicationsCount": "申请数",
+    "viewDetail": "查看详情",
+    "notAvailable": "不可申请",
+    "period": "项目期间",
+    "description": "项目描述",
+    "projectNotFound": "项目不存在",
+    "businessNumber": "营业执照号",
     "targetCompany": "目标企业",
     "types": {
       "startup": "创业支持",
@@ -68,9 +79,12 @@
         "expectedResults": "预期效果",
         "expectedResultsPlaceholder": "请描述量化指标或业务成果",
         "teamMembers": "参与人员",
-        "teamMembersPlaceholder": "请输入姓名、职责、经历等"
+        "teamMembersPlaceholder": "请输入姓名、职责、经历等",
+        "reason": "申请理由",
+        "reasonPlaceholder": "请详细说明申请此项目的原因（至少10个字符）"
       },
       "validationError": "请检查表单必填项并修正后再试。",
+      "reasonMinLength": "申请理由至少需要10个字符",
       "attachments": {
         "title": "附件文件",
         "description": "请上传营业执照、项目计划书等必要文件。",

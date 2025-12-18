@@ -43,7 +43,7 @@ export default function CustomReport() {
     // setReportData(response);
     
     setMessageVariant('info');
-    setMessage(t('admin.reports.custom.comingSoon', '自定义报表功能开发中，敬请期待。'));
+    setMessage(t('admin.reports.custom.comingSoon'));
     setLoading(false);
   }, [reportType, filters, t]);
 
@@ -62,9 +62,9 @@ export default function CustomReport() {
   }, []);
 
   const reportTypeOptions = [
-    { value: 'comprehensive', label: t('admin.reports.custom.types.comprehensive', '综合报表') },
-    { value: 'enterprise', label: t('admin.reports.custom.types.enterprise', '企业报表') },
-    { value: 'performance', label: t('admin.reports.custom.types.performance', '业绩报表') }
+    { value: 'comprehensive', label: t('admin.reports.custom.types.comprehensive') },
+    { value: 'enterprise', label: t('admin.reports.custom.types.enterprise') },
+    { value: 'performance', label: t('admin.reports.custom.types.performance') }
   ];
 
   return (
@@ -80,7 +80,7 @@ export default function CustomReport() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('admin.reports.custom.reportType', '报表类型')}
+                {t('admin.reports.custom.reportType')}
               </label>
               <Select
                 value={reportType}
@@ -92,13 +92,13 @@ export default function CustomReport() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 type="date"
-                label={t('admin.reports.custom.startDate', '开始日期')}
+                label={t('admin.reports.custom.startDate')}
                 value={filters.startDate}
                 onChange={handleFilterChange('startDate')}
               />
               <Input
                 type="date"
-                label={t('admin.reports.custom.endDate', '结束日期')}
+                label={t('admin.reports.custom.endDate')}
                 value={filters.endDate}
                 onChange={handleFilterChange('endDate')}
               />
@@ -110,21 +110,21 @@ export default function CustomReport() {
                 value={filters.industry}
                 onChange={handleFilterChange('industry')}
                 placeholder={null}
-                options={[{ value: '', label: t('common.all', '全部') }]}
+                options={[{ value: '', label: t('common.all') }]}
               />
               <Select
                 label={t('admin.reports.fields.region')}
                 value={filters.region}
                 onChange={handleFilterChange('region')}
                 placeholder={null}
-                options={[{ value: '', label: t('common.all', '全部') }]}
+                options={[{ value: '', label: t('common.all') }]}
               />
               <Select
                 label={t('admin.reports.fields.year')}
                 value={filters.year}
                 onChange={handleFilterChange('year')}
                 placeholder={null}
-                options={[{ value: '', label: t('common.all', '全部') }]}
+                options={[{ value: '', label: t('common.all') }]}
               />
               <Select
                 label={t('admin.reports.fields.quarter')}
@@ -132,7 +132,7 @@ export default function CustomReport() {
                 onChange={handleFilterChange('quarter')}
                 placeholder={null}
                 options={[
-                  { value: 'all', label: t('admin.reports.quarter.all', '全部') },
+                  { value: 'all', label: t('admin.reports.quarter.all') },
                   { value: 'Q1', label: t('admin.reports.quarter.Q1') },
                   { value: 'Q2', label: t('admin.reports.quarter.Q2') },
                   { value: 'Q3', label: t('admin.reports.quarter.Q3') },
@@ -143,10 +143,10 @@ export default function CustomReport() {
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
               <Button variant="secondary" onClick={handleReset}>
-                {t('common.reset', '重置')}
+                {t('common.reset')}
               </Button>
               <Button onClick={handleGenerate} loading={loading}>
-                {t('admin.reports.custom.generate', '生成报表')}
+                {t('admin.reports.custom.generate')}
               </Button>
             </div>
           </div>
@@ -156,10 +156,53 @@ export default function CustomReport() {
       {reportData && (
         <Card>
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {t('admin.reports.custom.reportPreview', '报表预览')}
-            </h3>
-            {/* TODO: 实现报表预览 */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {t('admin.reports.custom.reportPreview')}
+              </h3>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    // TODO: 实现报表导出功能
+                    setMessageVariant('info');
+                    setMessage(t('admin.reports.custom.exportComingSoon', '导出功能即将推出'));
+                    setTimeout(() => setMessage(null), 3000);
+                  }}
+                >
+                  {t('admin.reports.custom.export', '导出')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setReportData(null)}
+                >
+                  {t('common.close', '关闭')}
+                </Button>
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+              <div className="text-center py-8">
+                <div className="text-4xl mb-4">📊</div>
+                <p className="text-gray-600 mb-2">
+                  {t('admin.reports.custom.previewPlaceholder', '报表预览功能正在开发中')}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {t('admin.reports.custom.previewDescription', '报表数据已生成，预览功能即将推出')}
+                </p>
+                {reportData && typeof reportData === 'object' && (
+                  <div className="mt-6 text-left bg-white rounded p-4 border border-gray-200">
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      {t('admin.reports.custom.reportInfo', '报表信息')}:
+                    </p>
+                    <pre className="text-xs text-gray-600 overflow-auto">
+                      {JSON.stringify(reportData, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </Card>
       )}

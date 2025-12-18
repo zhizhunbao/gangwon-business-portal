@@ -47,14 +47,12 @@ async def list_my_performance_records(
     current_user: Annotated[Member, Depends(get_current_active_user)],
 ):
     """
-    List member's own performance records with pagination and filtering.
+    List member's own performance records with filtering.
 
     - **year**: Filter by year
     - **quarter**: Filter by quarter (1-4)
     - **status**: Filter by status (draft, submitted, approved, rejected, revision_requested)
     - **type**: Filter by type (sales, support, ip)
-    - **page**: Page number (default: 1)
-    - **page_size**: Items per page (default: 20, max: 100)
     """
     records, total = await service.list_performance_records(
         current_user.id, query
@@ -63,9 +61,9 @@ async def list_my_performance_records(
     return PerformanceListResponsePaginated(
         items=[PerformanceListItem.model_validate(r) for r in records],
         total=total,
-        page=query.page,
-        page_size=query.page_size,
-        total_pages=ceil(total / query.page_size) if total > 0 else 0,
+        page=1,
+        page_size=total if total > 0 else 1,
+        total_pages=1,
     )
 
 
@@ -206,17 +204,15 @@ async def list_all_performance_records(
     - **quarter**: Filter by quarter (1-4)
     - **status**: Filter by status
     - **type**: Filter by type (sales, support, ip)
-    - **page**: Page number
-    - **page_size**: Items per page
     """
     records, total = await service.list_all_performance_records(query)
 
     return PerformanceListResponsePaginated(
         items=[PerformanceListItem.model_validate(r) for r in records],
         total=total,
-        page=query.page,
-        page_size=query.page_size,
-        total_pages=ceil(total / query.page_size) if total > 0 else 0,
+        page=1,
+        page_size=total if total > 0 else 1,
+        total_pages=1,
     )
 
 

@@ -79,11 +79,11 @@ export default function MessageComposer({
     const newErrors = {};
     
     if (isNewThread && !formData.subject?.trim()) {
-      newErrors.subject = t('validation.required', { field: t('admin.messages.composer.subject', '主题') });
+      newErrors.subject = t('validation.required', { field: t('admin.messages.composer.subject') });
     }
     
     if (!formData.content?.trim()) {
-      newErrors.content = t('validation.required', { field: t('admin.messages.composer.content', '内容') });
+      newErrors.content = t('validation.required', { field: t('admin.messages.composer.content') });
     }
     
     setErrors(newErrors);
@@ -124,9 +124,9 @@ export default function MessageComposer({
   };
 
   const categoryOptions = [
-    { value: 'general', label: t('admin.messages.category.general', '一般问题') },
-    { value: 'support', label: t('admin.messages.category.support', '技术支持') },
-    { value: 'performance', label: t('admin.messages.category.performance', '绩效咨询') }
+    { value: 'general', label: t('admin.messages.category.general') },
+    { value: 'support', label: t('admin.messages.category.support') },
+    { value: 'performance', label: t('admin.messages.category.performance') }
   ];
 
   return (
@@ -134,8 +134,8 @@ export default function MessageComposer({
       isOpen={true}
       onClose={onCancel}
       title={isNewThread 
-        ? t('admin.messages.composer.newMessage', '新建消息') 
-        : t('admin.messages.composer.reply', '回复消息')
+        ? t('admin.messages.composer.newMessage') 
+        : t('admin.messages.composer.reply')
       }
       size="lg"
     >
@@ -150,7 +150,7 @@ export default function MessageComposer({
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="text-sm">
             <span className="font-medium text-gray-700">
-              {t('admin.messages.composer.recipient', '收件人')}:
+              {t('admin.messages.composer.recipient')}:
             </span>
             <span className="ml-2 text-gray-900">{recipientName}</span>
           </div>
@@ -159,12 +159,12 @@ export default function MessageComposer({
         {/* Subject (only for new threads) */}
         {isNewThread && (
           <Input
-            label={t('admin.messages.composer.subject', '主题')}
+            label={t('admin.messages.composer.subject')}
             value={formData.subject}
             onChange={handleFieldChange('subject')}
             required
             error={errors.subject}
-            placeholder={t('admin.messages.composer.subjectPlaceholder', '请输入消息主题')}
+            placeholder={t('admin.messages.composer.subjectPlaceholder')}
             maxLength={255}
           />
         )}
@@ -173,7 +173,7 @@ export default function MessageComposer({
         {isNewThread && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('admin.messages.composer.category', '分类')}
+              {t('admin.messages.composer.category')}
             </label>
             <select
               value={formData.category}
@@ -191,21 +191,21 @@ export default function MessageComposer({
 
         {/* Content */}
         <RichTextEditor
-          label={t('admin.messages.composer.content', '内容')}
+          label={t('admin.messages.composer.content')}
           value={formData.content}
           onChange={handleFieldChange('content')}
           required
           error={errors.content}
-          placeholder={t('admin.messages.composer.contentPlaceholder', '请输入消息内容...')}
+          placeholder={t('admin.messages.composer.contentPlaceholder')}
           height="200px"
         />
 
         {/* File Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            {t('admin.messages.composer.attachments', '附件')} 
+            {t('admin.messages.composer.attachments')} 
             <span className="text-gray-500 text-xs ml-1">
-              ({t('admin.messages.composer.maxFiles', '最多3个文件，每个不超过10MB')})
+              ({t('admin.messages.composer.maxFiles')})
             </span>
           </label>
           
@@ -231,12 +231,12 @@ export default function MessageComposer({
                 </svg>
                 <p className="mt-2 text-sm">
                   {uploadingFiles.length > 0
-                    ? t('admin.messages.composer.uploading', '上传中...')
-                    : t('admin.messages.composer.clickToUpload', '点击上传文件或拖拽到此处')
+                    ? t('admin.messages.composer.uploading')
+                    : t('admin.messages.composer.clickToUpload')
                   }
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {t('admin.messages.composer.supportedFormats', '支持 PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, GIF')}
+                  {t('admin.messages.composer.supportedFormats')}
                 </p>
               </div>
             </label>
@@ -287,7 +287,7 @@ export default function MessageComposer({
             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
           />
           <label htmlFor="isImportant" className="text-sm text-gray-700 cursor-pointer">
-            {t('admin.messages.composer.markAsImportant', '标记为重要消息')}
+            {t('admin.messages.composer.markAsImportant')}
           </label>
         </div>
 
@@ -299,14 +299,14 @@ export default function MessageComposer({
             onClick={onCancel}
             disabled={loading}
           >
-            {t('common.cancel', '取消')}
+            {t('common.cancel')}
           </Button>
           <Button
             type="submit"
             variant="primary"
             loading={loading}
           >
-            {t('admin.messages.composer.send', '发送')}
+            {t('admin.messages.composer.send')}
           </Button>
         </div>
       </form>

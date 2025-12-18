@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Banner } from '@shared/components';
 import { BANNER_TYPES, API_PREFIX } from '@shared/utils/constants';
-import { apiService, loggerService, exceptionService } from '@shared/services';
+import { apiService } from '@shared/services';
 import { PageContainer } from '@member/layouts';
 // About styles converted to Tailwind classes
 
@@ -19,59 +19,17 @@ export default function About() {
 
   useEffect(() => {
     const fetchAboutContent = async () => {
-      try {
-        setLoading(true);
-        // Use correct API endpoint: /api/system-info instead of /api/content/about
-        const data = await apiService.get(`${API_PREFIX}/system-info`);
-        
-        if (data && data.content_html) {
-          setHtmlContent(data.content_html);
-        } else {
-          setHtmlContent('');
-        }
-        setError(null);
-      } catch (err) {
-        // Extract error message properly
-        const errorMessage = err.response?.data?.message || err.response?.data?.detail || err.message || (typeof err === 'string' ? err : JSON.stringify(err)) || t('about.fetchError');
-        setError(errorMessage);
-        
-        loggerService.error('Error fetching about content', {
-          module: 'About',
-          function: 'fetchAboutContent',
-          request_path: `${API_PREFIX}/system-info`,
-          error_message: errorMessage,
-          error_code: err.response?.data?.code || err.code
-        });
-        
-        // Only record exception if it's not a 404 (404 is already recorded by API interceptor)
-        // This avoids duplicate exception records
-        const status = err.response?.status || err.status;
-        if (status && status !== 404) {
-          // Create proper Error object with meaningful message
-          const errorObj = err instanceof Error 
-            ? err 
-            : new Error(errorMessage || 'Failed to fetch about content');
-          
-          // Ensure error object has proper message
-          if (!errorObj.message || errorObj.message === '[object Object]') {
-            errorObj.message = errorMessage;
-          }
-          
-          // Record exception to backend (only for non-404 errors to avoid duplicates)
-          exceptionService.recordException(errorObj, {
-            request_method: 'GET',
-            request_path: `${API_PREFIX}/system-info`,
-            error_code: err.response?.data?.code || err.code || 'ABOUT_CONTENT_FETCH_ERROR',
-            status_code: status,
-            context_data: {
-              component: 'About',
-              action: 'fetchAboutContent',
-            },
-          });
-        }
-      } finally {
-        setLoading(false);
+      setLoading(true);
+      // Use correct API endpoint: /api/system-info instead of /api/content/about
+      const data = await apiService.get(`${API_PREFIX}/system-info`);
+      
+      if (data && data.content_html) {
+        setHtmlContent(data.content_html);
+      } else {
+        setHtmlContent('');
       }
+      setError(null);
+      setLoading(false);
     };
 
     fetchAboutContent();
@@ -89,7 +47,7 @@ export default function About() {
           {error && <div className="text-center py-12 px-8 text-base text-red-600">{t('about.errorMessage', { message: error })}</div>}
           {!loading && !error && htmlContent && (
             <div 
-              className="w-full max-w-full py-8 prose prose-gray max-w-none"
+              className="w-full py-8 prose prose-gray max-w-none"
               dangerouslySetInnerHTML={{ __html: htmlContent }}
             />
           )}

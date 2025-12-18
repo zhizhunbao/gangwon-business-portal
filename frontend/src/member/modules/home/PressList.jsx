@@ -9,8 +9,9 @@ import Card from '@shared/components/Card';
 import LazyImage from '@shared/components/LazyImage';
 import { Pagination } from '@shared/components';
 import { PageContainer } from '@member/layouts';
-import { apiService, loggerService, exceptionService } from '@shared/services';
-import { API_PREFIX, DEFAULT_PAGE_SIZE } from '@shared/utils/constants';
+import { formatDate } from '@shared/utils/format';
+import { contentService } from '@shared/services';
+import { DEFAULT_PAGE_SIZE } from '@shared/utils/constants';
 
 // 生成占位符图片
 const generatePlaceholderImage = (width = 400, height = 250) => {
@@ -38,32 +39,25 @@ function PressList() {
   const loadNews = useCallback(async () => {
     setLoading(true);
     try {
-      const params = {
-        page: parseInt(currentPage, 10),
-        page_size: parseInt(pageSize, 10)
-      };
-      const response = await apiService.get(`${API_PREFIX}/press`, params);
+      const response = await contentService.listPressReleases({
+        page: currentPage,
+        pageSize: pageSize
+      });
+      
       if (response.items) {
         const formattedNews = response.items.map(n => ({
           id: n.id,
           title: n.title,
-          thumbnailUrl: n.imageUrl || null,
-          publishedAt: n.createdAt ? new Date(n.createdAt).toISOString().split('T')[0] : ''
+          thumbnailUrl: n.imageUrl || n.image_url || null,
+          publishedAt: (n.createdAt || n.created_at) ? formatDate((n.createdAt || n.created_at), 'yyyy-MM-dd', i18n.language) : ''
         }));
         setNewsList(formattedNews);
         setTotalCount(response.total || formattedNews.length);
       }
     } catch (error) {
-      loggerService.error('Failed to load news', {
-        module: 'PressList',
-        function: 'loadNews',
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_path: window.location.pathname,
-        error_code: error.code || 'LOAD_NEWS_FAILED'
-      });
+      console.error('Failed to load news:', error);
+      setNewsList([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -81,11 +75,11 @@ function PressList() {
 
 
   return (
-    <PageContainer>
-      <div className="w-full">
-        <div className="mb-8">
-          <h1 className="text-3xl max-md:text-2xl font-bold text-gray-900 mb-2 m-0">{t('home.news.title', '新闻资料')}</h1>
-          <p className="text-base text-gray-500 m-0">{t('home.news.description', '查看最新新闻资料和资讯')}</p>
+    <PageContainer className="flex flex-col min-h-[calc(100vh-70px)] max-md:min-h-[calc(100vh-60px)]">
+      <div className="w-full flex flex-col min-h-0">
+        <div className="mb-8 p-0 bg-transparent shadow-none">
+          <h1 className="block text-2xl font-bold text-gray-900 mb-1 m-0">{t('home.news.title', '新闻资料')}</h1>
+          <p className="text-gray-600 text-sm m-0">{t('home.news.description', '查看最新新闻资料和资讯')}</p>
         </div>
 
       {loading && newsList.length === 0 ? (
@@ -94,21 +88,21 @@ function PressList() {
         </div>
       ) : newsList.length > 0 ? (
         <>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] max-md:grid-cols-2 max-sm:grid-cols-1 gap-6 max-md:gap-4 mb-8">
+          <div className={`grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] max-md:grid-cols-2 max-sm:grid-cols-1 gap-6 max-md:gap-4 ${totalCount > pageSize ? 'pb-20' : 'pb-0'}`}>
             {newsList.map((news) => (
-              <Card key={news.id} className="h-full flex flex-col rounded-lg transition-all duration-200">
-                <div className="flex flex-col p-5 text-inherit h-full flex-1 cursor-default">
-                  <div className="w-full h-40 min-h-[10rem] max-h-40 overflow-hidden rounded-md mb-4 flex-shrink-0 relative bg-gray-100 flex items-center justify-center">
+              <Card key={news.id} className="overflow-hidden flex-1 flex flex-col">
+                <div className="flex flex-col p-0 text-inherit no-underline h-full transition-transform hover:-translate-y-0.5">
+                  <div className="w-full h-[200px] overflow-hidden rounded-t-lg bg-gray-100 relative flex-shrink-0">
                     <LazyImage 
                       src={news.thumbnailUrl || generatePlaceholderImage()} 
                       alt={news.title}
                       placeholder={generatePlaceholderImage()}
-                      className="!w-full !h-full min-w-full min-h-full max-w-full max-h-full block flex-shrink-0 object-cover object-center"
+                      className="!block !w-full !h-full flex-shrink-0 object-cover object-center"
                     />
                   </div>
-                  <div className="flex flex-col flex-1">
-                    <h3 className="text-base font-semibold text-gray-900 mb-2 leading-normal flex-1 line-clamp-2">{news.title}</h3>
-                    <span className="text-xs text-gray-400 mt-auto">{news.publishedAt}</span>
+                  <div className="flex flex-col p-4 gap-2">
+                    <h3 className="text-base font-semibold text-gray-900 m-0 leading-snug line-clamp-2">{news.title}</h3>
+                    <span className="text-sm text-gray-400">{news.publishedAt}</span>
                   </div>
                 </div>
               </Card>
@@ -116,12 +110,17 @@ function PressList() {
           </div>
 
           {totalCount > pageSize && (
-            <div className="mt-8 flex justify-center">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(totalCount / pageSize)}
-                onPageChange={handlePageChange}
-              />
+            <div className="sticky bottom-0 mt-auto py-3">
+              <div className="flex justify-between items-center px-1 sm:px-0">
+                <div className="text-xs text-gray-500 whitespace-nowrap">
+                  {t('common.itemsPerPage', '每页显示')}: {pageSize} · {t('common.total', '共')}: {totalCount}
+                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(totalCount / pageSize)}
+                  onPageChange={handlePageChange}
+                />
+              </div>
             </div>
           )}
         </>

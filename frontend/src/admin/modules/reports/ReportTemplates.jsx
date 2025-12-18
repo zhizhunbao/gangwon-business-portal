@@ -17,26 +17,26 @@ export default function ReportTemplates() {
   const templates = [
     {
       id: 'monthly-summary',
-      name: t('admin.reports.templates.monthlySummary', '月度汇总报表'),
-      description: t('admin.reports.templates.monthlySummaryDesc', '包含企业数量、销售额、雇佣等月度汇总数据'),
+      name: t('admin.reports.templates.monthlySummary'),
+      description: t('admin.reports.templates.monthlySummaryDesc'),
       icon: '📊'
     },
     {
       id: 'quarterly-performance',
-      name: t('admin.reports.templates.quarterlyPerformance', '季度业绩报表'),
-      description: t('admin.reports.templates.quarterlyPerformanceDesc', '按季度统计企业业绩数据'),
+      name: t('admin.reports.templates.quarterlyPerformance'),
+      description: t('admin.reports.templates.quarterlyPerformanceDesc'),
       icon: '📈'
     },
     {
       id: 'annual-report',
-      name: t('admin.reports.templates.annualReport', '年度综合报表'),
-      description: t('admin.reports.templates.annualReportDesc', '年度企业综合数据统计报表'),
+      name: t('admin.reports.templates.annualReport'),
+      description: t('admin.reports.templates.annualReportDesc'),
       icon: '📑'
     },
     {
       id: 'industry-analysis',
-      name: t('admin.reports.templates.industryAnalysis', '行业分析报表'),
-      description: t('admin.reports.templates.industryAnalysisDesc', '按行业分类的企业数据分析'),
+      name: t('admin.reports.templates.industryAnalysis'),
+      description: t('admin.reports.templates.industryAnalysisDesc'),
       icon: '🏭'
     }
   ];
@@ -50,7 +50,7 @@ export default function ReportTemplates() {
     // 下载或预览报表
     
     setMessageVariant('info');
-    setMessage(t('admin.reports.templates.comingSoon', '报表模板功能开发中，敬请期待。'));
+    setMessage(t('admin.reports.templates.comingSoon'));
     setLoading(false);
   }, [t]);
 
@@ -82,7 +82,7 @@ export default function ReportTemplates() {
                       loading={loading}
                       className="w-full sm:w-auto"
                     >
-                      {t('admin.reports.templates.generate', '生成报表')}
+                      {t('admin.reports.templates.generate')}
                     </Button>
                   </div>
                 </div>

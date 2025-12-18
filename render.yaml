@@ -1,0 +1,40 @@
+# Render 部署配置文件
+# 使用此文件可以一次性创建所有服务
+
+services:
+  # 前端静态网站
+  - type: web
+    name: gangwon-portal-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://gangwon-portal-backend.onrender.com
+
+  # 后端 Web Service
+  - type: web
+    name: gangwon-portal-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
+    startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # 需要在 Dashboard 手动配置
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: LOG_DB_ENABLED
+        value: "true"
+      - key: DEBUG
+        value: "false"
+

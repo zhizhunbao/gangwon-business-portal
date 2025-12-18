@@ -330,12 +330,30 @@ class UploadService:
         if attachment.get("resource_type") == "public":
             # Public files are accessible to everyone
             pass
+        elif is_admin:
+            # Admin can access all files
+            pass
         else:
-            # Private files: check ownership or admin
-            if not is_admin and attachment.get("resource_id") != user["id"]:
-                # Check if user owns the resource
-                # For now, we check if resource_id matches user.id
-                # In the future, we might need to check the actual resource ownership
+            # Private files: check ownership based on resource_type
+            resource_type = attachment.get("resource_type")
+            resource_id = attachment.get("resource_id")
+            has_permission = False
+
+            if resource_type == "performance":
+                # Check if user owns the performance record
+                perf_result = supabase_service.client.table('performance_records').select('member_id').eq('id', resource_id).execute()
+                if perf_result.data and perf_result.data[0].get('member_id') == user["id"]:
+                    has_permission = True
+            elif resource_type == "inquiry":
+                # Check if user owns the inquiry
+                inquiry_result = supabase_service.client.table('inquiries').select('member_id').eq('id', resource_id).execute()
+                if inquiry_result.data and inquiry_result.data[0].get('member_id') == user["id"]:
+                    has_permission = True
+            elif resource_id == user["id"]:
+                # Direct ownership (e.g., profile files)
+                has_permission = True
+
+            if not has_permission:
                 raise UnauthorizedError("You don't have permission to access this file")
 
         # Generate download URL

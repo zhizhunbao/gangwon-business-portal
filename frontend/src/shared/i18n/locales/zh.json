@@ -14,6 +14,12 @@
     "reset": "重置",
     "submit": "提交",
     "submitting": "提交中...",
+    "sending": "发送中...",
+    "yesterday": "昨天",
+    "daysAgo": "{{days}}天前",
+    "hoursAgo": "{{hours}}小时前",
+    "justNow": "刚刚",
+    "more": "更多",
     "confirm": "确认",
     "back": "返回",
     "next": "下一步",
@@ -30,6 +36,11 @@
     "view": "查看",
     "download": "下载",
     "upload": "上传",
+    "uploading": "上传中...",
+    "clickToUpload": "点击上传文件",
+    "uploadSuccess": "上传成功",
+    "uploadFailed": "上传失败",
+    "add": "添加",
     "filter": "筛选",
     "sort": "排序",
     "export": "导出",
@@ -52,6 +63,7 @@
     "date": "日期",
     "startDate": "开始日期",
     "endDate": "结束日期",
+    "createdAt": "创建时间",
     "year": "年",
     "quarter": "季度",
     "status": "状态",
@@ -74,7 +86,9 @@
       "mb": "MB",
       "gb": "GB"
     },
-    "attachment": "📎"
+    "attachment": "📎",
+    "resultsCount": "共{{count}}条记录",
+    "itemsPerPage": "每页显示"
   },
   "nav": {
     "home": "首页",
@@ -164,7 +178,7 @@
       "goToMemberLogin": "前往会员登录"
     },
     "messages": {
-      "title": "站内信管理",
+      "title": "通知中心",
       "tabs": {
         "list": "消息列表",
         "send": "发送消息",
@@ -419,8 +433,7 @@
     "draft": "草稿",
     "submitted": "已提交",
     "needSupplement": "需补充",
-    "approved": "已批准",
-    "companyInfo": "企业信息"
+    "approved": "已批准"
   },
   "profile": {
     "loginRequired": "需要登录",
@@ -480,7 +493,37 @@
     "author": "作者",
     "createdDate": "创建日期",
     "views": "浏览量",
-    "attachments": "附件"
+    "viewsLabel": "次浏览",
+    "attachments": "附件",
+    "faqSearchPlaceholder": "搜索问题或答案...",
+    "selectCategory": "选择分类",
+    "noFaqResults": "没有找到匹配的问题",
+    "newInquiry": "提交咨询",
+    "categoryLabel": "咨询分类",
+    "subjectLabel": "咨询标题",
+    "subjectPlaceholder": "请输入咨询标题",
+    "contentLabel": "咨询内容",
+    "contentPlaceholder": "请详细描述您的问题",
+    "fillAllFields": "请填写所有必填项",
+    "submitFailed": "提交失败，请重试",
+    "maxAttachmentsReached": "最多只能上传{{max}}个附件",
+    "uploadFailed": "文件上传失败，请重试",
+    "addAttachment": "添加附件",
+    "attachmentHint": "支持 PDF、Word、Excel、图片格式，单个文件最大 10MB",
+    "category": {
+      "general": "一般咨询",
+      "support": "技术支持",
+      "performance": "业绩咨询"
+    },
+    "faqCategory": {
+      "registration": "会员注册",
+      "general": "一般",
+      "performance": "业绩管理",
+      "project": "项目",
+      "profile": "企业资料",
+      "support": "咨询/支持",
+      "other": "其他"
+    }
   },
   "validation": {
     "required": "请输入{{field}}",

@@ -58,6 +58,22 @@ class MessageService:
             return admin.get('full_name') or admin.get('email') or "管理员"
         return "系统管理员"
 
+    async def _is_admin(self, user_id: str) -> bool:
+        """
+        Check if user is an admin.
+        
+        Args:
+            user_id: User UUID string
+            
+        Returns:
+            True if user is an admin, False otherwise
+        """
+        if not user_id:
+            return False
+        
+        admin_result = supabase_service.client.table('admins').select('id').eq('id', user_id).execute()
+        return bool(admin_result.data)
+
     async def get_messages(
         self,
         user_id: UUID,
@@ -477,8 +493,12 @@ class MessageService:
         thread = thread_result.data[0]
         
         # Check access (member or admin)
-        # For now, allow access if user is the member or any admin
-        # TODO: Add proper admin role checking
+        # Allow access if user is the member or an admin
+        is_admin = await self._is_admin(str(user_id))
+        member_id = thread.get('member_id')
+        
+        if not is_admin and str(member_id) != str(user_id):
+            raise NotFoundError("Thread")
         
         # Get messages
         messages_result = supabase_service.client.table('thread_messages').select('*').eq('thread_id', str(thread_id)).order('created_at').execute()
@@ -506,6 +526,49 @@ class MessageService:
             'thread': thread,
             'messages': messages
         }
+
+    async def get_member_threads(self, member_id: UUID, page: int = 1, page_size: int = 20, status: Optional[str] = None) -> tuple:
+        """
+        Get paginated list of threads for a member.
+
+        Args:
+            member_id: Member UUID
+            page: Page number (default: 1)
+            page_size: Items per page (default: 20)
+            status: Optional status filter (open, resolved, closed)
+
+        Returns:
+            Tuple of (threads list, total count)
+        """
+        # Build base query
+        query = supabase_service.client.table('message_threads').select('*', count='exact')
+        query = query.eq('member_id', str(member_id))
+        
+        if status:
+            query = query.eq('status', status)
+        
+        # Get total count
+        count_result = query.execute()
+        total = count_result.count or 0
+        
+        # Get paginated threads
+        query = supabase_service.client.table('message_threads').select('*')
+        query = query.eq('member_id', str(member_id))
+        
+        if status:
+            query = query.eq('status', status)
+        
+        query = query.order('last_message_at', desc=True)
+        query = query.range((page - 1) * page_size, page * page_size - 1)
+        
+        result = query.execute()
+        threads = result.data or []
+        
+        # Enrich threads with member names
+        for thread in threads:
+            thread['member_name'] = await self._get_member_name(thread['member_id'])
+        
+        return threads, total
 
     async def create_thread_message(self, thread_id: UUID, data: ThreadMessageCreate, sender_id: UUID, sender_type: str) -> dict:
         """

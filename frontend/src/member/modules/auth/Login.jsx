@@ -10,8 +10,6 @@ import { useAuth } from "@shared/hooks";
 import { LanguageSwitcher } from "@shared/components";
 import { EyeIcon, EyeOffIcon } from "@shared/components/Icons";
 import { formatBusinessLicense } from "@shared/utils/format";
-import { loggerService, exceptionService } from "@shared/services";
-import { API_PREFIX } from "@shared/utils/constants";
 // Auth styles converted to Tailwind classes
 
 export default function Login() {
@@ -30,120 +28,29 @@ export default function Login() {
     e.preventDefault();
     setError("");
 
+    // Remove dashes from business number for API call
+    const businessNumberClean = formData.businessNumber.replace(/-/g, "");
+
     try {
-      // Remove dashes from business number for API call
-      const businessNumberClean = formData.businessNumber.replace(/-/g, "");
       const response = await login({
         businessNumber: businessNumberClean,
         password: formData.password,
       });
 
-      // Log successful login
-      // Mask business number for security (show only first 3 digits)
-      const maskedBusinessNumber =
-        businessNumberClean.length > 3
-          ? `${businessNumberClean.substring(
-              0,
-              3
-            )}-${businessNumberClean.substring(3, 5)}-*****`
-          : "***-***-*****";
-      loggerService.info("Member login successful", {
-        request_method: "POST",
-        request_path: `${API_PREFIX}/auth/login`,
-        response_status: 200,
-        extra_data: {
-          component: "Login",
-          action: "handleSubmit",
-          user_role: response.user?.role,
-          business_number_masked: maskedBusinessNumber,
-        },
-      });
+      if (!response || !response.user) {
+        throw new Error(t("auth.loginFailed", "登录失败，请检查账号和密码"));
+      }
 
       // Redirect based on role
       const redirectPath =
         response.user.role === "admin" ? "/admin" : "/member";
       navigate(redirectPath);
     } catch (err) {
-      // Extract error message properly
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.detail ||
-        err.message ||
-        (typeof err === "string" ? err : JSON.stringify(err)) ||
-        t("auth.loginFailed");
-
-      // Check for approval status errors and show user-friendly messages
-      const lowerMessage = errorMessage.toLowerCase();
-      let displayMessage = errorMessage;
-
-      if (
-        lowerMessage.includes("pending") ||
-        lowerMessage.includes("approval")
-      ) {
-        // Account is pending approval
-        displayMessage = t("auth.approvalPending");
-      } else if (
-        lowerMessage.includes("suspended") ||
-        lowerMessage.includes("inactive") ||
-        lowerMessage.includes("disabled")
-      ) {
-        // Account is suspended
-        displayMessage = t("auth.accountSuspended");
-      } else if (
-        lowerMessage.includes("invalid") ||
-        lowerMessage.includes("credentials") ||
-        lowerMessage.includes("password")
-      ) {
-        // Invalid credentials
-        displayMessage = t("auth.loginFailed");
-      }
-
-      setError(displayMessage);
-
-      // Log login failure
-      const businessNumberClean = formData.businessNumber.replace(/-/g, "");
-      // Mask business number for security (show only first 3 digits)
-      const maskedBusinessNumber =
-        businessNumberClean.length > 3
-          ? `${businessNumberClean.substring(
-              0,
-              3
-            )}-${businessNumberClean.substring(3, 5)}-*****`
-          : "***-***-*****";
-
-      // Create proper Error object with meaningful message
-      const errorObj =
-        err instanceof Error ? err : new Error(errorMessage || "Login failed");
-
-      // Ensure error object has proper message
-      if (!errorObj.message || errorObj.message === "[object Object]") {
-        errorObj.message = errorMessage;
-      }
-
-      exceptionService.recordException(errorObj, {
-        request_method: "POST",
-        request_path: `${API_PREFIX}/auth/login`,
-        error_code: err.response?.data?.code || err.code || "LOGIN_FAILED",
-        status_code: err.response?.status || err.status,
-        context_data: {
-          component: "Login",
-          action: "handleSubmit",
-          business_number_masked: maskedBusinessNumber,
-        },
-      });
-
-      loggerService.warn("Member login failed", {
-        request_method: "POST",
-        request_path: `${API_PREFIX}/auth/login`,
-        response_status: err.response?.status || err.status,
-        error_code: err.response?.data?.code || err.code || "LOGIN_FAILED",
-        error_message: errorMessage,
-        extra_data: {
-          component: "Login",
-          action: "handleSubmit",
-          business_number_masked: maskedBusinessNumber,
-        },
-      });
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        t("auth.loginFailed", "登录失败，请检查账号和密码");
+      setError(message);
     }
   };
 
@@ -154,6 +61,7 @@ export default function Login() {
       ...prev,
       businessNumber: formatted,
     }));
+    if (error) setError("");
   };
 
   const handlePasswordChange = (e) => {
@@ -161,6 +69,7 @@ export default function Login() {
       ...prev,
       password: e.target.value,
     }));
+    if (error) setError("");
   };
 
   const togglePasswordVisibility = () => {

@@ -9,10 +9,11 @@ import { Button, Input, Alert, Card, Modal, ModalFooter } from '@shared/componen
 import { apiService, contentService } from '@shared/services';
 import { API_PREFIX } from '@shared/utils/constants';
 import { validateImageFile } from '@shared/utils/fileValidation';
+import { formatDate } from '@shared/utils/format';
 import { validateNewsForm } from './utils';
 
 export default function NewsManagement() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   
   // State
   const [news, setNews] = useState([]);
@@ -205,7 +206,7 @@ export default function NewsManagement() {
                       <span>{newsItem.title}</span>
                     </div>
                     <p className="m-0 text-gray-500 text-sm">
-                      {newsItem.createdAt ? new Date(newsItem.createdAt).toLocaleDateString() : ''}
+                      {newsItem.createdAt ? formatDate(newsItem.createdAt, 'yyyy-MM-dd', i18n.language) : ''}
                     </p>
                   </div>
                   <Button

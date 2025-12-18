@@ -7,8 +7,9 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Card from '@shared/components/Card';
+import { formatDate } from '@shared/utils/format';
 import { Badge } from '@shared/components';
-import { contentService, loggerService, exceptionService } from '@shared/services';
+import { contentService } from '@shared/services';
 import { ROUTES } from '@shared/utils/constants';
 
 function NoticesPreview() {
@@ -18,36 +19,21 @@ function NoticesPreview() {
 
   const loadNotices = useCallback(async () => {
     setLoading(true);
-    try {
-      // 使用 contentService 获取最新5条公告，然后取前4条
-      const noticesData = await contentService.getLatestNotices();
-      
-      if (Array.isArray(noticesData) && noticesData.length > 0) {
-        const formattedNotices = noticesData.slice(0, 4).map(n => ({
-          id: n.id,
-          title: n.title,
-          date: n.createdAt ? new Date(n.createdAt).toISOString().split('T')[0] : '',
-          important: n.boardType === 'notice' // 可以根据需要调整判断逻辑
-        }));
-        setNotices(formattedNotices);
-      } else {
-        setNotices([]);
-      }
-    } catch (error) {
-      loggerService.error('Failed to load notices', {
-        module: 'NoticesPreview',
-        function: 'loadNotices',
-        error_message: error.message,
-        error_code: error.code
-      });
-      exceptionService.recordException(error, {
-        request_path: window.location.pathname,
-        error_code: error.code || 'LOAD_NOTICES_FAILED'
-      });
+    // 使用 contentService 获取最新5条公告，然后取前4条
+    const noticesData = await contentService.getLatestNotices();
+    
+    if (Array.isArray(noticesData) && noticesData.length > 0) {
+      const formattedNotices = noticesData.slice(0, 4).map(n => ({
+        id: n.id,
+        title: n.title,
+        date: n.createdAt ? formatDate(n.createdAt) : '',
+        important: n.boardType === 'notice' // 可以根据需要调整判断逻辑
+      }));
+      setNotices(formattedNotices);
+    } else {
       setNotices([]);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }, [i18n.language]);
 
   useEffect(() => {

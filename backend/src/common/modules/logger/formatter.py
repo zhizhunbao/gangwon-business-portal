@@ -24,7 +24,7 @@ class JSONFormatter(logging.Formatter):
 
         # Add exception info if present
         if record.exc_info:
-            # Use stack_trace for consistency with app_exceptions.log format
+            # Use stack_trace for consistency with error.log format
             log_data["stack_trace"] = self.formatException(record.exc_info)
             # Also extract exception type and message for consistency
             exc_type, exc_value, exc_tb = record.exc_info

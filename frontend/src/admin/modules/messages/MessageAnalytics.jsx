@@ -7,12 +7,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, Button, Select } from '@shared/components';
 import { LineChart, BarChart } from '@shared/components/Charts';
-import { messageService } from '@shared/services';
+import { messagesService } from '@shared/services';
 
 export default function MessageAnalytics() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [timeRange, setTimeRange] = useState('7d');
   const [analytics, setAnalytics] = useState({
     totalMessages: 0,
@@ -25,26 +24,18 @@ export default function MessageAnalytics() {
 
   const loadAnalytics = useCallback(async () => {
     setLoading(true);
-    setError(null);
-    try {
-      const response = await messageService.getAnalytics({ timeRange });
-      console.log('Analytics response:', response); // Debug log
-      
-      // Handle both camelCase and snake_case responses
-      setAnalytics({
-        totalMessages: response.totalMessages ?? response.total_messages ?? 0,
-        unreadMessages: response.unreadMessages ?? response.unread_messages ?? 0,
-        responseTime: response.responseTime ?? response.response_time ?? 0,
-        messagesByDay: response.messagesByDay ?? response.messages_by_day ?? [],
-        messagesByCategory: response.messagesByCategory ?? response.messages_by_category ?? [],
-        responseTimeByDay: response.responseTimeByDay ?? response.response_time_by_day ?? []
-      });
-    } catch (error) {
-      console.error('Failed to load analytics:', error);
-      setError(error.message || t('admin.messages.analytics.loadFailed', '加载统计数据失败'));
-    } finally {
-      setLoading(false);
-    }
+    const response = await messagesService.getAnalytics({ timeRange });
+    
+    // Handle both camelCase and snake_case responses
+    setAnalytics({
+      totalMessages: response.totalMessages ?? response.total_messages ?? 0,
+      unreadMessages: response.unreadMessages ?? response.unread_messages ?? 0,
+      responseTime: response.responseTime ?? response.response_time ?? 0,
+      messagesByDay: response.messagesByDay ?? response.messages_by_day ?? [],
+      messagesByCategory: response.messagesByCategory ?? response.messages_by_category ?? [],
+      responseTimeByDay: response.responseTimeByDay ?? response.response_time_by_day ?? []
+    });
+    setLoading(false);
   }, [timeRange]);
 
   useEffect(() => {
@@ -52,18 +43,18 @@ export default function MessageAnalytics() {
   }, [loadAnalytics]);
 
   const timeRangeOptions = [
-    { value: '7d', label: t('admin.messages.analytics.last7Days', '最近7天') },
-    { value: '30d', label: t('admin.messages.analytics.last30Days', '最近30天') },
-    { value: '90d', label: t('admin.messages.analytics.last90Days', '最近90天') },
-    { value: 'all', label: t('admin.messages.analytics.allTime', '全部时间') }
+    { value: '7d', label: t('admin.messages.analytics.last7Days') },
+    { value: '30d', label: t('admin.messages.analytics.last30Days') },
+    { value: '90d', label: t('admin.messages.analytics.last90Days') },
+    { value: 'all', label: t('admin.messages.analytics.allTime') }
   ];
 
   const formatResponseTime = (minutes) => {
     if (minutes < 60) {
-      return `${Math.round(minutes)} ${t('admin.messages.analytics.minutes', '分钟')}`;
+      return `${Math.round(minutes)} ${t('admin.messages.analytics.minutes')}`;
     }
     const hours = Math.round(minutes / 60);
-    return `${hours} ${t('admin.messages.analytics.hours', '小时')}`;
+    return `${hours} ${t('admin.messages.analytics.hours')}`;
   };
 
   return (
@@ -72,10 +63,10 @@ export default function MessageAnalytics() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 m-0 mb-1">
-              {t('admin.messages.analytics.title', '消息统计')}
+              {t('admin.messages.analytics.title')}
             </h2>
             <p className="text-gray-600 text-sm m-0">
-              {t('admin.messages.analytics.description', '查看消息相关的统计数据和趋势分析。')}
+              {t('admin.messages.analytics.description')}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -92,15 +83,10 @@ export default function MessageAnalytics() {
               onClick={loadAnalytics}
               loading={loading}
             >
-              {t('common.refresh', '刷新')}
+              {t('common.refresh')}
             </Button>
           </div>
         </div>
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
-            {error}
-          </div>
-        )}
       </div>
 
       {/* Summary Cards */}
@@ -116,7 +102,7 @@ export default function MessageAnalytics() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">
-                {t('admin.messages.analytics.totalMessages', '总消息数')}
+                {t('admin.messages.analytics.totalMessages')}
               </p>
               <p className="text-2xl font-semibold text-gray-900">
                 {analytics.totalMessages}
@@ -136,7 +122,7 @@ export default function MessageAnalytics() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">
-                {t('admin.messages.analytics.unreadMessages', '未读消息')}
+                {t('admin.messages.analytics.unreadMessages')}
               </p>
               <p className="text-2xl font-semibold text-gray-900">
                 {analytics.unreadMessages}
@@ -156,7 +142,7 @@ export default function MessageAnalytics() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">
-                {t('admin.messages.analytics.avgResponseTime', '平均响应时间')}
+                {t('admin.messages.analytics.avgResponseTime')}
               </p>
               <p className="text-2xl font-semibold text-gray-900">
                 {formatResponseTime(analytics.responseTime)}
@@ -176,7 +162,7 @@ export default function MessageAnalytics() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">
-                {t('admin.messages.analytics.responseRate', '响应率')}
+                {t('admin.messages.analytics.responseRate')}
               </p>
               <p className="text-2xl font-semibold text-gray-900">
                 {analytics.totalMessages > 0 
@@ -193,12 +179,12 @@ export default function MessageAnalytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
-            {t('admin.messages.analytics.messagesTrend', '消息趋势')}
+            {t('admin.messages.analytics.messagesTrend')}
           </h3>
           <LineChart
             categories={analytics.messagesByDay?.map(item => item.date) || []}
             series={[{
-              name: t('admin.messages.analytics.messageCount', '消息数量'),
+              name: t('admin.messages.analytics.messageCount'),
               data: analytics.messagesByDay?.map(item => item.count) || [],
               color: '#3b82f6'
             }]}
@@ -211,20 +197,20 @@ export default function MessageAnalytics() {
 
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
-            {t('admin.messages.analytics.messagesByCategory', '消息分类统计')}
+            {t('admin.messages.analytics.messagesByCategory')}
           </h3>
           <BarChart
             categories={analytics.messagesByCategory?.map(item => {
               const categoryMap = {
-                'general': t('admin.messages.analytics.categoryGeneral', '一般'),
-                'support': t('admin.messages.analytics.categorySupport', '支持'),
-                'performance': t('admin.messages.analytics.categoryPerformance', '绩效'),
-                'project': t('admin.messages.analytics.categoryProject', '项目')
+                'general': t('admin.messages.analytics.categoryGeneral'),
+                'support': t('admin.messages.analytics.categorySupport'),
+                'performance': t('admin.messages.analytics.categoryPerformance'),
+                'project': t('admin.messages.analytics.categoryProject')
               };
               return categoryMap[item.category] || item.category;
             }) || []}
             series={[{
-              name: t('admin.messages.analytics.messageCount', '消息数量'),
+              name: t('admin.messages.analytics.messageCount'),
               data: analytics.messagesByCategory?.map(item => item.count) || [],
               color: '#10b981'
             }]}
@@ -236,12 +222,12 @@ export default function MessageAnalytics() {
 
       <Card className="p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
-          {t('admin.messages.analytics.responseTimeTrend', '响应时间趋势')}
+          {t('admin.messages.analytics.responseTimeTrend')}
         </h3>
         <LineChart
           categories={analytics.responseTimeByDay?.map(item => item.date) || []}
           series={[{
-            name: t('admin.messages.analytics.responseTime', '响应时间'),
+            name: t('admin.messages.analytics.responseTime'),
             data: analytics.responseTimeByDay?.map(item => item.responseTime) || [],
             color: '#8b5cf6'
           }]}
@@ -251,7 +237,7 @@ export default function MessageAnalytics() {
           area={true}
           yAxis={{
             axisLabel: {
-              formatter: (value) => `${value} ${t('admin.messages.analytics.minutes', '分钟')}`
+              formatter: (value) => `${value} ${t('admin.messages.analytics.minutes')}`
             }
           }}
         />

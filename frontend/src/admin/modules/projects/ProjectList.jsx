@@ -3,56 +3,82 @@
  * 项目管理列表
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Badge, Pagination } from '@shared/components';
+import { Card, Table, Button, Badge, Pagination, SearchInput } from '@shared/components';
 import { apiService, adminService } from '@shared/services';
 import { API_PREFIX } from '@shared/utils/constants';
+import { formatBusinessLicense } from '@shared/utils/format';
 
 export default function ProjectList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [projects, setProjects] = useState([]);
+  const [allProjects, setAllProjects] = useState([]); // 存储所有数据
 
   const [searchKeyword, setSearchKeyword] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
 
-  useEffect(() => {
-    loadProjects();
-  }, [currentPage, pageSize]);
-
-  // 搜索防抖
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setCurrentPage(1); // 搜索时重置到第一页
-      loadProjects();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchKeyword]);
-
-  const loadProjects = async () => {
+  // 一次性加载所有项目数据
+  const loadAllProjects = useCallback(async () => {
     setLoading(true);
     const params = {
-      page: currentPage,
-      page_size: pageSize,
-      search: searchKeyword.trim() || undefined
+      page: 1,
+      page_size: 10000 // 加载所有数据
     };
     const response = await apiService.get(`${API_PREFIX}/admin/projects`, { params });
     
     if (response.items) {
-      setProjects(response.items);
-      setTotalCount(response.total || response.items.length);
+      setAllProjects(response.items);
     } else {
-      setProjects([]);
-      setTotalCount(0);
+      setAllProjects([]);
     }
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    loadAllProjects();
+  }, [loadAllProjects]);
+
+  // 前端模糊搜索和过滤
+  const filteredProjects = useMemo(() => {
+    return allProjects.filter(project => {
+      // 搜索关键词过滤
+      if (searchKeyword) {
+        const keyword = searchKeyword.toLowerCase();
+        const searchKeywordNormalized = searchKeyword.replace(/-/g, '').toLowerCase();
+        
+        // 搜索项目名称
+        const title = (project.title || '').toLowerCase();
+        // 搜索目标企业名称
+        const targetCompanyName = (project.target_company_name || '').toLowerCase();
+        // 搜索营业执照号
+        const targetBusinessNumber = (project.target_business_number || '').replace(/-/g, '').toLowerCase();
+        
+        if (!title.includes(keyword) && 
+            !targetCompanyName.includes(keyword) && 
+            !targetBusinessNumber.includes(searchKeywordNormalized)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [allProjects, searchKeyword]);
+
+  // 分页后的数据
+  const projects = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    return filteredProjects.slice(start, end);
+  }, [filteredProjects, currentPage, pageSize]);
+
+  // 更新总数
+  useEffect(() => {
+    setTotalCount(filteredProjects.length);
+  }, [filteredProjects]);
 
   const handleCreate = () => {
     navigate('/admin/projects/new');
@@ -67,11 +93,11 @@ export default function ProjectList() {
   };
 
   const handleDelete = async (projectId) => {
-    if (!confirm('确定要删除这个项目吗？此操作不可撤销。')) {
+    if (!confirm(t('admin.projects.confirmDelete', '确定要删除这个项目吗？此操作不可撤销。'))) {
       return;
     }
     await apiService.delete(`${API_PREFIX}/admin/projects/${projectId}`);
-    loadProjects();
+    loadAllProjects();
   };
 
   const handleExport = async (format = 'excel') => {
@@ -90,7 +116,7 @@ export default function ProjectList() {
       label: t('admin.projects.table.targetCompanyName', '목표 기업명'),
       render: (value, row) => {
         if (!value && !row.target_business_number) {
-          return <span className="text-gray-400">공개 모집</span>;
+          return <span className="text-gray-400">{t('admin.projects.table.publicRecruitment', '公开招募')}</span>;
         }
         return value || '-';
       }
@@ -99,7 +125,7 @@ export default function ProjectList() {
       key: 'target_business_number',
       label: t('admin.projects.table.targetBusinessNumber', '사업자등록번호'),
       render: (value) => {
-        return value || '-';
+        return value ? formatBusinessLicense(value) : '-';
       }
     },
     {
@@ -183,20 +209,14 @@ export default function ProjectList() {
         
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <div className="flex-1 min-w-[200px] max-w-md">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                placeholder={t('admin.projects.searchPlaceholder', '请输入项目名称、申请对象等关键词')}
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-              />
-            </div>
+            <SearchInput
+              value={searchKeyword}
+              onChange={(value) => {
+                setSearchKeyword(value);
+                setCurrentPage(1);
+              }}
+              placeholder={t('admin.projects.searchPlaceholder', '请输入项目名称、目标企业名称、营业执照号等关键词')}
+            />
           </div>
           <div className="flex items-center space-x-2 md:ml-4 w-full md:w-auto">
             <Button 
@@ -228,8 +248,8 @@ export default function ProjectList() {
             <p className="text-lg mb-2">{t('admin.projects.noProjects', '暂无项目数据')}</p>
             <p className="text-sm text-gray-400">
               {totalCount === 0 
-                ? '请创建第一个项目，或尝试刷新页面'
-                : '当前筛选条件下没有匹配的项目'}
+                ? t('admin.projects.noProjectsHint', '请创建第一个项目，或尝试刷新页面')
+                : t('admin.projects.noMatchingProjects', '当前筛选条件下没有匹配的项目')}
             </p>
           </div>
         ) : (

@@ -5,72 +5,33 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal } from '@shared/components';
-import apiService from '@shared/services/api.service';
-import { loggerService, exceptionService } from '@shared/services';
-import { API_PREFIX } from '@shared/utils/constants';
+import { TermsModal, TERM_TYPES } from '@shared/components';
 
 export default function Footer() {
   const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState('');
-  const [modalContent, setModalContent] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [currentTermType, setCurrentTermType] = useState(null);
 
-  const handleOpenModal = async (type) => {
+  const handleOpenModal = (type) => {
     setIsModalOpen(true);
-    setIsLoading(true);
-    setError(null);
-    setModalTitle('');
-    setModalContent('');
-
-    try {
-      const response = await apiService.get(`${API_PREFIX}/member/terms`, { type });
-      const term = response.term;
-      
-      if (term) {
-        setModalTitle(term.title);
-        setModalContent(term.content);
-      } else {
-        setError(t('footer.error'));
-      }
-    } catch (err) {
-      loggerService.error('Error fetching term', {
-        module: 'MemberFooter',
-        function: 'handleOpenModal',
-        term_type: type,
-        error_message: err.message,
-        error_code: err.code
-      });
-      exceptionService.recordException(err, {
-        request_path: window.location.pathname,
-        error_code: err.code || 'FETCH_TERM_FAILED',
-        context_data: { term_type: type }
-      });
-      setError(t('footer.error'));
-    } finally {
-      setIsLoading(false);
-    }
+    setCurrentTermType(type);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    setModalTitle('');
-    setModalContent('');
-    setError(null);
+    setCurrentTermType(null);
   };
 
   const handleTermsClick = (e) => {
     e.preventDefault();
-    handleOpenModal('terms_of_service');
+    handleOpenModal(TERM_TYPES.TERMS_OF_SERVICE);
   };
 
   const handlePrivacyClick = (e) => {
     e.preventDefault();
-    handleOpenModal('privacy_policy');
+    handleOpenModal(TERM_TYPES.PRIVACY_POLICY);
   };
 
   return (
@@ -110,30 +71,11 @@ export default function Footer() {
         </div>
       </footer>
 
-      <Modal
+      <TermsModal
         isOpen={isModalOpen}
+        termType={currentTermType}
         onClose={handleCloseModal}
-        title={modalTitle}
-        size="lg"
-      >
-        {isLoading ? (
-          <div className="text-center p-8 text-gray-500">
-            {t('footer.loading')}
-          </div>
-        ) : error ? (
-          <div className="text-center p-8 text-red-600">
-            {error}
-          </div>
-        ) : (
-          <div className="max-h-[70vh] overflow-y-auto">
-            <div className="leading-[1.8] text-gray-700">
-              {modalContent.split('\n').map((line, index) => (
-                <p key={index} className="mb-4 last:mb-0">{line}</p>
-              ))}
-            </div>
-          </div>
-        )}
-      </Modal>
+      />
     </>
   );
 }

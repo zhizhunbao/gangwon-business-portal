@@ -55,7 +55,7 @@ class MemberService:
         """
         member, profile = await self.get_member_profile(member_id)
         return MemberProfileResponse(
-            id=UUID(member["id"]),
+            id=UUID(str(member["id"])),
             business_number=member["business_number"],
             company_name=member["company_name"],
             email=member["email"],
@@ -95,7 +95,7 @@ class MemberService:
         """
         member, profile = await self.update_member_profile(member_id, data)
         return MemberProfileResponse(
-            id=UUID(member["id"]),
+            id=UUID(str(member["id"])),
             business_number=member["business_number"],
             company_name=member["company_name"],
             email=member["email"],
@@ -176,8 +176,16 @@ class MemberService:
             profile_update['region'] = data.region
         if data.address is not None:
             profile_update['address'] = data.address
+        if data.representative_name is not None:
+            profile_update['representative'] = data.representative_name
+        if data.corporation_number is not None:
+            profile_update['legal_number'] = data.corporation_number
+        if data.phone is not None:
+            profile_update['phone'] = data.phone
         if data.website is not None:
             profile_update['website'] = data.website
+        if data.logo_url is not None:
+            profile_update['logo_url'] = data.logo_url
 
         # Update or create profile
         if profile_update:
@@ -202,13 +210,8 @@ class MemberService:
             Tuple of (members list, total count)
         """
         members, total = await supabase_service.list_members_with_filters(
-            page=query.page,
-            page_size=query.page_size,
-            search=query.search,
-            industry=query.industry,
-            region=query.region,
-            approval_status=query.approval_status,
-            status=query.status,
+            order_by="created_at",
+            order_desc=True,
         )
         
         return members, total
@@ -313,16 +316,10 @@ class MemberService:
         Returns:
             List of member records as dictionaries
         """
-        # Get all members matching filters (without pagination)
-        # Use a large page size to get all records
+        # Get all members (without pagination or filtering)
         members, _ = await supabase_service.list_members_with_filters(
-            page=1,
-            page_size=10000,  # Large enough to get all records
-            search=query.search,
-            industry=query.industry,
-            region=query.region,
-            approval_status=query.approval_status,
-            status=query.status,
+            order_by="created_at",
+            order_desc=True,
         )
 
         # Convert to dict format for export

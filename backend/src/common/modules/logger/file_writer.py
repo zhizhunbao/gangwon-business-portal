@@ -1,19 +1,20 @@
 """File log writer for application logs and exceptions.
 
 This module provides thread-safe asynchronous file writing for:
-- app_logs.log - Combined backend and frontend application logs (merged for easier debugging)
-- app_exceptions.log - Combined backend and frontend exceptions (merged for easier debugging)
-- audit_logs.log - Audit logs (compliance and security tracking)
+- app.log - Combined backend and frontend application logs (merged for easier debugging)
+- error.log - Combined backend and frontend exceptions (merged for easier debugging)
+- audit.log - Audit logs (compliance and security tracking)
 
 Uses queue-based asynchronous writing to avoid blocking the main thread.
 """
 import json
 import queue
 import threading
-from datetime import datetime
+from datetime import datetime, date
 from pathlib import Path
 from typing import Any, Optional, Tuple
 import logging
+import re
 
 
 class FileLogWriter:
@@ -48,25 +49,23 @@ class FileLogWriter:
 
         # File paths
         # Merged application logs (backend + frontend) for easier debugging with trace_id correlation
-        self.application_logs_file = self.logs_dir / "app_logs.log"
+        self.application_logs_file = self.logs_dir / "app.log"
         # Merged exceptions (backend + frontend) for easier debugging with trace_id correlation
-        self.application_exceptions_file = self.logs_dir / "app_exceptions.log"
-        self.audit_logs_file = self.logs_dir / "audit_logs.log"
-        self.db_pool_file = self.logs_dir / "db_pool.log"
+        self.application_exceptions_file = self.logs_dir / "error.log"
+        self.audit_logs_file = self.logs_dir / "audit.log"
 
         # Initialize log files (create empty files if they don't exist)
         for log_file in [
             self.application_logs_file,
             self.application_exceptions_file,
             self.audit_logs_file,
-            self.db_pool_file,
         ]:
             if not log_file.exists():
                 log_file.touch()
 
-        # File rotation settings
-        self.max_bytes = 50 * 1024 * 1024  # 50MB
-        self.backup_count = 10
+        # File rotation settings (daily rotation)
+        self.backup_count = 30  # Keep 30 days of logs
+        self._last_rotation_date = {}  # Track last rotation date for each file
 
         # Queue for asynchronous log writing
         # Each entry is a tuple: (file_path: Path, entry: str)
@@ -136,27 +135,72 @@ class FileLogWriter:
                 logging.error(f"Failed to write log entry to {file_path}: {e}")
 
     def _rotate_file_if_needed(self, file_path: Path) -> None:
-        """Rotate file if it exceeds max size."""
+        """Rotate file daily at midnight."""
         if not file_path.exists():
             return
 
-        file_size = file_path.stat().st_size
-        if file_size < self.max_bytes:
+        # Get current date
+        today = date.today()
+        
+        # Check if we need to rotate (new day)
+        file_key = str(file_path)
+        last_rotation = self._last_rotation_date.get(file_key)
+        
+        if last_rotation == today:
+            # Already rotated today, no need to rotate again
             return
-
-        # Rotate existing files
-        for i in range(self.backup_count - 1, 0, -1):
-            old_file = file_path.parent / f"{file_path.stem}.{i}{file_path.suffix}"
-            new_file = file_path.parent / f"{file_path.stem}.{i + 1}{file_path.suffix}"
-            if old_file.exists():
-                if i + 1 <= self.backup_count:
-                    old_file.rename(new_file)
-
-        # Move current file to .1
-        backup_file = file_path.parent / f"{file_path.stem}.1{file_path.suffix}"
-        if backup_file.exists():
-            backup_file.unlink()
-        file_path.rename(backup_file)
+        
+        # Check file modification date
+        file_mtime = datetime.fromtimestamp(file_path.stat().st_mtime).date()
+        
+        # Rotate if file is from a previous day
+        if file_mtime < today:
+            # Move current file to dated backup
+            # Format: app.log.2024-01-15
+            date_str = file_mtime.strftime("%Y-%m-%d")
+            backup_file = file_path.parent / f"{file_path.stem}.{date_str}{file_path.suffix}"
+            
+            # If backup file already exists, append timestamp
+            if backup_file.exists():
+                timestamp = datetime.now().strftime("%H%M%S")
+                backup_file = file_path.parent / f"{file_path.stem}.{date_str}.{timestamp}{file_path.suffix}"
+            
+            file_path.rename(backup_file)
+            
+            # Update last rotation date
+            self._last_rotation_date[file_key] = today
+            
+            # Clean up old files beyond backup_count
+            self._cleanup_old_files(file_path)
+    
+    def _cleanup_old_files(self, file_path: Path) -> None:
+        """Clean up old log files beyond backup_count."""
+        if not file_path.parent.exists():
+            return
+        
+        # Find all backup files matching the pattern
+        # Pattern: {stem}.YYYY-MM-DD{suffix} or {stem}.{number}{suffix}
+        pattern = re.compile(
+            rf"^{re.escape(file_path.stem)}\."
+            rf"(?:\d{{4}}-\d{{2}}-\d{{2}}|\d+)"
+            rf"{re.escape(file_path.suffix)}$"
+        )
+        
+        backup_files = []
+        for f in file_path.parent.iterdir():
+            if f.is_file() and pattern.match(f.name):
+                backup_files.append(f)
+        
+        # Sort by modification time (oldest first)
+        backup_files.sort(key=lambda f: f.stat().st_mtime)
+        
+        # Remove files beyond backup_count
+        if len(backup_files) > self.backup_count:
+            for old_file in backup_files[:-self.backup_count]:
+                try:
+                    old_file.unlink()
+                except Exception as e:
+                    logging.warning(f"Failed to delete old log file {old_file}: {e}")
 
     def _format_log_entry(
         self,
@@ -383,7 +427,7 @@ class FileLogWriter:
         user_agent: Optional[str] = None,
         extra_data: Optional[dict[str, Any]] = None,
     ) -> None:
-        """Write an audit log entry to audit_logs.log file.
+        """Write an audit log entry to audit.log file.
 
         Args:
             action: Action type (e.g., 'login', 'create', 'update', 'delete', 'approve')
@@ -417,48 +461,6 @@ class FileLogWriter:
                         f.write(formatted_entry + "\n")
             except Exception as e:
                 logging.error(f"Failed to write audit log to file: {e}")
-
-    def write_db_pool_log(
-        self,
-        level: str,  # DEBUG, INFO, WARNING, ERROR
-        message: str,
-        extra_data: Optional[dict[str, Any]] = None,
-    ) -> None:
-        """Write a database pool log entry to db_pool.log file.
-
-        Args:
-            level: Log level (DEBUG/INFO/WARNING/ERROR)
-            message: Log message
-            extra_data: Additional context data
-        """
-        from datetime import datetime
-        import json
-        
-        log_entry = {
-            "timestamp": datetime.utcnow().isoformat(),
-            "level": level,
-            "message": message,
-        }
-        
-        if extra_data:
-            log_entry["extra"] = extra_data
-        
-        # Format as JSON line
-        formatted_entry = json.dumps(log_entry, ensure_ascii=False)
-
-        # Enqueue db_pool log entry for asynchronous writing
-        try:
-            self.log_queue.put((self.db_pool_file, formatted_entry), block=False)
-        except queue.Full:
-            # If queue is full, fallback to synchronous write to avoid losing logs
-            logging.warning("Log queue is full, falling back to synchronous write")
-            try:
-                with self.write_lock:
-                    self._rotate_file_if_needed(self.db_pool_file)
-                    with open(self.db_pool_file, "a", encoding="utf-8") as f:
-                        f.write(formatted_entry + "\n")
-            except Exception as e:
-                logging.error(f"Failed to write db_pool log to file: {e}")
 
     def close(self, timeout: float = 5.0) -> None:
         """Close file writer gracefully, ensuring all queued logs are written.

@@ -8,9 +8,10 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Card, Badge, Loading } from '@shared/components';
 import { adminService } from '@shared/services';
+import { formatDateTime } from '@shared/utils/format';
 
 export default function AuditLogDetail() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -27,18 +28,6 @@ export default function AuditLogDetail() {
     setLoading(false);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleString('ko-KR', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-  };
 
   const getActionBadgeVariant = (action) => {
     if (action?.includes('create') || action?.includes('register')) {
@@ -128,7 +117,7 @@ export default function AuditLogDetail() {
                 {t('admin.auditLogs.detail.createdAt', '时间')}
               </dt>
               <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                {formatDate(log.createdAt)}
+                {formatDateTime(log.createdAt, 'yyyy-MM-dd HH:mm:ss', i18n.language)}
               </dd>
             </div>
           </dl>

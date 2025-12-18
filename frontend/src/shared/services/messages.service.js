@@ -1,5 +1,5 @@
 /**
- * Message Service
+ * Messages Service
  * 站内信服务
  */
 
@@ -147,7 +147,7 @@ function toCamelCase(obj) {
   return camelObj;
 }
 
-const messageService = {
+const messagesService = {
   /**
    * Get messages list (admin)
    * @param {Object} params - Query parameters
@@ -291,7 +291,52 @@ const messageService = {
   },
 
   /**
-   * Get thread with messages
+   * Get member threads list
+   * @param {Object} params - Query parameters
+   * @param {number} params.page - Page number
+   * @param {number} params.pageSize - Page size
+   * @param {string} params.status - Filter by status (open, resolved, closed)
+   * @returns {Promise<Object>} Threads list response
+   */
+  async getMemberThreads(params = {}) {
+    const queryParams = new URLSearchParams({
+      page: (params.page || 1).toString(),
+      page_size: (params.pageSize || 20).toString(),
+    });
+
+    if (params.status) {
+      queryParams.append('status', params.status);
+    }
+
+    const response = await apiService.get(`${MEMBER_BASE_URL}/threads?${queryParams.toString()}`);
+    return {
+      ...response,
+      items: (response.items || []).map(toCamelCase),
+    };
+  },
+
+  /**
+   * Create thread (member)
+   * @param {Object} data - Thread data
+   * @param {string} data.subject - Thread subject
+   * @param {string} data.category - Thread category
+   * @param {string} data.content - Initial message content
+   * @param {Array} data.attachments - Attachments
+   * @returns {Promise<Object>} Created thread
+   */
+  async createThread(data) {
+    const payload = {
+      subject: data.subject,
+      category: data.category || 'general',
+      content: data.content,
+      attachments: data.attachments || []
+    };
+    const response = await apiService.post(`${MEMBER_BASE_URL}/threads`, payload);
+    return toCamelCase(response);
+  },
+
+  /**
+   * Get thread with messages (admin)
    * @param {string} threadId - Thread ID
    * @returns {Promise<Object>} Thread with messages
    */
@@ -304,7 +349,20 @@ const messageService = {
   },
 
   /**
-   * Update thread
+   * Get thread with messages (member)
+   * @param {string} threadId - Thread ID
+   * @returns {Promise<Object>} Thread with messages
+   */
+  async getMemberThread(threadId) {
+    const response = await apiService.get(`${MEMBER_BASE_URL}/threads/${threadId}`);
+    return {
+      thread: toCamelCase(response.thread),
+      messages: (response.messages || []).map(toCamelCase)
+    };
+  },
+
+  /**
+   * Update thread (admin)
    * @param {string} threadId - Thread ID
    * @param {Object} data - Update data
    * @returns {Promise<Object>} Updated thread
@@ -319,7 +377,7 @@ const messageService = {
   },
 
   /**
-   * Create message in thread
+   * Create message in thread (admin)
    * @param {string} threadId - Thread ID
    * @param {Object} data - Message data
    * @returns {Promise<Object>} Created message
@@ -331,6 +389,22 @@ const messageService = {
       attachments: data.attachments || []
     };
     const response = await apiService.post(`${BASE_URL}/threads/${threadId}/messages`, payload);
+    return toCamelCase(response);
+  },
+
+  /**
+   * Create message in thread (member)
+   * @param {string} threadId - Thread ID
+   * @param {Object} data - Message data
+   * @returns {Promise<Object>} Created message
+   */
+  async createMemberThreadMessage(threadId, data) {
+    const payload = {
+      content: data.content,
+      is_important: data.isImportant || false,
+      attachments: data.attachments || []
+    };
+    const response = await apiService.post(`${MEMBER_BASE_URL}/threads/${threadId}/messages`, payload);
     return toCamelCase(response);
   },
 
@@ -369,4 +443,5 @@ const messageService = {
   },
 };
 
-export default messageService;
+export default messagesService;
+

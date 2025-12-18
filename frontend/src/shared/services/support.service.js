@@ -121,16 +121,27 @@ const supportService = {
    * @param {Object} data - 咨询数据
    * @param {string} data.subject - 咨询标题
    * @param {string} data.content - 咨询内容
+   * @param {Array} [data.attachments] - 附件列表（最多3个）
    * @returns {Promise<Object>} 创建的咨询记录
    */
   async createInquiry(data) {
-    // 后端只需要 subject 和 content
     const requestData = {
+      category: data.category || 'general',
       subject: data.subject,
       content: data.content,
     };
 
-    const response = await createInquiryInternal(toSnakeCase(requestData));
+    // 添加附件（如果有）
+    if (data.attachments && data.attachments.length > 0) {
+      requestData.attachments = data.attachments.slice(0, 3).map(att => ({
+        file_id: att.file_id || att.id,
+        file_url: att.file_url || att.url,
+        original_name: att.original_name || att.name,
+        file_size: att.file_size || att.size
+      }));
+    }
+
+    const response = await createInquiryInternal(requestData);
 
     const result = toCamelCase(response);
     // 状态映射

@@ -48,7 +48,14 @@ class MemberProfileUpdate(BaseModel):
     founding_date: Optional[date] = Field(None, description="YYYY-MM-DD format")
     region: Optional[str] = Field(None, max_length=100)
     address: Optional[str] = None
+    representative_name: Optional[str] = Field(None, max_length=100)
+    corporation_number: Optional[str] = Field(None, max_length=50)
+    phone: Optional[str] = Field(None, max_length=50)
     website: Optional[str] = Field(None, max_length=255)
+    logo_url: Optional[str] = Field(None, max_length=500)
+
+    class Config:
+        extra = 'forbid'  # 禁止额外字段，接收到未定义字段时抛出异常
 
 
 class MemberListResponse(BaseModel):
@@ -76,8 +83,6 @@ class MemberListResponse(BaseModel):
 class MemberListQuery(BaseModel):
     """Member list query parameters."""
 
-    page: int = Field(1, ge=1, description="Page number")
-    page_size: int = Field(20, ge=1, le=100, description="Items per page")
     search: Optional[str] = Field(None, description="Search by company name")
     industry: Optional[str] = Field(None, description="Filter by industry")
     region: Optional[str] = Field(None, description="Filter by region")

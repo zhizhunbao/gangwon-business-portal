@@ -335,7 +335,7 @@ class AdminService {
    * Approve a performance record (Admin)
    * 批准绩效记录（管理员）
    *
-   * @param {string} recordId - Performance record ID (UUID)
+   * @param {string} recordId - Performance record ID (UUID, corresponds to backend performance_id)
    * @param {string} [comments] - Approval comments
    * @returns {Promise<Object>} Updated performance record
    */
@@ -380,7 +380,7 @@ class AdminService {
    * Request revision for a performance record (Admin)
    * 要求修改绩效记录（管理员）
    *
-   * @param {string} recordId - Performance record ID (UUID)
+   * @param {string} recordId - Performance record ID (UUID, corresponds to backend performance_id)
    * @param {string} comments - Revision comments
    * @returns {Promise<Object>} Updated performance record
    */
@@ -425,7 +425,7 @@ class AdminService {
    * Reject a performance record (Admin)
    * 驳回绩效记录（管理员）
    *
-   * @param {string} recordId - Performance record ID (UUID)
+   * @param {string} recordId - Performance record ID (UUID, corresponds to backend performance_id)
    * @param {string} [comments] - Rejection comments
    * @returns {Promise<Object>} Updated performance record
    */
@@ -622,6 +622,9 @@ class AdminService {
     }
     if (params.status) {
       queryParams.status = params.status;
+    }
+    if (params.language) {
+      queryParams.language = params.language;
     }
 
     return await this._exportMembersInternal(queryParams);

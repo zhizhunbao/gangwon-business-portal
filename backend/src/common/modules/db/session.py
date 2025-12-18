@@ -1,426 +1,86 @@
 """
-Database session management.
+Database session management module.
 
-This module provides async database session management using SQLAlchemy.
+This module provides async database session management using SQLAlchemy with
+PostgreSQL backend. It includes session factory, dependency injection, and
+utility functions for database operations.
 
-⚠️ DEPRECATED: This module is deprecated and will be removed in a future version.
-   The application is migrating to Supabase client for all database operations.
+⚠️ PARTIALLY DEPRECATED: Some functions in this module are deprecated.
+   The application is migrating to Supabase client for most database operations.
    New code should use `supabase_service` from `common.modules.supabase.service`.
    
-   Remaining usage:
-   - ORM models (Base) - kept for backward compatibility
+   Deprecated components:
+   - get_db() - Use supabase_service instead
+   - ORM models (Base) - kept for backward compatibility only
    - Exception/Audit/Logger routers - need migration to Supabase
    - Health check endpoints - can be replaced with Supabase health checks
+   
+   Active components (NOT deprecated):
+   - fuzzy_search_all_columns() - Active utility function for multi-column fuzzy search
+     This function is actively maintained and recommended for fuzzy search operations.
+
+Features:
+    - Async database sessions with automatic connection management
+    - Direct connection mode (no connection pooling) for simplicity
+    - Multi-column fuzzy search utility optimized for large datasets (ACTIVE)
 """
-import logging
-from pathlib import Path
-from typing import AsyncGenerator, Optional
-from urllib.parse import urlparse, urlunparse, quote
+from typing import AsyncGenerator, Optional, List, Dict, Any, Tuple
+from sqlalchemy import text
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-from sqlalchemy import event
-from sqlalchemy.dialects.postgresql.asyncpg import AsyncAdapt_asyncpg_connection
-from sqlalchemy.pool import Pool, NullPool
-import asyncpg
+from sqlalchemy.pool import NullPool
 
 from ..config import settings
-# Import directly from submodules to avoid circular import through logger/__init__.py
-from ..logger.handlers import create_file_handler
-from ..logger.formatter import JSONFormatter
 
 
 # ============================================================================
-# Database Pool Logger Setup
-# ============================================================================
-
-def _setup_db_pool_logger() -> logging.Logger:
-    """
-    Setup dedicated logger for database connection pool.
-    
-    This logger only writes to file (db_pool.log) and does NOT output to console.
-    It is completely isolated from the root logger to avoid console output.
-    
-    Returns:
-        Configured logger instance for database pool operations
-    """
-    logger = logging.getLogger("db_pool")
-    logger.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
-    
-    # Avoid duplicate handlers
-    if logger.handlers:
-        return logger
-    
-    # Determine backend directory path
-    # backend/src/common/modules/db/session.py -> backend/
-    backend_dir = Path(__file__).resolve().parent.parent.parent.parent.parent
-    log_file = backend_dir / "logs" / "db_pool.log"
-    
-    # Create formatter and handler
-    formatter = JSONFormatter()
-    handler_level = logging.DEBUG if settings.DEBUG else logging.INFO
-    file_handler = create_file_handler(
-        str(log_file),
-        formatter,
-        handler_level,
-        max_bytes=10485760,  # 10MB
-        backup_count=5,
-    )
-    
-    logger.addHandler(file_handler)
-    logger.propagate = False  # Prevent propagation to root logger
-    
-    return logger
-
-
-# Initialize database pool logger
-db_pool_logger = _setup_db_pool_logger()
-
-
-# ============================================================================
-# Database URL Encoding
-# ============================================================================
-
-def _encode_database_url(url: str) -> str:
-    """
-    Properly encode special characters in database URL password.
-    
-    This handles passwords containing special characters like % that need
-    to be URL-encoded for SQLAlchemy to parse correctly.
-    Also removes pgbouncer=true parameter as asyncpg doesn't support it.
-    
-    Args:
-        url: Database URL string
-        
-    Returns:
-        Encoded database URL string with pgbouncer parameter removed
-    """
-    parsed = urlparse(url)
-
-    # Ensure we always use the asyncpg driver, even if the URL comes from
-    # official docs using "postgres://" or "postgresql://".
-    # This lets you keep the original Supabase config unchanged.
-    scheme = parsed.scheme
-    if scheme in ("postgres", "postgresql"):
-        scheme = "postgresql+asyncpg"
-    if not parsed.password:
-        # Still need to remove pgbouncer parameter even if no password
-        query_params = []
-        if parsed.query:
-            from urllib.parse import parse_qs, urlencode
-            params = parse_qs(parsed.query)
-            # Remove pgbouncer parameter
-            params.pop('pgbouncer', None)
-            if params:
-                query_params = urlencode(params, doseq=True)
-        
-        return urlunparse((
-            scheme,
-            parsed.netloc,
-            parsed.path,
-            parsed.params,
-            query_params if query_params else '',
-            parsed.fragment
-        ))
-    
-    # URL-encode the password
-    encoded_password = quote(parsed.password, safe='')
-    
-    # Reconstruct the netloc with encoded password
-    if parsed.port:
-        netloc = f"{parsed.username}:{encoded_password}@{parsed.hostname}:{parsed.port}"
-    else:
-        netloc = f"{parsed.username}:{encoded_password}@{parsed.hostname}"
-    
-    # Remove pgbouncer parameter from query string
-    query_params = []
-    if parsed.query:
-        from urllib.parse import parse_qs, urlencode
-        params = parse_qs(parsed.query)
-        # Remove pgbouncer parameter (asyncpg doesn't support it)
-        params.pop('pgbouncer', None)
-        if params:
-            query_params = urlencode(params, doseq=True)
-    
-    # Reconstruct the full URL
-    return urlunparse((
-        scheme,
-        netloc,
-        parsed.path,
-        parsed.params,
-        query_params if query_params else '',
-        parsed.fragment
-    ))
-
-
-# ============================================================================
-# Database Connection (Direct, No Pooling, for scripts)
+# Database Connection (Direct Connection, No Pooling)
 # ============================================================================
 #
-# 说明：
-# - 这里的 SQLAlchemy 只给测试脚本等遗留代码用；
-# - 优先使用 DIRECT_URL（直连 Postgres，不经过 PgBouncer）；
-# - 如果没配置 DIRECT_URL，才退回 DATABASE_URL。
+# Connection Strategy:
+#   - Uses NullPool for direct connections (no connection pooling)
+#   - Each connection is automatically closed after use
+#   - Prefers DIRECT_URL (direct Postgres connection, bypasses PgBouncer)
+#   - Falls back to DATABASE_URL if DIRECT_URL is not configured
+#   - Supports raw SQL execution: session.execute(text("SELECT ..."))
+#
+# Performance Considerations:
+#   - NullPool is simpler but may have higher connection overhead
+#   - Suitable for low to moderate traffic scenarios
+#   - For high-traffic scenarios, consider using connection pooling
 # ============================================================================
 
+# Get database URL (prefer direct connection URL)
 database_url = settings.DIRECT_URL or settings.DATABASE_URL
 
+# Ensure asyncpg driver is used for async operations
+# Convert postgresql:// or postgres:// to postgresql+asyncpg://
+if database_url.startswith("postgresql://") or database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1).replace("postgres://", "postgresql+asyncpg://", 1)
+
+# Create async database engine with NullPool (no connection pooling)
+# Each connection is created on demand and closed after use
 engine = create_async_engine(
-    _encode_database_url(database_url),
-    echo=settings.DEBUG,
-    future=True,
-    poolclass=NullPool,
+    database_url,
+    echo=settings.DEBUG,  # Log SQL queries in debug mode
+    future=True,  # Use SQLAlchemy 2.0 style
+    poolclass=NullPool,  # Disable connection pooling - direct connections only
     connect_args={
-        # Critical for PgBouncer (transaction/statement mode):
-        # disable asyncpg's statement cache to avoid DuplicatePreparedStatementError.
-        "statement_cache_size": 0,
+        "statement_cache_size": 0,  # Disable statement cache for simplicity
     },
 )
-
-# ============================================================================
-# SQL Logging Utilities
-# ============================================================================
-
-def _extract_sql_operation_type(statement: str) -> str:
-    """
-    Extract SQL operation type from statement.
-    
-    Args:
-        statement: SQL statement string
-        
-    Returns:
-        Operation type (SELECT, INSERT, UPDATE, DELETE, etc.)
-    """
-    sql_upper = statement.strip().upper()
-    
-    operation_types = [
-        "SELECT", "INSERT", "UPDATE", "DELETE",
-        "COMMIT", "ROLLBACK", "BEGIN"
-    ]
-    
-    for op_type in operation_types:
-        if sql_upper.startswith(op_type):
-            return op_type
-    
-    return "OTHER"
-
-
-def _normalize_sql_statement(statement: str) -> str:
-    """
-    Normalize SQL statement for logging.
-    
-    Args:
-        statement: Raw SQL statement
-        
-    Returns:
-        Normalized SQL statement (single line, trimmed)
-    """
-    return statement.replace("\n", " ").strip()
-
-
-def _log_sql_execution(
-    op_type: str,
-    sql_statement: str,
-    request_ctx: dict,
-    connection_id: int,
-    executemany: bool,
-    level: str = "DEBUG",
-) -> None:
-    """
-    Log SQL execution using logging service.
-    
-    Args:
-        op_type: SQL operation type
-        sql_statement: SQL statement
-        request_ctx: Request context dictionary
-        connection_id: Database connection ID
-        executemany: Whether this is an executemany operation
-        level: Log level (DEBUG, INFO, etc.)
-    """
-    from ..logger import logging_service
-    
-    user_id = request_ctx.get("user_id")  # Already UUID or None
-    
-    logging_service.create_log(
-        source="backend",
-        level=level,
-        message=f"SQL {op_type}: {sql_statement}",
-        module="db.session",
-        function="before_cursor_execute",
-        trace_id=request_ctx.get("trace_id"),
-        user_id=user_id,
-        request_path=request_ctx.get("request_path"),
-        request_method=request_ctx.get("request_method"),
-        ip_address=request_ctx.get("ip_address"),
-        user_agent=request_ctx.get("user_agent"),
-        extra_data={
-            "db_operation": op_type,
-            "connection_id": connection_id,
-            "executemany": executemany,
-        }
-    )
-
-
-def _log_sql_completion(
-    op_type: str,
-    rowcount: Optional[int],
-    request_ctx: dict,
-    connection_id: int,
-) -> None:
-    """
-    Log SQL execution completion.
-    
-    Args:
-        op_type: SQL operation type
-        rowcount: Number of rows affected
-        request_ctx: Request context dictionary
-        connection_id: Database connection ID
-    """
-    from ..logger import logging_service
-    
-    logging_service.create_log(
-        source="backend",
-        level="INFO",
-        message=f"SQL {op_type} completed: {rowcount} rows affected",
-        module="db.session",
-        function="after_cursor_execute",
-        trace_id=request_ctx.get("trace_id"),
-        user_id=request_ctx.get("user_id"),
-        request_path=request_ctx.get("request_path"),
-        request_method=request_ctx.get("request_method"),
-        ip_address=request_ctx.get("ip_address"),
-        user_agent=request_ctx.get("user_agent"),
-        extra_data={
-            "db_operation": op_type,
-            "rows_affected": rowcount,
-            "connection_id": connection_id,
-        }
-    )
-
-
-# ============================================================================
-# SQLAlchemy Event Listeners - Connection Pool
-# ============================================================================
-
-@event.listens_for(engine.sync_engine, "connect")
-def on_connect(dbapi_conn, connection_record):
-    """Log when a new database connection is established."""
-    db_pool_logger.debug(
-        "New database connection established",
-        extra={"connection_id": id(dbapi_conn)}
-    )
-
-
-@event.listens_for(engine.sync_engine, "checkout")
-def on_checkout(dbapi_conn, connection_record, connection_proxy):
-    """Log when a connection is checked out from the pool."""
-    try:
-        db_pool_logger.debug(
-            "Connection checked out from pool",
-            extra={"connection_id": id(dbapi_conn)}
-        )
-    except Exception:
-        # Silently ignore errors to prevent connection invalidation
-        pass
-
-
-@event.listens_for(engine.sync_engine, "checkin")
-def on_checkin(dbapi_conn, connection_record):
-    """Log when a connection is returned to the pool."""
-    try:
-        db_pool_logger.debug(
-            "Connection returned to pool",
-            extra={"connection_id": id(dbapi_conn)}
-        )
-    except Exception:
-        # Silently ignore errors to prevent connection invalidation
-        pass
-
-
-@event.listens_for(engine.sync_engine, "invalidate")
-def on_invalidate(dbapi_conn, connection_record, exception):
-    """Log when a connection is invalidated."""
-    db_pool_logger.warning(
-        "Database connection invalidated",
-        extra={
-            "connection_id": id(dbapi_conn),
-            "exception": str(exception) if exception else None,
-        },
-        exc_info=exception is not None,
-    )
-
-
-@event.listens_for(engine.sync_engine, "soft_invalidate")
-def on_soft_invalidate(dbapi_conn, connection_record, exception):
-    """Log when a connection is soft invalidated."""
-    db_pool_logger.warning(
-        "Database connection soft invalidated",
-        extra={
-            "connection_id": id(dbapi_conn),
-            "exception": str(exception) if exception else None,
-        },
-    )
-
-
-@event.listens_for(engine.sync_engine, "close")
-def on_close(dbapi_conn, connection_record):
-    """Log when a connection is closed."""
-    db_pool_logger.debug(
-        "Database connection closed",
-        extra={"connection_id": id(dbapi_conn)}
-    )
-
-
-# ============================================================================
-# SQLAlchemy Event Listeners - SQL Execution
-# ============================================================================
-
-@event.listens_for(engine.sync_engine, "before_cursor_execute")
-def on_before_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    """Log SQL statement before execution."""
-    from ..logger.request import get_request_context
-    
-    request_ctx = get_request_context()
-    op_type = _extract_sql_operation_type(statement)
-    sql_statement = _normalize_sql_statement(statement)
-    
-    _log_sql_execution(
-        op_type=op_type,
-        sql_statement=sql_statement,
-        request_ctx=request_ctx,
-        connection_id=id(conn),
-        executemany=executemany,
-        level="DEBUG",
-    )
-
-
-@event.listens_for(engine.sync_engine, "after_cursor_execute")
-def on_after_cursor_execute(conn, cursor, statement, parameters, context, executemany):
-    """Log after SQL execution with row count."""
-    from ..logger.request import get_request_context
-    
-    request_ctx = get_request_context()
-    op_type = _extract_sql_operation_type(statement)
-    rowcount = cursor.rowcount if cursor.rowcount >= 0 else None
-    
-    # Only log INSERT, UPDATE, DELETE operations
-    if op_type in ("INSERT", "UPDATE", "DELETE"):
-        _log_sql_completion(
-            op_type=op_type,
-            rowcount=rowcount,
-            request_ctx=request_ctx,
-            connection_id=id(conn),
-        )
 
 
 # ============================================================================
 # Database Session Factory
 # ============================================================================
 
-# Log engine creation success
-db_pool_logger.info("Database engine created successfully")
-
 # Create async session factory
+# Configuration:
+#   - expire_on_commit=False: Objects remain accessible after commit
+#   - autocommit=False: Manual commit required
+#   - autoflush=False: Manual flush required (better control)
 AsyncSessionLocal = async_sessionmaker(
     engine,
     class_=AsyncSession,
@@ -429,7 +89,8 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
 )
 
-# Base class for models
+# Base class for SQLAlchemy ORM models
+# Used for declarative model definitions (backward compatibility)
 Base = declarative_base()
 
 
@@ -439,173 +100,180 @@ Base = declarative_base()
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
-    Dependency function to get database session with retry mechanism.
+    Dependency function to get database session.
     
     ⚠️ DEPRECATED: This function is deprecated. Use `supabase_service` instead.
     
     This function provides a database session that is automatically
-    committed on success or rolled back on error. Includes retry logic
-    for connection timeouts.
+    committed on success or rolled back on error.
     
     Yields:
-        AsyncSession: Database session
+        AsyncSession: Database session ready for use
+    
+    Example:
+        ```python
+        async for session in get_db():
+            result = await session.execute(text("SELECT * FROM users"))
+            # Session is automatically committed on success
+        ```
     """
-    import asyncio
-    from sqlalchemy.exc import DisconnectionError, TimeoutError as SQLTimeoutError
-    
-    max_retries = 3
-    retry_delay = 1  # seconds
-    
-    for attempt in range(max_retries):
-        try:
-            db_pool_logger.debug(f"Creating new database session (attempt {attempt + 1}/{max_retries})")
-            
-            async with AsyncSessionLocal() as session:
-                try:
-                    yield session
-                    await session.commit()
-                    db_pool_logger.debug("Database session committed successfully")
-                    return  # Success, exit retry loop
-                    
-                except Exception as e:
-                    # Only rollback for database-related errors
-                    # Business logic exceptions (AppException) should not trigger rollback
-                    from sqlalchemy.exc import SQLAlchemyError
-                    from ..exception.exceptions import AppException
-                    
-                    # Check if it's a database error
-                    if isinstance(e, SQLAlchemyError):
-                        await session.rollback()
-                        db_pool_logger.error(
-                            "Database session rollback due to database error",
-                            extra={
-                                "exception_type": type(e).__name__,
-                                "exception_message": str(e),
-                                "attempt": attempt + 1,
-                            },
-                            exc_info=True,
-                        )
-                    # For business logic exceptions, just log at debug level (no rollback needed)
-                    elif isinstance(e, AppException):
-                        db_pool_logger.debug(
-                            f"Business logic exception (no rollback needed): {type(e).__name__}",
-                            extra={
-                                "exception_type": type(e).__name__,
-                                "exception_message": str(e),
-                                "status_code": e.status_code,
-                            },
-                        )
-                    # For other unexpected exceptions, rollback to be safe
-                    else:
-                        await session.rollback()
-                        db_pool_logger.error(
-                            "Database session rollback due to unexpected error",
-                            extra={
-                                "exception_type": type(e).__name__,
-                                "exception_message": str(e),
-                                "attempt": attempt + 1,
-                            },
-                            exc_info=True,
-                        )
-                    raise
-                finally:
-                    db_pool_logger.debug("Database session closed")
-                    
-        except (DisconnectionError, SQLTimeoutError, asyncio.TimeoutError) as e:
-            if attempt < max_retries - 1:
-                db_pool_logger.warning(
-                    f"Database connection failed, retrying in {retry_delay}s",
-                    extra={
-                        "exception_type": type(e).__name__,
-                        "attempt": attempt + 1,
-                        "max_retries": max_retries,
-                        "retry_delay": retry_delay,
-                    }
-                )
-                await asyncio.sleep(retry_delay)
-                retry_delay *= 2  # Exponential backoff
-                continue
-            else:
-                db_pool_logger.error(
-                    "Database connection failed after all retries",
-                    extra={
-                        "exception_type": type(e).__name__,
-                        "exception_message": str(e),
-                        "total_attempts": max_retries,
-                    },
-                    exc_info=True,
-                )
-                raise
-        except Exception as e:
-            # For non-connection related errors, don't retry
-            raise
+    async with AsyncSessionLocal() as session:
+        yield session
+        await session.commit()
 
 
 # ============================================================================
-# Connection Pool Health Check
+# Fuzzy Search Function (Optimized for Large Datasets)
+# ============================================================================
+#
+# This function is ACTIVE and actively maintained.
+# It provides efficient multi-column fuzzy search capabilities optimized for
+# large datasets. This is the recommended approach for fuzzy search operations.
 # ============================================================================
 
-async def check_db_health() -> dict:
+async def fuzzy_search_all_columns(
+    session: AsyncSession,
+    table_name: str,
+    search_keyword: str,
+    columns: List[str],
+    limit: int = 100,
+    offset: int = 0,
+    order_by: Optional[str] = None,
+    case_sensitive: bool = False,
+) -> Tuple[List[Dict[str, Any]], int]:
     """
-    Check database connection pool health.
+    在指定列中进行模糊查询，支持分页和排序。
+    
+    核心功能：
+    1. 模糊查询：使用 ILIKE/LIKE 在指定列中搜索
+    2. 分页：使用 LIMIT/OFFSET 进行分页
+    3. 排序：支持 ORDER BY 子句
+    4. SQL 注入防护：使用参数化查询和列名验证
+    
+    Args:
+        session: 数据库会话
+        table_name: 表名（如 'members' 或 'public.members'）
+        search_keyword: 搜索关键词
+        columns: 要搜索的列名列表（必需，调用端负责验证列存在性）
+        limit: 返回结果的最大数量（默认 100）
+        offset: 跳过的记录数（默认 0）
+        order_by: 排序字段（如 'id DESC' 或 'created_at ASC'），None 则不排序
+        case_sensitive: 是否区分大小写（默认 False，使用 ILIKE）
     
     Returns:
-        dict: Pool status information
-    """
-    try:
-        from sqlalchemy import text
-        pool = engine.pool
-        
-        # Get pool statistics
-        pool_status = {
-            "pool_size": pool.size(),
-            "checked_in": pool.checkedin(),
-            "checked_out": pool.checkedout(),
-            "overflow": pool.overflow(),
-            "status": "healthy"
-        }
-        
-        # Test connection
+        Tuple[List[Dict[str, Any]], int]: (结果列表, 总记录数)
+    
+    Example:
+        ```python
         async with AsyncSessionLocal() as session:
-            await session.execute(text("SELECT 1"))
-            
-        db_pool_logger.info("Database health check passed", extra=pool_status)
-        return pool_status
-        
-    except Exception as e:
-        error_status = {
-            "status": "unhealthy",
-            "error": str(e),
-            "error_type": type(e).__name__
-        }
-        db_pool_logger.error("Database health check failed", extra=error_status, exc_info=True)
-        return error_status
-
-
-def get_pool_status() -> dict:
+            results, total = await fuzzy_search_all_columns(
+                session=session,
+                table_name='members',
+                search_keyword='test',
+                columns=['company_name', 'business_number'],
+                limit=50,
+                offset=0,
+                order_by='id DESC'
+            )
+        ```
     """
-    Get current connection pool status (synchronous).
+    # 参数验证
+    if not search_keyword or not search_keyword.strip():
+        return [], 0
     
-    Returns:
-        dict: Current pool statistics
-    """
-    try:
-        pool = engine.pool
-        return {
-            "pool_size": pool.size(),
-            "checked_in": pool.checkedin(),
-            "checked_out": pool.checkedout(),
-            "overflow": pool.overflow(),
+    if not columns:
+        raise ValueError("columns parameter is required and cannot be empty")
+    
+    # 表名处理：添加 schema 前缀（如果未指定）
+    if '.' not in table_name:
+        table_name = f'public.{table_name}'
+    schema_name, table_only = table_name.split('.', 1)
+    schema_name = schema_name.strip('"')
+    table_only = table_only.strip('"')
+    safe_table_name = f'"{schema_name}"."{table_only}"'
+    
+    # SQL 注入防护：验证列名只包含字母、数字、下划线、连字符
+    # 列名会被双引号包裹，进一步防止注入
+    safe_columns = []
+    for col in columns:
+        col = col.strip()
+        if not col:
+            continue
+        # 只允许字母、数字、下划线、连字符
+        if not all(c.isalnum() or c in ('_', '-') for c in col):
+            raise ValueError(f"Invalid column name: {col}")
+        safe_columns.append(f'"{col}"')
+    
+    if not safe_columns:
+        return [], 0
+    
+    # 转义搜索关键词中的特殊字符（LIKE 模式中的 % 和 _）
+    escaped_keyword = search_keyword.replace('%', r'\%').replace('_', r'\_')
+    search_pattern = f'%{escaped_keyword}%'
+    
+    # 选择 LIKE 或 ILIKE 操作符
+    like_operator = 'LIKE' if case_sensitive else 'ILIKE'
+    
+    # 构建 WHERE 子句：所有列的 OR 条件
+    where_conditions = [f'{col} {like_operator} :search_pattern' for col in safe_columns]
+    where_clause = ' OR '.join(where_conditions)
+    
+    # 构建 ORDER BY 子句（SQL 注入防护）
+    order_clause = ''
+    if order_by:
+        order_by = order_by.strip()
+        # 防止 SQL 注入：检查危险字符
+        if any(char in order_by for char in [';', '--', '/*', '*/', 'xp_', 'sp_']):
+            raise ValueError("Invalid order_by parameter: contains dangerous characters")
+        order_clause = f'ORDER BY {order_by}'
+    
+    # 构建查询：COUNT 查询和分页数据查询
+    count_query = text(f"""
+        SELECT COUNT(*) 
+        FROM {safe_table_name}
+        WHERE {where_clause}
+    """)
+    
+    data_query = text(f"""
+        SELECT * 
+        FROM {safe_table_name}
+        WHERE {where_clause}
+        {order_clause}
+        LIMIT :limit OFFSET :offset
+    """)
+    
+    # 执行查询
+    # 获取总数
+    count_result = await session.execute(
+        count_query,
+        {"search_pattern": search_pattern}
+    )
+    total = count_result.scalar() or 0
+    
+    # 获取分页数据
+    data_result = await session.execute(
+        data_query,
+        {
+            "search_pattern": search_pattern,
+            "limit": limit,
+            "offset": offset
         }
-    except Exception as e:
-        return {
-            "error": str(e),
-            "error_type": type(e).__name__
-        }
+    )
+    
+    # 转换为字典列表
+    rows = data_result.fetchall()
+    columns_from_result = data_result.keys()
+    results = [
+        {col: value for col, value in zip(columns_from_result, row)}
+        for row in rows
+    ]
+    
+    return results, total
 
 
 # ============================================================================
 # Module Exports
 # ============================================================================
 
-__all__ = ["engine", "AsyncSessionLocal", "Base", "get_db", "db_pool_logger", "check_db_health", "get_pool_status"]
+__all__ = ["engine", "AsyncSessionLocal", "Base", "get_db", "fuzzy_search_all_columns"]
+
