@@ -53,7 +53,7 @@
     }
   },
   "validation": {
-    "required": "필수 항목입니다",
+    "required": "{{field}}을(를) 입력해주세요",
     "passwordMismatch": "비밀번호가 일치하지 않습니다",
     "minLength": "최소 {{min}}자 이상 입력해주세요",
     "maxLength": "최대 {{max}}자까지 입력 가능합니다",

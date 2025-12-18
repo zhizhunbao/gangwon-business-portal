@@ -189,7 +189,6 @@ export default function InquiryDetail() {
             key: 'support-inquiry-history',
             path: '/member/support/inquiry-history',
             exact: true,
-            activePaths: ['/member/support/inquiry-history', '/member/support/inquiry'],
             label: t('support.inquiryHistory')
           }
         ]}

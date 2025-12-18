@@ -21,16 +21,25 @@ def get_client_info(request: Request) -> tuple[Optional[str], Optional[str]]:
     Returns:
         Tuple of (ip_address, user_agent)
     """
-    # Get IP address (considering proxy headers)
     ip_address = None
-    if request.client:
-        ip_address = request.client.host
-
-    # Check for X-Forwarded-For header (if behind proxy)
+    
+    # Check X-Forwarded-For header (common for reverse proxies)
     forwarded_for = request.headers.get("X-Forwarded-For")
     if forwarded_for:
-        # Take the first IP in the chain
+        # Take the first IP in the chain (original client)
         ip_address = forwarded_for.split(",")[0].strip()
+    
+    # Check X-Real-IP header (used by some proxies like nginx)
+    if not ip_address:
+        ip_address = request.headers.get("X-Real-IP")
+    
+    # Fall back to direct client host
+    if not ip_address and request.client:
+        ip_address = request.client.host
+    
+    # Normalize IPv6 localhost to IPv4
+    if ip_address == "::1":
+        ip_address = "127.0.0.1"
 
     # Get user agent
     user_agent = request.headers.get("user-agent")

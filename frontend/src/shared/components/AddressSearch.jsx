@@ -124,13 +124,7 @@ export function AddressSearch({
           postcodeRef.current = null;
         }
       },
-      onresize: (size) => {
-        // 弹窗大小调整
-        if (postcodeRef.current) {
-          postcodeRef.current.style.width = size.width + "px";
-          postcodeRef.current.style.height = size.height + "px";
-        }
-      },
+      // 不响应 onresize，保持弹窗固定大小
       width: "100%",
       height: "100%",
     });
@@ -138,7 +132,7 @@ export function AddressSearch({
     // 创建弹窗容器
     if (!postcodeRef.current) {
       const wrapper = document.createElement("div");
-      wrapper.className = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] max-w-[90vw] h-[600px] max-h-[90vh] z-[10000] bg-white rounded-lg shadow-2xl overflow-hidden md:w-[95vw] md:h-[80vh]";
+      wrapper.className = "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] max-w-[90vw] h-[500px] max-h-[80vh] z-[10000] bg-white rounded-lg shadow-2xl overflow-hidden";
       wrapper.id = "daum-postcode-wrapper";
       document.body.appendChild(wrapper);
       postcodeRef.current = wrapper;
@@ -185,8 +179,8 @@ export function AddressSearch({
         <button
           type="button"
           className={cn(
-            "px-4 py-2 bg-primary-600 text-white border-none rounded text-sm font-medium cursor-pointer whitespace-nowrap transition-colors duration-200",
-            "hover:bg-primary-700 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]",
+            "px-4 py-2 bg-[#0052a4] text-white border-none rounded-md text-sm font-medium cursor-pointer whitespace-nowrap transition-colors duration-200",
+            "hover:bg-[#003d7a] active:bg-[#003366] disabled:opacity-50 disabled:cursor-not-allowed",
             "sm:w-full"
           )}
           onClick={openAddressSearch}

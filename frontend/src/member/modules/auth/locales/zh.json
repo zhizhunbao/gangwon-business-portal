@@ -53,7 +53,7 @@
     }
   },
   "validation": {
-    "required": "此项为必填项",
+    "required": "请输入{{field}}",
     "passwordMismatch": "密码不匹配",
     "minLength": "至少需要{{min}}个字符",
     "maxLength": "最多允许{{max}}个字符",

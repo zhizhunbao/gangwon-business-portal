@@ -7,8 +7,46 @@ configures middleware, and registers routes.
 
 import logging
 import time
+from typing import Optional
 
 from fastapi import FastAPI, Request
+
+
+def get_client_ip(request: Request) -> Optional[str]:
+    """
+    Get real client IP address from request.
+    
+    Checks proxy headers (X-Forwarded-For, X-Real-IP) first,
+    then falls back to direct client host.
+    Normalizes IPv6 localhost (::1) to IPv4 (127.0.0.1).
+    
+    Args:
+        request: FastAPI Request object
+        
+    Returns:
+        Client IP address string or None
+    """
+    ip_address = None
+    
+    # Check X-Forwarded-For header (common for reverse proxies)
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        # Take the first IP in the chain (original client)
+        ip_address = forwarded_for.split(",")[0].strip()
+    
+    # Check X-Real-IP header (used by some proxies like nginx)
+    if not ip_address:
+        ip_address = request.headers.get("X-Real-IP")
+    
+    # Fall back to direct client host
+    if not ip_address and request.client:
+        ip_address = request.client.host
+    
+    # Normalize IPv6 localhost to IPv4
+    if ip_address == "::1":
+        ip_address = "127.0.0.1"
+    
+    return ip_address
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
@@ -96,8 +134,8 @@ async def log_http_requests(request: Request, call_next):
     # Generate trace_id for this request
     trace_id = get_trace_id(request)
 
-    # Get request information
-    ip_address = request.client.host if request.client else None
+    # Get real client IP address (considering reverse proxy headers)
+    ip_address = get_client_ip(request)
     user_agent = request.headers.get("user-agent")
     
     # Try to get user_id from request state (if authenticated)

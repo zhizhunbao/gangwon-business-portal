@@ -1,7 +1,7 @@
 """Log formatter for structured logging."""
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class JSONFormatter(logging.Formatter):
@@ -9,8 +9,8 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
-        # Use local timezone
-        timestamp = datetime.now().isoformat()
+        # Use UTC timezone with unified format
+        timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
         log_data = {
             "timestamp": timestamp,

@@ -45,14 +45,12 @@ export function useAuth() {
   };
   
   const register = async (userData) => {
+    // 注册不设置全局loading，因为注册页面有自己的loading状态
     try {
-      setLoading(true);
       const response = await authService.register(userData);
       return response;
     } catch (error) {
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
   

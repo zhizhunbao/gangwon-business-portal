@@ -10,7 +10,7 @@ Uses queue-based asynchronous writing to avoid blocking the main thread.
 import json
 import queue
 import threading
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from pathlib import Path
 from typing import Any, Optional, Tuple
 import logging
@@ -202,6 +202,10 @@ class FileLogWriter:
                 except Exception as e:
                     logging.warning(f"Failed to delete old log file {old_file}: {e}")
 
+    def _format_timestamp(self) -> str:
+        """Format timestamp in unified format: YYYY-MM-DD HH:MM:SS UTC."""
+        return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
     def _format_log_entry(
         self,
         level: str,
@@ -211,7 +215,7 @@ class FileLogWriter:
     ) -> str:
         """Format a log entry as JSON."""
         entry = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": self._format_timestamp(),
             "source": source,  # backend or frontend
             "level": level,
             "message": message,
@@ -229,7 +233,7 @@ class FileLogWriter:
     ) -> str:
         """Format an exception entry as JSON."""
         entry = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": self._format_timestamp(),
             "source": source,  # backend or frontend
             "exception_type": exception_type,
             "exception_message": exception_message,
@@ -399,17 +403,22 @@ class FileLogWriter:
         extra_data: Optional[dict[str, Any]] = None,
     ) -> str:
         """Format an audit log entry as JSON."""
+        # Use UTC time with timezone info for consistency
+        utc_now = datetime.now(timezone.utc)
         entry = {
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": utc_now.strftime("%Y-%m-%d %H:%M:%S UTC"),
             "action": action,
         }
-        if user_id:
-            entry["user_id"] = user_id
+        # Always include user_id field (even if None for clarity)
+        entry["user_id"] = user_id
         if resource_type:
             entry["resource_type"] = resource_type
         if resource_id:
             entry["resource_id"] = resource_id
+        # Normalize IP address (convert ::1 to 127.0.0.1 for localhost)
         if ip_address:
+            if ip_address == "::1":
+                ip_address = "127.0.0.1"
             entry["ip_address"] = ip_address
         if user_agent:
             entry["user_agent"] = user_agent

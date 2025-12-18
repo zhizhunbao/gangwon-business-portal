@@ -153,7 +153,7 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
       size="sm"
     >
       <div className="p-0">
-        {error && <div className="px-4 py-3 mb-6 text-red-700 bg-red-100 border-none rounded-md text-sm leading-relaxed">{error}</div>}
+        {error && <div className="px-4 py-3 mb-6 text-red-700 bg-red-50 border border-red-200 rounded-lg text-sm leading-relaxed">{error}</div>}
 
         <form onSubmit={handleSubmit} className="mt-0" autoComplete="on">
           <div className="mb-6 mt-0">
@@ -229,7 +229,7 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
               id="modal-remember-me"
               name="remember-me"
               type="checkbox"
-              className="mr-2 w-4 h-4 cursor-pointer accent-gray-900"
+              className="mr-2 w-4 h-4 cursor-pointer accent-[#0052a4]"
             />
             <label htmlFor="modal-remember-me" className="text-sm text-gray-700 cursor-pointer m-0">
               {t("auth.rememberMe")}
@@ -238,7 +238,7 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
 
           <button
             type="submit"
-            className={`w-full px-6 py-3.5 text-base font-medium leading-relaxed text-center text-white bg-gray-900 border-none rounded-md cursor-pointer transition-all duration-200 inline-flex items-center justify-center gap-2 box-border hover:bg-gray-700 active:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full px-6 py-3.5 text-base font-medium leading-relaxed text-center text-white bg-[#0052a4] border-none rounded-md cursor-pointer transition-all duration-200 inline-flex items-center justify-center gap-2 box-border hover:bg-[#003d7a] active:bg-[#003d7a] disabled:opacity-50 disabled:cursor-not-allowed ${
               isLoading ? "relative text-transparent" : ""
             }`}
             disabled={isLoading}
@@ -254,7 +254,7 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
           {t("auth.noAccount")}{" "}
           <button
             type="button"
-            className="bg-none border-none text-gray-900 cursor-pointer text-base font-medium font-inherit p-0 underline hover:text-gray-700"
+            className="bg-none border-none text-[#0052a4] cursor-pointer text-base font-medium font-inherit p-0 underline hover:text-[#003d7a]"
             onClick={() => {
               handleClose();
               if (onSwitchToRegister) onSwitchToRegister();

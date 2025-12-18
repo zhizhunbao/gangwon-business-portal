@@ -77,17 +77,17 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-10 px-5 bg-white relative">
+    <div className="min-h-screen flex flex-col items-center justify-center py-10 px-5 bg-[#f5f6f7] relative">
       <div className="absolute top-5 right-5">
         <LanguageSwitcher />
       </div>
 
       <div className="w-full max-w-md px-10 py-12 bg-white rounded-lg shadow-sm">
-        <div className="text-center mb-8 pb-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 m-0 tracking-tight">{t("common.appName")}</h2>
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 m-0">{t("common.login")}</h2>
         </div>
 
-        {error && <div className="px-4 py-3 mb-6 text-red-700 bg-red-100 border-none rounded-md text-sm leading-relaxed">{error}</div>}
+        {error && <div className="px-4 py-3 mb-6 text-red-700 bg-red-50 border border-red-200 rounded-lg text-sm leading-relaxed">{error}</div>}
 
         <form onSubmit={handleSubmit} className="mt-8" autoComplete="on">
           <div className="mb-6">
@@ -165,24 +165,23 @@ export default function Login() {
 
           <button
             type="submit"
-            className={`w-full px-6 py-3.5 text-base font-medium leading-relaxed text-center text-white bg-gray-900 border-none rounded-md cursor-pointer transition-all duration-200 inline-flex items-center justify-center gap-2 box-border hover:bg-gray-700 active:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full px-6 py-3 text-base font-medium text-center text-white bg-[#0052a4] border-none rounded cursor-pointer transition-all duration-200 inline-flex items-center justify-center gap-2 box-border hover:bg-[#003d7a] active:bg-[#003366] disabled:opacity-50 disabled:cursor-not-allowed ${
               isLoading ? "relative text-transparent" : ""
             }`}
             disabled={isLoading}
           >
             {isLoading && (
-              <div className="absolute w-4.5 h-4.5 top-1/2 left-1/2 -ml-2.25 -mt-2.25 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
+              <div className="absolute w-5 h-5 top-1/2 left-1/2 -ml-2.5 -mt-2.5 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
             )}
             {!isLoading && t("common.login")}
           </button>
         </form>
 
-        <div className="mt-8 pt-0 border-t-0 text-center text-base text-gray-500 leading-relaxed">
+        <div className="mt-8 text-center text-sm text-gray-500">
           {t("auth.noAccount")}{" "}
-          <Link to="/member/register" className="text-gray-900 no-underline font-medium hover:underline">
+          <Link to="/member/register" className="text-[#0052a4] no-underline font-medium hover:underline">
             {t("common.register")}
           </Link>
-          .
         </div>
       </div>
     </div>
