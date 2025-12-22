@@ -44,16 +44,27 @@ src/
 
 ## 代码规范
 
+### 日志与异常方案（现状）
+
+- 架构概览：日志与异常的实现目前是分散的
+  - 日志相关：`src/shared/utils/loggerHandler.js`（通用日志处理）、`src/shared/components/RouteLogger.jsx`（路由/页面链路日志）等
+  - 异常相关：`src/shared/utils/errorHandler.js`（错误格式化/上报）、`src/shared/hooks/useErrorHandler.js`（hook 层捕获）、`App.jsx` 中存在应用级 ErrorBoundary
+  - 服务层：`src/shared/services/*` 负责将 API 错误转换为结构化错误并决定上报或重抛
+
+- 当前问题：实现分散、重复较多、缺乏统一采样/脱敏与上报策略
+
+- 推荐短期策略：逐步抽取统一入口（例如 `src/aop/`），先在 `service`/`router`/全局 `error` 层接入集中化模块，再按需覆盖 `store`/关键 `components`/`hooks`
+
 ### JSX 组件编写规范
 
 1. **只关注业务逻辑**
-   - 不要在 JSX 文件中添加 `console.log`、`console.error` 等日志
-   - 不要使用 `try-catch` 进行错误处理
-   - 不要添加 fallback UI（如 ErrorBoundary 已在 App.jsx 中统一处理）
+   - 不要在 JSX 文件中添加 `console.log`、`console.error` 等日志（调试期间短期使用可接受，但提交前应移除）
+   - 组件可以使用 `try/catch` 或 `.catch()` 来捕获 API 调用失败以更新局部 UI 状态（例如在表单中显示红色错误提示）。但复杂的错误解析、重试策略或全局错误上报应仍然由服务层处理并抛出结构化错误（包含 `error_code`/`status`），组件仅负责展示。
+   - 不要添加全局 fallback UI（应用级别的 ErrorBoundary 已在 `App.jsx` 中统一处理）
 
 2. **错误处理**
    - 错误处理应在服务层（`shared/services/`）统一处理
-   - 组件层只负责调用服务和更新状态
+   - 组件层只负责调用服务和更新状态。**组件不得直接调用异常上报接口（例如 `exceptionService.recordException`）或做持久化日志记录；异常上报与日志记录应由服务层或 AOP 中间件统一负责。**
 
 3. **代码示例**
 

@@ -1,59 +1,25 @@
 """
 Storage service for file upload operations.
 """
-from supabase import create_client, Client
 from fastapi import UploadFile
 import uuid
 from typing import Optional
 
 from ..config import settings
+from ..supabase.client import get_supabase_client
 
 
 class StorageService:
     """Service for file storage operations using Supabase Storage."""
 
     def __init__(self):
-        """Initialize storage service with lazy client creation."""
-        self._client: Optional[Client] = None
+        """Initialize storage service."""
+        pass
 
     @property
-    def client(self) -> Client:
-        """Lazily create and return Supabase client."""
-        if self._client is None:
-            if settings.SUPABASE_URL == "https://placeholder.supabase.co":
-                raise ValueError(
-                    "Supabase URL not configured. "
-                    "Please set SUPABASE_URL in your .env file."
-                )
-            
-            # Prefer service role key for server-side operations (bypasses RLS)
-            # Fall back to anon key if service key is not available
-            supabase_key = settings.SUPABASE_SERVICE_KEY or settings.SUPABASE_KEY
-            
-            if supabase_key == "placeholder-key" or not supabase_key:
-                raise ValueError(
-                    "Supabase key not configured. "
-                    "Please set SUPABASE_SERVICE_KEY (recommended) or SUPABASE_KEY in your .env file. "
-                    "Service role key is required for file upload operations to bypass RLS policies."
-                )
-            
-            try:
-                self._client = create_client(settings.SUPABASE_URL, supabase_key)
-            except TypeError as e:
-                if "proxy" in str(e) and "unexpected keyword argument" in str(e):
-                    # This is a known compatibility issue between gotrue and httpx
-                    # The error occurs when gotrue tries to pass 'proxy' parameter to httpx Client
-                    # which is not supported in newer httpx versions
-                    raise ValueError(
-                        "Supabase client initialization failed due to library compatibility issue. "
-                        "This is a known issue with gotrue/httpx versions. "
-                        "To fix this, please reinstall dependencies:\n"
-                        "  pip install --upgrade 'supabase==2.25.1' 'gotrue>=2.12.0' 'httpx>=0.26.0,<0.27.0'\n"
-                        "Or if using requirements.txt:\n"
-                        "  pip install -r requirements.txt --force-reinstall"
-                    ) from e
-                raise
-        return self._client
+    def client(self):
+        """Get Supabase client for storage operations."""
+        return get_supabase_client()
 
     async def upload_file(
         self,

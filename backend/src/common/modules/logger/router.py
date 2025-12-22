@@ -21,6 +21,8 @@ from .schemas import (
     LogListQuery,
     AppLogResponse,
     FrontendLogCreate,
+    FrontendLogBatchCreate,
+    AppLogCreate,
 )
 
 router = APIRouter()
@@ -142,47 +144,154 @@ async def list_frontend_logs(
 
 @router.post("/api/v1/logging/frontend/logs")
 async def create_frontend_log(
-    log_data: FrontendLogCreate,
+    log_data: FrontendLogBatchCreate,
 ):
     """
-    Create a frontend application log entry.
+    Create frontend application log entries (batch).
     
-    This endpoint is specifically for frontend to record logs.
+    This endpoint is specifically for frontend to record logs in batches.
     Backend logs should be recorded directly via logging_service (not through this API).
     No authentication required for this endpoint (but should be rate-limited in production).
+    
+    Optimized for fast response to avoid logging loops.
     """
+    import asyncio
     from uuid import UUID
     
-    # Convert user_id from string to UUID if provided
-    user_id = None
-    if log_data.user_id:
+    # Quick validation and early return for empty batches
+    if not log_data.logs:
+        return {"status": "ok", "processed": 0, "failed": 0, "total": 0}
+    
+    # Limit batch size to prevent performance issues
+    max_batch_size = 50
+    if len(log_data.logs) > max_batch_size:
+        # Process only the first batch_size logs to maintain performance
+        log_data.logs = log_data.logs[:max_batch_size]
+    
+    async def process_log_entry(log_entry):
+        """Process a single log entry asynchronously with minimal overhead."""
         try:
-            user_id = UUID(log_data.user_id)
-        except (ValueError, TypeError):
-            # Invalid UUID format, ignore user_id
-            pass
+            # Convert user_id from string to UUID if provided
+            user_id = None
+            if log_entry.user_id:
+                try:
+                    user_id = UUID(log_entry.user_id)
+                except (ValueError, TypeError):
+                    # Invalid UUID format, ignore user_id
+                    pass
+            
+            # Simplified performance log detection
+            is_performance_log = (hasattr(log_entry, 'layer') and 
+                                log_entry.layer == 'Performance')
+            
+            if is_performance_log:
+                # Simplified performance log processing
+                from .schemas import PerformanceLogCreate
+                
+                extra_data = log_entry.extra_data or {}
+                
+                # Quick metric extraction with defaults
+                metric_name = "performance_metric"
+                metric_value = 0.0
+                metric_unit = "ms"
+                
+                # Fast pattern matching for common metrics
+                message = log_entry.message
+                if "memory" in message.lower():
+                    metric_name = "memory_usage"
+                    metric_value = float(extra_data.get("used", 0))
+                    metric_unit = "bytes"
+                elif "network" in message.lower() or "request" in message.lower():
+                    metric_name = "network_request"
+                    metric_value = float(extra_data.get("duration_ms", 0))
+                elif "report" in message.lower():
+                    metric_name = "performance_report"
+                    metric_value = 1.0
+                    metric_unit = "report"
+                
+                # Convert request_id to string if needed
+                request_id = extra_data.get("request_id")
+                if request_id is not None and not isinstance(request_id, str):
+                    request_id = str(request_id)
+                
+                await logging_service.performance(PerformanceLogCreate(
+                    source="frontend",
+                    metric_name=metric_name,
+                    metric_value=metric_value,
+                    metric_unit=metric_unit,
+                    layer=log_entry.layer,
+                    module=log_entry.module,
+                    component_name=extra_data.get("component_name"),
+                    trace_id=log_entry.trace_id,
+                    request_id=request_id,
+                    user_id=user_id,
+                    threshold=extra_data.get("threshold_ms"),
+                    performance_issue=extra_data.get("performance_issue"),
+                    web_vitals=extra_data.get("web_vitals"),
+                    extra_data=extra_data,
+                ))
+            else:
+                # Regular application log with minimal processing
+                await logging_service.log(AppLogCreate(
+                    source="frontend",
+                    level=log_entry.level,
+                    message=log_entry.message,
+                    module=log_entry.module,
+                    function=log_entry.function,
+                    line_number=log_entry.line_number,
+                    trace_id=log_entry.trace_id,
+                    user_id=user_id,
+                    ip_address=log_entry.ip_address,
+                    user_agent=log_entry.user_agent,
+                    request_method=log_entry.request_method,
+                    request_path=log_entry.request_path,
+                    request_data=log_entry.request_data,
+                    response_status=log_entry.response_status,
+                    duration_ms=log_entry.duration_ms,
+                    extra_data=log_entry.extra_data,
+                ))
+            return True
+        except Exception as e:
+            # Minimal error logging to avoid recursion
+            return False
     
-    # Force source to be frontend
-    logging_service.create_log(
-        source="frontend",  # Always frontend for this endpoint
-        level=log_data.level,
-        message=log_data.message,
-        module=log_data.module,
-        function=log_data.function,
-        line_number=log_data.line_number,
-        trace_id=log_data.trace_id,
-        user_id=user_id,
-        ip_address=log_data.ip_address,
-        user_agent=log_data.user_agent,
-        request_method=log_data.request_method,
-        request_path=log_data.request_path,
-        request_data=log_data.request_data,
-        response_status=log_data.response_status,
-        duration_ms=log_data.duration_ms,
-        extra_data=log_data.extra_data,
-    )
+    # Optimized concurrent processing with smaller batches
+    concurrent_batch_size = 5  # Reduced from 10 to improve response time
+    processed = 0
+    failed = 0
     
-    return {"status": "ok"}
+    # Process in smaller concurrent batches for better performance
+    for i in range(0, len(log_data.logs), concurrent_batch_size):
+        batch = log_data.logs[i:i + concurrent_batch_size]
+        
+        # Process batch with timeout to prevent hanging
+        try:
+            tasks = [process_log_entry(log_entry) for log_entry in batch]
+            results = await asyncio.wait_for(
+                asyncio.gather(*tasks, return_exceptions=True),
+                timeout=2.0  # 2 second timeout per batch
+            )
+            
+            # Count results
+            for result in results:
+                if result is True:
+                    processed += 1
+                else:
+                    failed += 1
+                    
+        except asyncio.TimeoutError:
+            # If batch times out, count all as failed
+            failed += len(batch)
+        except Exception:
+            # If batch fails completely, count all as failed
+            failed += len(batch)
+    
+    return {
+        "status": "ok", 
+        "processed": processed,
+        "failed": failed,
+        "total": len(log_data.logs)
+    }
 
 
 @router.get("/api/v1/logging/logs/{log_id}", response_model=AppLogResponse)

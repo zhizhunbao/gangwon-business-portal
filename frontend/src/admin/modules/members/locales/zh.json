@@ -50,6 +50,7 @@
         "industry": "行业",
         "phone": "电话",
         "email": "邮箱",
+        "createdAt": "注册时间",
         "searchNiceDnb": "查询 Nice D&B",
         "viewPerformance": "查看业绩管理",
         "nicednbInfo": "Nice D&B 信息",

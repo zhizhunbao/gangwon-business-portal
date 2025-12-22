@@ -330,7 +330,7 @@ async function searchCompanies(req) {
     id: member.id,
     companyName: member.companyName,
     businessNumber: member.businessLicense,
-    representative: member.representativeName,
+    representative: member.representative,
     industry: member.industry || '제조업',
     region: member.region || '강원특별자치도',
     status: member.approvalStatus,

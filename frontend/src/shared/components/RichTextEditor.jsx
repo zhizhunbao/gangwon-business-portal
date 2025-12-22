@@ -60,7 +60,7 @@ export const RichTextEditor = ({
           alert('图片上传失败，请重试');
         }
       } catch (err) {
-        console.error('Image upload error:', err);
+        // AOP 系统会自动记录错误
         alert(err.message || '图片上传失败，请重试');
       }
     };

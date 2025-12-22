@@ -6,64 +6,9 @@ import {
   HTTP_STATUS,
 } from "@shared/utils/constants";
 import { getStorage, setStorage, removeStorage } from "@shared/utils/storage";
-import { loggerService } from "@shared/utils/loggerHandler";
-import { handleError } from "@shared/utils/errorHandler";
-
-function sanitizeRequestData(data) {
-  if (!data) return null;
-  try {
-    if (data instanceof FormData) {
-      return { _type: "FormData", _size: "hidden" };
-    }
-    let parsedData = data;
-    if (typeof data === "string") {
-      try {
-        parsedData = JSON.parse(data);
-      } catch (e) {
-        return {
-          _type: "string",
-          _length: data.length,
-          _preview: data.substring(0, 100),
-        };
-      }
-    }
-    if (
-      typeof parsedData !== "object" ||
-      parsedData === null ||
-      Array.isArray(parsedData)
-    ) {
-      const str = String(parsedData);
-      if (str.length > 500) {
-        return {
-          _type: typeof parsedData,
-          _truncated: true,
-          _preview: str.substring(0, 100),
-        };
-      }
-      return parsedData;
-    }
-    const sanitized = { ...parsedData };
-    const sensitiveFields = [
-      "password",
-      "password_hash",
-      "token",
-      "access_token",
-      "refresh_token",
-      "secret",
-      "api_key",
-    ];
-    sensitiveFields.forEach((field) => {
-      if (sanitized[field]) sanitized[field] = "***REDACTED***";
-    });
-    const jsonStr = JSON.stringify(sanitized);
-    if (jsonStr.length > 500) {
-      return { ...sanitized, _truncated: true, _original_size: jsonStr.length };
-    }
-    return sanitized;
-  } catch (e) {
-    return { _error: "Failed to sanitize data" };
-  }
-}
+import { createApiInterceptors } from "@shared/interceptors/api.interceptor";
+import { logger } from "@shared/utils/logger";
+import { exceptionHandler } from "@shared/utils/errorHandler";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -71,39 +16,21 @@ const apiClient = axios.create({
   headers: { "Content-Type": "application/json", Accept: "application/json" },
 });
 
+// 创建 API 拦截器
+const interceptors = createApiInterceptors();
+
 apiClient.interceptors.request.use(
   (config) => {
-    // Prevent infinite loop: Don't log the logging requests themselves
-    if (config.url?.includes("/logging/") || config.url?.includes("/logs")) {
-      return config;
-    }
+    // 应用 API 日志拦截器
+    config = interceptors.request(config);
 
+    // 添加认证和语言头
     const token = getStorage(ACCESS_TOKEN_KEY);
     if (token) config.headers.Authorization = `Bearer ${token}`;
     const language = getStorage("language") || "ko";
     config.headers["Accept-Language"] = language;
-    // Pass frontend-generated trace_id to backend via X-Trace-Id header for request correlation
-    if (loggerService.traceId) {
-      config.headers["X-Trace-Id"] = loggerService.traceId;
-    }
+
     if (config.data instanceof FormData) delete config.headers["Content-Type"];
-
-    // Start timing for duration tracking
-    config._startTime = performance.now();
-
-    // Log Request Start
-    try {
-      loggerService.debug(
-        `API Request: ${config.method?.toUpperCase()} ${config.url}`,
-        {
-          module: "API",
-          request_method: config.method?.toUpperCase(),
-          request_url: config.url,
-        }
-      );
-    } catch (e) {
-      // Ignore logging errors during request setup
-    }
 
     return config;
   },
@@ -114,86 +41,35 @@ apiClient.interceptors.request.use(
 
 apiClient.interceptors.response.use(
   (response) => {
-    // Ignore logging requests
-    if (
-      response.config.url?.includes("/logging/") ||
-      response.config.url?.includes("/logs")
-    ) {
-      return response.data;
-    }
-
-    // Calculate Duration
-    const startTime = response.config._startTime;
-    const duration = startTime ? Math.round(performance.now() - startTime) : 0;
-
-    // Log Success
-    try {
-      const method = response.config.method?.toUpperCase();
-      const url = response.config.url;
-
-      loggerService.info(`API Success: ${method} ${url}`, {
-        module: "API",
-        request_method: method,
-        request_url: url,
-        response_status: response.status,
-        duration_ms: duration,
-      });
-
-      // Performance Warning - 对于某些端点使用更高的阈值（threads 端点通常较慢）
-      const slowThreshold = url?.includes('/threads/') ? 3000 : 2000;
-      if (duration > slowThreshold) {
-        loggerService.warn(`Slow API Warning: ${method} ${url}`, {
-          module: "API",
-          request_method: method,
-          request_url: url,
-          duration_ms: duration,
-          performance_issue: "SLOW_API",
-        });
-      }
-    } catch (e) {
-      // Ignore logging errors
-    }
+    // 应用 API 日志拦截器
+    response = interceptors.response(response);
 
     if (response.config.responseType === "blob") return response;
     return response.data;
   },
   async (error) => {
+    // 应用 API 错误日志拦截器
+    interceptors.error(error);
+
     const originalRequest = error.config;
 
-    // Ignore logging requests failure to prevent loops
-    if (
-      originalRequest?.url?.includes("/logging/") ||
-      originalRequest?.url?.includes("/logs")
-    ) {
-      return Promise.reject(error);
-    }
-
-    const duration = originalRequest?._startTime
-      ? Math.round(performance.now() - originalRequest._startTime)
-      : 0;
-
-    // Log API Error
+    // AOP 系统会自动记录 API 错误
     try {
-      const method = originalRequest?.method?.toUpperCase();
-      const url = originalRequest?.url;
-      const status = error.response?.status || 0;
-
-      loggerService.error(`API Failed: ${method} ${url}`, {
-        module: "API",
-        request_method: method,
-        request_url: url,
-        response_status: status,
-        error_message: error.message,
-        duration_ms: duration,
-      });
+      // 保留错误处理逻辑，移除调试日志
     } catch (e) {
-      // Ignore logging errors
+      // ignore
     }
+
+    // Skip 401 handling for login requests - let the login component handle the error
+    const requestUrl = originalRequest?.url || "";
+    const isLoginRequest = requestUrl.includes("/auth/login");
 
     if (
       error.response?.status === HTTP_STATUS.UNAUTHORIZED &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !isLoginRequest
     ) {
+      // AOP 系统会自动记录 401 处理
       originalRequest._retry = true;
       try {
         const refreshToken = getStorage("refresh_token");
@@ -260,24 +136,16 @@ apiClient.interceptors.response.use(
       error.message ||
       "An error occurred";
 
-    // Use errorHandler to handle the error consistently
-    const errorObj = {
-      ...error,
-      response: {
-        ...error.response,
-        data: {
-          ...error.response?.data,
-          message: errorMessage,
-        },
-      },
-    };
-    
-    handleError(errorObj, {
-      request_method: originalRequest?.method?.toUpperCase(),
-      request_path: url,
-      status_code: error.response?.status,
-      error_code: error.response?.data?.code,
-    });
+    // Skip global error handling for login requests - let the login component handle it
+    if (!isLoginRequest) {
+      // Use exception handler to handle the error consistently
+      exceptionHandler.handleError(error, {
+        request_method: error.config?.method?.toUpperCase(),
+        request_path: error.config?.url,
+        status_code: error.response?.status,
+        context_data: { isLoginRequest },
+      });
+    }
 
     return Promise.reject({
       message: errorMessage,

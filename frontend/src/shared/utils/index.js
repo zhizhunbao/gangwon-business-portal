@@ -7,4 +7,5 @@ export * from "./format";
 export * from "./validation";
 export * from "./storage";
 export * from "./helpers";
-export { default as loggerService, LOG_LEVELS, autoLog } from "./loggerHandler";
+export { logger, LOG_LAYERS } from "./logger";
+export { exceptionService, exceptionHandler } from "./errorHandler";

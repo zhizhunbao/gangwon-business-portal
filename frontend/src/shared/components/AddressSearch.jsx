@@ -5,7 +5,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { loggerService } from "@shared/utils/loggerHandler";
 import { exceptionService } from "@shared/utils/errorHandler";
 import { cn } from "@shared/utils/helpers";
 
@@ -49,18 +48,11 @@ export function AddressSearch({
       "https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js";
     script.async = true;
     script.onload = () => {
-      loggerService.info("Daum Postcode API loaded", {
-        module: "AddressSearch",
-        function: "loadDaumPostcodeScript",
-      });
+      // AOP 系统会自动处理成功日志
     };
     script.onerror = () => {
       const error = new Error("Failed to load Daum Postcode API");
-      loggerService.error("Failed to load Daum Postcode API", {
-        module: "AddressSearch",
-        function: "loadDaumPostcodeScript",
-        error_message: error.message,
-      });
+      // AOP 系统会自动处理异常日志
       exceptionService.recordException(error, {
         request_path: window.location.pathname,
         error_code: "LOAD_DAUM_POSTCODE_API_FAILED",

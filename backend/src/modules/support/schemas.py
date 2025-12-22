@@ -93,15 +93,39 @@ class InquiryListItem(BaseModel):
     
     id: UUID
     member_id: UUID
-    member_name: Optional[str] = Field(None, description="Member company name")
-    category: Optional[str] = Field(default="general", description="Inquiry category")
+    member_name: str  # 必填，数据库里没有就报错
+    category: str  # 必填，数据库里没有就报错
     subject: str
     status: str
     created_at: datetime
-    replied_at: Optional[datetime]
+    replied_at: Optional[datetime]  # 这个可以为空，因为可能还没回复
     
     class Config:
         from_attributes = True
+        
+    @classmethod
+    def from_db_dict(cls, data: dict, member_name_override: Optional[str] = None):
+        """
+        Create InquiryListItem from database dictionary.
+        
+        Args:
+            data: Raw database dictionary
+            member_name_override: Optional override for member_name (used for member's own inquiries)
+            
+        Returns:
+            InquiryListItem instance
+        """
+        # Basic fields - let it fail if required fields are missing
+        return cls(
+            id=data["id"],
+            member_id=data["member_id"],
+            member_name=member_name_override or data["member_name"],
+            category=data["category"],
+            subject=data["subject"],
+            status=data["status"],
+            created_at=data["created_at"],
+            replied_at=data.get("replied_at"),  # 可以为空
+        )
 
 
 class InquiryListResponse(BaseModel):

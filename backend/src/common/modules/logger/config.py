@@ -81,7 +81,7 @@ def setup_logging() -> None:
     # File handler for system logs (Python standard logging)
     # Note: 
     # - system.log: Standard Python logging (logging.error, logging.info, etc.) - system/framework logs
-    # - app.log: Application business logs via logging_service.create_log() - business logic logs
+    # - app.log: Application business logs via logging_service.log(AppLogCreate(...)) - business logic logs
     # - error.log: Application exceptions via exception service
     # - audit.log: Audit logs for compliance
     enable_file = getattr(settings, "LOG_ENABLE_FILE", True)  # Default to True (write to system.log)

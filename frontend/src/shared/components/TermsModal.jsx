@@ -9,7 +9,6 @@ import { Modal } from './Modal';
 import { Loading } from './Loading';
 import { Alert } from './Alert';
 import contentService from '@shared/services/content.service';
-import { loggerService } from '@shared/utils/loggerHandler';
 import { exceptionService } from '@shared/utils/errorHandler';
 import { cn } from '@shared/utils/helpers';
 
@@ -88,13 +87,7 @@ export function TermsModal({ isOpen, termType, onClose }) {
       const placeholderContent = getPlaceholderContent(type, language);
       setContent(placeholderContent);
     } catch (err) {
-      loggerService.error('Failed to load terms content', {
-        module: 'TermsModal',
-        function: 'loadTermsContent',
-        term_type: type,
-        error_message: err.message,
-        error_code: err.code
-      });
+      // AOP 系统会自动处理异常日志
       exceptionService.recordException(err, {
         request_path: window.location.pathname,
         error_code: err.code || 'LOAD_TERMS_CONTENT_FAILED',

@@ -41,7 +41,7 @@ export default function ThreadDetailModal({
         }, 100);
       }
     } catch (err) {
-      console.error('Failed to load thread detail:', err);
+      // AOP 系统会自动记录错误
     } finally {
       setLoading(false);
     }
@@ -73,7 +73,7 @@ export default function ThreadDetailModal({
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     } catch (err) {
-      console.error('Failed to send reply:', err);
+      // AOP 系统会自动记录错误
       alert(t('support.replyFailed'));
     } finally {
       setSubmitting(false);

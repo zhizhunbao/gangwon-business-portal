@@ -28,11 +28,19 @@ export default function App() {
   // Initialize authentication state on app load - validate token
   useEffect(() => {
     const validateToken = async () => {
-      if (isAuthenticated) {
+      // Only validate if we have a stored token
+      const hasToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      
+      if (hasToken && isAuthenticated) {
         try {
-          await getCurrentUser();
+          const user = await getCurrentUser();
+          if (!user) {
+            // Token无效，认证状态已被清除
+            console.log('[App] Token validation failed, auth state cleared');
+          }
         } catch (error) {
-          // Token is invalid, auth state already cleared by getCurrentUser
+          // 其他错误（非401）
+          console.error('[App] Token validation error:', error);
         }
       }
     };

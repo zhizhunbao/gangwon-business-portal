@@ -1,23 +1,38 @@
 """Logging module.
 
-This module provides structured logging functionality for the application.
-It exports a configured logger instance, logging utilities, and application log services.
-Exception services are in the exception module.
+This module provides unified structured logging functionality for the application.
+All log types use the same API pattern and write to both file and database.
 
 Usage:
-    from ...common.modules.logger import logger, logging_service
-    
-    # Standard logging
-    logger.info("Application started")
-    logger.error("Error occurred", exc_info=True)
-    
-    # Application log recording
-    logging_service.create_log(
-        source="backend",
-        level="ERROR",
-        message="Something went wrong",
-        trace_id=trace_id,
+    from ...common.modules.logger import logging_service
+    from ...common.modules.logger.schemas import (
+        AppLogCreate, ErrorLogCreate, AuditLogCreate, PerformanceLogCreate
     )
+    
+    # Application logs -> app.log + DB
+    await logging_service.app(AppLogCreate(
+        level="INFO",
+        message="User logged in",
+        layer="Auth"
+    ))
+    
+    # Error logs -> error.log + DB
+    await logging_service.error(ErrorLogCreate(
+        error_type="ValidationError",
+        error_message="Invalid input"
+    ))
+    
+    # Audit logs -> audit.log + DB
+    await logging_service.audit(AuditLogCreate(
+        action="login",
+        user_id=user_id
+    ))
+    
+    # Performance logs -> performance.log + DB
+    await logging_service.performance(PerformanceLogCreate(
+        metric_name="api_response_time",
+        metric_value=150.5
+    ))
 """
 import logging
 
@@ -28,7 +43,15 @@ from .service import LoggingService
 # NOTE: router is imported lazily to avoid circular import with db.session
 # Use get_logging_router() instead of logging_router directly
 from .request import get_trace_id, set_request_context, get_request_context
-from .decorator import auto_log
+from .middleware import (
+    HTTPLoggingMiddleware,
+    get_client_ip,
+    extract_or_generate_trace_id,
+    extract_or_generate_request_id,
+    determine_log_level,
+    should_skip_logging,
+    SLOW_REQUEST_THRESHOLD_MS,
+)
 
 # Initialize logging on import
 setup_logging()
@@ -57,6 +80,13 @@ __all__ = [
     "get_trace_id",
     "set_request_context",
     "get_request_context",
-    "auto_log",
+    # HTTP Logging Middleware
+    "HTTPLoggingMiddleware",
+    "get_client_ip",
+    "extract_or_generate_trace_id",
+    "extract_or_generate_request_id",
+    "determine_log_level",
+    "should_skip_logging",
+    "SLOW_REQUEST_THRESHOLD_MS",
 ]
 

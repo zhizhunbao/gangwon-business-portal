@@ -3,14 +3,14 @@
  * 登录弹窗组件
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@shared/hooks";
 import { Modal } from "./Modal";
 import { EyeIcon, EyeOffIcon } from "./Icons";
 import { formatBusinessLicense } from "@shared/utils/format";
-import { loggerService, exceptionService } from "@shared/services";
+// Exception reporting handled by service layer / AOP; components should not call reporting directly.
 import { API_PREFIX } from "@shared/utils/constants";
 // Auth styles converted to Tailwind classes
 
@@ -32,30 +32,13 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
     try {
       // Remove dashes from business number for API call
       const businessNumberClean = formData.businessNumber.replace(/-/g, "");
+      // AOP 系统会自动记录登录尝试
       const response = await login({
         businessNumber: businessNumberClean,
         password: formData.password,
       });
 
-      // Log successful login
-      const maskedBusinessNumber =
-        businessNumberClean.length > 3
-          ? `${businessNumberClean.substring(
-              0,
-              3
-            )}-${businessNumberClean.substring(3, 5)}-*****`
-          : "***-***-*****";
-      loggerService.info("Member login successful (modal)", {
-        request_method: "POST",
-        request_path: `${API_PREFIX}/auth/login`,
-        response_status: 200,
-        extra_data: {
-          component: "LoginModal",
-          action: "handleSubmit",
-          user_role: response.user?.role,
-          business_number_masked: maskedBusinessNumber,
-        },
-      });
+      // Successful login (UI-only handling — logging handled via AOP)
 
       // Call success callback if provided
       if (onSuccess) {
@@ -65,13 +48,41 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
       // Close modal
       onClose();
     } catch (err) {
-      // Extract error message properly
-      const errorMessage =
-        err.response?.data?.message ||
-        err.response?.data?.detail ||
+      // AOP 系统会自动记录登录错误
+      // Extract error message - API service returns { message, status, code, details }
+      const rawResponse = err.response?.data || {};
+      const rawErrorMessage =
         err.message ||
-        (typeof err === "string" ? err : JSON.stringify(err)) ||
+        rawResponse.message ||
+        rawResponse.detail ||
+        (typeof err === "string" ? err : null) ||
         t("auth.loginFailed");
+
+      // Prefer server-provided error_code when possible, then fall back to matching localized messages
+      let errorMessage = t("auth.loginFailed");
+      const serverCode = rawResponse.error_code || rawResponse.code || err.code || "";
+
+      if (serverCode === "ACCOUNT_PENDING_APPROVAL") {
+        errorMessage = t("auth.approvalPending");
+      } else if (serverCode === "INVALID_CREDENTIALS" || serverCode === "INVALID_ADMIN_CREDENTIALS") {
+        errorMessage = t("auth.invalidCredentials");
+      } else if (serverCode === "ACCOUNT_SUSPENDED") {
+        errorMessage = t("auth.accountSuspended");
+      } else {
+        const lowerMessage = String(rawErrorMessage || "").toLowerCase();
+        const pendingTranslation = t("auth.approvalPending").toLowerCase();
+        const invalidTranslation = t("auth.invalidCredentials").toLowerCase();
+
+        if (pendingTranslation && lowerMessage.includes(pendingTranslation)) {
+          errorMessage = t("auth.approvalPending");
+        } else if (invalidTranslation && lowerMessage.includes(invalidTranslation)) {
+          errorMessage = t("auth.invalidCredentials");
+        } else if (rawErrorMessage) {
+          errorMessage = rawErrorMessage;
+        }
+      }
+
+      // AOP 系统会自动记录错误设置
       setError(errorMessage);
 
       // Log login failure
@@ -84,37 +95,9 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
             )}-${businessNumberClean.substring(3, 5)}-*****`
           : "***-***-*****";
 
-      const errorObj =
-        err instanceof Error ? err : new Error(errorMessage || "Login failed");
+      // Exception reporting is handled centrally (service layer / AOP). Component only sets UI state.
 
-      if (!errorObj.message || errorObj.message === "[object Object]") {
-        errorObj.message = errorMessage;
-      }
-
-      exceptionService.recordException(errorObj, {
-        request_method: "POST",
-        request_path: `${API_PREFIX}/auth/login`,
-        error_code: err.response?.data?.code || err.code || "LOGIN_FAILED",
-        status_code: err.response?.status || err.status,
-        context_data: {
-          component: "LoginModal",
-          action: "handleSubmit",
-          business_number_masked: maskedBusinessNumber,
-        },
-      });
-
-      loggerService.warn("Member login failed (modal)", {
-        request_method: "POST",
-        request_path: `${API_PREFIX}/auth/login`,
-        response_status: err.response?.status || err.status,
-        error_code: err.response?.data?.code || err.code || "LOGIN_FAILED",
-        error_message: errorMessage,
-        extra_data: {
-          component: "LoginModal",
-          action: "handleSubmit",
-          business_number_masked: maskedBusinessNumber,
-        },
-      });
+      // Login failure recorded by exceptionService; additional logging via AOP
     }
   };
 
@@ -140,10 +123,13 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
 
   // Reset form when modal closes
   const handleClose = () => {
+    // AOP 系统会自动记录组件事件
     setFormData({ businessNumber: "", password: "" });
     setError("");
     onClose();
   };
+
+  // 移除调试日志 - AOP 系统会自动处理组件生命周期
 
   return (
     <Modal
@@ -151,6 +137,8 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
       onClose={handleClose}
       title={t("auth.login")}
       size="sm"
+      disableBackdropClose={isLoading || Boolean(error)}
+      showCloseButton={!isLoading && !error}
     >
       <div className="p-0">
         {error && <div className="px-4 py-3 mb-6 text-red-700 bg-red-50 border border-red-200 rounded-lg text-sm leading-relaxed">{error}</div>}

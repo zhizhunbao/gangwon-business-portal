@@ -12,7 +12,6 @@ from fastapi import Request
 
 from ...common.modules.db.models import Member
 from ...common.modules.audit import audit_log
-from ...common.modules.logger import auto_log
 from ..user.dependencies import get_current_admin_user
 from ..upload.service import UploadService
 from .service import ContentService
@@ -55,7 +54,6 @@ BANNER_KEYS = ['main_primary', 'about', 'projects', 'performance', 'support']
     tags=["content"],
     summary="List notices",
 )
-@auto_log("list_notices", log_result_count=True)
 async def list_notices(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -63,6 +61,7 @@ async def list_notices(
 ):
     """
     List notices with pagination and optional search.
+    Data formatting is handled by schemas.
 
     - **page**: Page number (default: 1)
     - **page_size**: Items per page (default: 20, max: 100)
@@ -70,8 +69,9 @@ async def list_notices(
     """
     notices, total = await service.get_notices(page, page_size, search)
 
+    # Use schema to format data - no manual conversion needed
     return NoticeListResponse(
-        items=[NoticeListItem(**n) for n in notices],
+        items=[NoticeListItem.from_db_dict(n, include_admin_fields=False) for n in notices],
         total=total,
         page=page,
         page_size=page_size,
@@ -85,11 +85,10 @@ async def list_notices(
     tags=["content"],
     summary="Get latest 5 notices",
 )
-@auto_log("get_latest_notices")
 async def get_latest_notices():
     """Get latest 5 notices for homepage."""
     notices = await service.get_notice_latest5()
-    return [NoticeListItem(**n) for n in notices]
+    return [NoticeListItem.from_db_dict(n) for n in notices]
 
 
 @router.get(
@@ -98,7 +97,6 @@ async def get_latest_notices():
     tags=["content"],
     summary="Get notice detail",
 )
-@auto_log("get_notice", log_resource_id=True)
 async def get_notice(
     notice_id: UUID,
 ):
@@ -121,7 +119,6 @@ async def get_notice(
     tags=["content", "admin"],
     summary="Create notice",
 )
-@auto_log("create_notice", log_resource_id=True)
 @audit_log(action="create", resource_type="notice")
 async def create_notice(
     data: NoticeCreate,
@@ -146,7 +143,6 @@ async def create_notice(
     tags=["content", "admin"],
     summary="Update notice",
 )
-@auto_log("update_notice", log_resource_id=True)
 @audit_log(action="update", resource_type="notice")
 async def update_notice(
     notice_id: UUID,
@@ -166,7 +162,6 @@ async def update_notice(
     tags=["content", "admin"],
     summary="Delete notice",
 )
-@auto_log("delete_notice", log_resource_id=True)
 @audit_log(action="delete", resource_type="notice")
 async def delete_notice(
     notice_id: UUID,
@@ -185,21 +180,22 @@ async def delete_notice(
     tags=["content"],
     summary="List press releases",
 )
-@auto_log("list_press_releases", log_result_count=True)
 async def list_press_releases(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ):
     """
     List press releases with pagination.
+    Data formatting is handled by schemas.
 
     - **page**: Page number (default: 1)
     - **page_size**: Items per page (default: 20, max: 100)
     """
     press_releases, total = await service.get_press_releases(page, page_size)
 
+    # Use schema to format data - no manual conversion needed
     return PressListResponse(
-        items=[PressListItem(**p) for p in press_releases],
+        items=[PressListItem.from_db_dict(p, include_admin_fields=False) for p in press_releases],
         total=total,
         page=page,
         page_size=page_size,
@@ -229,7 +225,6 @@ async def get_latest_press():
     tags=["content"],
     summary="Get press release detail",
 )
-@auto_log("get_press_release", log_resource_id=True)
 async def get_press_release(
     press_id: UUID,
 ):
@@ -248,7 +243,6 @@ async def get_press_release(
     tags=["content", "admin"],
     summary="Create press release",
 )
-@auto_log("create_press_release", log_resource_id=True)
 @audit_log(action="create", resource_type="press_release")
 async def create_press_release(
     data: PressReleaseCreate,
@@ -273,7 +267,6 @@ async def create_press_release(
     tags=["content", "admin"],
     summary="Update press release",
 )
-@auto_log("update_press_release", log_resource_id=True)
 @audit_log(action="update", resource_type="press_release")
 async def update_press_release(
     press_id: UUID,
@@ -293,7 +286,6 @@ async def update_press_release(
     tags=["content", "admin"],
     summary="Delete press release",
 )
-@auto_log("delete_press_release", log_resource_id=True)
 @audit_log(action="delete", resource_type="press_release")
 async def delete_press_release(
     press_id: UUID,
@@ -312,7 +304,6 @@ async def delete_press_release(
     tags=["content"],
     summary="Get banners",
 )
-@auto_log("get_banners")
 async def get_banners(
     banner_type: Optional[str] = Query(default=None, description="Banner type: main_primary, about, projects, performance, support"),
 ):
@@ -342,7 +333,6 @@ async def get_banners(
     tags=["content", "admin"],
     summary="Get all banners (admin)",
 )
-@auto_log("get_all_banners")
 async def get_all_banners(
     current_user: Member = Depends(get_current_admin_user),
 ):
@@ -367,7 +357,6 @@ async def get_all_banners(
     tags=["content", "admin"],
     summary="Create banner",
 )
-@auto_log("create_banner", log_resource_id=True)
 @audit_log(action="create", resource_type="banner")
 async def create_banner(
     data: BannerCreate,
@@ -389,7 +378,6 @@ async def create_banner(
     tags=["content", "admin"],
     summary="Update banner",
 )
-@auto_log("update_banner", log_resource_id=True)
 @audit_log(action="update", resource_type="banner")
 async def update_banner(
     banner_id: UUID,
@@ -412,7 +400,6 @@ async def update_banner(
     tags=["content", "admin"],
     summary="Delete banner",
 )
-@auto_log("delete_banner", log_resource_id=True)
 @audit_log(action="delete", resource_type="banner")
 async def delete_banner(
     banner_id: UUID,
@@ -429,7 +416,6 @@ async def delete_banner(
     tags=["content", "admin"],
     summary="Get banners by key (admin)",
 )
-@auto_log("get_banners_by_key")
 async def get_banners_by_key(
     request: Request,
     current_user: Member = Depends(get_current_admin_user),
@@ -485,7 +471,6 @@ async def get_banners_by_key(
     tags=["content", "admin"],
     summary="Update banner by key (admin)",
 )
-@auto_log("update_banner_by_key", log_resource_id=True)
 @audit_log(action="update", resource_type="banner")
 async def update_banner_by_key(
     banner_key: str,
@@ -582,7 +567,6 @@ async def update_banner_by_key(
     tags=["content"],
     summary="Get system information",
 )
-@auto_log("get_system_info")
 async def get_system_info():
     """Get system introduction content."""
     system_info = await service.get_system_info()
@@ -601,7 +585,6 @@ async def get_system_info():
     tags=["content", "admin"],
     summary="Update system information",
 )
-@auto_log("update_system_info", log_resource_id=True)
 @audit_log(action="update", resource_type="system_info")
 async def update_system_info(
     data: SystemInfoUpdate,
@@ -628,7 +611,6 @@ async def update_system_info(
     tags=["content"],
     summary="Get active popup",
 )
-@auto_log("get_active_popup")
 async def get_active_popup():
     """
     Get active popup for public display.
@@ -651,7 +633,6 @@ async def get_active_popup():
     tags=["content", "admin"],
     summary="Get all popups (admin)",
 )
-@auto_log("get_all_popups")
 async def get_all_popups(
     current_user: Member = Depends(get_current_admin_user),
 ):
@@ -668,7 +649,6 @@ async def get_all_popups(
     tags=["content", "admin"],
     summary="Get popup by ID (admin)",
 )
-@auto_log("get_popup", log_resource_id=True)
 async def get_popup(
     popup_id: UUID,
     current_user: Member = Depends(get_current_admin_user),
@@ -686,7 +666,6 @@ async def get_popup(
     tags=["content", "admin"],
     summary="Create popup",
 )
-@auto_log("create_popup", log_resource_id=True)
 @audit_log(action="create", resource_type="popup")
 async def create_popup(
     data: PopupCreate,
@@ -705,7 +684,6 @@ async def create_popup(
     tags=["content", "admin"],
     summary="Update popup",
 )
-@auto_log("update_popup", log_resource_id=True)
 @audit_log(action="update", resource_type="popup")
 async def update_popup(
     popup_id: UUID,
@@ -725,7 +703,6 @@ async def update_popup(
     tags=["content", "admin"],
     summary="Delete popup",
 )
-@auto_log("delete_popup", log_resource_id=True)
 @audit_log(action="delete", resource_type="popup")
 async def delete_popup(
     popup_id: UUID,
@@ -744,7 +721,6 @@ async def delete_popup(
     tags=["content", "admin"],
     summary="Get popup for dashboard (admin)",
 )
-@auto_log("get_dashboard_popup")
 async def get_dashboard_popup(
     current_user: Member = Depends(get_current_admin_user),
 ):
@@ -761,7 +737,6 @@ async def get_dashboard_popup(
     tags=["content", "admin"],
     summary="Create or update popup for dashboard (admin)",
 )
-@auto_log("save_dashboard_popup", log_resource_id=True)
 @audit_log(action="update", resource_type="popup")
 async def save_dashboard_popup(
     request: Request,

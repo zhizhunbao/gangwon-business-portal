@@ -38,7 +38,7 @@ class MemberService {
         logo: response.logo_url,
         logoUrl: response.logo_url,
         phone: response.phone,
-        representativeName: response.representative,
+        representative: response.representative,
         corporationNumber: response.legal_number,
         createdAt: response.created_at,
         updatedAt: response.updated_at,
@@ -135,8 +135,8 @@ class MemberService {
     if (data.logoUrl !== undefined) {
       requestData.logo_url = data.logoUrl;
     }
-    if (data.representativeName !== undefined) {
-      requestData.representative_name = data.representativeName;
+    if (data.representative !== undefined) {
+      requestData.representative = data.representative;
     }
     if (data.corporationNumber !== undefined) {
       requestData.corporation_number = data.corporationNumber;

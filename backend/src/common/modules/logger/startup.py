@@ -7,6 +7,7 @@ import logging
 from ..config import settings
 from .file_writer import file_log_writer
 from .service import LoggingService
+from .schemas import AppLogCreate
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ async def clear_logs_on_startup() -> tuple[list[str], int, int]:
         ("app.log", file_log_writer.application_logs_file),  # Application business logs
         ("error.log", file_log_writer.application_exceptions_file),  # Application exceptions
         ("audit.log", file_log_writer.audit_logs_file),  # Audit logs
+        ("performance.log", file_log_writer.performance_logs_file),  # Performance logs - 添加性能日志清理
     ]
     
     cleared_files = []
@@ -46,7 +48,7 @@ async def clear_logs_on_startup() -> tuple[list[str], int, int]:
     return cleared_files, logs_count, exceptions_count
 
 
-def write_startup_logs(
+async def write_startup_logs(
     startup_message: str,
     debug_mode_message: str,
     log_clear_message: str | None = None,
@@ -64,42 +66,42 @@ def write_startup_logs(
     logging_service = LoggingService()
     
     # Write startup messages (from main.py lifespan)
-    logging_service.create_log(
+    await logging_service.log(AppLogCreate(
         source="backend",
         level="INFO",
         message=startup_message,
         module="src.main",
         function="lifespan",
         line_number=30,
-    )
-    logging_service.create_log(
+    ))
+    await logging_service.log(AppLogCreate(
         source="backend",
         level="INFO",
         message=debug_mode_message,
         module="src.main",
         function="lifespan",
         line_number=31,
-    )
+    ))
     
     # Write cleanup messages (from logger.startup module)
     if log_clear_message:
-        logging_service.create_log(
+        await logging_service.log(AppLogCreate(
             source="backend",
             level="INFO",
             message=log_clear_message,
             module=__name__,
             function="write_startup_logs",
             line_number=96,
-        )
+        ))
     if db_clear_message:
-        logging_service.create_log(
+        await logging_service.log(AppLogCreate(
             source="backend",
             level="INFO",
             message=db_clear_message,
             module=__name__,
             function="write_startup_logs",
             line_number=107,
-        )
+        ))
 
 
 async def handle_startup_logging() -> None:
@@ -134,7 +136,7 @@ async def handle_startup_logging() -> None:
             )
             
             # Write startup logs to file after clearing
-            write_startup_logs(
+            await write_startup_logs(
                 startup_message=startup_message,
                 debug_mode_message=debug_mode_message,
                 log_clear_message=log_clear_message,
@@ -144,7 +146,7 @@ async def handle_startup_logging() -> None:
             logger.warning(f"Failed to clear logs on startup: {str(e)}")
             # Still try to write startup messages even if cleanup failed
             try:
-                write_startup_logs(
+                await write_startup_logs(
                     startup_message=startup_message,
                     debug_mode_message=debug_mode_message,
                 )
@@ -153,7 +155,7 @@ async def handle_startup_logging() -> None:
     else:
         # Even if not clearing logs, write startup messages to file
         try:
-            write_startup_logs(
+            await write_startup_logs(
                 startup_message=startup_message,
                 debug_mode_message=debug_mode_message,
             )

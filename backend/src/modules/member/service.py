@@ -7,7 +7,7 @@ from typing import Optional
 from uuid import UUID
 from datetime import datetime, date
 
-from ...common.modules.db.models import Member, MemberProfile  # 保留用于类型提示和文档
+from ...common.modules.db.models import Member  # Member table now includes profile fields
 from ...common.modules.exception import NotFoundError, ValidationError, ConflictError
 from ...common.modules.supabase.service import supabase_service
 from ...common.modules.integrations.nice_dnb.schemas import NiceDnBResponse
@@ -176,8 +176,8 @@ class MemberService:
             profile_update['region'] = data.region
         if data.address is not None:
             profile_update['address'] = data.address
-        if data.representative_name is not None:
-            profile_update['representative'] = data.representative_name
+        if data.representative is not None:
+            profile_update['representative'] = data.representative
         if data.corporation_number is not None:
             profile_update['legal_number'] = data.corporation_number
         if data.phone is not None:
@@ -210,8 +210,11 @@ class MemberService:
             Tuple of (members list, total count)
         """
         members, total = await supabase_service.list_members_with_filters(
-            order_by="created_at",
-            order_desc=True,
+            search=query.search,
+            approval_status=query.approval_status,
+            region=query.region,
+            sort_by="created_at",
+            sort_order="desc",
         )
         
         return members, total
@@ -318,8 +321,8 @@ class MemberService:
         """
         # Get all members (without pagination or filtering)
         members, _ = await supabase_service.list_members_with_filters(
-            order_by="created_at",
-            order_desc=True,
+            sort_by="created_at",
+            sort_order="desc",
         )
 
         # Convert to dict format for export
@@ -444,3 +447,5 @@ class MemberService:
                 .insert(db_data)\
                 .execute()
 
+# Service instance
+member_service = MemberService()

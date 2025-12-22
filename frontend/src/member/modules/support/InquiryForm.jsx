@@ -152,7 +152,7 @@ export default function InquiryForm({ onSubmitSuccess }) {
         navigate(`/member/support/inquiry/${thread.id}`);
       }
     } catch (err) {
-      console.error('Failed to create thread:', err);
+      // AOP 系统会自动记录错误
       setError(t('support.submitFailed'));
     } finally {
       setIsSubmitting(false);

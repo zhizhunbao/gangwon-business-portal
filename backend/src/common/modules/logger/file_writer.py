@@ -6,15 +6,21 @@ This module provides thread-safe asynchronous file writing for:
 - audit.log - Audit logs (compliance and security tracking)
 
 Uses queue-based asynchronous writing to avoid blocking the main thread.
+Uses database models to ensure consistent formatting between file and database logs.
 """
 import json
 import queue
 import threading
 from datetime import datetime, date, timezone
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Dict, Union
 import logging
 import re
+from uuid import UUID, uuid4
+
+# Import database models for consistent formatting
+from ..db.models import AppLog, ErrorLog, SystemLog, AuditLog, PerformanceLog
+from .utils import format_timestamp
 
 
 class FileLogWriter:
@@ -53,12 +59,15 @@ class FileLogWriter:
         # Merged exceptions (backend + frontend) for easier debugging with trace_id correlation
         self.application_exceptions_file = self.logs_dir / "error.log"
         self.audit_logs_file = self.logs_dir / "audit.log"
+        # Performance logs for performance metrics and monitoring - Requirements 9.9
+        self.performance_logs_file = self.logs_dir / "performance.log"
 
         # Initialize log files (create empty files if they don't exist)
         for log_file in [
             self.application_logs_file,
             self.application_exceptions_file,
             self.audit_logs_file,
+            self.performance_logs_file,
         ]:
             if not log_file.exists():
                 log_file.touch()
@@ -203,8 +212,126 @@ class FileLogWriter:
                     logging.warning(f"Failed to delete old log file {old_file}: {e}")
 
     def _format_timestamp(self) -> str:
-        """Format timestamp in unified format: YYYY-MM-DD HH:MM:SS UTC."""
-        return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        """Format timestamp in unified format: YYYY-MM-DD HH:MM:SS.mmm (local time)."""
+        return format_timestamp()
+
+    def _create_log_dict_from_model(
+        self,
+        source: str,
+        level: str,
+        message: str,
+        layer: Optional[str] = None,
+        module: Optional[str] = None,
+        function: Optional[str] = None,
+        line_number: Optional[int] = None,
+        trace_id: Optional[str] = None,
+        request_id: Optional[str] = None,
+        user_id: Optional[Union[str, UUID]] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        request_method: Optional[str] = None,
+        request_path: Optional[str] = None,
+        request_data: Optional[Dict[str, Any]] = None,
+        response_status: Optional[int] = None,
+        duration_ms: Optional[int] = None,
+        extra_data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Create a log dictionary using the same structure as AppLog model.
+        
+        This ensures file logs have exactly the same format as database logs.
+        """
+        # Create a dictionary with the same fields as AppLog model
+        log_dict = {
+            "timestamp": self._format_timestamp(),
+            "source": source,
+            "level": level.upper(),
+            "message": message,
+        }
+        
+        # Add optional fields (only if not None)
+        optional_fields = {
+            "layer": layer,
+            "module": module,
+            "function": function,
+            "line_number": line_number,
+            "trace_id": trace_id,
+            "request_id": request_id,
+            "user_id": str(user_id) if user_id else None,
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "request_method": request_method,
+            "request_path": request_path,
+            "request_data": request_data,
+            "response_status": response_status,
+            "duration_ms": duration_ms,
+            "extra_data": extra_data,
+        }
+        
+        # Only add non-None values
+        for key, value in optional_fields.items():
+            if value is not None:
+                log_dict[key] = value
+        
+        return log_dict
+
+    def _create_error_dict_from_model(
+        self,
+        source: str,
+        error_type: str,
+        error_message: str,
+        stack_trace: Optional[str] = None,
+        layer: Optional[str] = None,
+        module: Optional[str] = None,
+        function: Optional[str] = None,
+        line_number: Optional[int] = None,
+        trace_id: Optional[str] = None,
+        user_id: Optional[Union[str, UUID]] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        request_method: Optional[str] = None,
+        request_path: Optional[str] = None,
+        request_data: Optional[Dict[str, Any]] = None,
+        error_details: Optional[Dict[str, Any]] = None,
+        context_data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Create an error dictionary using the same structure as ErrorLog model.
+        
+        This ensures file error logs have exactly the same format as database error logs.
+        """
+        # Create a dictionary with the same fields as ErrorLog model
+        error_dict = {
+            "timestamp": self._format_timestamp(),
+            "source": source,
+            "exception_type": error_type,
+            "exception_message": error_message,
+        }
+        
+        # Add optional fields (only if not None)
+        optional_fields = {
+            "stack_trace": stack_trace,
+            "layer": layer,
+            "module": module,
+            "function": function,
+            "line_number": line_number,
+            "trace_id": trace_id,
+            "user_id": str(user_id) if user_id else None,
+            "ip_address": ip_address,
+            "user_agent": user_agent,
+            "request_method": request_method,
+            "request_path": request_path,
+            "request_data": request_data,
+            "error_details": error_details,
+            "context_data": context_data,
+        }
+        
+        # Only add non-None values
+        for key, value in optional_fields.items():
+            if value is not None:
+                error_dict[key] = value
+        
+        return error_dict
 
     def _format_log_entry(
         self,
@@ -213,16 +340,45 @@ class FileLogWriter:
         source: Optional[str] = None,
         extra_data: Optional[dict[str, Any]] = None,
     ) -> str:
-        """Format a log entry as JSON."""
-        entry = {
-            "timestamp": self._format_timestamp(),
-            "source": source,  # backend or frontend
+        """Format a log entry as JSON using database model structure."""
+        # Extract fields from extra_data
+        kwargs = {
+            "source": source or "backend",
             "level": level,
             "message": message,
         }
+        
         if extra_data:
-            entry.update(extra_data)
-        return json.dumps(entry, ensure_ascii=False)
+            # Map extra_data fields to model parameters
+            field_mapping = {
+                "layer": "layer",
+                "module": "module",
+                "function": "function", 
+                "line_number": "line_number",
+                "trace_id": "trace_id",
+                "request_id": "request_id",
+                "user_id": "user_id",
+                "ip_address": "ip_address",
+                "user_agent": "user_agent",
+                "request_method": "request_method",
+                "request_path": "request_path",
+                "request_data": "request_data",
+                "response_status": "response_status",
+                "duration_ms": "duration_ms",
+            }
+            
+            for extra_key, param_key in field_mapping.items():
+                if extra_key in extra_data:
+                    kwargs[param_key] = extra_data[extra_key]
+            
+            # Add remaining fields as extra_data
+            remaining_data = {k: v for k, v in extra_data.items() if k not in field_mapping}
+            if remaining_data:
+                kwargs["extra_data"] = remaining_data
+        
+        # Create log dictionary using model structure
+        log_dict = self._create_log_dict_from_model(**kwargs)
+        return json.dumps(log_dict, ensure_ascii=False, default=str)
 
     def _format_exception_entry(
         self,
@@ -231,26 +387,243 @@ class FileLogWriter:
         source: Optional[str] = None,
         extra_data: Optional[dict[str, Any]] = None,
     ) -> str:
-        """Format an exception entry as JSON."""
-        entry = {
-            "timestamp": self._format_timestamp(),
-            "source": source,  # backend or frontend
-            "exception_type": exception_type,
-            "exception_message": exception_message,
+        """Format an exception entry as JSON using database model structure."""
+        kwargs = {
+            "source": source or "backend",
+            "error_type": exception_type,
+            "error_message": exception_message,
         }
+        
         if extra_data:
-            entry.update(extra_data)
-        return json.dumps(entry, ensure_ascii=False)
+            # Map extra_data fields to model parameters
+            field_mapping = {
+                "stack_trace": "stack_trace",
+                "layer": "layer",
+                "module": "module", 
+                "function": "function",
+                "line_number": "line_number",
+                "trace_id": "trace_id",
+                "user_id": "user_id",
+                "ip_address": "ip_address",
+                "user_agent": "user_agent",
+                "request_method": "request_method",
+                "request_path": "request_path",
+                "request_data": "request_data",
+                "error_details": "error_details",
+                "context_data": "context_data",
+            }
+            
+            for extra_key, param_key in field_mapping.items():
+                if extra_key in extra_data:
+                    kwargs[param_key] = extra_data[extra_key]
+            
+            # Add remaining fields as context_data
+            remaining_data = {k: v for k, v in extra_data.items() if k not in field_mapping}
+            if remaining_data:
+                if "context_data" not in kwargs:
+                    kwargs["context_data"] = {}
+                kwargs["context_data"].update(remaining_data)
+        
+        # Create error dictionary using model structure
+        error_dict = self._create_error_dict_from_model(**kwargs)
+        return json.dumps(error_dict, ensure_ascii=False, default=str)
+
+    def write_app_log(self, app_log: "AppLog") -> None:
+        """
+        Write an application log entry using AppLog model object.
+        
+        Args:
+            app_log: AppLog model instance
+        """
+        # Convert model to dictionary for JSON serialization
+        log_dict = {
+            "timestamp": self._format_timestamp(),
+            "source": app_log.source,
+            "level": app_log.level,
+            "message": app_log.message,
+        }
+        
+        # Add optional fields (only if not None)
+        optional_fields = {
+            "layer": app_log.layer,
+            "module": app_log.module,
+            "function": app_log.function,
+            "line_number": app_log.line_number,
+            "trace_id": app_log.trace_id,
+            "request_id": app_log.request_id,
+            "user_id": str(app_log.user_id) if app_log.user_id else None,
+            "ip_address": app_log.ip_address,
+            "user_agent": app_log.user_agent,
+            "request_method": app_log.request_method,
+            "request_path": app_log.request_path,
+            "request_data": app_log.request_data,
+            "response_status": app_log.response_status,
+            "duration_ms": app_log.duration_ms,
+            "extra_data": app_log.extra_data,
+        }
+        
+        # Only add non-None values
+        for key, value in optional_fields.items():
+            if value is not None:
+                log_dict[key] = value
+        
+        # Convert to JSON string
+        formatted_entry = json.dumps(log_dict, ensure_ascii=False, default=str)
+        
+        # Enqueue log entry for asynchronous writing
+        try:
+            # Write all logs (backend + frontend) to the same file for easier debugging
+            # Use source field to distinguish between backend and frontend logs
+            self.log_queue.put((self.application_logs_file, formatted_entry), block=False)
+        except queue.Full:
+            # Queue is full - log warning but don't block
+            logging.warning("Log file queue is full, dropping log entry")
+
+    def write_error_log(self, error_log: "ErrorLog") -> None:
+        """
+        Write an error log entry using ErrorLog model object.
+        
+        Args:
+            error_log: ErrorLog model instance
+        """
+        # Convert model to dictionary for JSON serialization
+        log_dict = {
+            "timestamp": self._format_timestamp(),
+            "source": error_log.source,
+            "error_type": error_log.error_type,
+            "error_message": error_log.error_message,
+        }
+        
+        # Add optional fields (only if not None)
+        optional_fields = {
+            "error_code": error_log.error_code,
+            "status_code": error_log.status_code,
+            "stack_trace": error_log.stack_trace,
+            "layer": error_log.layer,
+            "module": error_log.module,
+            "function": error_log.function,
+            "line_number": error_log.line_number,
+            "trace_id": error_log.trace_id,
+            "user_id": str(error_log.user_id) if error_log.user_id else None,
+            "ip_address": error_log.ip_address,
+            "user_agent": error_log.user_agent,
+            "request_method": error_log.request_method,
+            "request_path": error_log.request_path,
+            "request_data": error_log.request_data,
+            "error_details": error_log.error_details,
+            "context_data": error_log.context_data,
+        }
+        
+        # Only add non-None values
+        for key, value in optional_fields.items():
+            if value is not None:
+                log_dict[key] = value
+        
+        # Convert to JSON string
+        formatted_entry = json.dumps(log_dict, ensure_ascii=False, default=str)
+        
+        # Enqueue log entry for asynchronous writing
+        try:
+            self.log_queue.put((self.application_exceptions_file, formatted_entry), block=False)
+        except queue.Full:
+            logging.warning("Log file queue is full, dropping error log entry")
+
+    def write_audit_log(self, audit_log: "AuditLog") -> None:
+        """
+        Write an audit log entry using AuditLog model object.
+        
+        Args:
+            audit_log: AuditLog model instance
+        """
+        # Normalize IP address (convert ::1 to 127.0.0.1 for localhost)
+        ip_address = audit_log.ip_address
+        if ip_address == "::1":
+            ip_address = "127.0.0.1"
+        
+        # Convert model to dictionary for JSON serialization
+        log_dict = {
+            "timestamp": self._format_timestamp(),
+            "action": audit_log.action,
+        }
+        
+        # Add optional fields (only if not None)
+        optional_fields = {
+            "user_id": str(audit_log.user_id) if audit_log.user_id else None,
+            "resource_type": audit_log.resource_type,
+            "resource_id": str(audit_log.resource_id) if audit_log.resource_id else None,
+            "ip_address": ip_address,
+            "user_agent": audit_log.user_agent,
+        }
+        
+        # Only add non-None values
+        for key, value in optional_fields.items():
+            if value is not None:
+                log_dict[key] = value
+        
+        # Convert to JSON string
+        formatted_entry = json.dumps(log_dict, ensure_ascii=False, default=str)
+        
+        # Enqueue log entry for asynchronous writing
+        try:
+            self.log_queue.put((self.audit_logs_file, formatted_entry), block=False)
+        except queue.Full:
+            logging.warning("Log file queue is full, dropping audit log entry")
+
+    def write_performance_log(self, performance_log: "PerformanceLog") -> None:
+        """
+        Write a performance log entry using PerformanceLog model object.
+        
+        Args:
+            performance_log: PerformanceLog model instance
+        """
+        # Convert model to dictionary for JSON serialization
+        log_dict = {
+            "timestamp": self._format_timestamp(),
+            "source": performance_log.source,
+            "metric_name": performance_log.metric_name,
+            "metric_value": performance_log.metric_value,
+            "metric_unit": performance_log.metric_unit,
+        }
+        
+        # Add optional fields (only if not None)
+        optional_fields = {
+            "layer": performance_log.layer,
+            "module": performance_log.module,
+            "component_name": performance_log.component_name,
+            "trace_id": performance_log.trace_id,
+            "request_id": performance_log.request_id,
+            "user_id": str(performance_log.user_id) if performance_log.user_id else None,
+            "threshold": performance_log.threshold,
+            "performance_issue": performance_log.performance_issue,
+            "web_vitals": performance_log.web_vitals,
+            "extra_data": performance_log.extra_data,
+        }
+        
+        # Only add non-None values
+        for key, value in optional_fields.items():
+            if value is not None:
+                log_dict[key] = value
+        
+        # Convert to JSON string
+        formatted_entry = json.dumps(log_dict, ensure_ascii=False, default=str)
+        
+        # Enqueue log entry for asynchronous writing
+        try:
+            self.log_queue.put((self.performance_logs_file, formatted_entry), block=False)
+        except queue.Full:
+            logging.warning("Log file queue is full, dropping performance log entry")
 
     def write_log(
         self,
         source: str,  # backend, frontend
         level: str,
         message: str,
-        module: Optional[str] = None,
+        layer: Optional[str] = None,  # Service, Router, Auth, Store, Component, Hook, Performance, Middleware, Database, Audit
+        module: Optional[str] = None,  # Deprecated: use layer instead, kept for backward compatibility
         function: Optional[str] = None,
         line_number: Optional[int] = None,
         trace_id: Optional[str] = None,
+        request_id: Optional[str] = None,
         user_id: Optional[str] = None,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
@@ -267,10 +640,12 @@ class FileLogWriter:
             source: Source of the log (backend/frontend)
             level: Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)
             message: Log message
-            module: Module name
+            layer: AOP layer (Service, Router, Auth, Store, Component, Hook, Performance, Middleware, Database, Audit)
+            module: Module name (deprecated, use layer instead)
             function: Function name
             line_number: Line number
             trace_id: Request trace ID
+            request_id: Request ID in format {traceId}-{sequence}
             user_id: User ID
             ip_address: IP address
             user_agent: User agent string
@@ -281,11 +656,15 @@ class FileLogWriter:
             duration_ms: Request duration in milliseconds
             extra_data: Additional context data
         """
+        # Use layer if provided, otherwise fall back to module for backward compatibility
+        effective_layer = layer or module
+        
         log_data = {
-            "module": module,
+            "layer": effective_layer,
             "function": function,
             "line_number": line_number,
             "trace_id": trace_id,
+            "request_id": request_id,
             "user_id": str(user_id) if user_id else None,
             "ip_address": ip_address,
             "user_agent": user_agent,
@@ -403,10 +782,10 @@ class FileLogWriter:
         extra_data: Optional[dict[str, Any]] = None,
     ) -> str:
         """Format an audit log entry as JSON."""
-        # Use UTC time with timezone info for consistency
-        utc_now = datetime.now(timezone.utc)
+        # Use local time with milliseconds for consistency
+        local_now = datetime.now()
         entry = {
-            "timestamp": utc_now.strftime("%Y-%m-%d %H:%M:%S UTC"),
+            "timestamp": local_now.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
             "action": action,
         }
         # Always include user_id field (even if None for clarity)
@@ -424,6 +803,48 @@ class FileLogWriter:
             entry["user_agent"] = user_agent
         if extra_data:
             entry.update(extra_data)
+        return json.dumps(entry, ensure_ascii=False)
+
+    def _format_performance_entry(
+        self,
+        metric_name: str,
+        metric_value: float,
+        metric_unit: str = "ms",
+        source: Optional[str] = None,
+        component_name: Optional[str] = None,
+        trace_id: Optional[str] = None,
+        request_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        extra_data: Optional[dict[str, Any]] = None,
+    ) -> str:
+        """Format a performance log entry as JSON.
+        
+        Args:
+            metric_name: Name of the performance metric (e.g., 'render_time', 'api_response_time')
+            metric_value: Numeric value of the metric
+            metric_unit: Unit of measurement (default: 'ms')
+            source: Source of the metric (backend/frontend)
+            component_name: Name of the component being measured
+            trace_id: Request trace ID for correlation
+            request_id: Request ID for correlation
+            user_id: User ID associated with the metric
+            extra_data: Additional performance context data
+        """
+        entry = {
+            "timestamp": self._format_timestamp(),
+            "source": source,
+            "metric_name": metric_name,
+            "metric_value": metric_value,
+            "metric_unit": metric_unit,
+            "component_name": component_name,
+            "trace_id": trace_id,
+            "request_id": request_id,
+            "user_id": str(user_id) if user_id else None,
+        }
+        # Remove None values
+        entry = {k: v for k, v in entry.items() if v is not None}
+        if extra_data:
+            entry["extra_data"] = extra_data
         return json.dumps(entry, ensure_ascii=False)
 
     def write_audit_log(
@@ -470,6 +891,76 @@ class FileLogWriter:
                         f.write(formatted_entry + "\n")
             except Exception as e:
                 logging.error(f"Failed to write audit log to file: {e}")
+
+    def write_performance_log_params(
+        self,
+        metric_name: str,
+        metric_value: float,
+        metric_unit: str = "ms",
+        source: Optional[str] = None,
+        component_name: Optional[str] = None,
+        trace_id: Optional[str] = None,
+        request_id: Optional[str] = None,
+        user_id: Optional[str] = None,
+        threshold: Optional[float] = None,
+        performance_issue: Optional[str] = None,
+        web_vitals: Optional[dict[str, Any]] = None,
+        extra_data: Optional[dict[str, Any]] = None,
+    ) -> None:
+        """Write a performance log entry to performance.log file - Requirements 9.9.
+
+        Args:
+            metric_name: Name of the performance metric (e.g., 'render_time', 'api_response_time', 'FCP', 'LCP', 'TTI')
+            metric_value: Numeric value of the metric
+            metric_unit: Unit of measurement (default: 'ms')
+            source: Source of the metric (backend/frontend)
+            component_name: Name of the component being measured
+            trace_id: Request trace ID for correlation
+            request_id: Request ID for correlation
+            user_id: User ID associated with the metric
+            threshold: Performance threshold that was exceeded (if applicable)
+            performance_issue: Type of performance issue (e.g., 'SLOW_API', 'POOR_FCP', 'SLOW_COMPONENT_RENDER')
+            web_vitals: Web Vitals metrics snapshot (FCP, LCP, TTI, CLS)
+            extra_data: Additional performance context data
+        """
+        # Build performance-specific extra data
+        perf_extra_data = {}
+        if threshold is not None:
+            perf_extra_data["threshold"] = threshold
+            if metric_value > threshold:
+                perf_extra_data["exceeded_by"] = metric_value - threshold
+        if performance_issue:
+            perf_extra_data["performance_issue"] = performance_issue
+        if web_vitals:
+            perf_extra_data["web_vitals"] = web_vitals
+        if extra_data:
+            perf_extra_data.update(extra_data)
+
+        formatted_entry = self._format_performance_entry(
+            metric_name=metric_name,
+            metric_value=metric_value,
+            metric_unit=metric_unit,
+            source=source,
+            component_name=component_name,
+            trace_id=trace_id,
+            request_id=request_id,
+            user_id=str(user_id) if user_id else None,
+            extra_data=perf_extra_data if perf_extra_data else None,
+        )
+
+        # Enqueue performance log entry for asynchronous writing
+        try:
+            self.log_queue.put((self.performance_logs_file, formatted_entry), block=False)
+        except queue.Full:
+            # If queue is full, fallback to synchronous write to avoid losing logs
+            logging.warning("Log queue is full, falling back to synchronous write")
+            try:
+                with self.write_lock:
+                    self._rotate_file_if_needed(self.performance_logs_file)
+                    with open(self.performance_logs_file, "a", encoding="utf-8") as f:
+                        f.write(formatted_entry + "\n")
+            except Exception as e:
+                logging.error(f"Failed to write performance log to file: {e}")
 
     def close(self, timeout: float = 5.0) -> None:
         """Close file writer gracefully, ensuring all queued logs are written.

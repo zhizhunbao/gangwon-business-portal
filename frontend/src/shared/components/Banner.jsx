@@ -9,7 +9,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   contentService,
-  loggerService,
   exceptionService,
 } from "@shared/services";
 import { BANNER_TYPES, ROUTES } from "@shared/utils/constants";
@@ -186,11 +185,7 @@ export default function Banner({
       try {
         await Promise.all(newBanners.map((banner) => preloadImage(banner.imageUrl)));
       } catch (error) {
-        loggerService.warn("Some banner images failed to preload", {
-          module: "Banner",
-          function: "loadBanners",
-          error_message: error.message,
-        });
+        // AOP 系统会自动处理异常日志
       }
 
       bannerCache.set(cacheKey, { banners: newBanners, timestamp: Date.now() });
@@ -198,13 +193,7 @@ export default function Banner({
       setDisplayBanners(newBanners);
       setCurrentBanner(0);
     } catch (error) {
-      loggerService.error("Failed to load banners", {
-        module: "Banner",
-        function: "loadBanners",
-        banner_type: bannerType,
-        error_message: error.message,
-        error_code: error.code,
-      });
+      // AOP 系统会自动处理异常日志
       exceptionService.recordException(error, {
         request_path: window.location.pathname,
         error_code: error.code || "LOAD_BANNERS_FAILED",
@@ -222,7 +211,7 @@ export default function Banner({
       try {
         await preloadImage(fallbackBanner[0].imageUrl);
       } catch (preloadError) {
-        loggerService.warn("Fallback banner image failed to preload");
+        // AOP 系统会自动处理异常日志
       }
 
       setMainBanners(fallbackBanner);
@@ -236,12 +225,7 @@ export default function Banner({
   useEffect(() => {
     if (bannerType) {
       loadBanners().catch((error) => {
-        loggerService.error("Failed to load banners", {
-          module: "Banner",
-          function: "useEffect",
-          banner_type: bannerType,
-          error_message: error.message,
-        });
+        // AOP 系统会自动处理异常日志
         setIsLoading(false);
       });
     }

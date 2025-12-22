@@ -4,7 +4,7 @@ Exception schemas.
 Pydantic models for application exception API requests.
 Database-related response schemas removed (table dropped).
 """
-from typing import Optional, Any, Union
+from typing import Optional, Any, Union, List
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -34,3 +34,19 @@ class FrontendExceptionCreate(BaseModel):
             return None
         # Convert number to string, or keep string as is
         return str(v) if isinstance(v, (int, float)) else v
+
+
+class FrontendExceptionBatch(BaseModel):
+    """Schema for batch frontend exception reporting."""
+    
+    exceptions: List[dict] = Field(..., description="Array of exception objects from frontend")
+    metadata: Optional[dict] = Field(None, description="Batch metadata (size, timestamp, etc.)")
+
+
+class FrontendExceptionBatchResponse(BaseModel):
+    """Response schema for batch exception processing."""
+    
+    status: str = Field(..., description="Processing status")
+    processed: int = Field(..., description="Number of exceptions processed")
+    failed: int = Field(0, description="Number of exceptions that failed to process")
+    errors: Optional[List[str]] = Field(None, description="Processing error messages")

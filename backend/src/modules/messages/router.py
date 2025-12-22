@@ -12,7 +12,6 @@ from fastapi import Request
 
 from ...common.modules.db.models import Member
 from ...common.modules.audit import audit_log
-from ...common.modules.logger import auto_log
 from ..user.dependencies import get_current_admin_user, get_current_member_user
 from .service import MessageService
 from .schemas import (
@@ -45,7 +44,6 @@ service = MessageService()
     tags=["messages", "admin"],
     summary="Get messages (admin)",
 )
-@auto_log("get_messages", log_result_count=True)
 async def get_messages(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -85,7 +83,6 @@ async def get_messages(
     tags=["messages", "admin"],
     summary="Get unread messages count (admin)",
 )
-@auto_log("get_unread_count")
 async def get_unread_count(
     current_user = Depends(get_current_admin_user),
 ):
@@ -100,7 +97,6 @@ async def get_unread_count(
     tags=["messages", "analytics", "admin"],
     summary="Get message analytics (admin)",
 )
-@auto_log("get_message_analytics")
 async def get_message_analytics(
     time_range: str = Query("7d", regex="^(7d|30d|90d|all)$", description="Time range for analytics (7d, 30d, 90d, or all)"),
     current_user = Depends(get_current_admin_user),
@@ -116,7 +112,6 @@ async def get_message_analytics(
     tags=["messages", "threads", "admin"],
     summary="List all threads (admin)",
 )
-@auto_log("list_admin_threads", log_result_count=True)
 async def list_admin_threads(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -154,7 +149,6 @@ async def list_admin_threads(
     tags=["messages", "admin"],
     summary="Get message by ID (admin)",
 )
-@auto_log("get_message", log_resource_id=True)
 async def get_message(
     message_id: UUID,
     current_user = Depends(get_current_admin_user),
@@ -171,7 +165,6 @@ async def get_message(
     tags=["messages", "admin"],
     summary="Send message to member (admin)",
 )
-@auto_log("create_message", log_resource_id=True)
 @audit_log(action="create", resource_type="message")
 async def create_message(
     data: MessageCreate,
@@ -189,7 +182,6 @@ async def create_message(
     tags=["messages", "admin"],
     summary="Update message (admin)",
 )
-@auto_log("update_message", log_resource_id=True)
 @audit_log(action="update", resource_type="message")
 async def update_message(
     message_id: UUID,
@@ -208,7 +200,6 @@ async def update_message(
     tags=["messages", "admin"],
     summary="Delete message (admin)",
 )
-@auto_log("delete_message", log_resource_id=True)
 @audit_log(action="delete", resource_type="message")
 async def delete_message(
     message_id: UUID,
@@ -227,7 +218,6 @@ async def delete_message(
     tags=["messages", "member"],
     summary="Get messages (member)",
 )
-@auto_log("get_member_messages", log_result_count=True)
 async def get_member_messages(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -267,7 +257,6 @@ async def get_member_messages(
     tags=["messages", "member"],
     summary="Get unread messages count (member)",
 )
-@auto_log("get_member_unread_count")
 async def get_member_unread_count(
     current_user: Member = Depends(get_current_member_user),
 ):
@@ -284,7 +273,6 @@ async def get_member_unread_count(
     tags=["messages", "threads", "member"],
     summary="List member threads",
 )
-@auto_log("list_member_threads", log_result_count=True)
 async def list_member_threads(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
@@ -321,7 +309,6 @@ async def list_member_threads(
     tags=["messages", "threads", "member"],
     summary="Create message thread (member)",
 )
-@auto_log("create_thread", log_resource_id=True)
 async def create_thread(
     data: ThreadCreate,
     current_user: Member = Depends(get_current_member_user),
@@ -337,7 +324,6 @@ async def create_thread(
     tags=["messages", "threads", "member"],
     summary="Get thread with messages (member)",
 )
-@auto_log("get_member_thread", log_resource_id=True)
 async def get_member_thread(
     thread_id: UUID,
     current_user: Member = Depends(get_current_member_user),
@@ -357,7 +343,6 @@ async def get_member_thread(
     tags=["messages", "threads", "member"],
     summary="Send message in thread (member)",
 )
-@auto_log("create_member_thread_message", log_resource_id=True)
 async def create_member_thread_message(
     thread_id: UUID,
     data: ThreadMessageCreate,
@@ -375,7 +360,6 @@ async def create_member_thread_message(
     tags=["messages", "member"],
     summary="Send message to admin (member)",
 )
-@auto_log("create_member_message", log_resource_id=True)
 async def create_member_message(
     data: MessageCreate,
     request: Request,
@@ -392,7 +376,6 @@ async def create_member_message(
     tags=["messages", "member"],
     summary="Get message by ID (member)",
 )
-@auto_log("get_member_message", log_resource_id=True)
 async def get_member_message(
     message_id: UUID,
     current_user: Member = Depends(get_current_member_user),
@@ -408,7 +391,6 @@ async def get_member_message(
     tags=["messages", "member"],
     summary="Update message (member)",
 )
-@auto_log("update_member_message", log_resource_id=True)
 async def update_member_message(
     message_id: UUID,
     data: MessageUpdate,
@@ -426,7 +408,6 @@ async def update_member_message(
     tags=["messages", "member"],
     summary="Delete message (member)",
 )
-@auto_log("delete_member_message", log_resource_id=True)
 async def delete_member_message(
     message_id: UUID,
     request: Request,
@@ -444,7 +425,6 @@ async def delete_member_message(
     tags=["messages", "threads", "admin"],
     summary="Get thread with messages (admin)",
 )
-@auto_log("get_thread", log_resource_id=True)
 async def get_thread(
     thread_id: UUID,
     current_user = Depends(get_current_admin_user),
@@ -464,7 +444,6 @@ async def get_thread(
     tags=["messages", "threads", "admin"],
     summary="Send message in thread (admin)",
 )
-@auto_log("create_thread_message", log_resource_id=True)
 async def create_thread_message(
     thread_id: UUID,
     data: ThreadMessageCreate,
@@ -481,7 +460,6 @@ async def create_thread_message(
     tags=["messages", "threads", "admin"],
     summary="Update thread (admin)",
 )
-@auto_log("update_thread", log_resource_id=True)
 async def update_thread(
     thread_id: UUID,
     data: ThreadUpdate,
@@ -501,7 +479,6 @@ async def update_thread(
     tags=["messages", "broadcast", "admin"],
     summary="Send broadcast message (admin)",
 )
-@auto_log("create_broadcast", log_resource_id=True)
 async def create_broadcast(
     data: BroadcastCreate,
     current_user = Depends(get_current_admin_user),

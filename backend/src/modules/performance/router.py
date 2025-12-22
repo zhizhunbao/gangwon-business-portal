@@ -13,7 +13,6 @@ from fastapi import Request
 
 from ...common.modules.db.models import Member, Admin
 from ...common.modules.audit import audit_log
-from ...common.modules.logger import auto_log
 from ..user.dependencies import get_current_active_user_compat as get_current_active_user, get_current_admin_user
 from .service import PerformanceService
 from .schemas import (
@@ -40,7 +39,6 @@ service = PerformanceService()
     tags=["performance"],
     summary="List my performance records",
 )
-@auto_log("list_my_performance_records", log_result_count=True)
 async def list_my_performance_records(
     query: Annotated[PerformanceListQuery, Depends()],
     request: Request,
@@ -48,6 +46,7 @@ async def list_my_performance_records(
 ):
     """
     List member's own performance records with filtering.
+    Data formatting is handled by schemas.
 
     - **year**: Filter by year
     - **quarter**: Filter by quarter (1-4)
@@ -58,8 +57,9 @@ async def list_my_performance_records(
         current_user.id, query
     )
 
+    # Use schema to format data - no manual conversion needed
     return PerformanceListResponsePaginated(
-        items=[PerformanceListItem.model_validate(r) for r in records],
+        items=[PerformanceListItem.from_db_dict(r, include_admin_fields=False) for r in records],
         total=total,
         page=1,
         page_size=total if total > 0 else 1,
@@ -73,7 +73,6 @@ async def list_my_performance_records(
     tags=["performance"],
     summary="Get performance record details",
 )
-@auto_log("get_performance_record", log_resource_id=True)
 async def get_performance_record(
     performance_id: UUID,
     request: Request,
@@ -96,7 +95,6 @@ async def get_performance_record(
     tags=["performance"],
     summary="Create new performance record",
 )
-@auto_log("create_performance_record", log_resource_id=True)
 @audit_log(action="create", resource_type="performance")
 async def create_performance_record(
     data: PerformanceRecordCreate,
@@ -118,7 +116,6 @@ async def create_performance_record(
     tags=["performance"],
     summary="Update performance record",
 )
-@auto_log("update_performance_record", log_resource_id=True)
 @audit_log(action="update", resource_type="performance")
 async def update_performance_record(
     performance_id: UUID,
@@ -143,7 +140,6 @@ async def update_performance_record(
     tags=["performance"],
     summary="Delete performance record",
 )
-@auto_log("delete_performance_record", log_resource_id=True)
 @audit_log(action="delete", resource_type="performance")
 async def delete_performance_record(
     performance_id: UUID,
@@ -164,7 +160,6 @@ async def delete_performance_record(
     tags=["performance"],
     summary="Submit performance record for review",
 )
-@auto_log("submit_performance_record", log_resource_id=True)
 @audit_log(action="submit", resource_type="performance")
 async def submit_performance_record(
     performance_id: UUID,
@@ -190,7 +185,6 @@ async def submit_performance_record(
     tags=["admin-performance"],
     summary="List all performance records (Admin)",
 )
-@auto_log("list_all_performance_records", log_result_count=True)
 async def list_all_performance_records(
     query: Annotated[PerformanceListQuery, Depends()],
     request: Request,
@@ -198,6 +192,7 @@ async def list_all_performance_records(
 ):
     """
     List all performance records with filtering (admin only).
+    Data formatting is handled by schemas with admin-specific fields.
 
     - **member_id**: Filter by specific member
     - **year**: Filter by year
@@ -207,8 +202,9 @@ async def list_all_performance_records(
     """
     records, total = await service.list_all_performance_records(query)
 
+    # Use schema to format data with admin fields
     return PerformanceListResponsePaginated(
-        items=[PerformanceListItem.model_validate(r) for r in records],
+        items=[PerformanceListItem.from_db_dict(r, include_admin_fields=True) for r in records],
         total=total,
         page=1,
         page_size=total if total > 0 else 1,
@@ -221,7 +217,6 @@ async def list_all_performance_records(
     tags=["admin-performance"],
     summary="Export performance data (Admin)",
 )
-@auto_log("export_performance_data", log_result_count=True)
 @audit_log(action="export", resource_type="performance")
 async def export_performance_data(
     query: Annotated[PerformanceListQuery, Depends()],
@@ -272,7 +267,6 @@ async def export_performance_data(
     tags=["admin-performance"],
     summary="Get performance record details (Admin)",
 )
-@auto_log("get_performance_record_admin", log_resource_id=True)
 async def get_performance_record_admin(
     performance_id: UUID,
     request: Request,
@@ -291,7 +285,6 @@ async def get_performance_record_admin(
     tags=["admin-performance"],
     summary="Approve performance record (Admin)",
 )
-@auto_log("approve_performance_record", log_resource_id=True)
 @audit_log(action="approve", resource_type="performance")
 async def approve_performance_record(
     performance_id: UUID,
@@ -302,10 +295,10 @@ async def approve_performance_record(
     """
     Approve a performance record (admin only).
 
-    Creates a review record and changes status to approved.
+    Updates the record's review status to approved.
     """
     # Note: reviewer_id is not used because admin is not in members table
-    # The PerformanceReview.reviewer_id foreign key points to members.id
+    # The review fields are now integrated into the performance_records table
     record = await service.approve_performance(
         performance_id, None, data.comments  # reviewer_id set to None for admin
     )
@@ -318,7 +311,6 @@ async def approve_performance_record(
     tags=["admin-performance"],
     summary="Request revision of performance record (Admin)",
 )
-@auto_log("request_fix_performance_record", log_resource_id=True)
 @audit_log(action="request_fix", resource_type="performance")
 async def request_fix_performance_record(
     performance_id: UUID,
@@ -345,7 +337,6 @@ async def request_fix_performance_record(
     tags=["admin-performance"],
     summary="Reject performance record (Admin)",
 )
-@auto_log("reject_performance_record", log_resource_id=True)
 @audit_log(action="reject", resource_type="performance")
 async def reject_performance_record(
     performance_id: UUID,

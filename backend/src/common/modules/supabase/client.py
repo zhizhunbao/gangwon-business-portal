@@ -8,6 +8,7 @@ from supabase import create_client, Client
 from supabase.client import ClientOptions
 
 from ..config import settings
+from .unified_client import UnifiedSupabaseClient, create_unified_supabase_client
 
 
 class SupabaseClient:
@@ -46,12 +47,28 @@ class SupabaseClient:
 
 # 便捷函数
 def get_supabase_client() -> Client:
-    """获取 Supabase 客户端实例"""
+    """获取原始 Supabase 客户端实例"""
     return SupabaseClient.get_client()
+
+
+def get_unified_supabase_client() -> UnifiedSupabaseClient:
+    """获取统一的 Supabase 客户端实例（推荐使用）"""
+    client = get_supabase_client()
+    return create_unified_supabase_client(client)
+
+
+# 向后兼容的别名
+def get_logged_supabase_client() -> UnifiedSupabaseClient:
+    """获取带日志功能的 Supabase 客户端实例（已废弃，请使用 get_unified_supabase_client）"""
+    return get_unified_supabase_client()
 
 
 # 导出客户端实例
 supabase_client = get_supabase_client()
+unified_supabase_client = get_unified_supabase_client()  # 推荐使用
+
+# 向后兼容的别名
+logged_supabase_client = unified_supabase_client
 
 
 # 健康检查

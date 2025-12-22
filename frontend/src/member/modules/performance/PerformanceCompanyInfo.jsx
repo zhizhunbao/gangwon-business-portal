@@ -42,7 +42,7 @@ export default function PerformanceCompanyInfo() {
   const [messageVariant, setMessageVariant] = useState('success');
   const [companyData, setCompanyData] = useState({
     companyName: '', businessNumber: '', corporationNumber: '', establishedDate: '',
-    representativeName: '', phone: '', address: '', region: '', category: '', industry: '',
+    representative: '', phone: '', address: '', region: '', category: '', industry: '',
     description: '', website: '', logo: null, logoPreview: null, businessField: '', sales: '', employeeCount: '',
     mainBusiness: '', cooperationFields: [], approvalStatus: null
   });
@@ -69,7 +69,7 @@ export default function PerformanceCompanyInfo() {
       businessNumber: profile.businessNumber || '',
       corporationNumber: profile.corporationNumber || '',
       establishedDate: profile.establishedDate || profile.foundingDate || '',
-      representativeName: profile.representativeName || '', 
+      representative: profile.representative || '', 
       phone: profile.phone || '',
       address: profile.address || '', 
       region: profile.region || '', 
@@ -143,7 +143,7 @@ export default function PerformanceCompanyInfo() {
   const requiredFieldsMap = useMemo(() => ({
     companyName: t('member.companyName', 'Company Name'),
     establishedDate: t('member.establishedDate', 'Established Date'),
-    representativeName: t('member.representativeName', 'Representative'),
+    representative: t('member.representative', 'Representative'),
     phone: t('member.phone', 'Phone'),
     address: t('member.address', 'Address')
   }), [t]);
@@ -177,7 +177,7 @@ export default function PerformanceCompanyInfo() {
       address: companyData.address,
       website: companyData.website,
       corporationNumber: companyData.corporationNumber,
-      representativeName: companyData.representativeName,
+      representative: companyData.representative,
       phone: companyData.phone,
       logoUrl: companyData.logo
     };
@@ -444,14 +444,14 @@ export default function PerformanceCompanyInfo() {
           </div>
           <div className="flex flex-col">
             <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
-              {t('member.representativeName', 'Representative')} <span className="text-red-600">*</span>
+              {t('member.representative', 'Representative')} <span className="text-red-600">*</span>
             </label>
             <Input 
-              value={companyData.representativeName} 
-              onChange={(e) => handleChange('representativeName', e.target.value)} 
+              value={companyData.representative} 
+              onChange={(e) => handleChange('representative', e.target.value)} 
               disabled={!isEditing} 
               required
-              error={fieldErrors.representativeName}
+              error={fieldErrors.representative}
             />
           </div>
           <div className="flex flex-col">

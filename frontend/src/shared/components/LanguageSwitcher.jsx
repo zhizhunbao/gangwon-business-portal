@@ -7,7 +7,6 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GlobeIcon } from './Icons';
 import { setStorage } from '@shared/utils/storage';
-import { loggerService } from '@shared/utils/loggerHandler';
 import { exceptionService } from '@shared/utils/errorHandler';
 import { cn } from '@shared/utils/helpers';
 
@@ -39,11 +38,11 @@ export default function LanguageSwitcher({ variant = 'dark' }) {
     try {
       localStorage.setItem('i18nextLng', code);
     } catch (error) {
-      loggerService.warn('Unable to persist language preference', {
-        module: 'LanguageSwitcher',
-        function: 'persistLanguagePreference',
-        language_code: code,
-        error_message: error.message
+      // AOP 系统会自动处理异常日志
+      exceptionService.recordException(error, {
+        request_path: window.location.pathname,
+        error_code: 'PERSIST_LANGUAGE_FAILED',
+        context_data: { language_code: code }
       });
     }
   };
@@ -52,13 +51,7 @@ export default function LanguageSwitcher({ variant = 'dark' }) {
     const targetCode = nextLanguage.code;
     persistLanguagePreference(targetCode);
     i18n.changeLanguage(targetCode).catch(error => {
-      loggerService.error('Failed to change language', {
-        module: 'LanguageSwitcher',
-        function: 'toggleLanguage',
-        target_language: targetCode,
-        error_message: error.message,
-        error_code: error.code
-      });
+      // AOP 系统会自动处理异常日志
       exceptionService.recordException(error, {
         request_path: window.location.pathname,
         error_code: error.code || 'CHANGE_LANGUAGE_FAILED',

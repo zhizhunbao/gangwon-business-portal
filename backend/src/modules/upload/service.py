@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 from ...common.modules.supabase.service import supabase_service
 from ...common.modules.storage import storage_service
 from ...common.modules.config import settings
-from ...common.modules.exception import NotFoundError, UnauthorizedError, ValidationError
+from ...common.modules.exception import NotFoundError, AuthenticationError, ValidationError
 
 
 class UploadService:
@@ -312,7 +312,7 @@ class UploadService:
 
         Raises:
             NotFoundError: If file not found
-            UnauthorizedError: If user doesn't have permission
+            AuthenticationError: If user doesn't have permission
         """
         # Get attachment
         attachment = await supabase_service.get_attachment_by_id(str(file_id))
@@ -354,7 +354,7 @@ class UploadService:
                 has_permission = True
 
             if not has_permission:
-                raise UnauthorizedError("You don't have permission to access this file")
+                raise AuthenticationError("You don't have permission to access this file")
 
         # Generate download URL
         if attachment.get("resource_type") == "public" or attachment.get("file_url", "").startswith("http"):
@@ -400,7 +400,7 @@ class UploadService:
 
         Raises:
             NotFoundError: If file not found
-            UnauthorizedError: If user doesn't have permission
+            AuthenticationError: If user doesn't have permission
         """
         # Get attachment
         attachment = await supabase_service.get_attachment_by_id(str(file_id))
@@ -414,7 +414,7 @@ class UploadService:
         is_admin = await auth_service.is_admin(user["id"])
 
         if not is_admin and attachment.get("resource_id") != user["id"]:
-            raise UnauthorizedError("You don't have permission to delete this file")
+            raise AuthenticationError("You don't have permission to delete this file")
 
         # Determine bucket and path
         project_prefix = "gangwon-portal"

@@ -20,6 +20,7 @@ export function useAuth() {
     try {
       setLoading(true);
       const response = await authService.login(credentials);
+      // AOP 系统会自动记录认证成功
       setUser(response.user);
       setAuthenticated(true);
       return response;
@@ -60,7 +61,7 @@ export function useAuth() {
       await authService.logout();
       clearAuth();
     } catch (error) {
-      console.error('Logout error:', error);
+      // AOP 系统会自动记录错误
       clearAuth();
     } finally {
       setLoading(false);
@@ -71,9 +72,15 @@ export function useAuth() {
     try {
       setLoading(true);
       const user = await authService.getCurrentUser();
-      setUser(user);
-      setAuthenticated(true);
-      return user;
+      if (user) {
+        setUser(user);
+        setAuthenticated(true);
+        return user;
+      } else {
+        // 认证失败，清除状态
+        clearAuth();
+        return null;
+      }
     } catch (error) {
       clearAuth();
       throw error;

@@ -11,7 +11,7 @@ from uuid import UUID, uuid4
 
 from ...common.modules.config import settings
 from ...common.modules.supabase.service import supabase_service
-from ...common.modules.exception import UnauthorizedError, ValidationError, NotFoundError
+from ...common.modules.exception import AuthorizationError, ValidationError, NotFoundError
 from .schemas import MemberRegisterRequest
 
 # Password hashing context
@@ -70,7 +70,7 @@ class AuthService:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
             return payload
         except JWTError:
-            raise UnauthorizedError("Invalid or expired token")
+            raise AuthorizationError("Invalid or expired token")
 
     async def register_member(
         self, data: MemberRegisterRequest
@@ -174,6 +174,7 @@ class AuthService:
             "founding_date": profile_founding_date.isoformat() if profile_founding_date else None,
             "region": data.region,
             "address": profile_address,
+            "representative": data.representative,
             "website": data.website,
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat(),
@@ -213,13 +214,13 @@ class AuthService:
         member = await supabase_service.get_member_by_business_number(business_number)
 
         if not member or not self.verify_password(password, member.get("password_hash", "")):
-            raise UnauthorizedError("Invalid credentials")
+            raise AuthorizationError("Invalid credentials", error_code="INVALID_CREDENTIALS")
 
         if member.get("approval_status") != "approved":
-            raise UnauthorizedError("Account pending approval")
+            raise AuthorizationError("Account pending approval", error_code="ACCOUNT_PENDING_APPROVAL")
 
         if member.get("status") != "active":
-            raise UnauthorizedError("Account is suspended")
+            raise AuthorizationError("Account is suspended", error_code="ACCOUNT_SUSPENDED")
 
         return member
 
@@ -279,10 +280,10 @@ class AuthService:
         admin = await supabase_service.get_admin_by_email(email)
 
         if not admin or not self.verify_password(password, admin.get("password_hash", "")):
-            raise UnauthorizedError("Invalid admin credentials")
+            raise AuthorizationError("Invalid admin credentials", error_code="INVALID_ADMIN_CREDENTIALS")
 
         if admin.get("is_active") != "true":
-            raise UnauthorizedError("Account is suspended")
+            raise AuthorizationError("Account is suspended", error_code="ACCOUNT_SUSPENDED")
 
         return admin
 
@@ -358,19 +359,19 @@ class AuthService:
         member = await supabase_service.get_member_by_reset_token(token)
 
         if not member:
-            raise UnauthorizedError("Invalid reset token")
+            raise AuthorizationError("Invalid reset token")
 
         # Check if token has expired
         token_expires_str = member.get("reset_token_expires")
         if not token_expires_str:
-            raise UnauthorizedError("Reset token has expired")
+            raise AuthorizationError("Reset token has expired")
         
         try:
             token_expires = datetime.fromisoformat(token_expires_str.replace('Z', '+00:00'))
             if token_expires < datetime.utcnow():
-                raise UnauthorizedError("Reset token has expired")
+                raise AuthorizationError("Reset token has expired")
         except (ValueError, AttributeError):
-            raise UnauthorizedError("Reset token has expired")
+            raise AuthorizationError("Reset token has expired")
 
         # Update password and clear reset token
         update_data = {
@@ -406,7 +407,7 @@ class AuthService:
         """
         # Verify current password
         if not self.verify_password(current_password, member.get("password_hash", "")):
-            raise UnauthorizedError("Current password is incorrect")
+            raise AuthorizationError("Current password is incorrect")
 
         # Update password
         update_data = {

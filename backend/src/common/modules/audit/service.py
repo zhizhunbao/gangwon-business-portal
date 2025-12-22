@@ -29,6 +29,13 @@ class AuditLogService:
     ) -> dict:
         """
         Create an audit log entry using Supabase API (no database session required).
+        
+        Implements dual-write pattern (Requirement 8.3):
+        - Writes to audit_logs database table
+        - Writes to audit.log file
+        - Both writes are attempted independently for redundancy
+        - If one write fails, the other still proceeds
+        - Logs warnings for any write failures
 
         Args:
             action: Action type (e.g., 'login', 'create', 'update', 'delete', 'approve')
@@ -39,10 +46,15 @@ class AuditLogService:
             user_agent: User agent string
 
         Returns:
-            Created audit log data as dict
+            Created audit log data as dict (from database), or empty dict if both writes failed
         """
+        # Initialize variables for dual-write tracking
+        created_log = None
+        db_write_success = False
+        file_write_success = False
+        
+        # Write to audit_logs table using unified db_log_writer
         try:
-            # Write to audit_logs table using unified db_log_writer
             created_log = await db_log_writer.write_audit_log(
                 action=action,
                 user_id=user_id,
@@ -51,38 +63,50 @@ class AuditLogService:
                 ip_address=ip_address,
                 user_agent=user_agent,
             )
-            
             if created_log:
-                # Write to audit log file (non-blocking, fire-and-forget)
-                try:
-                    file_log_writer.write_audit_log(
-                        action=action,
-                        user_id=user_id,
-                        resource_type=resource_type,
-                        resource_id=resource_id,
-                        ip_address=ip_address,
-                        user_agent=user_agent,
-                        extra_data={
-                            "audit_log_id": created_log.get("id"),
-                            "created_at": created_log.get("created_at"),
-                        },
-                    )
-                except Exception as e:
-                    # Log error but don't fail the audit log creation
-                    import logging
-                    logging.warning(f"Failed to write audit log to file: {str(e)}")
-                
-                return created_log
-            else:
-                # Return empty dict on failure (graceful degradation)
-                return {}
-                
+                db_write_success = True
         except Exception as e:
-            # Log error but don't fail the operation
+            # Log error but continue with file write
             import logging
-            logging.warning(f"Failed to create audit log via API: {str(e)}", exc_info=False)
-            # Return empty dict on failure
-            return {}
+            logging.warning(f"Failed to write audit log to database: {str(e)}", exc_info=False)
+        
+        # Write to audit log file (always attempt, even if DB write failed)
+        try:
+            extra_data = {}
+            if created_log:
+                extra_data = {
+                    "audit_log_id": created_log.get("id"),
+                    "created_at": created_log.get("created_at"),
+                }
+            
+            file_log_writer.write_audit_log(
+                action=action,
+                user_id=user_id,
+                resource_type=resource_type,
+                resource_id=resource_id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+                extra_data=extra_data,
+            )
+            file_write_success = True
+        except Exception as e:
+            # Log error but don't fail the audit log creation
+            import logging
+            logging.warning(f"Failed to write audit log to file: {str(e)}")
+        
+        # Log dual-write status for monitoring
+        if not db_write_success and not file_write_success:
+            import logging
+            logging.error("Audit log dual-write completely failed - both database and file writes failed")
+        elif not db_write_success:
+            import logging
+            logging.warning("Audit log database write failed, but file write succeeded")
+        elif not file_write_success:
+            import logging
+            logging.warning("Audit log file write failed, but database write succeeded")
+        
+        # Return the database result (or empty dict if failed)
+        return created_log if created_log else {}
 
     async def list_audit_logs(
         self,

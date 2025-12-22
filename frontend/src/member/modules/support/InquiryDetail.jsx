@@ -64,7 +64,7 @@ export default function InquiryDetail() {
           setError(t('support.notFound'));
         }
       } catch (err) {
-        console.error('Failed to load thread:', err);
+        // AOP 系统会自动记录错误
         setError(t('support.loadFailed'));
       } finally {
         setLoading(false);
@@ -106,7 +106,7 @@ export default function InquiryDetail() {
       setMessages(prev => [...prev, newMessage]);
       setReplyContent('');
     } catch (err) {
-      console.error('Failed to send reply:', err);
+      // AOP 系统会自动记录错误
       alert(t('support.replyFailed'));
     } finally {
       setSubmitting(false);

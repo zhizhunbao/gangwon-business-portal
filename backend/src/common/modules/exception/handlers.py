@@ -1,328 +1,363 @@
 """
-Exception handlers for FastAPI.
+Global exception handlers for FastAPI application.
 
-This module provides global exception handlers for various exception types.
+This module provides centralized exception handling for all types of exceptions
+that can occur in the application, ensuring consistent error responses and
+proper logging/monitoring.
 """
-from fastapi import Request, status, HTTPException
+import traceback
+from typing import Union, Dict, Any
+from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-import traceback
-from typing import Optional
-from uuid import UUID
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from pydantic import ValidationError as PydanticValidationError
 
-from ..config import settings
-from .exceptions import AppException
-from .responses import create_error_response
-from ..logger.request import get_trace_id
+from ..logger.request import get_trace_id, get_request_id
+from .service import exception_service, ExceptionContext
+from .exceptions import (
+    BaseCustomException,
+    ValidationError,
+    AuthenticationError,
+    AuthorizationError,
+    NotFoundError,
+    ConflictError,
+    RateLimitError,
+    DatabaseError,
+    ExternalServiceError,
+    InternalError,
+)
 
 
-def _record_exception_to_file(
-    request: Request,
-    exc: Exception,
-    error_code: Optional[str] = None,
-    status_code: int = 500,
-    user_id: Optional[UUID] = None,
-):
+async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """
-    Record exception to file log.
+    Handle all unhandled exceptions in the application.
     
-    This function attempts to record the exception but doesn't fail if it can't
-    (to avoid recursive errors).
+    This is the catch-all handler for any exception that isn't handled by
+    more specific handlers.
+    
+    Args:
+        request: The FastAPI request object
+        exc: The unhandled exception
+    
+    Returns:
+        JSONResponse: Standardized error response
     """
+    # Extract context information
+    context = ExceptionContext(
+        trace_id=get_trace_id(request),
+        request_id=get_request_id(request),
+        user_id=getattr(request.state, 'user_id', None),
+        additional_data={
+            'url': str(request.url),
+            'method': request.method,
+            'headers': dict(request.headers),
+        }
+    )
+    
+    # Record the exception
     try:
-        from .service import ExceptionService
-        
-        trace_id = get_trace_id(request)
-        ip_address = request.client.host if request.client else None
-        user_agent = request.headers.get("user-agent")
-        
-        # Get request data (sanitized - only first 1000 chars to avoid huge payloads)
-        request_data = None
-        try:
-            if hasattr(request, "_body"):
-                body = request._body
-                if body and len(body) < 1000:
-                    import json
-                    request_data = json.loads(body.decode("utf-8"))
-        except Exception:
-            pass  # Ignore errors when reading request body
-        
-        exception_service = ExceptionService()
-        exception_service.create_exception(
-            source="backend",
-            exception_type=type(exc).__name__,
-            exception_message=str(exc),
-            error_code=error_code,
-            status_code=status_code,
-            trace_id=trace_id,
-            user_id=user_id,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            request_method=request.method,
-            request_path=request.url.path,
-            request_data=request_data,
-            exc=exc,
-        )
-    except Exception:
-        # Silently fail to avoid recursive errors
-        pass
-
-
-async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
-    """Handle application exceptions."""
-    trace_id = get_trace_id(request)
+        await exception_service.record_exception(exc, context, source="backend")
+    except Exception as log_exc:
+        # Don't let logging failures break error handling
+        import logging
+        logging.error(f"Failed to record exception: {log_exc}", exc_info=True)
     
-    # Get user_id from request state if available
-    user_id = None
-    if hasattr(request.state, "user_id"):
-        user_id = request.state.user_id
-
-    # Record server errors and important authorization errors to exception log
-    # - 5xx: all server-side errors
-    # - 403: forbidden access attempts (security/audit relevant)
-    if exc.status_code >= 500 or exc.status_code == 403:
-        _record_exception_to_file(
-            request=request,
-            exc=exc,
-            error_code=exc.error_code,
-            status_code=exc.status_code,
-            user_id=user_id,
-        )
-
-    # Include details only in debug mode
-    include_details = settings.DEBUG
-
-    response = create_error_response(
-        message=exc.message,
-        status_code=exc.status_code,
-        error_code=exc.error_code,
-        details=exc.details if include_details else None,
-        trace_id=trace_id,
-        include_details=include_details,
+    # Classify and handle the exception
+    classified_exc = exception_service.classify_exception(exc)
+    
+    # Build error response
+    error_response = {
+        "error": classified_exc.to_dict(),
+        "trace_id": str(context.trace_id) if context.trace_id else None,
+        "request_id": context.request_id,
+        "timestamp": context.additional_data.get('timestamp') if context.additional_data else None,
+    }
+    
+    return JSONResponse(
+        status_code=classified_exc.http_status_code,
+        content=error_response
     )
 
-    return JSONResponse(status_code=exc.status_code, content=response)
+
+async def custom_exception_handler(request: Request, exc: BaseCustomException) -> JSONResponse:
+    """
+    Handle custom application exceptions.
+    
+    Args:
+        request: The FastAPI request object
+        exc: The custom exception
+    
+    Returns:
+        JSONResponse: Standardized error response
+    """
+    # Extract context information
+    context = ExceptionContext(
+        trace_id=get_trace_id(request),
+        request_id=get_request_id(request),
+        user_id=getattr(request.state, 'user_id', None),
+        additional_data={
+            'url': str(request.url),
+            'method': request.method,
+            'headers': dict(request.headers),
+        }
+    )
+    
+    # Record the exception
+    try:
+        await exception_service.record_exception(exc, context, source="backend")
+    except Exception as log_exc:
+        # Don't let logging failures break error handling
+        import logging
+        logging.error(f"Failed to record exception: {log_exc}", exc_info=True)
+    
+    # Build error response
+    error_response = {
+        "error": exc.to_dict(),
+        "trace_id": str(context.trace_id) if context.trace_id else None,
+        "request_id": context.request_id,
+        "timestamp": context.additional_data.get('timestamp') if context.additional_data else None,
+    }
+    
+    return JSONResponse(
+        status_code=exc.http_status_code,
+        content=error_response
+    )
 
 
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
-    """Handle HTTP exceptions (FastAPI's HTTPException)."""
-    trace_id = get_trace_id(request)
+async def validation_exception_handler(request: Request, exc: Union[RequestValidationError, PydanticValidationError]) -> JSONResponse:
+    """
+    Handle validation exceptions from FastAPI/Pydantic.
     
-    # Get user_id from request state if available
-    user_id = None
-    if hasattr(request.state, "user_id"):
-        user_id = request.state.user_id
+    Args:
+        request: The FastAPI request object
+        exc: The validation exception
     
-    # Extract detail message from HTTPException
-    # HTTPException.detail can be a string, dict, or list
-    detail = exc.detail
-    if isinstance(detail, dict):
-        message = detail.get("message", detail.get("detail", "HTTP error"))
-    elif isinstance(detail, list):
-        message = "HTTP error"
+    Returns:
+        JSONResponse: Structured validation error response
+    """
+    # Extract field errors
+    field_errors = {}
+    if hasattr(exc, 'errors'):
+        for error in exc.errors():
+            field_path = '.'.join(str(loc) for loc in error['loc'])
+            field_errors[field_path] = error['msg']
+    
+    # Create custom validation error
+    validation_error = ValidationError(
+        message="Validation failed",
+        field_errors=field_errors,
+        original_exception=exc
+    )
+    
+    # Extract context information
+    context = ExceptionContext(
+        trace_id=get_trace_id(request),
+        request_id=get_request_id(request),
+        user_id=getattr(request.state, 'user_id', None),
+        additional_data={
+            'url': str(request.url),
+            'method': request.method,
+            'validation_errors': field_errors,
+        }
+    )
+    
+    # Record the exception
+    try:
+        await exception_service.record_exception(validation_error, context, source="backend")
+    except Exception as log_exc:
+        # Don't let logging failures break error handling
+        import logging
+        logging.error(f"Failed to record exception: {log_exc}", exc_info=True)
+    
+    # Build error response
+    error_response = {
+        "error": validation_error.to_dict(),
+        "trace_id": str(context.trace_id) if context.trace_id else None,
+        "request_id": context.request_id,
+        "timestamp": context.additional_data.get('timestamp') if context.additional_data else None,
+    }
+    
+    return JSONResponse(
+        status_code=400,
+        content=error_response
+    )
+
+
+async def http_exception_handler(request: Request, exc: Union[HTTPException, StarletteHTTPException]) -> JSONResponse:
+    """
+    Handle HTTP exceptions (404, 401, etc.).
+    
+    Args:
+        request: The FastAPI request object
+        exc: The HTTP exception
+    
+    Returns:
+        JSONResponse: Standardized HTTP error response
+    """
+    # Map HTTP status codes to custom exceptions
+    status_code = exc.status_code
+    detail = exc.detail if hasattr(exc, 'detail') else str(exc)
+    
+    if status_code == 401:
+        custom_exc = AuthenticationError(detail)
+    elif status_code == 403:
+        custom_exc = AuthorizationError(detail)
+    elif status_code == 404:
+        custom_exc = NotFoundError(detail)
+    elif status_code == 409:
+        custom_exc = ConflictError(detail)
+    elif status_code == 429:
+        custom_exc = RateLimitError(detail)
     else:
-        message = str(detail) if detail else "HTTP error"
+        custom_exc = InternalError(detail)
     
-    # Include details only in debug mode
-    include_details = settings.DEBUG
-    
-    # Format error code based on status code
-    error_code = f"HTTP_{exc.status_code}"
-    if exc.status_code >= 500:
-        error_code = "HTTP_SERVER_ERROR"
-    elif exc.status_code == 404:
-        error_code = "NOT_FOUND"
-    elif exc.status_code == 401:
-        error_code = "UNAUTHORIZED"
-    elif exc.status_code == 403:
-        error_code = "FORBIDDEN"
-    elif exc.status_code == 400:
-        error_code = "BAD_REQUEST"
-    
-    # Record 5xx errors and 403 forbidden errors to exception log
-    # - 5xx: server-side failures
-    # - 403: access denied events (security/audit relevant)
-    if exc.status_code >= 500 or exc.status_code == 403:
-        _record_exception_to_file(
-            request=request,
-            exc=exc,
-            error_code=error_code,
-            status_code=exc.status_code,
-            user_id=user_id,
-        )
-    
-    response = create_error_response(
-        message=message,
-        status_code=exc.status_code,
-        error_code=error_code,
-        details={"detail": detail} if include_details and detail else None,
-        trace_id=trace_id,
-        include_details=include_details,
+    # Extract context information
+    context = ExceptionContext(
+        trace_id=get_trace_id(request),
+        request_id=get_request_id(request),
+        user_id=getattr(request.state, 'user_id', None),
+        additional_data={
+            'url': str(request.url),
+            'method': request.method,
+            'original_status_code': status_code,
+        }
     )
     
-    return JSONResponse(status_code=exc.status_code, content=response)
+    # Record the exception
+    try:
+        await exception_service.record_exception(custom_exc, context, source="backend")
+    except Exception as log_exc:
+        # Don't let logging failures break error handling
+        import logging
+        logging.error(f"Failed to record exception: {log_exc}", exc_info=True)
+    
+    # Build error response
+    error_response = {
+        "error": custom_exc.to_dict(),
+        "trace_id": str(context.trace_id) if context.trace_id else None,
+        "request_id": context.request_id,
+        "timestamp": context.additional_data.get('timestamp') if context.additional_data else None,
+    }
+    
+    return JSONResponse(
+        status_code=status_code,
+        content=error_response
+    )
 
 
-async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
-    """Handle validation exceptions."""
-    trace_id = get_trace_id(request)
-    errors = exc.errors()
+async def database_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """
+    Handle database-related exceptions.
+    
+    Args:
+        request: The FastAPI request object
+        exc: The database exception
+    
+    Returns:
+        JSONResponse: Database error response
+    """
+    # Create database error
+    db_error = DatabaseError(
+        message="Database operation failed",
+        original_exception=exc
+    )
+    
+    # Extract context information
+    context = ExceptionContext(
+        trace_id=get_trace_id(request),
+        request_id=get_request_id(request),
+        user_id=getattr(request.state, 'user_id', None),
+        additional_data={
+            'url': str(request.url),
+            'method': request.method,
+            'database_error_type': type(exc).__name__,
+        }
+    )
+    
+    # Record the exception
+    try:
+        await exception_service.record_exception(db_error, context, source="backend")
+    except Exception as log_exc:
+        # Don't let logging failures break error handling
+        import logging
+        logging.error(f"Failed to record exception: {log_exc}", exc_info=True)
+    
+    # Build error response (don't expose internal database details)
+    error_response = {
+        "error": {
+            "type": "DatabaseError",
+            "message": "A database error occurred",
+            "code": "DATABASE_ERROR"
+        },
+        "trace_id": str(context.trace_id) if context.trace_id else None,
+        "request_id": context.request_id,
+        "timestamp": context.additional_data.get('timestamp') if context.additional_data else None,
+    }
+    
+    return JSONResponse(
+        status_code=500,
+        content=error_response
+    )
 
-    # Don't log validation errors to terminal, just return error response
-    # But record to exception log file for debugging (especially in DEBUG mode)
-    if settings.DEBUG:
-        # Get user_id from request state if available
-        user_id = None
-        if hasattr(request.state, "user_id"):
-            user_id = request.state.user_id
-        
-        # Record validation error to file for debugging
-        try:
-            from .service import ExceptionService
-            
-            ip_address = request.client.host if request.client else None
-            user_agent = request.headers.get("user-agent")
-            
-            # Format validation errors as a readable message
-            error_messages = []
-            for error in errors:
-                loc = " -> ".join(str(loc_item) for loc_item in error.get("loc", []))
-                msg = error.get("msg", "Validation error")
-                error_messages.append(f"{loc}: {msg}")
-            
-            exception_message = f"Validation error: {'; '.join(error_messages)}"
-            
-            service = ExceptionService()
-            service.create_exception(
-                source="backend",
-                exception_type="RequestValidationError",
-                exception_message=exception_message,
-                error_code="VALIDATION_ERROR",
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                trace_id=trace_id,
-                request_path=request.url.path,
-                request_method=request.method,
-                ip_address=ip_address,
-                user_agent=user_agent,
-                user_id=user_id,
-                context_data={"validation_errors": errors},
-            )
-        except Exception:
-            pass  # Ignore errors when recording validation exceptions
 
-    # Format error messages for response - always include details for validation errors
-    simplified_errors = []
-    for error in errors:
-        loc = " -> ".join(str(loc_item) for loc_item in error.get("loc", []))
-        msg = error.get("msg", "Validation error")
-        simplified_errors.append(f"{loc}: {msg}")
+def register_exception_handlers(app):
+    """
+    Register all exception handlers with the FastAPI application.
+    
+    Args:
+        app: The FastAPI application instance
+    """
+    # Custom exception handlers (most specific first)
+    app.add_exception_handler(BaseCustomException, custom_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(PydanticValidationError, validation_exception_handler)
+    app.add_exception_handler(HTTPException, http_exception_handler)
+    app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    
+    # Database exception handlers (add specific database exception types as needed)
+    # app.add_exception_handler(DatabaseSpecificException, database_exception_handler)
+    
+    # Global catch-all handler (least specific, handles everything else)
+    app.add_exception_handler(Exception, global_exception_handler)
 
-    # Always include validation error details in response for debugging
-    error_details = {
-        "validation_errors": errors,  # Full error details
-        "simplified_errors": simplified_errors,  # Human-readable format
+
+# Exception handler utilities
+def create_error_response(
+    exception: BaseCustomException,
+    trace_id: str = None,
+    request_id: str = None
+) -> Dict[str, Any]:
+    """
+    Create a standardized error response dictionary.
+    
+    Args:
+        exception: The exception to create response for
+        trace_id: Optional trace ID for correlation
+        request_id: Optional request ID for correlation
+    
+    Returns:
+        Dict: Standardized error response
+    """
+    return {
+        "error": exception.to_dict(),
+        "trace_id": trace_id,
+        "request_id": request_id,
+        "timestamp": None,  # Will be set by the handler
     }
 
-    response = create_error_response(
-        message=f"Validation error: {'; '.join(simplified_errors)}",
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        error_code="VALIDATION_ERROR",
-        details=error_details,
-        trace_id=trace_id,
-        include_details=True,  # Always include details for validation errors
-    )
 
-    return JSONResponse(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, content=response)
+def is_client_error(status_code: int) -> bool:
+    """Check if status code represents a client error (4xx)."""
+    return 400 <= status_code < 500
 
 
-async def sqlalchemy_exception_handler(
-    request: Request, exc: SQLAlchemyError
-) -> JSONResponse:
-    """Handle SQLAlchemy exceptions."""
-    trace_id = get_trace_id(request)
-    
-    # Get user_id from request state if available
-    user_id = None
-    if hasattr(request.state, "user_id"):
-        user_id = request.state.user_id
-
-    # Check for integrity errors (constraint violations)
-    if isinstance(exc, IntegrityError):
-        error_message = "Database integrity constraint violation"
-        error_code = "DATABASE_INTEGRITY_ERROR"
-    else:
-        error_message = "Database error occurred"
-        error_code = "DATABASE_ERROR"
-    
-    # Record database errors to database (no terminal logging)
-    _record_exception_to_file(
-        request=request,
-        exc=exc,
-        error_code=error_code,
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        user_id=user_id,
-    )
-
-    # Never expose database details in production
-    details = {"original_error": str(exc)} if settings.DEBUG else None
-
-    response = create_error_response(
-        message=error_message,
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        error_code=error_code,
-        details=details,
-        trace_id=trace_id,
-        include_details=settings.DEBUG,
-    )
-
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=response
-    )
+def is_server_error(status_code: int) -> bool:
+    """Check if status code represents a server error (5xx)."""
+    return 500 <= status_code < 600
 
 
-async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Handle general/unexpected exceptions."""
-    trace_id = get_trace_id(request)
-    
-    # Get user_id from request state if available
-    user_id = None
-    if hasattr(request.state, "user_id"):
-        user_id = request.state.user_id
-
-    # Record unexpected exceptions to database (no terminal logging)
-    _record_exception_to_file(
-        request=request,
-        exc=exc,
-        error_code="INTERNAL_SERVER_ERROR",
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        user_id=user_id,
-    )
-
-    # In production, don't expose exception details
-    message = "Internal server error"
-    details = None
-
-    if settings.DEBUG:
-        message = f"Unexpected error: {str(exc)}"
-        details = {
-            "exception_type": type(exc).__name__,
-            "exception_message": str(exc),
-            "traceback": traceback.format_exc(),
-        }
-
-    response = create_error_response(
-        message=message,
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        error_code="INTERNAL_SERVER_ERROR",
-        details=details,
-        trace_id=trace_id,
-        include_details=settings.DEBUG,
-    )
-
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=response
-    )
-
+def should_log_stack_trace(exception: BaseCustomException) -> bool:
+    """Determine if stack trace should be logged for this exception."""
+    # Don't log stack traces for client errors (4xx)
+    return not is_client_error(exception.http_status_code)

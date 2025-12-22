@@ -9,6 +9,7 @@ import {
   USER_ROLES,
 } from "@shared/utils/constants";
 import { setStorage, getStorage, removeStorage } from "@shared/utils/storage";
+import { applyAuthInterceptor } from "@shared/interceptors/auth.interceptor";
 
 class AuthService {
   /**
@@ -144,8 +145,8 @@ class AuthService {
         company_type: data.category || null,
         corporate_number: data.corporationNumber?.replace(/-/g, "") || null,
         address: data.address || null,
-        contact_person:
-          data.representativeName || data.contactPersonName || null,
+        representative: data.representative || null,
+        contact_person: data.contactPersonName || null,
 
         // Step 3: Business information
         industry: data.businessField || null,
@@ -230,15 +231,31 @@ class AuthService {
    * Get current user
    */
   async getCurrentUser() {
-    const response = await apiService.get(`${API_PREFIX}/auth/me`);
-    // Preserve existing role if not returned by API (member endpoints don't return role)
-    const existingUser = this.getCurrentUserFromStorage();
-    const userInfo = {
-      ...response,
-      role: response.role || existingUser?.role || "member",
-    };
-    setStorage("user_info", userInfo);
-    return userInfo;
+    // Check if we have a token before making the API call
+    if (!this.isAuthenticated()) {
+      this.clearAuth();
+      return null;
+    }
+
+    try {
+      const response = await apiService.get(`${API_PREFIX}/auth/me`);
+      // Preserve existing role if not returned by API (member endpoints don't return role)
+      const existingUser = this.getCurrentUserFromStorage();
+      const userInfo = {
+        ...response,
+        role: response.role || existingUser?.role || "member",
+      };
+      setStorage("user_info", userInfo);
+      return userInfo;
+    } catch (error) {
+      // 如果是401错误，优雅地清除认证状态
+      if (error?.response?.status === 401) {
+        this.clearAuth();
+        return null;
+      }
+      // 其他错误继续抛出
+      throw error;
+    }
   }
 
   /**
@@ -383,4 +400,12 @@ class AuthService {
   }
 }
 
-export default new AuthService();
+// 创建认证服务实例
+const authService = new AuthService();
+
+// 应用认证拦截器 - Requirements 3.5 (now with proper prototype method handling)
+const interceptedAuthService = applyAuthInterceptor(authService, {
+  enableLogging: true
+});
+
+export default interceptedAuthService;

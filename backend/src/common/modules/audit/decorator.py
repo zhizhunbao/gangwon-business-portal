@@ -151,7 +151,8 @@ def audit_log(
             if request:
                 ip_address, user_agent = get_client_info(request)
 
-            # Create audit log entry using Supabase API (no db session required)
+            # Create audit log entry using dual-write service (database + file)
+            # Implements Requirement 8.3: write to both audit_logs table and audit.log file
             # Non-blocking, log errors but don't fail
             # Only log if function succeeded (exceptions are handled by global handlers)
             try:

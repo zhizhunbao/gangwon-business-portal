@@ -55,7 +55,7 @@ function PressList() {
         setTotalCount(response.total || formattedNews.length);
       }
     } catch (error) {
-      console.error('Failed to load news:', error);
+      // AOP 系统会自动记录错误
       setNewsList([]);
       setTotalCount(0);
     } finally {

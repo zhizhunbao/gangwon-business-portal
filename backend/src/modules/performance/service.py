@@ -10,7 +10,7 @@ from datetime import datetime
 import json
 
 from ...common.modules.supabase.service import supabase_service
-from ...common.modules.exception import NotFoundError, ValidationError, ForbiddenError
+from ...common.modules.exception import NotFoundError, ValidationError, AuthorizationError
 from .schemas import PerformanceRecordCreate, PerformanceRecordUpdate, PerformanceListQuery
 
 
@@ -31,8 +31,8 @@ class PerformanceService:
             Tuple of (performance records list, total count)
         """
         records, total = await supabase_service.list_performance_records_with_filters(
-            order_by="created_at",
-            order_desc=True,
+            sort_by="created_at",
+            sort_order="desc",
         )
         return records, total
 
@@ -51,7 +51,7 @@ class PerformanceService:
 
         Raises:
             NotFoundError: If record not found
-            ForbiddenError: If member doesn't own the record
+            AuthorizationError: If member doesn't own the record
         """
         record = await supabase_service.get_performance_record_by_id(str(performance_id))
 
@@ -60,7 +60,7 @@ class PerformanceService:
 
         # Compare as strings to handle both UUID objects and string IDs
         if str(record["member_id"]) != str(member_id):
-            raise ForbiddenError("You don't have permission to access this record")
+            raise AuthorizationError("You don't have permission to access this record")
 
         return record
 
@@ -110,7 +110,7 @@ class PerformanceService:
 
         Raises:
             NotFoundError: If record not found
-            ForbiddenError: If member doesn't own the record
+            AuthorizationError: If member doesn't own the record
             ValidationError: If record status doesn't allow editing
         """
         record = await self.get_performance_by_id(performance_id, member_id)
@@ -147,7 +147,7 @@ class PerformanceService:
 
         Raises:
             NotFoundError: If record not found
-            ForbiddenError: If member doesn't own the record
+            AuthorizationError: If member doesn't own the record
             ValidationError: If record is not draft
         """
         record = await self.get_performance_by_id(performance_id, member_id)
@@ -176,7 +176,7 @@ class PerformanceService:
 
         Raises:
             NotFoundError: If record not found
-            ForbiddenError: If member doesn't own the record
+            AuthorizationError: If member doesn't own the record
             ValidationError: If record is not draft
         """
         record = await self.get_performance_by_id(performance_id, member_id)
@@ -210,8 +210,8 @@ class PerformanceService:
         """
         # 现在 list_performance_records_with_filters 已经包含了 member 信息的批量获取
         records, total = await supabase_service.list_performance_records_with_filters(
-            order_by="updated_at",  # 按更新时间倒序，最新的在前面
-            order_desc=True,
+            sort_by="updated_at",  # 按更新时间倒序，最新的在前面
+            sort_order="desc",
         )
         
         return records, total
@@ -226,7 +226,7 @@ class PerformanceService:
             performance_id: Performance record UUID
 
         Returns:
-            Performance record dict with attachments and reviews
+            Performance record dict with attachments
 
         Raises:
             NotFoundError: If record not found
@@ -242,8 +242,18 @@ class PerformanceService:
         )
         record['attachments'] = attachments
 
-        # Get reviews
-        reviews = await supabase_service.get_performance_reviews_by_performance_id(str(performance_id))
+        # Reviews are now integrated into the main record, but for backward compatibility
+        # create a reviews array if review data exists
+        reviews = []
+        if record.get('review_status'):
+            reviews.append({
+                'id': f"{performance_id}_review",
+                'performance_id': str(performance_id),
+                'reviewer_id': record.get('reviewer_id'),
+                'status': record.get('review_status'),
+                'comments': record.get('review_comments'),
+                'reviewed_at': record.get('reviewed_at'),
+            })
         record['reviews'] = reviews
 
         return record
@@ -278,21 +288,15 @@ class PerformanceService:
                 "Only 'submitted' records can be approved."
             )
 
-        # Update record status
-        await supabase_service.update_performance_record(
-            str(performance_id),
-            {"status": "approved"}
-        )
-
-        # Create review record
-        # Note: reviewer_id is set to None because admin is not in members table
-        review_data = {
-            "performance_id": str(performance_id),
-            "reviewer_id": None,  # Admin is not a member, so set to None
+        # Update record status and review fields in one operation
+        update_data = {
             "status": "approved",
-            "comments": comments,
+            "reviewer_id": None,  # Admin is not a member, so set to None
+            "review_status": "approved",
+            "review_comments": comments,
+            "reviewed_at": datetime.utcnow().isoformat(),
         }
-        await supabase_service.create_performance_review(review_data)
+        await supabase_service.update_performance_record(str(performance_id), update_data)
 
         # Get updated record
         updated_record = await supabase_service.get_performance_record_by_id(str(performance_id))
@@ -346,20 +350,15 @@ class PerformanceService:
                 "Only 'submitted' records can be sent back for revision."
             )
 
-        # Update record status
-        await supabase_service.update_performance_record(
-            str(performance_id),
-            {"status": "revision_requested"}
-        )
-
-        # Create review record
-        review_data = {
-            "performance_id": str(performance_id),
-            "reviewer_id": None,  # Admin is not a member, so set to None
+        # Update record status and review fields in one operation
+        update_data = {
             "status": "revision_requested",
-            "comments": comments,
+            "reviewer_id": None,  # Admin is not a member, so set to None
+            "review_status": "revision_requested",
+            "review_comments": comments,
+            "reviewed_at": datetime.utcnow().isoformat(),
         }
-        await supabase_service.create_performance_review(review_data)
+        await supabase_service.update_performance_record(str(performance_id), update_data)
 
         # Get updated record
         updated_record = await supabase_service.get_performance_record_by_id(str(performance_id))
@@ -415,20 +414,15 @@ class PerformanceService:
                 "Only 'submitted' records can be rejected."
             )
 
-        # Update record status
-        await supabase_service.update_performance_record(
-            str(performance_id),
-            {"status": "rejected"}
-        )
-
-        # Create review record
-        review_data = {
-            "performance_id": str(performance_id),
-            "reviewer_id": None,  # Admin is not a member, so set to None
+        # Update record status and review fields in one operation
+        update_data = {
             "status": "rejected",
-            "comments": comments,
+            "reviewer_id": None,  # Admin is not a member, so set to None
+            "review_status": "rejected",
+            "review_comments": comments,
+            "reviewed_at": datetime.utcnow().isoformat(),
         }
-        await supabase_service.create_performance_review(review_data)
+        await supabase_service.update_performance_record(str(performance_id), update_data)
 
         # Get updated record
         return await supabase_service.get_performance_record_by_id(str(performance_id))

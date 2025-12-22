@@ -163,7 +163,7 @@ async function register(req) {
     businessLicense: businessLicenseClean,
     password,
     role: 'member',
-    name: body.representativeName || '新用户',
+    name: body.representative || '新用户',
     companyName,
     memberId: users.length
   };

@@ -58,9 +58,9 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
         <LoginModal
           isOpen={showLoginModal}
           onClose={() => {
+            // AOP 系统会自动记录路由事件
+            // Only close the modal here; do not auto-redirect.
             setShowLoginModal(false);
-            // Redirect to home if user closes modal
-            window.location.href = "/member";
           }}
           onSuccess={handleLoginSuccess}
         />
@@ -102,6 +102,52 @@ function PublicRoute({ children }) {
 
 // Simple Error Page Components (inline, no separate pages directory)
 function Unauthorized() {
+  const location = useLocation();
+  const { user } = useAuth();
+  
+  // 현재 경로를 기반으로 적절한 홈 페이지 결정
+  const getHomePath = () => {
+    const currentPath = location.pathname;
+    
+    // Debug: 打印当前路径和用户信息
+    console.log('[Unauthorized] Current path:', currentPath);
+    console.log('[Unauthorized] User role:', user?.role);
+    console.log('[Unauthorized] Location state:', location.state);
+    
+    // 首先检查用户角色
+    if (user?.role === 'admin') {
+      console.log('[Unauthorized] User is admin, redirecting to /admin');
+      return '/admin';
+    }
+    
+    // 관리자 경로인 경우 관리자 홈으로
+    if (currentPath.startsWith('/admin')) {
+      console.log('[Unauthorized] Admin path detected, redirecting to /admin');
+      return '/admin';
+    }
+    
+    // 회원 경로인 경우 회원 홈으로
+    if (currentPath.startsWith('/member')) {
+      console.log('[Unauthorized] Member path detected, redirecting to /member');
+      return '/member';
+    }
+    
+    // 检查是否从 admin 路径跳转过来的
+    if (location.state?.from?.startsWith('/admin')) {
+      console.log('[Unauthorized] Came from admin path, redirecting to /admin');
+      return '/admin';
+    }
+    
+    // 기본적으로 회원 홈으로 (일반 사용자)
+    console.log('[Unauthorized] Default case, redirecting to /member');
+    return '/member';
+  };
+
+  const homePath = getHomePath();
+  const isAdminPath = homePath === '/admin';
+
+  console.log('[Unauthorized] Final homePath:', homePath, 'isAdminPath:', isAdminPath);
+
   return (
     <div className="error-page">
       <div className="error-page-container">
@@ -110,8 +156,8 @@ function Unauthorized() {
         <p className="error-message">
           이 페이지에 접근할 수 있는 권한이 없습니다.
         </p>
-        <Button onClick={() => (window.location.href = "/")}>
-          홈으로 돌아가기
+        <Button onClick={() => (window.location.href = homePath)}>
+          {isAdminPath ? '관리자 홈으로 돌아가기' : '홈으로 돌아가기'}
         </Button>
       </div>
     </div>
@@ -119,6 +165,35 @@ function Unauthorized() {
 }
 
 function NotFound() {
+  const location = useLocation();
+  const { user } = useAuth();
+  
+  // 현재 경로를 기반으로 적절한 홈 페이지 결정
+  const getHomePath = () => {
+    const currentPath = location.pathname;
+    
+    // 首先检查用户角色
+    if (user?.role === 'admin') {
+      return '/admin';
+    }
+    
+    // 관리자 경로인 경우 관리자 홈으로
+    if (currentPath.startsWith('/admin')) {
+      return '/admin';
+    }
+    
+    // 회원 경로인 경우 회원 홈으로
+    if (currentPath.startsWith('/member')) {
+      return '/member';
+    }
+    
+    // 기본적으로 회원 홈으로 (일반 사용자)
+    return '/member';
+  };
+
+  const homePath = getHomePath();
+  const isAdminPath = homePath === '/admin';
+
   return (
     <div className="error-page">
       <div className="error-page-container">
@@ -127,8 +202,8 @@ function NotFound() {
         <p className="error-message">
           요청하신 페이지가 존재하지 않거나 이동되었습니다.
         </p>
-        <Button onClick={() => (window.location.href = "/")}>
-          홈으로 돌아가기
+        <Button onClick={() => (window.location.href = homePath)}>
+          {isAdminPath ? '관리자 홈으로 돌아가기' : '홈으로 돌아가기'}
         </Button>
       </div>
     </div>
@@ -144,9 +219,6 @@ const MemberLayout = lazy(() =>
 );
 
 // Lazy load auth modules
-const Login = lazy(() =>
-  import("@member/modules/auth/Login").then((m) => ({ default: m.default }))
-);
 const Register = lazy(() =>
   import("@member/modules/auth/Register").then((m) => ({ default: m.default }))
 );
@@ -301,14 +373,7 @@ export const router = createBrowserRouter(
             </LazyRoute>
           ),
         },
-        {
-          path: "/login",
-          element: (
-            <LazyRoute>
-              <Login />
-            </LazyRoute>
-          ),
-        },
+        // Note: member login page removed; login handled via modal on protected routes
         {
           path: "/unauthorized",
           element: <Unauthorized />,

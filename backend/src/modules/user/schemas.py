@@ -48,6 +48,7 @@ class MemberRegisterRequest(BaseModel):
     company_type: Optional[str] = Field(None, max_length=100, description="Company type")
     corporate_number: Optional[str] = Field(None, max_length=20, description="Corporate number")
     address: Optional[str] = Field(None, description="Company address")
+    representative: Optional[str] = Field(None, max_length=100, description="Representative name (代表人名字)")
     contact_person: Optional[str] = Field(None, max_length=100, description="Contact person name")
 
     # Step 3: Business information

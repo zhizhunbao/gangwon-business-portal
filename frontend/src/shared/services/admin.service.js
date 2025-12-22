@@ -151,7 +151,6 @@ class AdminService {
         // Additional fields for compatibility
         // Use nullish coalescing to preserve null values
         representative: response.representative ?? null,
-        representativeName: response.representative ?? null,
         legalNumber: response.legal_number ?? null,
         phone: response.phone ?? null,
         category: null,

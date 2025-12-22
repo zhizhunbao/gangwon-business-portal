@@ -12,13 +12,13 @@ from uuid import UUID
 from fastapi import Request
 
 from ...common.modules.audit import audit_log
-from ...common.modules.logger import auto_log
 
 from ...common.modules.integrations.nice_dnb import nice_dnb_client
 from .schemas import (
     MemberProfileResponse,
     MemberProfileUpdate,
     MemberListResponse,
+    MemberListItem,
     MemberListQuery,
     MemberListResponsePaginated,
     CompanyVerifyRequest,
@@ -33,7 +33,6 @@ member_service = MemberService()
 
 # Member self-service endpoints
 @router.get("/api/member/profile", response_model=MemberProfileResponse)
-@auto_log("get_my_profile")
 async def get_my_profile(
     request: Request,
     current_user: dict = Depends(get_current_active_user),
@@ -43,7 +42,6 @@ async def get_my_profile(
 
 
 @router.put("/api/member/profile", response_model=MemberProfileResponse)
-@auto_log("update_my_profile", log_resource_id=True)
 @audit_log(action="update", resource_type="member")
 async def update_my_profile(
     data: MemberProfileUpdate,
@@ -58,7 +56,6 @@ async def update_my_profile(
 
 # Admin endpoints
 @router.get("/api/admin/members", response_model=MemberListResponsePaginated)
-@auto_log("list_members", log_result_count=True)
 async def list_members(
     request: Request,
     search: Optional[str] = Query(None),
@@ -68,7 +65,10 @@ async def list_members(
     status: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_admin_user),
 ):
-    """List members (admin only)."""
+    """
+    List members (admin only).
+    Data formatting is handled by schemas.
+    """
     query = MemberListQuery(
         search=search,
         industry=industry,
@@ -79,22 +79,9 @@ async def list_members(
 
     members, total = await member_service.list_members(query)
 
+    # Use schema to format data - no manual conversion needed
     return MemberListResponsePaginated(
-        items=[
-            MemberListResponse(
-                id=UUID(str(m["id"])),
-                business_number=m["business_number"],
-                company_name=m["company_name"],
-                email=m["email"],
-                status=m["status"],
-                approval_status=m["approval_status"],
-                industry=m.get("industry") or (m.get("profile", {}).get("industry") if m.get("profile") else None),
-                representative=m.get("representative"),
-                address=m.get("address"),
-                created_at=m.get("created_at"),
-            )
-            for m in members
-        ],
+        items=[MemberListItem.from_db_dict(m, include_admin_fields=True) for m in members],
         total=total,
         page=1,
         page_size=total if total > 0 else 1,
@@ -102,10 +89,7 @@ async def list_members(
     )
 
 
-
-
 @router.get("/api/admin/members/{member_id:uuid}", response_model=MemberProfileResponse)
-@auto_log("get_member", log_resource_id=True)
 async def get_member(
     member_id: UUID,
     request: Request,
@@ -116,7 +100,6 @@ async def get_member(
 
 
 @router.put("/api/admin/members/{member_id:uuid}/approve", response_model=dict)
-@auto_log("approve_member", log_resource_id=True)
 @audit_log(action="approve", resource_type="member")
 async def approve_member(
     member_id: UUID,
@@ -133,7 +116,6 @@ async def approve_member(
 
 
 @router.put("/api/admin/members/{member_id:uuid}/reject", response_model=dict)
-@auto_log("reject_member", log_resource_id=True)
 @audit_log(action="reject", resource_type="member")
 async def reject_member(
     member_id: UUID,
@@ -216,7 +198,6 @@ async def reject_member(
     },
     tags=["Member", "Nice D&B"],
 )
-@auto_log("verify_company")
 @audit_log(action="verify_company", resource_type="member")
 async def verify_company(
     data: CompanyVerifyRequest,
@@ -383,7 +364,6 @@ async def verify_company(
 #     },
     tags=["Admin", "Nice D&B"],
 )
-@auto_log("search_nice_dnb")
 async def search_nice_dnb(
     request: Request,
     business_number: str = Query(
@@ -501,7 +481,6 @@ async def search_nice_dnb(
 
 
 @router.get("/api/admin/members/export")
-@auto_log("export_members", log_result_count=True)
 @audit_log(action="export", resource_type="member")
 async def export_members(
     request: Request,

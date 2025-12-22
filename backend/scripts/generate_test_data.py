@@ -109,7 +109,7 @@ def load_config(config_path: Path = None) -> Dict[str, Any]:
 
 async def create_test_account(session: AsyncSession, config: Dict[str, Any], account_key: str = "test"):
     """Create a test account that is approved and active for testing purposes."""
-    from src.common.modules.db.models import Member, MemberProfile
+    from src.common.modules.db.models import Member
     test_config = config["accounts"][account_key]
     data_defs = config["data_definitions"]
     data_ranges = config["data_ranges"]["test_account"]
@@ -392,7 +392,7 @@ async def generate_performance_records(
     session: AsyncSession, members: List['Member'], config: Dict[str, Any], count: int = 350
 ) -> List['PerformanceRecord']:
     """Generate performance record test data."""
-    from src.common.modules.db.models import PerformanceRecord, PerformanceReview
+    from src.common.modules.db.models import PerformanceRecord
     
     records = []
     data_defs = config["data_definitions"]
@@ -449,6 +449,22 @@ async def generate_performance_records(
         # 所有状态都需要有提交时间（不能为空）
         submitted_at = datetime.now(timezone.utc) - timedelta(days=random.randint(0, data_ranges["submitted_days_ago_max"]))
         
+        # Initialize review fields
+        reviewer_id = None
+        review_status = None
+        review_comments = None
+        reviewed_at = None
+        
+        # Set review fields for reviewed statuses
+        if status in ["approved", "rejected", "revision_requested"]:
+            approved_members = [m for m in members if m.approval_status == "approved"]
+            if approved_members:
+                admin_member = random.choice(approved_members)
+                reviewer_id = admin_member.id
+                review_status = status
+                review_comments = fake.text(max_nb_chars=200) if random.random() > probs["performance_review_comments_null"] else None
+                reviewed_at = submitted_at + timedelta(days=random.randint(data_ranges["review_days_min"], data_ranges["review_days_max"]))
+        
         record = PerformanceRecord(
             id=uuid4(),
             member_id=member.id,
@@ -458,24 +474,15 @@ async def generate_performance_records(
             status=status,
             data_json=data_json,
             submitted_at=submitted_at,
+            # Review fields (merged from performance_reviews table)
+            reviewer_id=reviewer_id,
+            review_status=review_status,
+            review_comments=review_comments,
+            reviewed_at=reviewed_at,
             created_at=datetime.now(timezone.utc) - timedelta(days=random.randint(0, data_ranges["created_days_ago_max"])),
         )
         records.append(record)
         session.add(record)
-        
-        if status in ["approved", "rejected", "revision_requested"]:
-            approved_members = [m for m in members if m.approval_status == "approved"]
-            if approved_members:
-                admin_member = random.choice(approved_members)
-                review = PerformanceReview(
-                    id=uuid4(),
-                    performance_id=record.id,
-                    reviewer_id=admin_member.id,
-                    status=status,
-                    comments=fake.text(max_nb_chars=200) if random.random() > probs["performance_review_comments_null"] else None,
-                    reviewed_at=submitted_at + timedelta(days=random.randint(data_ranges["review_days_min"], data_ranges["review_days_max"])),
-                )
-                session.add(review)
     
     await session.flush()
     return records
@@ -1542,7 +1549,6 @@ async def clear_test_data(session: AsyncSession):
         "attachments",
         "project_applications",
         "projects",
-        "performance_reviews",
         "performance_records",
         "member_profiles",
         "members",
@@ -1694,7 +1700,6 @@ async def main():
         Member,
         MemberProfile,
         PerformanceRecord,
-        PerformanceReview,
         Project,
         ProjectApplication,
         Attachment,

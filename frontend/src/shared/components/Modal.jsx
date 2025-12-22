@@ -5,7 +5,6 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@shared/utils/helpers";
-import { loggerService } from "@shared/utils/loggerHandler";
 
 export function Modal({
   isOpen,
@@ -15,18 +14,19 @@ export function Modal({
   size = "md",
   showCloseButton = true,
   className,
+  disableBackdropClose = false,
 }) {
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === "Escape" && isOpen) {
+      if (e.key === "Escape" && isOpen && !disableBackdropClose) {
         onClose();
       }
     };
 
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, disableBackdropClose]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -41,24 +41,7 @@ export function Modal({
     };
   }, [isOpen]);
 
-  // Debug: Log modal state
-  useEffect(() => {
-    if (isOpen) {
-      loggerService.debug("Modal opened", {
-        module: "Modal",
-        function: "useEffect",
-        title: title || "Untitled",
-        isOpen: true,
-      });
-    } else {
-      loggerService.debug("Modal closed", {
-        module: "Modal",
-        function: "useEffect",
-        title: title || "Untitled",
-        isOpen: false,
-      });
-    }
-  }, [isOpen, title]);
+  // 移除手动日志 - 使用 AOP 系统自动处理
 
   const sizeClasses = {
     sm: "sm:max-w-sm",
@@ -69,20 +52,10 @@ export function Modal({
   };
 
   if (!isOpen) {
-    loggerService.debug("Modal not rendering - isOpen is false", {
-      module: "Modal",
-      function: "render",
-      title: title || "Untitled",
-    });
     return null;
   }
 
-  loggerService.debug("Modal rendering", {
-    module: "Modal",
-    function: "render",
-    title: title || "Untitled",
-    isOpen: isOpen,
-  });
+  // 移除手动日志 - 使用 AOP 系统自动处理
 
   const modalContent = (
     <div
@@ -95,7 +68,9 @@ export function Modal({
       {/* Background overlay */}
       <div
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={onClose}
+        onClick={() => {
+          if (!disableBackdropClose) onClose();
+        }}
       />
 
       {/* Modal content container */}

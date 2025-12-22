@@ -43,7 +43,7 @@ const loadSavedFormData = () => {
       };
     }
   } catch (e) {
-    console.error('Failed to load saved form data:', e);
+    // AOP 系统会自动记录错误
   }
   return null;
 };
@@ -59,7 +59,7 @@ const saveFormData = (data) => {
     delete toSave.businessLicenseFile;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   } catch (e) {
-    console.error('Failed to save form data:', e);
+    // AOP 系统会自动记录错误
   }
 };
 
@@ -68,7 +68,7 @@ const clearSavedFormData = () => {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (e) {
-    console.error('Failed to clear saved form data:', e);
+    // AOP 系统会自动记录错误
   }
 };
 
@@ -89,7 +89,7 @@ export default function Register() {
   
   const defaultFormData = {
     businessNumber: '', password: '', passwordConfirm: '', companyName: '', region: '', category: '',
-    corporationNumber: '', address: '', addressDetail: '', representativeName: '', establishedDate: '',
+    corporationNumber: '', address: '', addressDetail: '', representative: '', establishedDate: '',
     logo: null, businessLicenseFile: null,
     email: '', phone: '', representativePhone: '', contactPersonName: '', contactPersonDepartment: '', contactPersonPosition: '',
     businessField: '', sales: '', employeeCount: '', websiteUrl: '', mainBusiness: '', cooperationFields: [],
@@ -181,7 +181,7 @@ export default function Register() {
       2: () => {
         if (!formData.corporationNumber || formData.corporationNumber.replace(/\D/g, '').length !== 13) return t('validation.required', { field: t('member.corporationNumber') });
         if (!formData.address) return t('validation.required', { field: t('member.address') });
-        if (!formData.representativeName) return t('validation.required', { field: t('member.representativeName') });
+        if (!formData.representative) return t('validation.required', { field: t('member.representative') });
         if (!formData.establishedDate) return t('validation.required', { field: t('member.establishedDate') });
         return null;
       },
@@ -220,7 +220,7 @@ export default function Register() {
         }
       } catch (err) {
         // 如果检查失败，继续下一步（在最终提交时会再次验证）
-        console.error('Business number check failed:', err);
+        // AOP 系统会自动记录错误
       }
       setIsValidating(false);
     }
@@ -236,7 +236,7 @@ export default function Register() {
           return;
         }
       } catch (err) {
-        console.error('Email check failed:', err);
+        // AOP 系统会自动记录错误
       }
       setIsValidating(false);
     }
@@ -289,9 +289,10 @@ export default function Register() {
     }
   };
 
-  // 成功弹框关闭 - 只关闭弹框，不做其他操作
+  // 成功弹框关闭 - 跳转到首页
   const handleSuccessClose = () => {
     setSuccess(false);
+    navigate('/');
   };
 
   return (
@@ -428,8 +429,8 @@ export default function Register() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.representativeName')} <span className="text-red-500">*</span></label>
-                  <input type="text" name="representativeName" value={formData.representativeName} onChange={handleChange} autoComplete="name"
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.representative')} <span className="text-red-500">*</span></label>
+                  <input type="text" name="representative" value={formData.representative} onChange={handleChange} autoComplete="name"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" />
                 </div>
 

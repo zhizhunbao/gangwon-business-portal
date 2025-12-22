@@ -38,8 +38,8 @@ class ProjectService:
             Tuple of (projects list, total count)
         """
         projects, total = await supabase_service.list_projects_with_filters(
-            order_by="created_at",
-            order_desc=True,
+            sort_by="created_at",
+            sort_order="desc",
         )
         return projects, total
     
@@ -57,8 +57,8 @@ class ProjectService:
             Tuple of (projects list, total count)
         """
         projects, total = await supabase_service.list_projects_with_filters(
-            order_by="created_at",
-            order_desc=True,
+            sort_by="created_at",
+            sort_order="desc",
         )
         return projects, total
 
@@ -147,8 +147,8 @@ class ProjectService:
             Tuple of (applications list, total count)
         """
         applications, total = await supabase_service.list_project_applications_with_filters(
-            order_by="submitted_at",
-            order_desc=True,
+            sort_by="submitted_at",
+            sort_order="desc",
         )
         return applications, total
 
@@ -252,8 +252,8 @@ class ProjectService:
         await self.get_project_by_id(project_id)
 
         applications, total = await supabase_service.list_project_applications_with_filters(
-            order_by="submitted_at",
-            order_desc=True,
+            sort_by="submitted_at",
+            sort_order="desc",
         )
         return applications, total
 
@@ -271,8 +271,8 @@ class ProjectService:
             Tuple of (applications list, total count)
         """
         applications, total = await supabase_service.list_project_applications_with_filters(
-            order_by="submitted_at",
-            order_desc=True,
+            sort_by="submitted_at",
+            sort_order="desc",
         )
         return applications, total
 
@@ -384,3 +384,6 @@ class ProjectService:
             })
 
         return export_data
+
+# Service instance
+service = ProjectService()

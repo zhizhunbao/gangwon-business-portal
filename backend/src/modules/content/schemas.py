@@ -8,6 +8,15 @@ from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
 
+# Import common utilities
+from ...common.utils.formatters import (
+    parse_datetime,
+    format_datetime_display,
+    format_date_display,
+    format_board_type_display,
+    format_view_count_display,
+)
+
 
 # Notice Schemas
 
@@ -45,7 +54,7 @@ class NoticeResponse(BaseModel):
 
 
 class NoticeListItem(BaseModel):
-    """Notice list item schema."""
+    """Notice list item schema with formatting logic."""
     
     id: UUID
     title: str
@@ -53,8 +62,56 @@ class NoticeListItem(BaseModel):
     view_count: int
     created_at: datetime
     
+    # Formatted display fields
+    board_type_display: str
+    created_at_display: str
+    view_count_display: str
+    
     class Config:
         from_attributes = True
+        
+    @classmethod
+    def from_db_dict(cls, data: dict, include_admin_fields: bool = False):
+        """
+        Create NoticeListItem from database dictionary with all formatting applied.
+        
+        Args:
+            data: Raw database dictionary
+            include_admin_fields: Whether to include admin-specific formatted fields
+            
+        Returns:
+            Formatted NoticeListItem instance
+        """
+        # Basic fields - let it fail if required fields are missing
+        item_data = {
+            "id": data["id"],
+            "title": data["title"],
+            "board_type": data["board_type"],
+            "view_count": data["view_count"],
+            "created_at": cls._parse_datetime(data["created_at"]),
+            
+            # Formatted display fields
+            "board_type_display": cls._format_board_type_display(data["board_type"]),
+            "created_at_display": cls._format_datetime_display(data["created_at"]),
+            "view_count_display": format_view_count_display(data['view_count']),
+        }
+        
+        return cls(**item_data)
+    
+    @staticmethod
+    def _parse_datetime(dt_str) -> datetime:
+        """Parse datetime string to datetime object."""
+        return parse_datetime(dt_str)
+    
+    @staticmethod
+    def _format_board_type_display(board_type: str) -> str:
+        """Format board type for display."""
+        return format_board_type_display(board_type)
+    
+    @staticmethod
+    def _format_datetime_display(dt) -> str:
+        """Format datetime for display."""
+        return format_date_display(dt)
 
 
 class NoticeListResponse(BaseModel):
@@ -98,15 +155,53 @@ class PressReleaseResponse(BaseModel):
 
 
 class PressListItem(BaseModel):
-    """Press release list item schema."""
+    """Press release list item schema with formatting logic."""
     
     id: UUID
     title: str
     image_url: str
     created_at: datetime
     
+    # Formatted display fields
+    created_at_display: str
+    
     class Config:
         from_attributes = True
+        
+    @classmethod
+    def from_db_dict(cls, data: dict, include_admin_fields: bool = False):
+        """
+        Create PressListItem from database dictionary with all formatting applied.
+        
+        Args:
+            data: Raw database dictionary
+            include_admin_fields: Whether to include admin-specific formatted fields
+            
+        Returns:
+            Formatted PressListItem instance
+        """
+        # Basic fields - let it fail if required fields are missing
+        item_data = {
+            "id": data["id"],
+            "title": data["title"],
+            "image_url": data["image_url"],
+            "created_at": cls._parse_datetime(data["created_at"]),
+            
+            # Formatted display fields
+            "created_at_display": cls._format_datetime_display(data["created_at"]),
+        }
+        
+        return cls(**item_data)
+    
+    @staticmethod
+    def _parse_datetime(dt_str) -> datetime:
+        """Parse datetime string to datetime object."""
+        return parse_datetime(dt_str)
+    
+    @staticmethod
+    def _format_datetime_display(dt) -> str:
+        """Format datetime for display."""
+        return format_date_display(dt)
 
 
 class PressListResponse(BaseModel):

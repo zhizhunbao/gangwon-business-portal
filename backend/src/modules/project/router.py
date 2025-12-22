@@ -13,7 +13,6 @@ from fastapi import Request
 
 from ...common.modules.db.models import Member
 from ...common.modules.audit import audit_log
-from ...common.modules.logger import auto_log
 from ..user.dependencies import get_current_active_user_compat as get_current_active_user, get_current_admin_user
 from .service import ProjectService
 from .schemas import (
@@ -45,23 +44,19 @@ service = ProjectService()
     tags=["projects"],
     summary="List all projects",
 )
-@auto_log("list_projects", log_result_count=True)
 async def list_projects(
     query: Annotated[ProjectListQuery, Depends()],
     request: Request,
 ):
     """
     List all projects with pagination and filtering (public access).
-
-    - **status**: Filter by status (active, inactive, archived)
-    - **search**: Search in title and description
-    - **page**: Page number (default: 1)
-    - **page_size**: Items per page (default: 20, max: 100)
+    Data formatting is handled by schemas.
     """
     projects, total = await service.list_projects(query)
 
+    # Use schema to format data - no manual conversion needed
     return ProjectListResponsePaginated(
-        items=[ProjectListItem.model_validate(p) for p in projects],
+        items=[ProjectListItem.from_db_dict(p, include_admin_fields=False) for p in projects],
         total=total,
         page=1,
         page_size=total if total > 0 else 1,
@@ -75,7 +70,6 @@ async def list_projects(
     tags=["projects"],
     summary="Get project details",
 )
-@auto_log("get_project", log_resource_id=True)
 async def get_project(
     project_id: UUID,
     request: Request,
@@ -94,7 +88,6 @@ async def get_project(
     tags=["projects"],
     summary="Apply to project",
 )
-@auto_log("apply_to_project", log_resource_id=True)
 @audit_log(action="apply", resource_type="project_application")
 async def apply_to_project(
     project_id: UUID,
@@ -104,8 +97,6 @@ async def apply_to_project(
 ):
     """
     Apply to a project (member only).
-
-    Requires authentication. Member must not have already applied to this project.
     """
     application = await service.apply_to_project(
         current_user.id, project_id, data
@@ -119,7 +110,6 @@ async def apply_to_project(
     tags=["projects"],
     summary="Get my project applications",
 )
-@auto_log("get_my_applications", log_result_count=True)
 async def get_my_applications(
     query: Annotated[ApplicationListQuery, Depends()],
     request: Request,
@@ -127,10 +117,6 @@ async def get_my_applications(
 ):
     """
     Get member's own project applications with pagination (member only).
-
-    - **status**: Filter by status (submitted, under_review, approved, rejected)
-    - **page**: Page number
-    - **page_size**: Items per page
     """
     applications, total = await service.get_my_applications(
         current_user.id, query
@@ -154,7 +140,6 @@ async def get_my_applications(
     tags=["admin-projects"],
     summary="List all projects (Admin)",
 )
-@auto_log("list_projects_admin", log_result_count=True)
 async def list_projects_admin(
     query: Annotated[ProjectListQuery, Depends()],
     request: Request,
@@ -162,18 +147,13 @@ async def list_projects_admin(
 ):
     """
     List all projects with pagination and filtering (admin only).
-    
-    Admin can see all projects including drafts and inactive ones.
-    
-    - **status**: Filter by status (active, inactive, archived)
-    - **search**: Search in title and description
-    - **page**: Page number (default: 1)
-    - **page_size**: Items per page (default: 20, max: 100)
+    Data formatting is handled by schemas with admin-specific fields.
     """
     projects, total = await service.list_projects_admin(query)
 
+    # Use schema to format data with admin fields
     return ProjectListResponsePaginated(
-        items=[ProjectListItem.model_validate(p) for p in projects],
+        items=[ProjectListItem.from_db_dict(p, include_admin_fields=True) for p in projects],
         total=total,
         page=1,
         page_size=total if total > 0 else 1,
@@ -187,7 +167,6 @@ async def list_projects_admin(
     tags=["admin-projects"],
     summary="Get project details (Admin)",
 )
-@auto_log("get_project_admin", log_resource_id=True)
 async def get_project_admin(
     project_id: UUID,
     request: Request,
@@ -195,7 +174,6 @@ async def get_project_admin(
 ):
     """
     Get detailed information about a specific project (admin only).
-    Admin can see all project details including drafts and inactive ones.
     """
     project = await service.get_project_by_id(project_id)
     return ProjectResponse.model_validate(project)
@@ -208,7 +186,6 @@ async def get_project_admin(
     tags=["admin-projects"],
     summary="Create project (Admin)",
 )
-@auto_log("create_project", log_resource_id=True)
 @audit_log(action="create", resource_type="project")
 async def create_project(
     data: ProjectCreate,
@@ -228,7 +205,6 @@ async def create_project(
     tags=["admin-projects"],
     summary="Update project (Admin)",
 )
-@auto_log("update_project", log_resource_id=True)
 @audit_log(action="update", resource_type="project")
 async def update_project(
     project_id: UUID,
@@ -249,7 +225,6 @@ async def update_project(
     tags=["admin-projects"],
     summary="Delete project (Admin)",
 )
-@auto_log("delete_project", log_resource_id=True)
 @audit_log(action="delete", resource_type="project")
 async def delete_project(
     project_id: UUID,
@@ -258,8 +233,6 @@ async def delete_project(
 ):
     """
     Delete a project (admin only).
-
-    WARNING: This will cascade delete all applications related to this project.
     """
     await service.delete_project(project_id)
 
@@ -270,7 +243,6 @@ async def delete_project(
     tags=["admin-projects"],
     summary="List all applications (Admin)",
 )
-@auto_log("list_all_applications", log_result_count=True)
 async def list_all_applications(
     query: Annotated[ApplicationListQuery, Depends()],
     request: Request,
@@ -279,11 +251,6 @@ async def list_all_applications(
 ):
     """
     List all applications across all projects (admin only).
-
-    - **project_id**: Filter by specific project ID (optional)
-    - **status**: Filter by application status
-    - **page**: Page number
-    - **page_size**: Items per page
     """
     applications, total = await service.list_all_applications(query, project_id)
 
@@ -302,7 +269,6 @@ async def list_all_applications(
     tags=["admin-projects"],
     summary="List project applications (Admin)",
 )
-@auto_log("list_project_applications", log_result_count=True)
 async def list_project_applications(
     project_id: UUID,
     query: Annotated[ApplicationListQuery, Depends()],
@@ -311,10 +277,6 @@ async def list_project_applications(
 ):
     """
     List all applications for a specific project (admin only).
-
-    - **status**: Filter by application status
-    - **page**: Page number
-    - **page_size**: Items per page
     """
     applications, total = await service.list_project_applications(
         project_id, query
@@ -335,7 +297,6 @@ async def list_project_applications(
     tags=["admin-projects"],
     summary="Update application status (Admin)",
 )
-@auto_log("update_application_status", log_resource_id=True)
 @audit_log(action="update_status", resource_type="project_application")
 async def update_application_status(
     application_id: UUID,
@@ -345,8 +306,6 @@ async def update_application_status(
 ):
     """
     Update application status (admin only).
-
-    Change application status to: submitted, under_review, approved, or rejected.
     """
     application = await service.update_application_status(
         application_id, data.status
@@ -359,7 +318,6 @@ async def update_application_status(
     tags=["admin-projects"],
     summary="Export projects data (Admin)",
 )
-@auto_log("export_projects", log_result_count=True)
 @audit_log(action="export", resource_type="project")
 async def export_projects(
     query: Annotated[ProjectListQuery, Depends()],
@@ -369,15 +327,11 @@ async def export_projects(
 ):
     """
     Export projects data to Excel or CSV (admin only).
-
-    Supports the same filtering options as the list endpoint.
     """
     from ...common.modules.export import ExportService
     
-    # Get export data
     export_data = await service.export_projects_data(query)
     
-    # Generate export file
     if format == "excel":
         excel_bytes = ExportService.export_to_excel(
             data=export_data,
@@ -391,10 +345,8 @@ async def export_projects(
                 "Content-Disposition": f'attachment; filename="projects_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
             },
         )
-    else:  # CSV
-        csv_content = ExportService.export_to_csv(
-            data=export_data,
-        )
+    else:
+        csv_content = ExportService.export_to_csv(data=export_data)
         return Response(
             content=csv_content,
             media_type="text/csv",
@@ -409,7 +361,6 @@ async def export_projects(
     tags=["admin-projects"],
     summary="Export project applications data (Admin)",
 )
-@auto_log("export_applications", log_result_count=True)
 @audit_log(action="export", resource_type="project_application")
 async def export_applications(
     query: Annotated[ApplicationListQuery, Depends()],
@@ -420,15 +371,11 @@ async def export_applications(
 ):
     """
     Export project applications data to Excel or CSV (admin only).
-
-    Supports filtering by project ID and application status.
     """
     from ...common.modules.export import ExportService
     
-    # Get export data
     export_data = await service.export_applications_data(project_id, query)
     
-    # Generate export file
     if format == "excel":
         excel_bytes = ExportService.export_to_excel(
             data=export_data,
@@ -442,10 +389,8 @@ async def export_applications(
                 "Content-Disposition": f'attachment; filename="applications_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
             },
         )
-    else:  # CSV
-        csv_content = ExportService.export_to_csv(
-            data=export_data,
-        )
+    else:
+        csv_content = ExportService.export_to_csv(data=export_data)
         return Response(
             content=csv_content,
             media_type="text/csv",

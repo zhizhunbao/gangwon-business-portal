@@ -20,11 +20,13 @@ export const useAuthStore = create(
       setLoading: (isLoading) => set({ isLoading }),
       
       clearAuth: () => {
+        // AOP 系统会自动记录 Store 操作
         authService.clearAuth();
         set({ user: null, isAuthenticated: false });
       },
       
       logout: async () => {
+        // AOP 系统会自动记录 Store 操作
         await authService.logout();
         set({ user: null, isAuthenticated: false });
       }

@@ -72,7 +72,9 @@ export default function NewsManagement() {
           setMessage(null);
         }, 3000);
       } else {
-        throw new Error('Upload response missing file URL');
+        // Upload response missing file URL
+        setMessageVariant('error');
+        setMessage(t('admin.content.news.messages.uploadFailed', '图片上传失败'));
       }
     } catch (error) {
       setMessageVariant('error');

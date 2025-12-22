@@ -7,7 +7,7 @@ from typing import Optional, List, Tuple, Dict, Any
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
 
-from ...common.modules.exception import NotFoundError, ForbiddenError
+from ...common.modules.exception import NotFoundError, AuthorizationError
 from ...common.modules.supabase.service import supabase_service
 from .schemas import FAQCreate, FAQUpdate, InquiryCreate, InquiryReplyRequest
 
@@ -253,7 +253,7 @@ class SupportService:
 
         Raises:
             NotFoundError: If inquiry not found
-            ForbiddenError: If member tries to access another member's inquiry
+            AuthorizationError: If member tries to access another member's inquiry
         """
         query = supabase_service.client.table('inquiries').select('*').eq('id', str(inquiry_id))
         result = query.execute()
@@ -265,7 +265,7 @@ class SupportService:
 
         # If member_id is provided, verify ownership
         if member_id is not None and inquiry['member_id'] != str(member_id):
-            raise ForbiddenError("You can only access your own inquiries")
+            raise AuthorizationError("You can only access your own inquiries")
 
         # Get attachments for this inquiry
         attachments_result = supabase_service.client.table('attachments').select('*').eq('resource_type', 'inquiry').eq('resource_id', str(inquiry_id)).execute()

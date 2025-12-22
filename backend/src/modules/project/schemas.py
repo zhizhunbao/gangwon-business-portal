@@ -9,6 +9,16 @@ from uuid import UUID
 from datetime import date, datetime
 from enum import Enum
 
+# Import common utilities
+from ...common.utils.formatters import (
+    parse_date,
+    parse_datetime,
+    format_datetime_display,
+    format_status_display,
+    format_date_range_display,
+    format_count_display,
+)
+
 
 # Enums
 class ProjectStatus(str, Enum):
@@ -71,29 +81,108 @@ class ProjectResponse(BaseModel):
 
 
 class ProjectListItem(BaseModel):
-    """Simplified schema for project list items."""
+    """Simplified schema for project list items with formatting logic."""
     id: UUID
     title: str
     description: Optional[str]
     target_company_name: Optional[str]
     target_business_number: Optional[str]
-    start_date: Optional[date]
-    end_date: Optional[date]
+    start_date: date
+    end_date: date
     image_url: Optional[str]
     status: str
-    applications_count: Optional[int] = None
+    applications_count: int
+    
+    # Formatted display fields
+    status_display: str
+    date_range_display: str
+    applications_count_display: str
+    created_at_display: str
+    updated_at_display: str
 
     class Config:
         from_attributes = True
         
     @classmethod
+    def from_db_dict(cls, data: dict, include_admin_fields: bool = False):
+        """
+        Create ProjectListItem from database dictionary with all formatting applied.
+        
+        Args:
+            data: Raw database dictionary
+            include_admin_fields: Whether to include admin-specific formatted fields
+            
+        Returns:
+            Formatted ProjectListItem instance
+        """
+        # Handle legacy target_audience field
+        if 'target_audience' in data:
+            data = data.copy()
+            data.pop('target_audience')
+        
+        # Basic fields - let it fail if required fields are missing
+        item_data = {
+            "id": data["id"],
+            "title": data["title"],
+            "description": data.get("description", ""),
+            "target_company_name": data.get("target_company_name", ""),
+            "target_business_number": data.get("target_business_number", ""),
+            "start_date": cls._parse_date(data["start_date"]),
+            "end_date": cls._parse_date(data["end_date"]),
+            "image_url": data.get("image_url", ""),
+            "status": data["status"],
+            "applications_count": data["application_count"],
+            
+            # Formatted display fields
+            "status_display": cls._format_status_display(data["status"]),
+            "date_range_display": cls._format_date_range(
+                data["start_date"], 
+                data["end_date"]
+            ),
+        }
+        
+        # Add admin-specific fields if requested
+        if include_admin_fields:
+            item_data.update({
+                "applications_count_display": format_count_display(data['application_count']),
+                "created_at_display": format_datetime_display(data["created_at"]),
+                "updated_at_display": format_datetime_display(data["updated_at"]),
+            })
+        else:
+            # For non-admin, provide default values for required fields
+            item_data.update({
+                "applications_count_display": format_count_display(data['application_count']),
+                "created_at_display": format_datetime_display(data["created_at"]),
+                "updated_at_display": format_datetime_display(data.get("updated_at", data["created_at"])),
+            })
+        
+        return cls(**item_data)
+    
+    @staticmethod
+    def _parse_date(date_str) -> date:
+        """Parse date string to date object."""
+        return parse_date(date_str)
+    
+    @staticmethod
+    def _format_status_display(status: str) -> str:
+        """Format status for display."""
+        return format_status_display(status, "project")
+    
+    @staticmethod
+    def _format_date_range(start_date, end_date) -> str:
+        """Format date range for display."""
+        return format_date_range_display(start_date, end_date)
+    
+    @staticmethod
+    def _format_datetime_display(dt) -> str:
+        """Format datetime for display."""
+        return format_datetime_display(dt)
+        
+    @classmethod
     def model_validate(cls, obj):
         """Custom validation to handle legacy target_audience field."""
         if isinstance(obj, dict):
-            # Handle legacy target_audience field by removing it
-            obj = obj.copy()
-            if 'target_audience' in obj:
-                obj.pop('target_audience')
+            return cls.from_db_dict(obj)
         return super().model_validate(obj)
 
 
@@ -138,12 +227,12 @@ class ProjectApplicationListItem(BaseModel):
     id: UUID
     member_id: UUID
     project_id: UUID
-    project_title: Optional[str] = Field(None, description="Project title for convenience")
-    company_name: Optional[str] = Field(None, description="Company name for convenience")
+    project_title: str  # 必填，数据库里没有就报错
+    company_name: str  # 必填，数据库里没有就报错
     status: str
-    application_reason: Optional[str] = Field(None, description="Application reason")
+    application_reason: str  # 必填，数据库里没有就报错
     submitted_at: datetime
-    reviewed_at: Optional[datetime]
+    reviewed_at: Optional[datetime]  # 这个可以为空，因为可能还没审核
 
     class Config:
         from_attributes = True

@@ -1,23 +1,103 @@
 """
-Exception service.
+Exception service for coordinating exception handling operations.
 
-Business logic for application exception operations.
-Writes to both file logs and error_logs table for permanent storage.
+This module provides a unified interface for exception handling by
+coordinating the classifier, recorder, and monitor services.
 """
-from typing import Optional, Any
+from typing import Optional, Union, List, Dict, Any
 from uuid import UUID
-import traceback
+from datetime import datetime
 
-from ..logger.file_writer import file_log_writer
-from ..logger.db_writer import db_log_writer
+from .exceptions import BaseCustomException
+from .classifier import exception_classifier
+from .recorder import exception_recorder, ExceptionContext, ExceptionRecord
+from .monitor import exception_monitor, ExceptionStats
 
 
 class ExceptionService:
-    """Exception service class."""
-
-    def create_exception(
+    """
+    Unified service for exception handling coordination.
+    
+    This service coordinates between the classifier, recorder, and monitor
+    to provide a single interface for exception handling operations.
+    """
+    
+    def __init__(self):
+        """Initialize the exception service."""
+        self._classifier = exception_classifier
+        self._recorder = exception_recorder
+        self._monitor = exception_monitor
+    
+    async def record_exception(
         self,
-        source: str,  # backend, frontend
+        exception: Union[Exception, BaseCustomException],
+        context: Optional[ExceptionContext] = None,
+        source: str = "backend"
+    ) -> ExceptionRecord:
+        """
+        Record an exception with full context information.
+        
+        This method coordinates the full exception handling process:
+        1. Records the exception via the recorder
+        2. Updates monitoring statistics
+        3. Checks for alert conditions
+        
+        Args:
+            exception: The exception to record
+            context: Additional context information
+            source: Source of the exception ("frontend" or "backend")
+        
+        Returns:
+            ExceptionRecord: The recorded exception data
+        """
+        # Record the exception
+        record = await self._recorder.record(exception, context, source)
+        
+        # Update monitoring statistics
+        self._monitor.update_stats(record)
+        
+        # Check for alerts
+        await self._monitor.check_alerts(record)
+        
+        return record
+    
+    def classify_exception(self, exception: Exception) -> BaseCustomException:
+        """
+        Classify an exception into the appropriate custom exception type.
+        
+        Args:
+            exception: The exception to classify
+        
+        Returns:
+            BaseCustomException: The classified exception
+        """
+        return self._classifier.classify(exception)
+    
+    def get_stats(self, hours: int = 24) -> ExceptionStats:
+        """
+        Get exception statistics for the specified number of hours.
+        
+        Args:
+            hours: Number of hours to include in statistics
+        
+        Returns:
+            ExceptionStats: Aggregated statistics
+        """
+        return self._monitor.get_stats(hours)
+    
+    def set_alert_thresholds(self, critical_threshold: int = None, error_threshold: int = None):
+        """
+        Set alert thresholds for exception monitoring.
+        
+        Args:
+            critical_threshold: Number of critical exceptions per hour to trigger alert
+            error_threshold: Number of error exceptions per hour to trigger alert
+        """
+        self._monitor.set_thresholds(critical_threshold, error_threshold)
+    
+    async def create_exception(
+        self,
+        source: str,
         exception_type: str,
         exception_message: str,
         error_code: Optional[str] = None,
@@ -28,86 +108,68 @@ class ExceptionService:
         user_agent: Optional[str] = None,
         request_method: Optional[str] = None,
         request_path: Optional[str] = None,
-        request_data: Optional[dict[str, Any]] = None,
+        request_data: Optional[Dict[str, Any]] = None,
         stack_trace: Optional[str] = None,
-        exception_details: Optional[dict[str, Any]] = None,
-        context_data: Optional[dict[str, Any]] = None,
-        exc: Optional[Exception] = None,
-    ) -> None:
+        exception_details: Optional[Dict[str, Any]] = None,
+        context_data: Optional[Dict[str, Any]] = None,
+    ) -> ExceptionRecord:
         """
-        Create an application exception entry (file + error_logs table).
-
-        Writes to:
-        - File log (for real-time debugging)
-        - error_logs table (for permanent storage in Supabase)
-
-        Args:
-            source: Source of the exception (backend/frontend)
-            exception_type: Exception class name
-            exception_message: Exception message
-            error_code: Application error code
-            status_code: HTTP status code
-            trace_id: Request trace ID
-            user_id: User ID
-            ip_address: IP address
-            user_agent: User agent string
-            request_method: HTTP method
-            request_path: Request path
-            request_data: Request payload (sanitized)
-            stack_trace: Full stack trace
-            exception_details: Additional exception details
-            context_data: Additional context data
-            exc: Exception object (for extracting stack trace if not provided)
-        """
-        # Extract stack trace from exception if not provided
-        if not stack_trace and exc:
-            stack_trace = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-
-        # Write to file log
-        try:
-            file_log_writer.write_exception(
-                source=source,
-                exception_type=exception_type,
-                exception_message=exception_message,
-                error_code=error_code,
-                status_code=status_code,
-                trace_id=trace_id,
-                user_id=str(user_id) if user_id else None,
-                ip_address=ip_address,
-                user_agent=user_agent,
-                request_method=request_method,
-                request_path=request_path,
-                request_data=request_data,
-                stack_trace=stack_trace,
-                exception_details=exception_details,
-                context_data=context_data,
-            )
-        except Exception:
-            # Don't fail if file write fails
-            pass
+        Create an exception record directly (for API endpoints).
         
-        # Write to error_logs table using unified db_log_writer (for permanent storage)
-        try:
-            db_log_writer.write_error_log(
-                source=source,
-                error_type=exception_type,
-                error_message=exception_message,
-                error_code=error_code,
-                status_code=status_code,
-                stack_trace=stack_trace,
-                module=None,  # Can be extracted from stack_trace if needed
-                function=None,
-                line_number=None,
-                trace_id=trace_id,
-                user_id=user_id,
-                ip_address=ip_address,
-                user_agent=user_agent,
-                request_method=request_method,
-                request_path=request_path,
-                request_data=request_data,
-                error_details=exception_details,
-                context_data=context_data,
-            )
-        except Exception:
-            # Don't fail if database write fails (graceful degradation)
-            pass
+        Args:
+            source: Source of the exception ("frontend" or "backend")
+            exception_type: Type of the exception
+            exception_message: Exception message
+            error_code: Optional error code
+            status_code: Optional HTTP status code
+            trace_id: Optional trace ID
+            user_id: Optional user ID
+            ip_address: Optional IP address
+            user_agent: Optional user agent
+            request_method: Optional request method
+            request_path: Optional request path
+            request_data: Optional request data
+            stack_trace: Optional stack trace
+            exception_details: Optional exception details
+            context_data: Optional context data
+        
+        Returns:
+            ExceptionRecord: The created exception record
+        """
+        # Create exception context
+        context = ExceptionContext(
+            trace_id=UUID(trace_id) if trace_id else None,
+            user_id=user_id,
+            additional_data={
+                'ip_address': ip_address,
+                'user_agent': user_agent,
+                'request_method': request_method,
+                'request_path': request_path,
+                'request_data': request_data,
+                **(context_data or {})
+            }
+        )
+        
+        # Create a mock exception object
+        class MockException(Exception):
+            def __init__(self, message: str, exc_type: str):
+                super().__init__(message)
+                self.name = exc_type
+                self.__class__.__name__ = exc_type
+        
+        mock_exception = MockException(exception_message, exception_type)
+        
+        # Record the exception
+        return await self._recorder.record_direct(
+            exception=mock_exception,
+            context=context,
+            source=source,
+            error_code=error_code,
+            status_code=status_code,
+            stack_trace=stack_trace,
+            exception_details=exception_details
+        )
+
+
+# Global exception service instance
+exception_service = ExceptionService()

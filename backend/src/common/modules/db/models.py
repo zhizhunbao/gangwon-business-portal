@@ -12,6 +12,7 @@ from sqlalchemy import (
     TIMESTAMP,
     DECIMAL,
     Date,
+    Float,
     ForeignKey,
     CheckConstraint,
     Index,
@@ -26,9 +27,7 @@ from .session import Base
 
 __all__ = [
     "Member",
-    "MemberProfile",
     "PerformanceRecord",
-    "PerformanceReview",
     "Project",
     "ProjectApplication",
     "Attachment",
@@ -42,17 +41,19 @@ __all__ = [
     "AppLog",
     "ErrorLog",
     "SystemLog",
+    "PerformanceLog",
     "Admin",
-    "Message",
+    "Message",  # 统一的消息表
     "NiceDnbCompanyInfo",
 ]
 
 
 class Member(Base):
-    """Member (company) account table."""
+    """Member (company) account table with integrated profile information."""
 
     __tablename__ = "members"
 
+    # Basic member fields
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     business_number = Column(String(12), unique=True, nullable=False, index=True)
     company_name = Column(String(255), nullable=False)
@@ -62,26 +63,8 @@ class Member(Base):
     approval_status = Column(String(50), default="pending")  # pending, approved, rejected
     reset_token = Column(String(255), nullable=True)
     reset_token_expires = Column(TIMESTAMP(timezone=True), nullable=True)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
-
-    # Relationships
-    profile = relationship("MemberProfile", back_populates="member", uselist=False, cascade="all, delete-orphan")
-    performance_records = relationship("PerformanceRecord", back_populates="member", cascade="all, delete-orphan")
-    project_applications = relationship("ProjectApplication", back_populates="member", cascade="all, delete-orphan")
-    inquiries = relationship("Inquiry", back_populates="member", cascade="all, delete-orphan")
-
-    def __repr__(self):
-        return f"<Member(id={self.id}, business_number={self.business_number}, company_name={self.company_name})>"
-
-
-class MemberProfile(Base):
-    """Extended company profile information."""
-
-    __tablename__ = "member_profiles"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    member_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="CASCADE"), unique=True, nullable=False)
+    
+    # Profile fields (merged from member_profiles table)
     industry = Column(String(100))
     revenue = Column(DECIMAL(15, 2))
     employee_count = Column(Integer)
@@ -93,18 +76,25 @@ class MemberProfile(Base):
     phone = Column(String(20))
     website = Column(String(255))
     logo_url = Column(String(500))
+    
+    # Soft delete field
+    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
+    # Timestamps
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    # Relationships
-    member = relationship("Member", back_populates="profile")
+    # Relationships (removed profile relationship since it's merged)
+    performance_records = relationship("PerformanceRecord", back_populates="member", foreign_keys="PerformanceRecord.member_id", cascade="all, delete-orphan")
+    project_applications = relationship("ProjectApplication", back_populates="member", cascade="all, delete-orphan")
+    inquiries = relationship("Inquiry", back_populates="member", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"<MemberProfile(id={self.id}, member_id={self.member_id})>"
+        return f"<Member(id={self.id}, business_number={self.business_number}, company_name={self.company_name})>"
 
 
 class PerformanceRecord(Base):
-    """Performance data submission records."""
+    """Performance data submission records with integrated review information."""
 
     __tablename__ = "performance_records"
 
@@ -116,41 +106,31 @@ class PerformanceRecord(Base):
     status = Column(String(50), default="draft")  # draft, submitted, approved, rejected, revision_requested
     data_json = Column(JSONB, nullable=False)
     submitted_at = Column(TIMESTAMP(timezone=True))
+    
+    # Review fields (merged from performance_reviews table)
+    reviewer_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="SET NULL"), nullable=True)
+    review_status = Column(String(50), nullable=True)  # approved, rejected, revision_requested
+    review_comments = Column(Text, nullable=True)
+    reviewed_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
+    # Timestamps
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    # Relationships
-    member = relationship("Member", back_populates="performance_records")
-    reviews = relationship("PerformanceReview", back_populates="performance_record", cascade="all, delete-orphan")
+    # Relationships (removed reviews relationship since it's merged)
+    member = relationship("Member", back_populates="performance_records", foreign_keys=[member_id])
+    reviewer = relationship("Member", foreign_keys=[reviewer_id])
     # Note: attachments are queried via Attachment.resource_type='performance' and Attachment.resource_id=self.id
 
     # Indexes
     __table_args__ = (
         Index("idx_performance_member_year", "member_id", "year", "quarter"),
+        Index("idx_performance_reviewer", "reviewer_id", "reviewed_at"),
+        Index("idx_performance_status", "status", "review_status"),
     )
 
     def __repr__(self):
-        return f"<PerformanceRecord(id={self.id}, member_id={self.member_id}, year={self.year}, quarter={self.quarter})>"
-
-
-class PerformanceReview(Base):
-    """Performance data review/approval records."""
-
-    __tablename__ = "performance_reviews"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    performance_id = Column(UUID(as_uuid=True), ForeignKey("performance_records.id", ondelete="CASCADE"), nullable=False)
-    reviewer_id = Column(UUID(as_uuid=True), ForeignKey("members.id"))  # Admin member ID
-    status = Column(String(50), nullable=False)  # approved, rejected, revision_requested
-    comments = Column(Text)
-    reviewed_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-
-    # Relationships
-    performance_record = relationship("PerformanceRecord", back_populates="reviews")
-    reviewer = relationship("Member", foreign_keys=[reviewer_id])
-
-    def __repr__(self):
-        return f"<PerformanceReview(id={self.id}, performance_id={self.performance_id}, status={self.status})>"
+        return f"<PerformanceRecord(id={self.id}, member_id={self.member_id}, year={self.year}, quarter={self.quarter}, status={self.status})>"
 
 
 class Project(Base):
@@ -252,6 +232,10 @@ class Notice(Base):
     content_html = Column(Text)
     author_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)  # Can be NULL for admin-created content
     view_count = Column(Integer, default=0)
+    
+    # Soft delete field
+    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), index=True)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -261,6 +245,7 @@ class Notice(Base):
     # Indexes
     __table_args__ = (
         Index("idx_notices_created", "created_at"),
+        Index("idx_notices_deleted_at", "deleted_at"),
     )
 
     def __repr__(self):
@@ -276,10 +261,19 @@ class PressRelease(Base):
     title = Column(String(255), nullable=False)
     image_url = Column(String(500), nullable=False)
     author_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)  # Can be NULL for admin-created content
+    
+    # Soft delete field
+    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     # Relationships
     author = relationship("Member", foreign_keys=[author_id])
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_press_releases_deleted_at", "deleted_at"),
+    )
 
     def __repr__(self):
         return f"<PressRelease(id={self.id}, title={self.title})>"
@@ -358,11 +352,20 @@ class Inquiry(Base):
     content = Column(Text, nullable=False)
     status = Column(String(50), default="pending")  # pending, replied, closed
     admin_reply = Column(Text)
+    
+    # Soft delete field
+    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     replied_at = Column(TIMESTAMP(timezone=True))
 
     # Relationships
     member = relationship("Member", back_populates="inquiries")
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_inquiries_deleted_at", "deleted_at"),
+    )
 
     def __repr__(self):
         return f"<Inquiry(id={self.id}, member_id={self.member_id}, subject={self.subject})>"
@@ -398,10 +401,12 @@ class AppLog(Base):
     source = Column(String(20), nullable=False)  # backend, frontend
     level = Column(String(20), nullable=False)  # DEBUG, INFO, WARNING, ERROR, CRITICAL
     message = Column(Text, nullable=False)
+    layer = Column(String(100))  # AOP layer (Service, Router, Auth, Database, etc.)
     module = Column(String(255))  # Module name (e.g., module path)
     function = Column(String(255))  # Function name
     line_number = Column(Integer)  # Line number
     trace_id = Column(String(100))  # Request trace ID
+    request_id = Column(String(100))  # Request ID in format {traceId}-{sequence}
     user_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)
     ip_address = Column(String(45))
     user_agent = Column(Text)
@@ -440,6 +445,7 @@ class ErrorLog(Base):
     error_code = Column(String(100))  # Application error code
     status_code = Column(Integer)  # HTTP status code
     stack_trace = Column(Text)  # Full stack trace
+    layer = Column(String(100))  # AOP layer (Service, Router, Auth, Database, etc.)
     module = Column(String(255))  # Module name
     function = Column(String(255))  # Function name
     line_number = Column(Integer)  # Line number
@@ -497,6 +503,45 @@ class SystemLog(Base):
         return f"<SystemLog(id={self.id}, level={self.level}, logger_name={self.logger_name}, created_at={self.created_at})>"
 
 
+class PerformanceLog(Base):
+    """Performance logs for monitoring application and system performance."""
+
+    __tablename__ = "performance_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    source = Column(String(20), nullable=False)  # backend, frontend
+    metric_name = Column(String(255), nullable=False)  # e.g., 'render_time', 'api_response_time', 'FCP', 'LCP', 'TTI'
+    metric_value = Column(Float, nullable=False)  # Numeric value of the metric
+    metric_unit = Column(String(20), default="ms")  # Unit of measurement (ms, s, bytes, etc.)
+    layer = Column(String(100))  # AOP layer (Performance, Component, Service, etc.)
+    module = Column(String(255))  # Module name
+    component_name = Column(String(255))  # Name of the component being measured
+    trace_id = Column(String(100))  # Request trace ID for correlation
+    request_id = Column(String(100))  # Request ID for correlation
+    user_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)
+    threshold = Column(Float)  # Performance threshold that was exceeded (if applicable)
+    performance_issue = Column(String(100))  # Type of performance issue (e.g., 'SLOW_API', 'POOR_FCP', 'SLOW_COMPONENT_RENDER')
+    web_vitals = Column(JSONB)  # Web Vitals metrics snapshot (FCP, LCP, TTI, CLS)
+    extra_data = Column(JSONB)  # Additional performance context data
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), index=True)
+
+    # Relationships
+    user = relationship("Member", foreign_keys=[user_id])
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_performance_logs_metric", "metric_name", "created_at"),
+        Index("idx_performance_logs_source", "source", "created_at"),
+        Index("idx_performance_logs_component", "component_name", "created_at"),
+        Index("idx_performance_logs_trace_id", "trace_id"),
+        Index("idx_performance_logs_user_id", "user_id", "created_at"),
+        Index("idx_performance_logs_created", "created_at"),
+    )
+
+    def __repr__(self):
+        return f"<PerformanceLog(id={self.id}, metric_name={self.metric_name}, metric_value={self.metric_value}, created_at={self.created_at})>"
+
+
 class Admin(Base):
     """Admin user table."""
 
@@ -516,203 +561,52 @@ class Admin(Base):
 
 
 class Message(Base):
-    """Message table for member notifications."""
+    """Unified message table for all types of messages."""
 
     __tablename__ = "messages"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    sender_id = Column(UUID(as_uuid=True), nullable=True, comment="Admin or member ID who sent the message")
-    recipient_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="CASCADE"), nullable=False, comment="Member ID who receives the message")
+    message_type = Column(String(20), nullable=False, server_default="direct")  # direct, thread, broadcast
+    thread_id = Column(UUID(as_uuid=True), ForeignKey("messages.id", ondelete="CASCADE"), nullable=True)  # For grouping
+    parent_id = Column(UUID(as_uuid=True), ForeignKey("messages.id", ondelete="CASCADE"), nullable=True)  # For replies
+    sender_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="SET NULL"), nullable=True)
+    sender_type = Column(String(20), nullable=True)  # admin, member, system
+    recipient_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="CASCADE"), nullable=True)
     subject = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
+    category = Column(String(50), nullable=False, server_default="general")
+    status = Column(String(20), nullable=False, server_default="sent")  # sent, delivered, read
+    priority = Column(String(20), nullable=False, server_default="normal")  # low, normal, high, urgent
     is_read = Column(Boolean, nullable=False, server_default="false")
     is_important = Column(Boolean, nullable=False, server_default="false")
+    is_broadcast = Column(Boolean, nullable=False, server_default="false")
+    broadcast_count = Column(Integer, nullable=True)  # For broadcast messages
     read_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    sent_at = Column(TIMESTAMP(timezone=True), nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
+    sender = relationship("Member", foreign_keys=[sender_id])
     recipient = relationship("Member", foreign_keys=[recipient_id])
+    thread_parent = relationship("Message", remote_side=[id], foreign_keys=[thread_id])
+    reply_parent = relationship("Message", remote_side=[id], foreign_keys=[parent_id])
+    attachments = relationship("Attachment", 
+                             primaryjoin="and_(Message.id == foreign(Attachment.resource_id), "
+                                        "Attachment.resource_type == 'message')",
+                             viewonly=True)
 
     # Indexes
     __table_args__ = (
         Index("idx_messages_recipient", "recipient_id", "is_read"),
         Index("idx_messages_sender", "sender_id"),
+        Index("idx_messages_thread", "thread_id", "created_at"),
+        Index("idx_messages_type", "message_type", "created_at"),
         Index("idx_messages_created_at", "created_at"),
     )
 
     def __repr__(self):
-        return f"<Message(id={self.id}, recipient_id={self.recipient_id}, subject={self.subject})>"
-
-
-class MessageThread(Base):
-    """Message thread table for conversation grouping."""
-
-    __tablename__ = "message_threads"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    subject = Column(String(255), nullable=False)
-    category = Column(String(50), nullable=False, server_default="general", comment="general, support, performance")
-    status = Column(String(20), nullable=False, server_default="open", comment="open, resolved, closed")
-    member_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="CASCADE"), nullable=False)
-    created_by = Column(UUID(as_uuid=True), nullable=False, comment="User ID who created the thread")
-    assigned_to = Column(UUID(as_uuid=True), nullable=True, comment="Admin ID assigned to handle this thread")
-    last_message_at = Column(TIMESTAMP(timezone=True), nullable=True)
-    message_count = Column(Integer, nullable=False, server_default="0")
-    unread_count = Column(Integer, nullable=False, server_default="0")
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
-
-    # Relationships
-    member = relationship("Member", foreign_keys=[member_id])
-    messages = relationship("ThreadMessage", back_populates="thread", cascade="all, delete-orphan")
-
-    # Indexes
-    __table_args__ = (
-        Index("idx_message_threads_member", "member_id", "status"),
-        Index("idx_message_threads_status", "status"),
-        Index("idx_message_threads_created_at", "created_at"),
-    )
-
-    def __repr__(self):
-        return f"<MessageThread(id={self.id}, subject={self.subject}, status={self.status})>"
-
-
-class ThreadMessage(Base):
-    """Individual messages within a thread."""
-
-    __tablename__ = "thread_messages"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    thread_id = Column(UUID(as_uuid=True), ForeignKey("message_threads.id", ondelete="CASCADE"), nullable=False)
-    sender_id = Column(UUID(as_uuid=True), nullable=False, comment="User ID who sent the message")
-    sender_type = Column(String(20), nullable=False, comment="admin or member")
-    content = Column(Text, nullable=False)
-    is_read = Column(Boolean, nullable=False, server_default="false")
-    is_important = Column(Boolean, nullable=False, server_default="false")
-    read_at = Column(TIMESTAMP(timezone=True), nullable=True)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
-
-    # Relationships
-    thread = relationship("MessageThread", back_populates="messages")
-    attachments = relationship("MessageAttachment", back_populates="message", cascade="all, delete-orphan")
-
-    # Indexes
-    __table_args__ = (
-        Index("idx_thread_messages_thread", "thread_id", "created_at"),
-        Index("idx_thread_messages_sender", "sender_id"),
-    )
-
-    def __repr__(self):
-        return f"<ThreadMessage(id={self.id}, thread_id={self.thread_id}, sender_type={self.sender_type})>"
-
-
-class MessageAttachment(Base):
-    """File attachments for messages."""
-
-    __tablename__ = "message_attachments"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    message_id = Column(UUID(as_uuid=True), ForeignKey("thread_messages.id", ondelete="CASCADE"), nullable=False)
-    file_name = Column(String(255), nullable=False)
-    file_path = Column(String(500), nullable=False)
-    file_size = Column(Integer, nullable=False)
-    mime_type = Column(String(100), nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-
-    # Relationships
-    message = relationship("ThreadMessage", back_populates="attachments")
-
-    # Indexes
-    __table_args__ = (
-        Index("idx_message_attachments_message", "message_id"),
-    )
-
-    def __repr__(self):
-        return f"<MessageAttachment(id={self.id}, file_name={self.file_name})>"
-
-
-class BroadcastMessage(Base):
-    """Broadcast messages sent to multiple recipients."""
-
-    __tablename__ = "broadcast_messages"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    sender_id = Column(UUID(as_uuid=True), nullable=False, comment="Admin ID who sent the broadcast")
-    subject = Column(String(255), nullable=False)
-    content = Column(Text, nullable=False)
-    category = Column(String(50), nullable=False, server_default="general")
-    is_important = Column(String(10), nullable=False, server_default="false")
-    send_to_all = Column(String(10), nullable=False, server_default="false")
-    recipient_count = Column(Integer, nullable=False, server_default="0")
-    sent_at = Column(TIMESTAMP(timezone=True), nullable=True)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-
-    # Relationships
-    recipients = relationship("BroadcastRecipient", back_populates="broadcast", cascade="all, delete-orphan")
-    attachments = relationship("BroadcastAttachment", back_populates="broadcast", cascade="all, delete-orphan")
-
-    # Indexes
-    __table_args__ = (
-        Index("idx_broadcast_messages_sender", "sender_id"),
-        Index("idx_broadcast_messages_created_at", "created_at"),
-    )
-
-    def __repr__(self):
-        return f"<BroadcastMessage(id={self.id}, subject={self.subject})>"
-
-
-class BroadcastRecipient(Base):
-    """Recipients of broadcast messages."""
-
-    __tablename__ = "broadcast_recipients"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    broadcast_id = Column(UUID(as_uuid=True), ForeignKey("broadcast_messages.id", ondelete="CASCADE"), nullable=False)
-    member_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="CASCADE"), nullable=False)
-    is_read = Column(Boolean, nullable=False, server_default="false")
-    read_at = Column(TIMESTAMP(timezone=True), nullable=True)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-
-    # Relationships
-    broadcast = relationship("BroadcastMessage", back_populates="recipients")
-    member = relationship("Member")
-
-    # Indexes
-    __table_args__ = (
-        Index("idx_broadcast_recipients_broadcast", "broadcast_id"),
-        Index("idx_broadcast_recipients_member", "member_id", "is_read"),
-        UniqueConstraint("broadcast_id", "member_id", name="uq_broadcast_recipient"),
-    )
-
-    def __repr__(self):
-        return f"<BroadcastRecipient(broadcast_id={self.broadcast_id}, member_id={self.member_id})>"
-
-
-class BroadcastAttachment(Base):
-    """File attachments for broadcast messages."""
-
-    __tablename__ = "broadcast_attachments"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    broadcast_id = Column(UUID(as_uuid=True), ForeignKey("broadcast_messages.id", ondelete="CASCADE"), nullable=False)
-    file_name = Column(String(255), nullable=False)
-    file_path = Column(String(500), nullable=False)
-    file_size = Column(Integer, nullable=False)
-    mime_type = Column(String(100), nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-
-    # Relationships
-    broadcast = relationship("BroadcastMessage", back_populates="attachments")
-
-    # Indexes
-    __table_args__ = (
-        Index("idx_broadcast_attachments_broadcast", "broadcast_id"),
-    )
-
-    def __repr__(self):
-        return f"<BroadcastAttachment(id={self.id}, file_name={self.file_name})>"
+        return f"<Message(id={self.id}, type={self.message_type}, subject={self.subject})>"
 
 
 class NiceDnbCompanyInfo(Base):

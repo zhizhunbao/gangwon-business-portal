@@ -112,7 +112,7 @@ export default function MemberDetail() {
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.representative')}</label>
-            <span className="text-base text-gray-900">{member.representative || member.representativeName || '-'}</span>
+            <span className="text-base text-gray-900">{member.representative || '-'}</span>
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.legalNumber')}</label>
@@ -143,6 +143,12 @@ export default function MemberDetail() {
                 {t(`admin.members.status.${member.approvalStatus}`)}
               </Badge>
             </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-600 font-medium">{t('admin.members.detail.createdAt', '가입일시')}</label>
+            <span className="text-base text-gray-900">
+              {member.createdAt ? formatDate(member.createdAt, 'yyyy-MM-dd HH:mm', i18n.language) : '-'}
+            </span>
           </div>
         </div>
 

@@ -68,8 +68,9 @@ export default function MemberList() {
           // 状态（搜索原始值和翻译值）
           member.approvalStatus || '',
           member.approvalStatus ? t(`admin.members.status.${member.approvalStatus}`) : '',
-          // 创建时间
-          member.createdAt ? formatDate(member.createdAt, 'yyyy-MM-dd', currentLanguage) : '',
+          // 创建时间（包含格式化后的时间，显示到分钟）
+          member.created_at_display || '',
+          member.createdAt ? formatDate(member.createdAt, 'yyyy-MM-dd HH:mm', currentLanguage) : '',
           // ID（用于精确搜索）
           member.id || '',
         ].join(' ').toLowerCase();
@@ -159,11 +160,11 @@ export default function MemberList() {
         width: '120px'
       },
       {
-        key: 'createdAt',
+        key: 'created_at_display',
         label: t('admin.members.table.createdAt'),
         sortable: true,
-        width: '140px',
-        render: (value) => formatDate(value, 'yyyy-MM-dd', currentLanguage)
+        width: '160px',
+        render: (value, row) => value || formatDate(row.createdAt, 'yyyy-MM-dd HH:mm', currentLanguage)
       },
       {
         key: 'approvalStatus',

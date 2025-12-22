@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 from typing import Optional
 
 from ...common.modules.db.models import Member
-from ...common.modules.logger import auto_log
 from ..user.dependencies import get_current_admin_user
 from .service import DashboardService
 from .schemas import DashboardResponse
@@ -23,7 +22,6 @@ service = DashboardService()
     tags=["dashboard"],
     summary="Get admin dashboard statistics",
 )
-@auto_log("get_dashboard_stats")
 async def get_dashboard_stats(
     year: Optional[str] = Query(
         None, description="Year filter ('all' or specific year)"
@@ -65,7 +63,6 @@ async def get_dashboard_stats(
     tags=["dashboard"],
     summary="Export dashboard statistics",
 )
-@auto_log("export_dashboard_stats")
 async def export_dashboard_stats(
     year: Optional[str] = Query(
         None, description="Year filter ('all' or specific year)"
