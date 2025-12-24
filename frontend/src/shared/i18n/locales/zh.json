@@ -446,6 +446,19 @@
   },
   "performance": {
     "type": "业绩类型",
+    "types": {
+      "sales": "销售/雇佣业绩",
+      "support": "政府支持业绩",
+      "ip": "知识产权业绩"
+    },
+    "status": {
+      "draft": "草稿",
+      "submitted": "已提交",
+      "approved": "已批准",
+      "rejected": "已驳回",
+      "revisionRequested": "需修改"
+    },
+    "annual": "年度",
     "year": "年度",
     "quarter": "季度",
     "sales": "销售额",

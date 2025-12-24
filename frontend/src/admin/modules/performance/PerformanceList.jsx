@@ -72,7 +72,7 @@ export default function PerformanceList() {
           record.quarter ? `Q${record.quarter}` : t('performance.annual', '年度'),
           // 类型（搜索原始值和翻译值）
           record.type || '',
-          record.type ? t(`performance.type.${record.type}`, record.type) : '',
+          record.type ? t(`performance.types.${record.type}`, record.type) : '',
           // 状态（搜索原始值和翻译值）
           record.status || '',
           record.status ? t(`performance.status.${record.status}`, record.status) : '',
@@ -210,14 +210,7 @@ export default function PerformanceList() {
     {
       key: 'type',
       label: t('admin.performance.table.type', '类型'),
-      render: (value) => {
-        const typeMap = {
-          sales: t('performance.type.sales', '销售业绩'),
-          support: t('performance.type.support', '支持业绩'),
-          ip: t('performance.type.ip', '知识产权业绩')
-        };
-        return typeMap[value] || value;
-      }
+      render: (value) => t(`performance.types.${value}`, value)
     },
     {
       key: 'status',
@@ -226,24 +219,26 @@ export default function PerformanceList() {
         const variantMap = {
           approved: 'success',
           submitted: 'info',
-          pending: 'warning', // Legacy support
+          pending: 'warning',
           revision_requested: 'warning',
-          revision_required: 'warning', // Legacy support
+          revision_required: 'warning',
           draft: 'secondary',
           rejected: 'danger'
         };
-        const statusLabelMap = {
-          approved: t('performance.status.approved', '已批准'),
-          submitted: t('performance.status.submitted', '已提交'),
-          pending: t('performance.status.submitted', '已提交'), // Legacy support
-          revision_requested: t('performance.status.revisionRequested', '需修改'),
-          revision_required: t('performance.status.revisionRequested', '需修改'), // Legacy support
-          draft: t('performance.status.draft', '草稿'),
-          rejected: t('performance.status.rejected', '已驳回')
+        // 映射后端状态值到 i18n key
+        const statusKeyMap = {
+          approved: 'approved',
+          submitted: 'submitted',
+          pending: 'submitted',
+          revision_requested: 'revisionRequested',
+          revision_required: 'revisionRequested',
+          draft: 'draft',
+          rejected: 'rejected'
         };
+        const statusKey = statusKeyMap[value] || value;
         return (
           <Badge variant={variantMap[value] || 'default'}>
-            {statusLabelMap[value] || value}
+            {t(`performance.status.${statusKey}`, value)}
           </Badge>
         );
       }

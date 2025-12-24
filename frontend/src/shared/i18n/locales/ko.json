@@ -442,6 +442,19 @@
   },
   "performance": {
     "type": "실적 유형",
+    "types": {
+      "sales": "매출/고용 실적",
+      "support": "정부지원 실적",
+      "ip": "지식재산권 실적"
+    },
+    "status": {
+      "draft": "임시저장",
+      "submitted": "제출 완료",
+      "approved": "승인 완료",
+      "rejected": "반려",
+      "revisionRequested": "보완 필요"
+    },
+    "annual": "연간",
     "year": "연도",
     "quarter": "분기",
     "sales": "매출액",
