@@ -108,8 +108,15 @@ export default function ApplicationModal({
       // 关闭弹窗
       onClose();
     } catch (err) {
-      const message = err?.response?.data?.message || err?.message || t('common.unknownError', '发生未知错误，请稍后再试');
-      setFormError(message);
+      // api.service.js 已经处理了错误码映射，返回 i18nKey
+      console.log('API Error:', err); // 调试用
+      const i18nKey = err?.i18nKey;
+      
+      // 优先使用 i18n key，否则使用后端返回的 message
+      const message = i18nKey 
+        ? t(i18nKey) 
+        : (err?.message || t('common.unknownError', '发生未知错误，请稍后再试'));
+      // 只在 Alert 显示后端错误，不在 Textarea 显示
       setFormMessage(message);
     } finally {
       setSubmitting(false);
@@ -167,7 +174,7 @@ export default function ApplicationModal({
 
         {/* 错误提示 */}
         {formMessage && (
-          <Alert variant={formError ? "error" : "info"}>{formMessage}</Alert>
+          <Alert variant="error">{formMessage}</Alert>
         )}
 
         {/* 申请理由 */}

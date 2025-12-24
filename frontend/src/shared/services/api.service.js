@@ -4,6 +4,7 @@ import {
   API_PREFIX,
   ACCESS_TOKEN_KEY,
   HTTP_STATUS,
+  ERROR_CODE_I18N_MAP,
 } from "@shared/utils/constants";
 import {
   getStorage,
@@ -53,8 +54,12 @@ apiClient.interceptors.response.use(
     return response.data;
   },
   async (error) => {
-    // 应用 API 错误日志拦截器
-    interceptors.error(error);
+    // 应用 API 错误日志拦截器（不等待，只记录日志）
+    try {
+      interceptors.error(error);
+    } catch (e) {
+      // 忽略日志错误
+    }
 
     const originalRequest = error.config;
 
@@ -163,9 +168,12 @@ apiClient.interceptors.response.use(
       message: errorMessage,
       status: error.response?.status,
       code:
+        error.response?.data?.error?.code ||
         error.response?.data?.error_code ||
         error.response?.data?.code ||
         error.code,
+      // 添加 i18n key 映射
+      i18nKey: ERROR_CODE_I18N_MAP[error.response?.data?.error?.code],
       response: error.response,
       details: error.response?.data?.details,
     });

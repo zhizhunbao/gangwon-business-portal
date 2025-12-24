@@ -30,6 +30,7 @@
     "info": "정보",
     "view": "보기",
     "download": "다운로드",
+    "downloading": "다운로드 중...",
     "upload": "업로드",
     "uploading": "업로드 중...",
     "clickToUpload": "파일을 업로드하려면 클릭하세요",
@@ -404,6 +405,7 @@
   "projects": {
     "title": "프로그램",
     "detail": "프로그램 상세",
+    "alreadyApplied": "이미 신청한 프로그램입니다",
     "searchPlaceholder": "제목/내용으로 검색",
     "statusFilter": "상태 필터",
     "itemsPerPage": "페이지당 표시",

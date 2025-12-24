@@ -10,6 +10,7 @@ from datetime import datetime
 from ...common.modules.db.models import Project, ProjectApplication  # 保留用于类型提示和文档
 from ...common.modules.supabase.service import supabase_service
 from ...common.modules.exception import NotFoundError, ValidationError
+from ...common.modules.exception.codes import ErrorCode
 from .schemas import (
     ProjectCreate,
     ProjectUpdate,
@@ -126,8 +127,8 @@ class ProjectService:
         
         if existing_app.data:
             raise ValidationError(
-                "You have already applied to this project. "
-                "Duplicate applications are not allowed."
+                "Project already applied",
+                context={"error_code": ErrorCode.PROJECT_ALREADY_APPLIED}
             )
 
         # Create application - use helper method

@@ -26,6 +26,7 @@ class ErrorCode(int, Enum):
     # --- 4000 - 4999: Validation ---
     VALIDATION_FAILED = 4001
     DUPLICATE_RESOURCE = 4002
+    PROJECT_ALREADY_APPLIED = 4003
 
     # --- 5000 - 5999: System ---
     SYSTEM_ERROR = 5001

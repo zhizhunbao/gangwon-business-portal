@@ -35,6 +35,7 @@
     "info": "信息",
     "view": "查看",
     "download": "下载",
+    "downloading": "下载中...",
     "upload": "上传",
     "uploading": "上传中...",
     "clickToUpload": "点击上传文件",
@@ -408,6 +409,7 @@
   "projects": {
     "title": "项目",
     "detail": "项目详情",
+    "alreadyApplied": "您已申请过该项目",
     "searchPlaceholder": "按标题/内容搜索",
     "statusFilter": "状态筛选",
     "itemsPerPage": "每页显示",
