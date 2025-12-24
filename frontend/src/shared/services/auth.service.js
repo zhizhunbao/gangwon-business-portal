@@ -8,7 +8,13 @@ import {
   ACCESS_TOKEN_KEY,
   USER_ROLES,
 } from "@shared/utils/constants";
-import { setStorage, getStorage, removeStorage } from "@shared/utils/storage";
+import {
+  setStorage,
+  getStorage,
+  removeStorage,
+  removeSessionStorage,
+  getSessionStorage,
+} from "@shared/utils/storage";
 import { applyAuthInterceptor } from "@shared/interceptors/auth.interceptor";
 
 class AuthService {
@@ -322,8 +328,10 @@ class AuthService {
    * Check if user is authenticated
    */
   isAuthenticated() {
-    const token = getStorage(ACCESS_TOKEN_KEY);
-    const expiry = getStorage("token_expiry");
+    const token =
+      getStorage(ACCESS_TOKEN_KEY) || getSessionStorage(ACCESS_TOKEN_KEY);
+    const expiry =
+      getStorage("token_expiry") || getSessionStorage("token_expiry");
 
     if (!token) return false;
     if (!expiry) return true; // If no expiry, assume token is valid
@@ -336,7 +344,7 @@ class AuthService {
    * Get current user from storage
    */
   getCurrentUserFromStorage() {
-    return getStorage("user_info");
+    return getStorage("user_info") || getSessionStorage("user_info");
   }
 
   /**
@@ -393,10 +401,18 @@ class AuthService {
    * Clear authentication data
    */
   clearAuth() {
-    removeStorage(ACCESS_TOKEN_KEY);
-    removeStorage("refresh_token");
-    removeStorage("user_info");
-    removeStorage("token_expiry");
+    const keys = [
+      ACCESS_TOKEN_KEY,
+      "refresh_token",
+      "user_info",
+      "token_expiry",
+      "token_type",
+    ];
+
+    keys.forEach((key) => {
+      removeStorage(key);
+      removeSessionStorage(key);
+    });
   }
 }
 
@@ -405,7 +421,7 @@ const authService = new AuthService();
 
 // 应用认证拦截器 - Requirements 3.5 (now with proper prototype method handling)
 const interceptedAuthService = applyAuthInterceptor(authService, {
-  enableLogging: true
+  enableLogging: true,
 });
 
 export default interceptedAuthService;

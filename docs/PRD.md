@@ -1339,16 +1339,37 @@ The system follows a three-tier architecture:
 #### Error Response
 ```json
 {
-  "code": 400,
-  "message": "Error description",
-  "errors": [
-    {
-      "field": "field_name",
-      "message": "Field-specific error message"
-    }
-  ]
+  "error": {
+    "type": "AuthenticationError",
+    "message": "Error description",
+    "code": 1001
+  },
+  "trace_id": "uuid-string",
+  "request_id": "uuid-string"
 }
 ```
+
+#### HTTP Status Codes
+
+| Status Code | Type | Description | Use Case |
+|-------------|------|-------------|----------|
+| 400 | ValidationError | Request validation failed | Invalid input data, missing required fields |
+| 401 | AuthenticationError | Authentication failed | Invalid credentials, expired token |
+| 403 | AuthorizationError | Access denied | Account pending approval, suspended, insufficient permissions |
+| 404 | NotFoundError | Resource not found | Entity does not exist |
+| 409 | ConflictError | Resource conflict | Duplicate entry, concurrent modification |
+| 429 | RateLimitError | Too many requests | Rate limit exceeded |
+| 500 | InternalError | Server error | Unexpected server error |
+
+#### Business Error Codes
+
+| Code Range | Category | Examples |
+|------------|----------|----------|
+| 1000-1999 | Credentials | 1001: Invalid credentials, 1002: Invalid admin credentials |
+| 2000-2999 | Account Status | 2001: Account pending approval, 2002: Account suspended |
+| 3000-3999 | Permission | 3001: Insufficient permissions |
+| 4000-4999 | Validation | 4001: Invalid input format |
+| 5000-5999 | System | 5001: Database error, 5002: External service error |
 
 ### APP5: File Upload Limits
 

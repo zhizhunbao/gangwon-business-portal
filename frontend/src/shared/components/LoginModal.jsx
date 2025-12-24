@@ -11,8 +11,8 @@ import { Modal } from "./Modal";
 import { EyeIcon, EyeOffIcon } from "./Icons";
 import { formatBusinessLicense } from "@shared/utils/format";
 import { cn } from "@shared/utils/helpers";
-// Exception reporting handled by service layer / AOP; components should not call reporting directly.
 import { API_PREFIX } from "@shared/utils/constants";
+import ApiErrorClassifier from "@shared/interceptors/api.error.classifier";
 // Auth styles converted to Tailwind classes
 
 export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
@@ -49,41 +49,28 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
       // Close modal
       onClose();
     } catch (err) {
-      // AOP 系统会自动记录登录错误
-      // Extract error message - API service returns { message, status, code, details }
-      const rawResponse = err.response?.data || {};
-      const rawErrorMessage =
-        err.message ||
-        rawResponse.message ||
-        rawResponse.detail ||
-        (typeof err === "string" ? err : null) ||
-        t("auth.loginFailed");
+      // Use the classifier to get structured error info
+      const classification = ApiErrorClassifier.classify(err);
 
-      // Prefer server-provided error_code when possible, then fall back to matching localized messages
       let errorMessage = t("auth.loginFailed");
-      const serverCode = rawResponse.error_code || rawResponse.code || err.code || "";
 
-      if (serverCode === "ACCOUNT_PENDING_APPROVAL") {
-        errorMessage = t("auth.approvalPending");
-      } else if (serverCode === "INVALID_CREDENTIALS" || serverCode === "INVALID_ADMIN_CREDENTIALS") {
-        errorMessage = t("auth.invalidCredentials");
-      } else if (serverCode === "ACCOUNT_SUSPENDED") {
-        errorMessage = t("auth.accountSuspended");
-      } else {
-        const lowerMessage = String(rawErrorMessage || "").toLowerCase();
-        const pendingTranslation = t("auth.approvalPending").toLowerCase();
-        const invalidTranslation = t("auth.invalidCredentials").toLowerCase();
-
-        if (pendingTranslation && lowerMessage.includes(pendingTranslation)) {
+      if (classification.subCategory === "ACCOUNT_STATUS") {
+        if (classification.code === 2001) {
+          // ACCOUNT_PENDING_APPROVAL
           errorMessage = t("auth.approvalPending");
-        } else if (invalidTranslation && lowerMessage.includes(invalidTranslation)) {
-          errorMessage = t("auth.invalidCredentials");
-        } else if (rawErrorMessage) {
-          errorMessage = rawErrorMessage;
+        } else if (classification.code === 2002) {
+          // ACCOUNT_SUSPENDED
+          errorMessage = t("auth.accountSuspended");
+        } else {
+          errorMessage = t("auth.accountSuspended");
         }
+      } else if (classification.subCategory === "CREDENTIALS") {
+        errorMessage = t("auth.invalidCredentials");
+      } else if (err.message) {
+        // Fallback for non-business common errors (like network)
+        errorMessage = err.message;
       }
 
-      // AOP 系统会自动记录错误设置
       setError(errorMessage);
 
       // Log login failure
@@ -138,15 +125,22 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
       onClose={handleClose}
       title={t("auth.login")}
       size="sm"
-      disableBackdropClose={isLoading || Boolean(error)}
-      showCloseButton={!isLoading && !error}
+      disableBackdropClose={isLoading}
+      showCloseButton={!isLoading}
     >
       <div className="p-0">
-        {error && <div className="px-4 py-3 mb-6 text-red-700 bg-red-50 border border-red-200 rounded-lg text-sm leading-relaxed">{error}</div>}
+        {error && (
+          <div className="px-4 py-3 mb-6 text-red-700 bg-red-50 border border-red-200 rounded-lg text-sm leading-relaxed">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="mt-0" autoComplete="on">
           <div className="mb-6 mt-0">
-            <label htmlFor="modal-businessNumber" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="modal-businessNumber"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               {t("auth.businessLicense")}
             </label>
             <input
@@ -168,9 +162,18 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
 
           <div className="mb-6">
             <div className="flex justify-between items-center mb-2 text-sm">
-              <label htmlFor="modal-password" className="block text-sm font-medium text-gray-700">{t("auth.password")}</label>
+              <label
+                htmlFor="modal-password"
+                className="block text-sm font-medium text-gray-700"
+              >
+                {t("auth.password")}
+              </label>
               <div className="flex items-center gap-2">
-                <Link to="/find-id" className="text-gray-900 no-underline text-base font-medium hover:underline" onClick={handleClose}>
+                <Link
+                  to="/find-id"
+                  className="text-gray-900 no-underline text-base font-medium hover:underline"
+                  onClick={handleClose}
+                >
                   {t("auth.findId")}
                 </Link>
                 <span className="text-gray-400 text-xs">|</span>
@@ -189,7 +192,7 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
                 name="password"
                 type={showPassword ? "text" : "password"}
                 className="w-full py-3 pr-10 text-base leading-relaxed text-gray-900 bg-transparent border-0 border-b border-gray-300 rounded-none outline-none box-border transition-colors duration-200 focus:border-gray-900 focus:outline-none"
-                style={{ letterSpacing: showPassword ? 'normal' : '-0.02em' }}
+                style={{ letterSpacing: showPassword ? "normal" : "-0.02em" }}
                 value={formData.password}
                 onChange={handlePasswordChange}
                 required
@@ -220,7 +223,10 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
               type="checkbox"
               className="mr-2 w-4 h-4 cursor-pointer accent-[#0052a4]"
             />
-            <label htmlFor="modal-remember-me" className="text-sm text-gray-700 cursor-pointer m-0">
+            <label
+              htmlFor="modal-remember-me"
+              className="text-sm text-gray-700 cursor-pointer m-0"
+            >
               {t("auth.rememberMe")}
             </label>
           </div>
@@ -228,12 +234,12 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
           <button
             type="submit"
             className={cn(
-              'w-full px-6 py-3.5 text-base font-medium leading-relaxed text-center text-white',
-              'bg-[#0052a4] border-none rounded-md cursor-pointer transition-all duration-200',
-              'inline-flex items-center justify-center gap-2 box-border',
-              'hover:bg-[#003d7a] active:bg-[#003d7a]',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              isLoading && 'relative text-transparent'
+              "w-full px-6 py-3.5 text-base font-medium leading-relaxed text-center text-white",
+              "bg-[#0052a4] border-none rounded-md cursor-pointer transition-all duration-200",
+              "inline-flex items-center justify-center gap-2 box-border",
+              "hover:bg-[#003d7a] active:bg-[#003d7a]",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
+              isLoading && "relative text-transparent"
             )}
             disabled={isLoading}
           >

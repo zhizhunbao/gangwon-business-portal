@@ -44,6 +44,8 @@ from .exceptions import (
     create_exception_from_type,
 )
 
+from .codes import ErrorCode
+
 from .service import (
     # Service class and instance
     ExceptionService,
@@ -119,6 +121,9 @@ __all__ = [
     # Utilities
     "EXCEPTION_TYPE_MAP",
     "create_exception_from_type",
+    
+    # Error Codes
+    "ErrorCode",
     
     # Service
     "ExceptionService",

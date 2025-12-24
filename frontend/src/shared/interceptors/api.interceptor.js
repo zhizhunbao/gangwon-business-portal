@@ -188,7 +188,7 @@ export function createErrorInterceptor(options = {}) {
         `API Failed: ${method} ${path}`,
         {
           error_message: err.message,
-          error_code: err.response?.data?.code,
+          error_code: err.response?.data?.error?.code || err.response?.data?.code,
           error_type: err.name,
           network_error: !err.response,
           classification: classification,

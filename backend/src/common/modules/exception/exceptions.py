@@ -74,12 +74,21 @@ class BaseCustomException(Exception):
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert exception to dictionary for API responses."""
-        return {
+        code = self.context.get("error_code") or self.error_code
+        # 如果是 Enum 型，取其 value（支持 ErrorCode 等）
+        if hasattr(code, 'value'):
+            code = code.value
+            
+        result = {
             "type": self.exception_type.value,
             "message": self.message,
-            "code": self.error_code,
-            "context": self.context
+            "code": code,
         }
+        # 只有当 context 中有其他数据时才包含
+        other_context = {k: v for k, v in self.context.items() if k != "error_code"}
+        if other_context:
+            result["context"] = other_context
+        return result
 
 
 # Validation Exceptions (HTTP 400)

@@ -564,17 +564,6 @@ export default function PerformanceDetail() {
               </div>
             </div>
           )}
-          {/* 显示完整的 JSON 数据（可折叠） */}
-          <details className="mt-4">
-            <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-900 font-medium">
-              {t('admin.performance.detail.viewRawData', '查看原始数据')}
-            </summary>
-            <div className="mt-2 bg-gray-50 rounded-lg p-4">
-              <pre className="text-xs text-gray-700 whitespace-pre-wrap overflow-x-auto">
-                {JSON.stringify(record.dataJson, null, 2)}
-              </pre>
-            </div>
-          </details>
         </div>
       </Card>
 

@@ -138,6 +138,7 @@
     "emailAlreadyRegistered": "이미 등록된 이메일입니다",
     "loginFailed": "로그인 실패",
     "invalidCredentials": "사업자등록번호 또는 비밀번호가 올바르지 않습니다",
+    "approvalPending": "회원가입 신청이 접수되었으며 현재 '승인 대기' 상태입니다. 관리자의 승인이 완료된 후 다시 로그인해 주세요.",
     "sessionExpired": "세션이 만료되었습니다. 다시 로그인해주세요",
     "accountSuspended": "계정이 정지되었습니다. 관리자에게 문의하세요",
     "redirectingToLogin": "로그인 페이지로 이동합니다...",
@@ -170,8 +171,7 @@
     "step4Title": "사업 정보",
     "step5Title": "약관 동의",
     "passwordPolicy": "비밀번호는 8자 이상, 영문 대소문자, 숫자, 특수문자를 포함해야 합니다",
-    "fileUploadError": "파일 업로드에 실패했습니다",
-    "approvalPending": "회원가입 신청이 접수되었으며 현재 '승인 대기' 상태입니다. 관리자의 승인이 완료된 후 다시 로그인해 주세요."
+    "fileUploadError": "파일 업로드에 실패했습니다"
   },
   "admin": {
     "auth": {
@@ -373,9 +373,6 @@
     "sales": "매출액",
     "employeeCount": "직원 수",
     "representativePhone": "대표 전화번호",
-    "contactPersonName": "기업 담당자명",
-    "contactPersonDepartment": "기업 담당자 부서명",
-    "contactPersonPosition": "기업 담당자 직책명",
     "cooperationFields": "산업협력 희망 분야",
     "contactPersonName": "담당자명",
     "contactPersonDepartment": "담당자 부서",
@@ -626,4 +623,3 @@
     }
   }
 }
-

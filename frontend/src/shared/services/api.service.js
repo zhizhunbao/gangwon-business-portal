@@ -5,7 +5,12 @@ import {
   ACCESS_TOKEN_KEY,
   HTTP_STATUS,
 } from "@shared/utils/constants";
-import { getStorage, setStorage, removeStorage } from "@shared/utils/storage";
+import {
+  getStorage,
+  setStorage,
+  removeStorage,
+  removeSessionStorage,
+} from "@shared/utils/storage";
 import { createApiInterceptors } from "@shared/interceptors/api.interceptor";
 import { logger } from "@shared/logger";
 import { exceptionHandler } from "@shared/exception";
@@ -87,10 +92,15 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshError) {
         // Clear storage and auth store state
-        removeStorage(ACCESS_TOKEN_KEY);
-        removeStorage("refresh_token");
-        removeStorage("user_info");
-        removeStorage("token_expiry");
+        [
+          ACCESS_TOKEN_KEY,
+          "refresh_token",
+          "user_info",
+          "token_expiry",
+        ].forEach((k) => {
+          removeStorage(k);
+          removeSessionStorage(k);
+        });
 
         // Update Zustand store state (import dynamically to avoid circular dependency)
         try {
@@ -114,10 +124,12 @@ apiClient.interceptors.response.use(
       }
 
       // No refresh token available, clear auth state
-      removeStorage(ACCESS_TOKEN_KEY);
-      removeStorage("refresh_token");
-      removeStorage("user_info");
-      removeStorage("token_expiry");
+      [ACCESS_TOKEN_KEY, "refresh_token", "user_info", "token_expiry"].forEach(
+        (k) => {
+          removeStorage(k);
+          removeSessionStorage(k);
+        }
+      );
 
       // Update Zustand store state
       try {
@@ -150,7 +162,11 @@ apiClient.interceptors.response.use(
     return Promise.reject({
       message: errorMessage,
       status: error.response?.status,
-      code: error.response?.data?.code,
+      code:
+        error.response?.data?.error_code ||
+        error.response?.data?.code ||
+        error.code,
+      response: error.response,
       details: error.response?.data?.details,
     });
   }

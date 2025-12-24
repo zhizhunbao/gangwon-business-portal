@@ -70,7 +70,6 @@
     "status": "状态",
     "actions": "操作",
     "details": "详情",
-    "more": "更多",
     "less": "收起",
     "viewAll": "查看全部",
     "preview": "预览",
@@ -142,7 +141,8 @@
     "businessNumberAlreadyRegistered": "该营业执照号码已被注册",
     "emailAlreadyRegistered": "该邮箱已被注册",
     "loginFailed": "登录失败",
-    "invalidCredentials": "营业执照号码或密码不正确",
+    "invalidCredentials": "用户名或密码错误",
+    "approvalPending": "您的注册申请已收到，目前处于“等待批准”状态。请在管理员批准后重新登录。",
     "sessionExpired": "会话已过期，请重新登录",
     "accountSuspended": "账户已被暂停，请联系管理员",
     "redirectingToLogin": "正在跳转到登录页面...",
@@ -175,8 +175,7 @@
     "step4Title": "业务信息",
     "step5Title": "条款同意",
     "passwordPolicy": "密码必须包含8位以上字符，包括大小写字母、数字和特殊字符",
-    "fileUploadError": "文件上传失败",
-    "approvalPending": "您的注册申请已提交，目前处于审批进行中状态，请等待管理员审核通过后再尝试登录。"
+    "fileUploadError": "文件上传失败"
   },
   "admin": {
     "auth": {

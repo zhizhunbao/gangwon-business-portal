@@ -24,8 +24,13 @@ export default function AdminLogin() {
     e.preventDefault();
     setError('');
     
-    await adminLogin(formData);
-    navigate('/admin');
+    try {
+      await adminLogin(formData);
+      navigate('/admin');
+    } catch (err) {
+      // 显示错误信息，阻止跳转
+      setError(err.response?.data?.message || t('admin.auth.loginFailed'));
+    }
   };
   
   const handleChange = (e) => {

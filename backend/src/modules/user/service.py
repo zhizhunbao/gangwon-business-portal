@@ -11,8 +11,20 @@ from uuid import UUID, uuid4
 
 from ...common.modules.config import settings
 from ...common.modules.supabase.service import supabase_service
-from ...common.modules.exception import AuthorizationError, ValidationError, NotFoundError
+from ...common.modules.exception import AuthorizationError, AuthenticationError, ValidationError, NotFoundError, ErrorCode
 from .schemas import MemberRegisterRequest
+
+from enum import Enum
+
+class UserStatus(str, Enum):
+    """User and approval status constants."""
+    ACTIVE = "active"
+    PENDING = "pending"
+    SUSPENDED = "suspended"
+    DELETED = "deleted"
+    APPROVED = "approved"
+    PENDING_APPROVAL = "pending"
+
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -159,13 +171,13 @@ class AuthService:
         member = await supabase_service.get_member_by_business_number(business_number)
 
         if not member or not self.verify_password(password, member.get("password_hash", "")):
-            raise AuthorizationError("Invalid credentials", error_code="INVALID_CREDENTIALS")
+            raise AuthenticationError("Invalid credentials", context={"error_code": ErrorCode.INVALID_CREDENTIALS})
 
-        if member.get("approval_status") != "approved":
-            raise AuthorizationError("Account pending approval", error_code="ACCOUNT_PENDING_APPROVAL")
+        if member.get("approval_status") == UserStatus.PENDING_APPROVAL.value:
+            raise AuthorizationError("Account pending approval", context={"error_code": ErrorCode.ACCOUNT_PENDING_APPROVAL})
 
-        if member.get("status") != "active":
-            raise AuthorizationError("Account is suspended", error_code="ACCOUNT_SUSPENDED")
+        if member.get("status") in [UserStatus.SUSPENDED.value, UserStatus.DELETED.value]:
+            raise AuthorizationError("Account is suspended", context={"error_code": ErrorCode.ACCOUNT_SUSPENDED})
 
         return member
 
@@ -227,10 +239,10 @@ class AuthService:
         admin = await supabase_service.get_admin_by_email(email)
 
         if not admin or not self.verify_password(password, admin.get("password_hash", "")):
-            raise AuthorizationError("Invalid admin credentials", error_code="INVALID_ADMIN_CREDENTIALS")
+            raise AuthorizationError("Invalid admin credentials", context={"error_code": ErrorCode.INVALID_ADMIN_CREDENTIALS})
 
-        if admin.get("is_active") != "true":
-            raise AuthorizationError("Account is suspended", error_code="ACCOUNT_SUSPENDED")
+        if admin.get("is_active") in [UserStatus.SUSPENDED.value, UserStatus.DELETED.value]:
+            raise AuthorizationError("Account is suspended", context={"error_code": ErrorCode.ACCOUNT_SUSPENDED})
 
         return admin
 
