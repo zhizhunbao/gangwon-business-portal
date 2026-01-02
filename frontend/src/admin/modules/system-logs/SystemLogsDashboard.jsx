@@ -31,6 +31,7 @@ export default function SystemLogsDashboard() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [clearAllModal, setClearAllModal] = useState(false);
   const [clearingAll, setClearingAll] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   
   const [logFilter, setLogFilter] = useState(null);
   const [exceptionFilter, setExceptionFilter] = useState(null);
@@ -100,6 +101,7 @@ export default function SystemLogsDashboard() {
     try {
       await logsService.deleteAllLogs();
       setClearAllModal(false);
+      setRefreshKey(k => k + 1);
       loadDashboardData();
     } catch (err) {
       console.error('Failed to clear logs:', err);
@@ -208,13 +210,13 @@ export default function SystemLogsDashboard() {
           goToServer={goToServer}
         />
       )}
-      {activeTab === 'logs' && <LogViewer initialFilter={logFilter} />}
-      {activeTab === 'exceptions' && <ExceptionViewer initialFilter={exceptionFilter} />}
-      {activeTab === 'performance' && <PerformanceViewer initialFilter={perfFilter} />}
-      {activeTab === 'audit' && <AuditLogViewer initialFilter={auditFilter} />}
-      {activeTab === 'system' && <SystemLogViewer />}
-      {activeTab === 'database' && <DatabaseMonitor />}
-      {activeTab === 'server' && <ServerMonitor />}
+      {activeTab === 'logs' && <LogViewer key={refreshKey} initialFilter={logFilter} />}
+      {activeTab === 'exceptions' && <ExceptionViewer key={refreshKey} initialFilter={exceptionFilter} />}
+      {activeTab === 'performance' && <PerformanceViewer key={refreshKey} initialFilter={perfFilter} />}
+      {activeTab === 'audit' && <AuditLogViewer key={refreshKey} initialFilter={auditFilter} />}
+      {activeTab === 'system' && <SystemLogViewer key={refreshKey} />}
+      {activeTab === 'database' && <DatabaseMonitor key={refreshKey} />}
+      {activeTab === 'server' && <ServerMonitor key={refreshKey} />}
     </div>
   );
 }
