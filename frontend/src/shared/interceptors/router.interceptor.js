@@ -6,18 +6,18 @@
  * Requirements: 3.4
  */
 
-import { info, LOG_LAYERS } from '@shared/logger';
+import { LOG_LAYERS } from '@shared/logger';
+import { createLogger } from '@shared/hooks/useLogger';
+
+const FILE_PATH = 'src/shared/interceptors/router.interceptor.js';
+const log = createLogger(FILE_PATH);
 
 let isInstalled = false;
 let unsubscribe = null;
 let prevPath = null;
 
-/**
- * 获取认证状态（延迟导入避免循环依赖）
- */
 function getAuthState() {
   try {
-    // 动态导入 authStore
     const { useAuthStore } = require('@shared/stores');
     const state = useAuthStore.getState();
     return {
@@ -29,14 +29,10 @@ function getAuthState() {
   }
 }
 
-/**
- * 记录路由变化
- */
 function logRouteChange(location, action) {
   const fromPath = prevPath || '(initial)';
   const toPath = location.pathname;
   
-  // 跳过相同路径
   if (fromPath === toPath && fromPath !== '(initial)') {
     return;
   }
@@ -58,15 +54,11 @@ function logRouteChange(location, action) {
     extraData.user_role = userRole;
   }
   
-  info(LOG_LAYERS.ROUTER, `Route: ${fromPath} -> ${toPath}`, extraData);
+  log.info(LOG_LAYERS.ROUTER, `Route: ${fromPath} -> ${toPath}`, extraData);
   
   prevPath = toPath;
 }
 
-/**
- * 安装路由拦截器
- * @param {Object} router - React Router 的 router 实例
- */
 export function installRouterInterceptor(router) {
   if (isInstalled) {
     return false;
@@ -77,12 +69,10 @@ export function installRouterInterceptor(router) {
     return false;
   }
   
-  // 记录初始路由
   if (router.state?.location) {
     logRouteChange(router.state.location, 'INITIAL');
   }
   
-  // 订阅路由变化
   unsubscribe = router.subscribe((state) => {
     if (state.location) {
       logRouteChange(state.location, state.historyAction);
@@ -98,9 +88,6 @@ export function installRouterInterceptor(router) {
   return true;
 }
 
-/**
- * 卸载路由拦截器
- */
 export function uninstallRouterInterceptor() {
   if (!isInstalled) {
     return false;

@@ -7,29 +7,31 @@
  * - 记录组件渲染耗时
  * - 渲染超过 100ms 记录 WARNING
  * - 收集 Web Vitals（FCP, LCP, TTI）
- * - FCP > 2s, LCP > 2.5s, TTI > 3.8s 记录 WARNING
+ * - 支持模块路径注入
  *
  * Requirements: 4.5, 4.6, 4.7, 4.8, 4.9
  */
 
 import React, { useEffect, useRef, useCallback } from "react";
-import { info, warn, debug, LOG_LAYERS } from "@shared/logger";
+import { LOG_LAYERS } from "@shared/logger";
+import { logWithModule } from "./useLogger";
 
 /**
  * 性能日志记录 Hook
  * @param {string} componentName - 组件名称
  * @param {Object} options - 配置选项
- * @returns {Object} 性能记录工具函数
+ * @param {string} options.filePath - 文件路径
  */
 export function usePerformanceLog(componentName, options = {}) {
   const {
+    filePath = null,
     enableLogging = true,
     trackRenderTime = true,
     trackWebVitals = true,
-    renderWarningThreshold = 100, // ms - Requirements 4.5
-    fcpWarningThreshold = 2000, // ms - Requirements 4.7
-    lcpWarningThreshold = 2500, // ms - Requirements 4.8
-    ttiWarningThreshold = 3800, // ms - Requirements 4.9
+    renderWarningThreshold = 100,
+    fcpWarningThreshold = 2000,
+    lcpWarningThreshold = 2500,
+    ttiWarningThreshold = 3800,
   } = options;
 
   const renderStartTimeRef = useRef(null);
@@ -41,18 +43,52 @@ export function usePerformanceLog(componentName, options = {}) {
     tti: null,
   });
 
-  // 初始化 Web Vitals 监控 - Requirements 4.6
+  // 内部日志函数
+  const log = useCallback((level, message, data) => {
+    logWithModule(filePath, level, LOG_LAYERS.PERFORMANCE, message, data);
+  }, [filePath]);
+
+  // 记录 Web Vital 指标
+  const logWebVital = useCallback(
+    (metric, value, threshold) => {
+      if (!enableLogging) return;
+
+      try {
+        const logData = {
+          component_name: componentName,
+          metric_name: metric,
+          metric_value: Math.round(value),
+          metric_value_ms: Math.round(value),
+          threshold_ms: threshold,
+          web_vitals: { ...webVitalsRef.current },
+        };
+
+        if (value > threshold) {
+          log('WARNING', `Poor Web Vital: ${metric} (${Math.round(value)}ms)`, {
+            ...logData,
+            performance_issue: `POOR_${metric}`,
+            exceeded_by_ms: Math.round(value - threshold),
+          });
+        } else {
+          log('INFO', `Web Vital: ${metric} (${Math.round(value)}ms)`, logData);
+        }
+      } catch (error) {
+        console.warn("Failed to log Web Vital:", error);
+      }
+    },
+    [componentName, enableLogging, log]
+  );
+
+  // 初始化 Web Vitals 监控
   useEffect(() => {
     if (!enableLogging || !trackWebVitals) return;
 
-    // 检查浏览器支持
     if (typeof PerformanceObserver === "undefined") {
       console.warn("PerformanceObserver not supported");
       return;
     }
 
     try {
-      // 监控 FCP (First Contentful Paint)
       const fcpObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         entries.forEach((entry) => {
@@ -63,7 +99,6 @@ export function usePerformanceLog(componentName, options = {}) {
         });
       });
 
-      // 监控 LCP (Largest Contentful Paint)
       const lcpObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         const lastEntry = entries[entries.length - 1];
@@ -73,12 +108,10 @@ export function usePerformanceLog(componentName, options = {}) {
         }
       });
 
-      // 监控导航时间（用于计算 TTI）
       const navigationObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         entries.forEach((entry) => {
           if (entry.entryType === "navigation") {
-            // 简化的 TTI 计算：domInteractive 时间
             const tti = entry.domInteractive;
             webVitalsRef.current.tti = tti;
             logWebVital("TTI", tti, ttiWarningThreshold);
@@ -86,7 +119,6 @@ export function usePerformanceLog(componentName, options = {}) {
         });
       });
 
-      // 启动观察器
       try {
         fcpObserver.observe({ entryTypes: ["paint"] });
         lcpObserver.observe({ entryTypes: ["largest-contentful-paint"] });
@@ -104,7 +136,6 @@ export function usePerformanceLog(componentName, options = {}) {
       console.warn("Failed to initialize Web Vitals monitoring:", error);
     }
 
-    // 清理观察器
     return () => {
       if (performanceObserverRef.current) {
         try {
@@ -122,47 +153,8 @@ export function usePerformanceLog(componentName, options = {}) {
     fcpWarningThreshold,
     lcpWarningThreshold,
     ttiWarningThreshold,
+    logWebVital,
   ]);
-
-  // 记录 Web Vital 指标
-  const logWebVital = useCallback(
-    (metric, value, threshold) => {
-      if (!enableLogging) return;
-
-      try {
-        const logData = {
-          component_name: componentName,
-          metric_name: metric,
-          metric_value: Math.round(value),
-          metric_value_ms: Math.round(value),
-          threshold_ms: threshold,
-          web_vitals: { ...webVitalsRef.current },
-        };
-
-        // 根据阈值记录警告 - Requirements 4.7, 4.8, 4.9
-        if (value > threshold) {
-          warn(
-            LOG_LAYERS.PERFORMANCE,
-            `Poor Web Vital: ${metric} (${Math.round(value)}ms)`,
-            {
-              ...logData,
-              performance_issue: `POOR_${metric}`,
-              exceeded_by_ms: Math.round(value - threshold),
-            }
-          );
-        } else {
-          info(
-            LOG_LAYERS.PERFORMANCE,
-            `Web Vital: ${metric} (${Math.round(value)}ms)`,
-            logData
-          );
-        }
-      } catch (error) {
-        console.warn("Failed to log Web Vital:", error);
-      }
-    },
-    [componentName, enableLogging]
-  );
 
   // 开始渲染性能测量
   const startRenderMeasure = useCallback(() => {
@@ -171,7 +163,6 @@ export function usePerformanceLog(componentName, options = {}) {
     renderStartTimeRef.current = performance.now();
     renderCountRef.current += 1;
 
-    // 返回结束测量函数
     return () => {
       if (!renderStartTimeRef.current) return;
 
@@ -188,23 +179,14 @@ export function usePerformanceLog(componentName, options = {}) {
           threshold_ms: renderWarningThreshold,
         };
 
-        // 慢渲染警告 - Requirements 4.5
         if (renderTime > renderWarningThreshold) {
-          warn(
-            LOG_LAYERS.PERFORMANCE,
-            `Slow Component Render: ${componentName} (${renderTime}ms)`,
-            {
-              ...logData,
-              performance_issue: "SLOW_COMPONENT_RENDER",
-              exceeded_by_ms: renderTime - renderWarningThreshold,
-            }
-          );
+          log('WARNING', `Slow Component Render: ${componentName} (${renderTime}ms)`, {
+            ...logData,
+            performance_issue: "SLOW_COMPONENT_RENDER",
+            exceeded_by_ms: renderTime - renderWarningThreshold,
+          });
         } else {
-          debug(
-            LOG_LAYERS.PERFORMANCE,
-            `Component Render: ${componentName} (${renderTime}ms)`,
-            logData
-          );
+          log('DEBUG', `Component Render: ${componentName} (${renderTime}ms)`, logData);
         }
       } catch (error) {
         console.warn("Failed to log render performance:", error);
@@ -212,7 +194,7 @@ export function usePerformanceLog(componentName, options = {}) {
 
       renderStartTimeRef.current = null;
     };
-  }, [componentName, enableLogging, trackRenderTime, renderWarningThreshold]);
+  }, [componentName, enableLogging, trackRenderTime, renderWarningThreshold, log]);
 
   // 记录自定义性能指标
   const logCustomMetric = useCallback(
@@ -228,29 +210,20 @@ export function usePerformanceLog(componentName, options = {}) {
           threshold: threshold,
         };
 
-        // 如果有阈值且超过阈值，记录警告
         if (threshold && value > threshold) {
-          warn(
-            LOG_LAYERS.PERFORMANCE,
-            `Poor Performance Metric: ${metricName} (${value}${unit})`,
-            {
-              ...logData,
-              performance_issue: `POOR_${metricName.toUpperCase()}`,
-              exceeded_by: value - threshold,
-            }
-          );
+          log('WARNING', `Poor Performance Metric: ${metricName} (${value}${unit})`, {
+            ...logData,
+            performance_issue: `POOR_${metricName.toUpperCase()}`,
+            exceeded_by: value - threshold,
+          });
         } else {
-          info(
-            LOG_LAYERS.PERFORMANCE,
-            `Performance Metric: ${metricName} (${value}${unit})`,
-            logData
-          );
+          log('INFO', `Performance Metric: ${metricName} (${value}${unit})`, logData);
         }
       } catch (error) {
         console.warn("Failed to log custom metric:", error);
       }
     },
-    [componentName, enableLogging]
+    [componentName, enableLogging, log]
   );
 
   // 获取当前 Web Vitals 快照
@@ -271,7 +244,7 @@ export function usePerformanceLog(componentName, options = {}) {
         navigation.domContentLoadedEventEnd - navigation.fetchStart;
       const firstByte = navigation.responseStart - navigation.fetchStart;
 
-      info(LOG_LAYERS.PERFORMANCE, `Page Load Performance: ${componentName}`, {
+      log('INFO', `Page Load Performance: ${componentName}`, {
         component_name: componentName,
         page_load_time_ms: Math.round(loadTime),
         dom_content_loaded_ms: Math.round(domContentLoaded),
@@ -287,7 +260,7 @@ export function usePerformanceLog(componentName, options = {}) {
     } catch (error) {
       console.warn("Failed to log page load performance:", error);
     }
-  }, [componentName, enableLogging, getWebVitalsSnapshot]);
+  }, [componentName, enableLogging, getWebVitalsSnapshot, log]);
 
   return {
     startRenderMeasure,
@@ -300,16 +273,12 @@ export function usePerformanceLog(componentName, options = {}) {
 
 /**
  * 性能监控装饰器 HOC
- * @param {string} componentName - 组件名称
- * @param {Object} options - 配置选项
- * @returns {Function} HOC 函数
  */
 export function withPerformanceLog(componentName, options = {}) {
   return function (WrappedComponent) {
     return function PerformanceLoggedComponent(props) {
       const { startRenderMeasure } = usePerformanceLog(componentName, options);
 
-      // 测量渲染性能
       const endRenderMeasure = startRenderMeasure();
 
       useEffect(() => {
@@ -323,23 +292,18 @@ export function withPerformanceLog(componentName, options = {}) {
 
 /**
  * 全局 Web Vitals 监控初始化
- * @param {Object} options - 配置选项
  */
 export function initializeWebVitalsMonitoring(options = {}) {
   const {
+    filePath = null,
     enableLogging = true,
-    fcpWarningThreshold = 2000,
-    lcpWarningThreshold = 2500,
-    ttiWarningThreshold = 3800,
   } = options;
 
   if (!enableLogging || typeof PerformanceObserver === "undefined") {
     return;
   }
 
-  // 全局 Web Vitals 监控
   try {
-    // 监控 CLS (Cumulative Layout Shift)
     const clsObserver = new PerformanceObserver((list) => {
       let clsValue = 0;
       const entries = list.getEntries();
@@ -351,8 +315,7 @@ export function initializeWebVitalsMonitoring(options = {}) {
       });
 
       if (clsValue > 0.1) {
-        // CLS threshold
-        warn(LOG_LAYERS.PERFORMANCE, `Poor CLS: ${clsValue.toFixed(4)}`, {
+        logWithModule(filePath, 'WARNING', LOG_LAYERS.PERFORMANCE, `Poor CLS: ${clsValue.toFixed(4)}`, {
           metric_name: "CLS",
           metric_value: clsValue,
           performance_issue: "POOR_CLS",

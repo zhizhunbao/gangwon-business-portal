@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation, Loading, Select, logsService, createTranslator } from './adapter';
 import { SearchInput, Pagination, ConfirmModal, Button } from '@shared/components';
-import { formatEST } from '@shared/utils/format';
+import { formatEST, parseModulePath, parseFilename } from '@shared/utils/format';
 
 // 级别颜色
 const levelColors = {
@@ -123,8 +123,11 @@ export default function LogViewer({ initialFilter = null }) {
     const latest5 = filteredLogs.slice(0, 5).map(log => ({
       time: formatEST(log.createdAt),
       level: log.level,
+      source: log.source || 'backend',
+      layer: log.layer || '-',
+      module: parseModulePath(log.module),
+      file: parseFilename(log.module, log.source, log.filePath),
       message: log.message,
-      module: log.module,
       traceId: log.traceId,
     }));
     try {
@@ -319,11 +322,11 @@ function LogRow({ log, expanded, onToggle, tl, onReload }) {
         <div className="col-span-1 text-xs text-gray-600">
           {log.layer || '-'}
         </div>
-        <div className="col-span-2 text-xs text-gray-500 truncate">
-          {log.module ? (log.module.includes('.js') ? '-' : log.module.replace(/^src\./, '').split('.').slice(0, -1).join('.') || '-') : '-'}
+        <div className="col-span-2 text-xs text-gray-500 truncate" title={log.module}>
+          {parseModulePath(log.module)}
         </div>
-        <div className="col-span-1 text-xs text-gray-500 truncate">
-          {log.module ? (log.module.includes('.js') ? log.module : log.module.split('.').pop() + '.py') : '-'}
+        <div className="col-span-1 text-xs text-gray-500 truncate" title={log.filePath || parseFilename(log.module, log.source, log.filePath)}>
+          {parseFilename(log.module, log.source, log.filePath)}
         </div>
         <div className="col-span-3 text-sm text-gray-900 truncate" title={log.message}>
           {log.message}

@@ -31,7 +31,7 @@ class AppLogCreate(BaseModel):
     """Schema for creating an application log entry.
     
     按日志规范：
-    - 通用字段（8个）：timestamp, source, level, message, layer, module, function, line_number
+    - 通用字段（9个）：timestamp, source, level, message, layer, module, function, line_number, file_path
     - 追踪字段（4个）：trace_id, request_id, user_id, duration_ms
     - 扩展字段：extra_data（包含 ip_address, user_agent, request_method, request_path, response_status 等）
     """
@@ -39,7 +39,7 @@ class AppLogCreate(BaseModel):
     # Timestamp (optional - frontend provides, backend generates if not provided)
     timestamp: Optional[str] = Field(None, description="Timestamp (frontend provides, backend generates if not provided)")
     
-    # Common fields (8)
+    # Common fields (9)
     source: str = Field(default="backend", description="Source of the log (backend/frontend)")
     level: str = Field(default="INFO", description="Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)")
     message: str = Field(..., description="Log message")
@@ -47,6 +47,7 @@ class AppLogCreate(BaseModel):
     module: Optional[str] = Field(None, description="Module name/path")
     function: Optional[str] = Field(None, description="Function name")
     line_number: Optional[int] = Field(None, description="Line number")
+    file_path: Optional[str] = Field(None, description="Full file path for debugging")
     
     # Trace fields (4)
     trace_id: Optional[str] = Field(None, description="Request trace ID")
@@ -106,6 +107,7 @@ class AppLogCreate(BaseModel):
             "module": self.module,
             "function": self.function,
             "line_number": self.line_number,
+            "file_path": self.file_path,
             "trace_id": self.trace_id,
             "request_id": self.request_id,
             "user_id": str(self.user_id) if self.user_id else None,
@@ -147,6 +149,7 @@ class AppLogCreate(BaseModel):
             "module": self.module,
             "function": self.function,
             "line_number": self.line_number,
+            "file_path": self.file_path,
         }
         
         # 追踪字段（只在有值时添加）
@@ -173,7 +176,7 @@ class ErrorLogCreate(BaseModel):
     """Schema for creating an error log entry.
     
     按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number
+    - 通用字段：source, level, message, layer, module, function, line_number, file_path
     - 追踪字段：trace_id, request_id, user_id
     - 扩展字段：extra_data (包含 error_type, error_message, stack_trace, error_code, status_code, request_method, request_path, ip_address)
     """
@@ -185,6 +188,7 @@ class ErrorLogCreate(BaseModel):
     module: str = Field(default="", description="Module path relative to project root")
     function: str = Field(default="", description="Function name")
     line_number: int = Field(default=0, description="Line number")
+    file_path: Optional[str] = Field(None, description="Full file path for debugging")
     
     # Error info (will be stored in extra_data)
     error_type: str = Field(..., description="Exception class name -> extra_data")
@@ -257,6 +261,7 @@ class ErrorLogCreate(BaseModel):
             "module": self.module,
             "function": self.function,
             "line_number": self.line_number,
+            "file_path": self.file_path,
             "trace_id": self.trace_id,
             "request_id": self.request_id,
             "user_id": str(self.user_id) if self.user_id else None,
@@ -268,7 +273,7 @@ class ErrorLogCreate(BaseModel):
         """Convert to dictionary for file logging.
         
         按照日志规范输出:
-        - timestamp, source, level, message, layer, module, function, line_number (必需)
+        - timestamp, source, level, message, layer, module, function, line_number, file_path (必需)
         - trace_id, request_id, user_id (追踪字段，按需)
         - extra_data: error_type, error_message, stack_trace (Error 层独有)
         """
@@ -301,6 +306,7 @@ class ErrorLogCreate(BaseModel):
             "module": self.module,
             "function": self.function,
             "line_number": self.line_number,
+            "file_path": self.file_path,
         }
         
         # Add trace fields only if present
@@ -322,7 +328,7 @@ class PerformanceLogCreate(BaseModel):
     """Schema for creating a performance log entry.
     
     按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number
+    - 通用字段：source, level, message, layer, module, function, line_number, file_path
     - 追踪字段：trace_id, request_id, user_id, duration_ms
     - 扩展字段：extra_data (包含 metric_name, metric_value, metric_unit, threshold_ms, is_slow, component_name, web_vitals)
     """
@@ -334,6 +340,7 @@ class PerformanceLogCreate(BaseModel):
     module: str = Field(default="", description="Module path relative to project root")
     function: str = Field(default="", description="Function name")
     line_number: int = Field(default=0, description="Line number")
+    file_path: Optional[str] = Field(None, description="Full file path for debugging")
     
     # Trace fields
     trace_id: Optional[str] = Field(None, description="Request trace ID")
@@ -393,6 +400,7 @@ class PerformanceLogCreate(BaseModel):
             "module": self.module,
             "function": self.function,
             "line_number": self.line_number,
+            "file_path": self.file_path,
             "trace_id": self.trace_id,
             "request_id": self.request_id,
             "user_id": str(self.user_id) if self.user_id else None,
@@ -405,7 +413,7 @@ class PerformanceLogCreate(BaseModel):
         """Convert to dictionary for file logging.
         
         按照日志规范输出:
-        - timestamp, source, level, message, layer, module, function, line_number (必需)
+        - timestamp, source, level, message, layer, module, function, line_number, file_path (必需)
         - trace_id, request_id, user_id, duration_ms (追踪字段，按需)
         - extra_data: threshold_ms, is_slow (Performance 层独有)
         """
@@ -434,6 +442,7 @@ class PerformanceLogCreate(BaseModel):
             "module": self.module,
             "function": self.function,
             "line_number": self.line_number,
+            "file_path": self.file_path,
         }
         
         # Add trace fields only if present
@@ -457,7 +466,7 @@ class SystemLogCreate(BaseModel):
     """Schema for creating a system log entry.
     
     按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number
+    - 通用字段：source, level, message, layer, module, function, line_number, file_path
     - 扩展字段：extra_data (包含 server, host, port, workers, logger_name)
     """
     
@@ -469,6 +478,7 @@ class SystemLogCreate(BaseModel):
     module: str = Field(default="", description="Module name")
     function: str = Field(default="", description="Function name")
     line_number: int = Field(default=0, description="Line number")
+    file_path: Optional[str] = Field(None, description="Full file path for debugging")
     
     # Legacy field (will be stored in extra_data)
     logger_name: Optional[str] = Field(None, description="Logger name -> extra_data")
@@ -500,6 +510,7 @@ class SystemLogCreate(BaseModel):
             "level": self.level,
             "message": self.message,
             "layer": self.layer,
+            "file_path": self.file_path,
         }
         
         # Add optional fields only if they have meaningful values
@@ -523,7 +534,7 @@ class SystemLogCreate(BaseModel):
         """Convert to dictionary for file logging.
         
         按照日志规范输出:
-        - timestamp, source, level, message, layer, module, function, line_number (必需)
+        - timestamp, source, level, message, layer, module, function, line_number, file_path (必需)
         - extra_data: server, host, port, workers (System 层独有)
         """
         result: dict[str, Any] = {
@@ -535,6 +546,7 @@ class SystemLogCreate(BaseModel):
             "module": self.module or self.logger_name or "",
             "function": self.function,
             "line_number": self.line_number,
+            "file_path": self.file_path,
         }
         
         if self.extra_data:
@@ -550,7 +562,7 @@ class AuditLogCreate(BaseModel):
     """Schema for creating an audit log entry.
     
     按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number
+    - 通用字段：source, level, message, layer, module, function, line_number, file_path
     - 追踪字段：trace_id, user_id
     - 扩展字段：extra_data (包含 action, result, ip_address, user_agent, resource_type, resource_id)
     """
@@ -562,6 +574,7 @@ class AuditLogCreate(BaseModel):
     module: str = Field(default="", description="Module path relative to project root")
     function: str = Field(default="", description="Function name")
     line_number: int = Field(default=0, description="Line number")
+    file_path: Optional[str] = Field(None, description="Full file path for debugging")
     
     # Trace fields
     trace_id: Optional[str] = Field(None, description="Request trace ID")
@@ -629,6 +642,7 @@ class AuditLogCreate(BaseModel):
             "module": self.module,
             "function": self.function,
             "line_number": self.line_number,
+            "file_path": self.file_path,
             "trace_id": self.trace_id,
             "user_id": str(self.user_id) if self.user_id else None,
             "extra_data": extra,
@@ -639,7 +653,7 @@ class AuditLogCreate(BaseModel):
         """Convert to dictionary for file logging.
         
         按照日志规范输出:
-        - timestamp, source, level, message, layer, module, function, line_number (必需)
+        - timestamp, source, level, message, layer, module, function, line_number, file_path (必需)
         - trace_id, user_id (追踪字段，按需)
         - extra_data: action, result, ip_address, user_agent (Audit 层独有)
         """
@@ -666,6 +680,7 @@ class AuditLogCreate(BaseModel):
             "module": self.module,
             "function": self.function,
             "line_number": self.line_number,
+            "file_path": self.file_path,
         }
         
         # Add trace fields only if present
@@ -689,7 +704,7 @@ class AppLogResponse(BaseModel):
     """Application log response schema (new schema).
     
     按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number
+    - 通用字段：source, level, message, layer, module, function, line_number, file_path
     - 追踪字段：trace_id, request_id, user_id, duration_ms
     - 扩展字段：extra_data
     """
@@ -702,6 +717,7 @@ class AppLogResponse(BaseModel):
     module: Optional[str] = None
     function: Optional[str] = None
     line_number: Optional[int] = None
+    file_path: Optional[str] = None
     trace_id: Optional[str] = None
     request_id: Optional[str] = None
     user_id: Optional[UUID] = None
@@ -765,6 +781,7 @@ class FrontendLogCreate(BaseModel):
     module: Optional[str] = Field(None, description="Module/file name")
     function: Optional[str] = None
     line_number: Optional[int] = Field(None, description="Line number")
+    file_path: Optional[str] = Field(None, description="Full file path for debugging")
     
     # 追踪字段
     trace_id: Optional[str] = None
@@ -793,6 +810,7 @@ class FrontendLogCreate(BaseModel):
             module=self.module,
             function=self.function,
             line_number=self.line_number,
+            file_path=self.file_path,
             trace_id=self.trace_id,
             request_id=self.request_id,
             user_id=UUID(self.user_id) if self.user_id else None,

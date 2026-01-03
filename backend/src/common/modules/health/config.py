@@ -14,7 +14,7 @@ class ServiceConfig(BaseModel):
     url: str
     type: str = "api"  # api, static, database
     health_endpoint: Optional[str] = None  # 自定义健康检查端点
-    timeout: float = 10.0
+    timeout: float = 5.0  # Reduced from 10.0 to fail faster on cold starts
 
 
 class HealthModuleConfig(BaseModel):
@@ -24,7 +24,7 @@ class HealthModuleConfig(BaseModel):
     cache_ttl: int = 30
     
     # 检查超时
-    default_timeout: float = 10.0
+    default_timeout: float = 5.0  # Reduced from 10.0 for faster failure on cold starts
     
     # 外部服务配置（如 Render 部署的服务）
     external_services: Dict[str, ServiceConfig] = {}

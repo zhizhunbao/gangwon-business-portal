@@ -45,5 +45,8 @@ export {
   flush,
 } from "./transport.js";
 
+// 导出 useLogger hook（从 hooks 目录）
+export { useLogger, createLogger } from "../hooks/useLogger.js";
+
 // 默认导出日志核心
 export { loggerCore as default, loggerCore as logger } from "./core.js";

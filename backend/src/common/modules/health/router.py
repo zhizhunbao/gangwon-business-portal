@@ -16,11 +16,16 @@ _get_current_admin_user = get_auth_dependency()
 
 
 @router.get("")
-async def get_system_health() -> Dict[str, Any]:
+async def get_system_health(
+    skip_external: bool = False
+) -> Dict[str, Any]:
     """
     获取系统健康状态（公开接口，用于外部监控）
+    
+    Args:
+        skip_external: 是否跳过外部服务检查（防止循环调用）
     """
-    return await HealthService.get_system_health()
+    return await HealthService.get_system_health(skip_external=skip_external)
 
 
 @router.get("/detailed")

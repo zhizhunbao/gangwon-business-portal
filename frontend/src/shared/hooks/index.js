@@ -12,4 +12,5 @@ export * from './useStoreLog';
 export * from './useHookLog';
 export * from './useComponentLog';
 export * from './usePerformanceLog';
+export * from './useLogger';
 

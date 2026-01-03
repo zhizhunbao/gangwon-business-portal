@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation, Loading, Select, logsService, createTranslator } from './adapter';
 import { SearchInput, Pagination, ConfirmModal, Button } from '@shared/components';
-import { formatEST } from '@shared/utils/format';
+import { formatEST, parseModulePath, parseFilename } from '@shared/utils/format';
 
 // 阈值配置
 const getThresholdOptions = (tl) => [
@@ -349,10 +349,10 @@ function PerformanceRow({ log, expanded, onToggle, getDurationColor, tl, onReloa
           {log.layer || 'Performance'}
         </div>
         <div className="col-span-2 text-xs text-gray-500 truncate">
-          {log.module ? (log.module.includes('.js') ? '-' : log.module.replace(/^src\./, '').split('.').slice(0, -1).join('.') || '-') : '-'}
+          {parseModulePath(log.module)}
         </div>
         <div className="col-span-1 text-xs text-gray-500 truncate">
-          {log.module ? (log.module.includes('.js') ? log.module : log.module.split('.').pop() + '.py') : '-'}
+          {parseFilename(log.module)}
         </div>
         <div className="col-span-3 text-sm text-gray-900 truncate" title={log.message || `${metricName}: ${duration}ms`}>
           {log.message || `${metricName}: ${duration}ms`}

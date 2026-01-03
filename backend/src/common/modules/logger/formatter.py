@@ -34,6 +34,9 @@ class JSONFormatter(logging.Formatter):
         
         if record.lineno:
             log_data["line_number"] = record.lineno
+        
+        if record.pathname:
+            log_data["file_path"] = record.pathname
 
         # Request context fields
         context_fields = [

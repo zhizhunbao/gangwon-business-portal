@@ -100,6 +100,11 @@ class Member(Base):
     performance_records = relationship("PerformanceRecord", back_populates="member", foreign_keys="PerformanceRecord.member_id", cascade="all, delete-orphan")
     project_applications = relationship("ProjectApplication", back_populates="member", cascade="all, delete-orphan")
 
+    # Indexes
+    __table_args__ = (
+        Index("idx_members_deleted_at", "deleted_at"),
+    )
+
     def __repr__(self):
         return f"<Member(id={self.id}, business_number={self.business_number}, company_name={self.company_name})>"
 
@@ -119,10 +124,13 @@ class PerformanceRecord(Base):
     submitted_at = Column(TIMESTAMP(timezone=True))
     
     # Review fields (merged from performance_reviews table)
-    reviewer_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="SET NULL"), nullable=True)
+    reviewer_id = Column(UUID(as_uuid=True), ForeignKey("admins.id", ondelete="SET NULL"), nullable=True)
     review_status = Column(String(50), nullable=True)  # approved, rejected, revision_requested
     review_comments = Column(Text, nullable=True)
     reviewed_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
+    # Soft delete field
+    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
     
     # Timestamps
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
@@ -130,14 +138,13 @@ class PerformanceRecord(Base):
 
     # Relationships (removed reviews relationship since it's merged)
     member = relationship("Member", back_populates="performance_records", foreign_keys=[member_id])
-    reviewer = relationship("Member", foreign_keys=[reviewer_id])
+    reviewer = relationship("Admin", foreign_keys=[reviewer_id])
     # Note: attachments are queried via Attachment.resource_type='performance' and Attachment.resource_id=self.id
 
     # Indexes
     __table_args__ = (
         Index("idx_performance_member_year", "member_id", "year", "quarter"),
-        Index("idx_performance_reviewer", "reviewer_id", "reviewed_at"),
-        Index("idx_performance_status", "status", "review_status"),
+        Index("idx_performance_records_deleted_at", "deleted_at"),
     )
 
     def __repr__(self):
@@ -158,12 +165,21 @@ class Project(Base):
     end_date = Column(Date)
     image_url = Column(String(500))
     status = Column(String(50), default="active")  # active, inactive, archived
+    
+    # Soft delete field
+    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Relationships
     applications = relationship("ProjectApplication", back_populates="project", cascade="all, delete-orphan")
     # Note: attachments are queried via Attachment.resource_type='project' and Attachment.resource_id=self.id
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_projects_deleted_at", "deleted_at"),
+    )
 
     def __repr__(self):
         return f"<Project(id={self.id}, title={self.title})>"
@@ -181,12 +197,21 @@ class ProjectApplication(Base):
     application_reason = Column(Text)
     submitted_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     reviewed_at = Column(TIMESTAMP(timezone=True))
+    
+    # Soft delete field
+    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
     # Relationships
     member = relationship("Member", back_populates="project_applications")
     project = relationship("Project", back_populates="applications")
     # Note: attachments are queried via Attachment.resource_type='project_application' and Attachment.resource_id=self.id
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_project_applications_deleted_at", "deleted_at"),
+    )
 
     def __repr__(self):
         return f"<ProjectApplication(id={self.id}, member_id={self.member_id}, project_id={self.project_id})>"
@@ -209,6 +234,7 @@ class Attachment(Base):
     __tablename__ = "attachments"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    file_id = Column(UUID(as_uuid=True), nullable=True)  # Optional reference to file storage
     resource_type = Column(String(50), nullable=False)  # performance, project, project_application, etc.
     resource_id = Column(UUID(as_uuid=True), nullable=False)
     file_type = Column(String(50))  # image, document, etc.
@@ -310,12 +336,17 @@ class Banner(Base):
     subtitle_zh = Column(String(500))
     is_active = Column(String(10), default="true")  # "true" or "false" as string
     display_order = Column(Integer, default=0)  # For sorting banners
+    
+    # Soft delete field
+    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # Indexes
     __table_args__ = (
         Index("idx_banners_type_active", "banner_type", "is_active", "display_order"),
+        Index("idx_banners_deleted_at", "deleted_at"),
     )
 
     def __repr__(self):
@@ -371,7 +402,16 @@ class FAQ(Base):
     question = Column(Text, nullable=False)
     answer = Column(Text, nullable=False)
     display_order = Column(Integer, default=0)
+    
+    # Soft delete field
+    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_faqs_deleted_at", "deleted_at"),
+    )
 
     def __repr__(self):
         return f"<FAQ(id={self.id}, category={self.category})>"
@@ -381,7 +421,7 @@ class AuditLog(Base):
     """Audit trail for system actions.
     
     按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number
+    - 通用字段：source, level, message, layer, module, function, line_number, file_path
     - 追踪字段：trace_id, user_id
     - 扩展字段：extra_data (包含 action, result, ip_address, user_agent, resource_type, resource_id)
     """
@@ -390,7 +430,7 @@ class AuditLog(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
-    # Common fields (8)
+    # Common fields (9)
     source = Column(String(20), nullable=False, default="backend")
     level = Column(String(20), nullable=False, default="INFO")
     message = Column(Text, nullable=False)  # Format: "Audit: {action} {result}"
@@ -398,6 +438,7 @@ class AuditLog(Base):
     module = Column(String(255))
     function = Column(String(255))
     line_number = Column(Integer)
+    file_path = Column(String(500))  # Full file path for debugging
     
     # Trace fields
     trace_id = Column(String(100))
@@ -406,7 +447,7 @@ class AuditLog(Base):
     # Extension field
     extra_data = Column(JSONB)  # action, result, ip_address, user_agent, resource_type, resource_id
     
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), index=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False, index=True)
 
     # Indexes
     __table_args__ = (
@@ -432,14 +473,15 @@ class AppLog(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
-    # Common fields (8)
+    # Common fields (9)
     source = Column(String(20), nullable=False)  # backend, frontend
     level = Column(String(20), nullable=False)   # DEBUG, INFO, WARNING, ERROR, CRITICAL
     message = Column(Text, nullable=False)
     layer = Column(String(100))  # Router, Auth, Service, Database, etc.
-    module = Column(String(255))  # File path
+    module = Column(String(255))  # Module path (e.g., common.modules.interceptor)
     function = Column(String(255))
     line_number = Column(Integer)
+    file_path = Column(String(500))  # Full file path for debugging
     
     # Trace fields (4)
     trace_id = Column(String(100))
@@ -450,7 +492,7 @@ class AppLog(Base):
     # Extension field
     extra_data = Column(JSONB)  # ip_address, user_agent, request_method, request_path, response_status, etc.
     
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), index=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False, index=True)
 
     # Indexes (no relationship - user_id has no FK)
     __table_args__ = (
@@ -468,7 +510,7 @@ class ErrorLog(Base):
     """Error logs for exception tracking and debugging.
     
     按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number
+    - 通用字段：source, level, message, layer, module, function, line_number, file_path
     - 追踪字段：trace_id, request_id, user_id
     - 扩展字段：extra_data (包含 error_type, error_message, stack_trace, request_method, request_path 等)
     """
@@ -477,7 +519,7 @@ class ErrorLog(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
-    # Common fields (8)
+    # Common fields (9)
     source = Column(String(20), nullable=False)
     level = Column(String(20), nullable=False, default="ERROR")
     message = Column(Text, nullable=False)  # Format: "{error_type}: {error_message}"
@@ -485,6 +527,7 @@ class ErrorLog(Base):
     module = Column(String(255))
     function = Column(String(255))
     line_number = Column(Integer)
+    file_path = Column(String(500))  # Full file path for debugging
     
     # Trace fields
     trace_id = Column(String(100))
@@ -494,7 +537,7 @@ class ErrorLog(Base):
     # Extension field
     extra_data = Column(JSONB)  # error_type, error_message, stack_trace, error_code, status_code, request_method, request_path, ip_address
     
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), index=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False, index=True)
 
     # Indexes (no relationship - user_id has no FK)
     __table_args__ = (
@@ -512,7 +555,7 @@ class SystemLog(Base):
     """System logs for infrastructure and operational monitoring.
     
     按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number
+    - 通用字段：source, level, message, layer, module, function, line_number, file_path
     - 扩展字段：extra_data (包含 server, host, port, workers 等)
     """
 
@@ -520,7 +563,7 @@ class SystemLog(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
-    # Common fields (8)
+    # Common fields (9)
     source = Column(String(20), nullable=False, default="backend")
     level = Column(String(20), nullable=False)
     message = Column(Text, nullable=False)
@@ -528,11 +571,12 @@ class SystemLog(Base):
     module = Column(String(255))  # Logger name (uvicorn, sqlalchemy, etc.)
     function = Column(String(255))
     line_number = Column(Integer)
+    file_path = Column(String(500))  # Full file path for debugging
     
     # Extension field
     extra_data = Column(JSONB)  # server, host, port, workers
     
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), index=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False, index=True)
 
     # Indexes
     __table_args__ = (
@@ -548,7 +592,7 @@ class PerformanceLog(Base):
     """Performance logs for monitoring application and system performance.
     
     按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number
+    - 通用字段：source, level, message, layer, module, function, line_number, file_path
     - 追踪字段：trace_id, request_id, user_id, duration_ms
     - 扩展字段：extra_data (包含 metric_name, metric_value, metric_unit, threshold_ms, is_slow 等)
     """
@@ -557,7 +601,7 @@ class PerformanceLog(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
-    # Common fields (8)
+    # Common fields (9)
     source = Column(String(20), nullable=False)
     level = Column(String(20), nullable=False, default="INFO")
     message = Column(Text, nullable=False)  # Format: "Slow {type}: {target} ({duration}ms > {threshold}ms)"
@@ -565,6 +609,7 @@ class PerformanceLog(Base):
     module = Column(String(255))
     function = Column(String(255))
     line_number = Column(Integer)
+    file_path = Column(String(500))  # Full file path for debugging
     
     # Trace fields
     trace_id = Column(String(100))
@@ -575,7 +620,7 @@ class PerformanceLog(Base):
     # Extension field
     extra_data = Column(JSONB)  # metric_name, metric_value, metric_unit, threshold_ms, is_slow, component_name, web_vitals
     
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), index=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False, index=True)
 
     # Indexes (no relationship - user_id has no FK)
     __table_args__ = (
@@ -630,8 +675,8 @@ class Message(Base):
     broadcast_count = Column(Integer, nullable=True)  # For broadcast messages
     read_at = Column(TIMESTAMP(timezone=True), nullable=True)
     sent_at = Column(TIMESTAMP(timezone=True), nullable=True)
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     attachments = relationship("Attachment", 
                              primaryjoin="and_(Message.id == foreign(Attachment.resource_id), "
                                         "Attachment.resource_type == 'message')",
@@ -639,11 +684,11 @@ class Message(Base):
 
     # Indexes
     __table_args__ = (
-        Index("idx_messages_recipient", "recipient_id", "is_read"),
-        Index("idx_messages_sender", "sender_id"),
-        Index("idx_messages_thread", "thread_id", "created_at"),
-        Index("idx_messages_type", "message_type", "created_at"),
-        Index("idx_messages_created_at", "created_at"),
+        Index("idx_messages_unified_recipient", "recipient_id", "is_read"),
+        Index("idx_messages_unified_sender", "sender_id"),
+        Index("idx_messages_unified_thread", "thread_id", "created_at"),
+        Index("idx_messages_unified_type", "message_type", "created_at"),
+        Index("idx_messages_unified_created_at", "created_at"),
     )
 
     def __repr__(self):

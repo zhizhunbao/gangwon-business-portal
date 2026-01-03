@@ -42,13 +42,19 @@ export const LOG_LAYERS = {
  * @param {number} skipFrames - 额外跳过的栈帧数（默认0）
  * @returns {Object} 包含模块名、行号、函数名的对象（与后端字段名一致）
  */
+/**
+ * 获取调用栈信息
+ * @param {number} skipFrames - 额外跳过的栈帧数（默认0）
+ * @returns {Object} 包含模块名、行号、函数名的对象（与后端字段名一致）
+ */
 function getCallerInfo(skipFrames = 0) {
   const error = new Error();
   const stack = error.stack;
   
   if (!stack) {
     return {
-      module: 'unknown',
+      module: '-',
+      file_path: null,
       line_number: null,
       function: 'unknown'
     };
@@ -113,9 +119,9 @@ function getCallerInfo(skipFrames = 0) {
         lineNumber = parseInt(match[2] || '0', 10);
       }
       
-      // 提取相对于项目根目录的路径
-      // 格式: frontend/src/shared/interceptors/hook.interceptor.js
+      // 提取模块路径（目录级别）和完整文件路径
       let modulePath = extractModulePath(filePath);
+      let fullFilePath = extractFullFilePath(filePath);
       
       // 清理函数名（去掉 Object. 等前缀）
       functionName = functionName
@@ -125,6 +131,7 @@ function getCallerInfo(skipFrames = 0) {
       
       return {
         module: modulePath,
+        file_path: fullFilePath,
         line_number: lineNumber || null,
         function: functionName
       };
@@ -133,6 +140,7 @@ function getCallerInfo(skipFrames = 0) {
   
   return {
     module: 'unknown',
+    file_path: null,
     line_number: null,
     function: 'unknown'
   };
@@ -141,15 +149,22 @@ function getCallerInfo(skipFrames = 0) {
 /**
  * 从完整文件路径提取相对于项目根目录的模块路径
  * @param {string} filePath - 完整文件路径（可能包含 URL 格式）
- * @returns {string} 相对模块路径，如 frontend/src/shared/interceptors/hook.interceptor.js
+ * @returns {string} 相对模块路径，使用点分格式，如 shared.interceptors
  */
 function extractModulePath(filePath) {
   if (!filePath || filePath === 'unknown') {
-    return 'unknown';
+    return '-';
   }
   
   // 去掉查询参数（Vite 的 ?t=xxx）
   let cleanPath = filePath.split('?')[0];
+  
+  // 检测打包后的哈希文件名（如 index-CddmaCi5.js, chunk-abc123.js）
+  // 打包后的文件通常在 /assets/ 目录下，且文件名包含哈希
+  const bundledFilePattern = /\/(assets|dist)\/[^/]*-[a-zA-Z0-9]{6,}\.(js|css)$/;
+  if (bundledFilePattern.test(cleanPath)) {
+    return '-'; // 打包后无法获取源码模块路径
+  }
   
   // 处理 URL 格式 (http://localhost:5173/src/...)
   if (cleanPath.includes('://')) {
@@ -171,26 +186,82 @@ function extractModulePath(filePath) {
   // 去掉开头的斜杠
   cleanPath = cleanPath.replace(/^\/+/, '');
   
-  // 如果路径以 src/ 开头，添加 frontend/ 前缀
-  if (cleanPath.startsWith('src/')) {
-    return 'frontend/' + cleanPath;
+  // 提取 src/ 之后的路径
+  if (cleanPath.includes('src/')) {
+    const srcIndex = cleanPath.indexOf('src/');
+    cleanPath = cleanPath.substring(srcIndex + 4); // 跳过 "src/"
   }
   
-  // 如果路径包含 node_modules，返回包名和文件
+  // 如果路径包含 node_modules，返回包名（使用点分格式）
   if (cleanPath.includes('node_modules/')) {
     const parts = cleanPath.split('node_modules/');
     if (parts.length > 1) {
-      return 'node_modules/' + parts[parts.length - 1];
+      const packagePath = parts[parts.length - 1];
+      // 只返回包名，不要文件路径
+      const packageParts = packagePath.split('/');
+      return 'node_modules.' + packageParts[0];
     }
   }
   
-  // 如果已经是 frontend/ 开头，直接返回
-  if (cleanPath.startsWith('frontend/')) {
-    return cleanPath;
+  // 去掉文件名，只保留目录路径
+  // shared/interceptors/auth.interceptor.js -> shared.interceptors
+  const lastSlash = cleanPath.lastIndexOf('/');
+  if (lastSlash > 0) {
+    // 转换为点分格式
+    return cleanPath.substring(0, lastSlash).replace(/\//g, '.');
   }
   
-  // 其他情况，返回文件名
-  return cleanPath.split('/').pop() || cleanPath;
+  // 如果没有目录，检查是否是打包后的文件名
+  const fileName = cleanPath.split('/').pop() || cleanPath;
+  
+  // 检测打包后的哈希文件名模式（如 index-CddmaCi5.js）
+  if (/^[a-zA-Z]+-[a-zA-Z0-9]{6,}\.(js|css)$/.test(fileName)) {
+    return '-'; // 打包后无法获取源码模块路径
+  }
+  
+  const dotIndex = fileName.lastIndexOf('.');
+  return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+}
+
+/**
+ * 从完整文件路径提取相对文件路径（包含文件名）
+ * @param {string} filePath - 完整文件路径（可能包含 URL 格式）
+ * @returns {string} 相对文件路径，如 shared/interceptors/auth.interceptor.js
+ */
+function extractFullFilePath(filePath) {
+  if (!filePath || filePath === 'unknown') {
+    return null;
+  }
+  
+  // 去掉查询参数（Vite 的 ?t=xxx）
+  let cleanPath = filePath.split('?')[0];
+  
+  // 处理 URL 格式 (http://localhost:5173/src/...)
+  if (cleanPath.includes('://')) {
+    try {
+      const url = new URL(cleanPath);
+      cleanPath = url.pathname;
+    } catch {
+      const protocolEnd = cleanPath.indexOf('://');
+      if (protocolEnd !== -1) {
+        const pathStart = cleanPath.indexOf('/', protocolEnd + 3);
+        if (pathStart !== -1) {
+          cleanPath = cleanPath.substring(pathStart);
+        }
+      }
+    }
+  }
+  
+  // 去掉开头的斜杠
+  cleanPath = cleanPath.replace(/^\/+/, '');
+  
+  // 提取 src/ 之后的路径
+  if (cleanPath.includes('src/')) {
+    const srcIndex = cleanPath.indexOf('src/');
+    return cleanPath.substring(srcIndex + 4); // 跳过 "src/"
+  }
+  
+  return cleanPath;
 }
 
 /**
@@ -290,20 +361,26 @@ export class LoggerCore {
    * @param {string} level - 日志级别
    * @param {string} layer - 日志层级
    * @param {string} message - 日志消息
-   * @param {Object} extra - 额外数据（可包含 _function, _module, _line_number 覆盖默认值）
+   * @param {Object} extra - 额外数据（可包含 _function, _module, _line_number, _file_path 覆盖默认值）
    * @returns {Object} 日志数据
    */
   createLogEntry(level, layer, message, extra = {}) {
     // 提取自定义的位置信息（如果有）
-    const { _function, _module, _line_number, ...restExtra } = extra || {};
+    const { _function, _module, _line_number, _file_path, ...restExtra } = extra || {};
     
-    // 获取调用栈信息（仅当没有自定义值时使用）
-    const callerInfo = (_function || _module) ? null : getCallerInfo();
+    // 始终获取调用栈信息，用于补充缺失的字段
+    const callerInfo = getCallerInfo();
     
     // 获取上下文信息
     const traceId = this._contextManager ? this._contextManager.getTraceId() : null;
     const requestId = this._contextManager ? this._contextManager.getCurrentRequestId() : null;
     const userId = this._contextManager ? this._contextManager.getUserId() : null;
+    
+    // 确定各字段值（优先使用传入的值，否则使用调用栈信息）
+    const moduleValue = _module || (callerInfo ? callerInfo.module : 'unknown');
+    const filePathValue = _file_path || (callerInfo ? callerInfo.file_path : null);
+    const functionValue = _function || (callerInfo ? callerInfo.function : 'unknown');
+    const lineNumberValue = _line_number !== undefined ? _line_number : (callerInfo ? callerInfo.line_number : null);
     
     // 创建日志数据（包含 timestamp）
     const logEntry = {
@@ -312,9 +389,10 @@ export class LoggerCore {
       level: level,
       message: message,
       layer: layer,
-      module: _module || (callerInfo ? callerInfo.module : 'unknown'),
-      function: _function || (callerInfo ? callerInfo.function : 'unknown'),
-      line_number: _line_number !== undefined ? _line_number : (callerInfo ? callerInfo.line_number : null)
+      module: moduleValue,
+      function: functionValue,
+      line_number: lineNumberValue,
+      file_path: filePathValue
     };
     
     // 添加追踪字段（只在有值时添加）

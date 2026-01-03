@@ -19,34 +19,56 @@ from .exceptions import BaseCustomException
 
 def file_path_to_module(file_path: Optional[str]) -> str:
     """
-    Convert file path to module path format.
+    Normalize file path to a consistent module path format.
     
-    Examples:
-        /opt/render/project/src/backend/src/common/modules/exception/recorder.py
-        -> src.common.modules.exception.recorder
-        
-        backend/src/common/modules/interceptor/router.py
-        -> src.common.modules.interceptor.router
+    Handles different environments:
+    - Local Windows: C:\\Users\\...\\backend\\src\\common\\modules\\...
+    - Local Unix: /home/.../backend/src/common/modules/...
+    - Render: /opt/render/project/src/backend/src/common/modules/...
+    
+    Returns a clean module path like: common.modules.exception.recorder
     """
     if not file_path:
         return "unknown"
     
-    # Remove .py extension
-    path = file_path.replace('.py', '')
-    
     # Normalize path separators
-    path = path.replace('\\', '/')
+    normalized = file_path.replace("\\", "/")
     
-    # Find 'src/' in path and extract from there
-    match = re.search(r'(?:^|/)src/(.+)$', path)
-    if match:
-        module_path = 'src.' + match.group(1).replace('/', '.')
-        return module_path
+    # Find the src/ directory and extract relative path
+    # Handle various patterns:
+    # - backend/src/common/...
+    # - src/backend/src/common/...
+    # - /opt/render/project/src/backend/src/common/...
     
-    # Fallback: just convert slashes to dots and take last parts
-    parts = path.split('/')
-    # Take last 4-5 parts as module path
-    return '.'.join(parts[-5:]) if len(parts) > 5 else '.'.join(parts)
+    patterns = [
+        "/backend/src/",  # Standard backend path
+        "/src/backend/src/",  # Render deployment path
+        "backend/src/",  # Relative path
+    ]
+    
+    for pattern in patterns:
+        if pattern in normalized:
+            # Extract everything after the pattern
+            idx = normalized.find(pattern)
+            relative_path = normalized[idx + len(pattern):]
+            # Remove .py extension and convert to module path
+            if relative_path.endswith(".py"):
+                relative_path = relative_path[:-3]
+            return relative_path.replace("/", ".")
+    
+    # Fallback: try to extract from any src/ directory
+    if "/src/" in normalized:
+        idx = normalized.rfind("/src/")
+        relative_path = normalized[idx + 5:]  # Skip "/src/"
+        if relative_path.endswith(".py"):
+            relative_path = relative_path[:-3]
+        return relative_path.replace("/", ".")
+    
+    # Last resort: return the filename without extension
+    filename = normalized.split("/")[-1]
+    if filename.endswith(".py"):
+        filename = filename[:-3]
+    return filename
 
 
 @dataclass
@@ -337,6 +359,7 @@ class ExceptionRecorder:
                     module=module_path,
                     function=record.function,
                     line_number=record.line_number,
+                    file_path=record.file,
                     trace_id=str(record.trace_id) if record.trace_id else None,
                     request_id=record.request_id,
                     user_id=record.user_id,

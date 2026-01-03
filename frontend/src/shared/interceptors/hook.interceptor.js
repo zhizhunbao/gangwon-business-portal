@@ -1,22 +1,20 @@
 /**
  * Hook Interceptor - React Hook拦截器
  * 
- * 按规范只记录有意义的 Hook 调用：
- * 1. useEffect 执行和清理
- * 2. useState 状态变化
- * 3. 慢 Hook（执行时间 > 10ms）
- * 4. Hook 错误
+ * 按规范只记录有意义的 Hook 调用
  * 
  * Requirements: 4.3, 4.4
  */
 
 import React from 'react';
-import { debug, warn, LOG_LAYERS } from '@shared/logger';
+import { LOG_LAYERS } from '@shared/logger';
+import { createLogger } from '@shared/hooks/useLogger';
 
-// 慢 Hook 阈值（毫秒）
+const FILE_PATH = 'src/shared/interceptors/hook.interceptor.js';
+const log = createLogger(FILE_PATH);
+
 const SLOW_HOOK_THRESHOLD = 10;
 
-// 需要过滤的 React 内部组件
 const INTERNAL_COMPONENTS = [
   'RouterProvider', 'Router', 'Routes', 'Route', 'DataRoutes',
   'RenderedRoute', 'Outlet', 'Navigate', 'Link', 'NavLink',
@@ -24,7 +22,6 @@ const INTERNAL_COMPONENTS = [
   'StrictMode', 'Profiler', 'Unknown', 'Anonymous', 'ForwardRef', 'Memo'
 ];
 
-// 存储原始的 React Hooks
 const originalHooks = {
   useState: React.useState,
   useEffect: React.useEffect,
@@ -36,15 +33,9 @@ const originalHooks = {
   useLayoutEffect: React.useLayoutEffect,
 };
 
-// 拦截器状态
 let isInstalled = false;
-
-// 组件 mount 追踪
 const mountedComponents = new Map();
 
-/**
- * 从 React Fiber 获取当前组件名称
- */
 function getCurrentComponentName() {
   try {
     const ReactSharedInternals = React.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
@@ -69,10 +60,6 @@ function getCurrentComponentName() {
   }
 }
 
-
-/**
- * 检查是否应该记录该组件
- */
 function shouldLogComponent(componentName) {
   return !INTERNAL_COMPONENTS.some(internal =>
     componentName === internal ||
@@ -82,9 +69,6 @@ function shouldLogComponent(componentName) {
   );
 }
 
-/**
- * 脱敏处理值
- */
 function sanitizeValue(value) {
   if (value === null || value === undefined) return value;
   if (typeof value === 'boolean' || typeof value === 'number') return value;
@@ -97,9 +81,6 @@ function sanitizeValue(value) {
   return String(value);
 }
 
-/**
- * 创建 useState 拦截器 - 记录状态变化
- */
 function createUseStateInterceptor(originalUseState) {
   const stateIndexMap = new Map();
   
@@ -121,7 +102,7 @@ function createUseStateInterceptor(originalUseState) {
       const nextValue = typeof newValue === 'function' ? newValue(prevValue) : newValue;
       
       if (prevValue !== nextValue) {
-        debug(LOG_LAYERS.HOOK, `State: ${componentName}.${currentIndex}`, {
+        log.debug(LOG_LAYERS.HOOK, `State: ${componentName}.${currentIndex}`, {
           hook_name: 'useState',
           component_name: componentName,
           event: 'state_change',
@@ -138,9 +119,6 @@ function createUseStateInterceptor(originalUseState) {
   };
 }
 
-/**
- * 创建 useEffect 拦截器
- */
 function createUseEffectInterceptor(originalUseEffect, hookName = 'useEffect') {
   return function interceptedUseEffect(effect, deps) {
     const componentName = getCurrentComponentName();
@@ -158,26 +136,28 @@ function createUseEffectInterceptor(originalUseEffect, hookName = 'useEffect') {
         if (shouldLog) {
           if (isMountEffect && !mountedComponents.has(componentName)) {
             mountedComponents.set(componentName, { mountTime: Date.now(), renderCount: 1 });
-            debug(LOG_LAYERS.COMPONENT, `Component: ${componentName} mounted`, {
+            log.debug(LOG_LAYERS.COMPONENT, `Component: ${componentName} mounted`, {
               component_name: componentName,
               lifecycle: 'mount',
             });
           }
           
-          debug(LOG_LAYERS.HOOK, `Effect: ${componentName}`, {
+          log.debug(LOG_LAYERS.HOOK, `Effect: ${componentName}`, {
             hook_name: hookName,
             component_name: componentName,
             event: 'effect',
             has_cleanup: hasCleanup,
             deps_changed: true,
-          }, { duration_ms: executionTime });
+            duration_ms: executionTime
+          });
           
           if (executionTime > SLOW_HOOK_THRESHOLD) {
-            warn(LOG_LAYERS.HOOK, `Slow Hook: ${hookName} in ${componentName}`, {
+            log.warn(LOG_LAYERS.HOOK, `Slow Hook: ${hookName} in ${componentName}`, {
               hook_name: hookName,
               component_name: componentName,
               event: 'slow',
-            }, { duration_ms: executionTime });
+              duration_ms: executionTime
+            });
           }
         }
         
@@ -189,16 +169,17 @@ function createUseEffectInterceptor(originalUseEffect, hookName = 'useEffect') {
               const cleanupTime = Math.round(performance.now() - cleanupStart);
               
               if (shouldLog) {
-                debug(LOG_LAYERS.HOOK, `Effect Cleanup: ${componentName}`, {
+                log.debug(LOG_LAYERS.HOOK, `Effect Cleanup: ${componentName}`, {
                   hook_name: hookName,
                   component_name: componentName,
                   event: 'cleanup',
-                }, { duration_ms: cleanupTime });
+                  duration_ms: cleanupTime
+                });
                 
                 if (isMountEffect && mountedComponents.has(componentName)) {
                   const info = mountedComponents.get(componentName);
                   mountedComponents.delete(componentName);
-                  debug(LOG_LAYERS.COMPONENT, `Component: ${componentName} unmounted`, {
+                  log.debug(LOG_LAYERS.COMPONENT, `Component: ${componentName} unmounted`, {
                     component_name: componentName,
                     lifecycle: 'unmount',
                     render_count: info.renderCount,
@@ -208,8 +189,11 @@ function createUseEffectInterceptor(originalUseEffect, hookName = 'useEffect') {
               }
               return cleanupResult;
             } catch (error) {
-              warn(LOG_LAYERS.HOOK, `Hook Error: ${hookName} in ${componentName}`, {
-                hook_name: hookName, component_name: componentName, event: 'error', error_message: error.message,
+              log.warn(LOG_LAYERS.HOOK, `Hook Error: ${hookName} in ${componentName}`, {
+                hook_name: hookName,
+                component_name: componentName,
+                event: 'error',
+                error_message: error.message,
               });
               throw error;
             }
@@ -218,8 +202,11 @@ function createUseEffectInterceptor(originalUseEffect, hookName = 'useEffect') {
         return result;
       } catch (error) {
         if (shouldLog) {
-          warn(LOG_LAYERS.HOOK, `Hook Error: ${hookName} in ${componentName}`, {
-            hook_name: hookName, component_name: componentName, event: 'error', error_message: error.message,
+          log.warn(LOG_LAYERS.HOOK, `Hook Error: ${hookName} in ${componentName}`, {
+            hook_name: hookName,
+            component_name: componentName,
+            event: 'error',
+            error_message: error.message,
           });
         }
         throw error;
@@ -230,10 +217,6 @@ function createUseEffectInterceptor(originalUseEffect, hookName = 'useEffect') {
   };
 }
 
-
-/**
- * 创建通用 Hook 拦截器 - 只记录慢 Hook 和错误
- */
 function createGenericHookInterceptor(hookName, originalHook) {
   return function interceptedHook(...args) {
     const startTime = performance.now();
@@ -245,17 +228,18 @@ function createGenericHookInterceptor(hookName, originalHook) {
       const executionTime = Math.round(performance.now() - startTime);
       
       if (shouldLog && executionTime > SLOW_HOOK_THRESHOLD) {
-        warn(LOG_LAYERS.HOOK, `Slow Hook: ${hookName} in ${componentName}`, {
+        log.warn(LOG_LAYERS.HOOK, `Slow Hook: ${hookName} in ${componentName}`, {
           hook_name: hookName,
           component_name: componentName,
           event: 'slow',
-        }, { duration_ms: executionTime });
+          duration_ms: executionTime
+        });
       }
       
       return result;
     } catch (error) {
       if (shouldLog) {
-        warn(LOG_LAYERS.HOOK, `Hook Error: ${hookName} in ${componentName}`, {
+        log.warn(LOG_LAYERS.HOOK, `Hook Error: ${hookName} in ${componentName}`, {
           hook_name: hookName,
           component_name: componentName,
           event: 'error',
@@ -267,9 +251,6 @@ function createGenericHookInterceptor(hookName, originalHook) {
   };
 }
 
-/**
- * 安装 Hook 拦截器
- */
 export function installHookInterceptor() {
   if (isInstalled) return false;
   
@@ -295,9 +276,6 @@ export function installHookInterceptor() {
   }
 }
 
-/**
- * 卸载 Hook 拦截器
- */
 export function uninstallHookInterceptor() {
   if (!isInstalled) return false;
   

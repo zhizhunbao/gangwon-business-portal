@@ -1,38 +1,31 @@
 /**
  * Performance Interceptor - 性能监控拦截器
  * 
- * 自动监控应用性能指标，实现性能级别的自动日志记录和优化建议。
- * 
- * Features:
- * - 自动监控页面性能指标
- * - 拦截网络请求性能
- * - 监控渲染性能
- * - 内存使用监控
- * - 自动性能报告和优化建议
- * - 避免日志循环的智能排除机制
+ * 自动监控应用性能指标
  * 
  * Requirements: 4.3, 4.4
  */
 
-import { info, debug, warn, LOG_LAYERS, generateRequestId } from '@shared/logger';
+import { LOG_LAYERS, generateRequestId } from '@shared/logger';
+import { createLogger } from '@shared/hooks/useLogger';
 import { LOGGING_CONFIG, shouldExcludeFromPerformanceMonitoring } from '@shared/logger/config';
 
-// 拦截器状态
+const FILE_PATH = 'src/shared/interceptors/performance.interceptor.js';
+const log = createLogger(FILE_PATH);
+
 let isInstalled = false;
 
-// 性能监控配置 - 使用统一配置
 const performanceConfig = {
   enableNetworkMonitoring: LOGGING_CONFIG.performance.enableNetworkMonitoring,
   enableRenderMonitoring: LOGGING_CONFIG.performance.enableMemoryMonitoring,
   enableMemoryMonitoring: LOGGING_CONFIG.performance.enableMemoryMonitoring,
   enableNavigationMonitoring: true,
   slowRequestThreshold: LOGGING_CONFIG.performance.slowRequestThreshold,
-  slowRenderThreshold: 16, // ms (60fps)
+  slowRenderThreshold: 16,
   memoryWarningThreshold: LOGGING_CONFIG.performance.memoryWarningThreshold,
   reportInterval: LOGGING_CONFIG.performance.reportInterval
 };
 
-// 性能统计信息
 const performanceStats = {
   networkRequests: [],
   renderMetrics: [],
@@ -42,18 +35,13 @@ const performanceStats = {
   errors: []
 };
 
-// 监控定时器
 let monitoringInterval = null;
 let memoryMonitoringInterval = null;
 
-/**
- * 监控网络请求性能
- */
 function monitorNetworkPerformance() {
   if (!performanceConfig.enableNetworkMonitoring) return;
   
   try {
-    // 拦截fetch
     const originalFetch = window.fetch;
     window.fetch = async function interceptedFetch(resource, options = {}) {
       const startTime = performance.now();
@@ -61,19 +49,15 @@ function monitorNetworkPerformance() {
       const method = options.method || 'GET';
       const requestId = generateRequestId();
       
-      // 使用统一的排除检查函数
       const isLoggingRequest = shouldExcludeFromPerformanceMonitoring(url);
-      
-      // 不记录请求开始日志，只关注慢查询
       
       try {
         const response = await originalFetch(resource, options);
         const endTime = performance.now();
         const duration = Math.round(endTime - startTime);
         
-        // 只记录慢查询，忽略日志上传请求
         if (!isLoggingRequest && duration > performanceConfig.slowRequestThreshold) {
-          warn(LOG_LAYERS.PERFORMANCE, `Slow network_request: ${method} ${url} (${duration}ms > ${performanceConfig.slowRequestThreshold}ms)`, {
+          log.warn(LOG_LAYERS.PERFORMANCE, `Slow network_request: ${method} ${url} (${duration}ms > ${performanceConfig.slowRequestThreshold}ms)`, {
             request_id: requestId,
             metric_name: 'network_request',
             metric_value: duration,
@@ -94,7 +78,6 @@ function monitorNetworkPerformance() {
           });
         }
         
-        // 保存请求统计（但不包括日志请求）
         if (!isLoggingRequest) {
           performanceStats.networkRequests.push({
             method,
@@ -103,7 +86,6 @@ function monitorNetworkPerformance() {
             duration
           });
           
-          // 限制统计数据大小
           if (performanceStats.networkRequests.length > 100) {
             performanceStats.networkRequests = performanceStats.networkRequests.slice(-50);
           }
@@ -111,10 +93,6 @@ function monitorNetworkPerformance() {
         
         return response;
       } catch (error) {
-        const endTime = performance.now();
-        const duration = Math.round(endTime - startTime);
-        
-        // 网络错误记录到error日志，不在performance日志
         if (!isLoggingRequest) {
           performanceStats.errors.push({
             type: 'fetch',
@@ -128,7 +106,6 @@ function monitorNetworkPerformance() {
       }
     };
     
-    // 拦截XMLHttpRequest
     const originalXHROpen = XMLHttpRequest.prototype.open;
     const originalXHRSend = XMLHttpRequest.prototype.send;
     
@@ -137,11 +114,7 @@ function monitorNetworkPerformance() {
       this._method = method;
       this._url = url;
       this._requestId = generateRequestId();
-      
-      // 使用统一的排除检查函数
       this._isLoggingRequest = shouldExcludeFromPerformanceMonitoring(url);
-      
-      // 不记录请求开始日志，只关注慢查询
       
       return originalXHROpen.call(this, method, url, async, user, password);
     };
@@ -154,9 +127,8 @@ function monitorNetworkPerformance() {
         if (xhr.readyState === 4) {
           const duration = Math.round(performance.now() - xhr._startTime);
           
-          // 只记录慢查询
           if (!xhr._isLoggingRequest && duration > performanceConfig.slowRequestThreshold) {
-            warn(LOG_LAYERS.PERFORMANCE, `Slow network_request: ${xhr._method} ${xhr._url} (${duration}ms > ${performanceConfig.slowRequestThreshold}ms)`, {
+            log.warn(LOG_LAYERS.PERFORMANCE, `Slow network_request: ${xhr._method} ${xhr._url} (${duration}ms > ${performanceConfig.slowRequestThreshold}ms)`, {
               request_id: xhr._requestId,
               metric_name: 'network_request',
               metric_value: duration,
@@ -177,7 +149,6 @@ function monitorNetworkPerformance() {
             });
           }
           
-          // 保存统计（不包括日志请求）
           if (!xhr._isLoggingRequest) {
             performanceStats.networkRequests.push({
               method: xhr._method,
@@ -201,14 +172,10 @@ function monitorNetworkPerformance() {
   }
 }
 
-/**
- * 监控页面导航性能
- */
 function monitorNavigationPerformance() {
   if (!performanceConfig.enableNavigationMonitoring) return;
   
   try {
-    // 监控页面加载性能
     window.addEventListener('load', () => {
       setTimeout(() => {
         const navigation = performance.getEntriesByType('navigation')[0];
@@ -223,7 +190,7 @@ function monitorNavigationPerformance() {
             timestamp: new Date().toISOString()
           };
           
-          info(LOG_LAYERS.PERFORMANCE, 'Page Navigation Performance', {
+          log.info(LOG_LAYERS.PERFORMANCE, 'Page Navigation Performance', {
             navigation_type: navigation.type,
             ...metrics
           });
@@ -233,9 +200,8 @@ function monitorNavigationPerformance() {
       }, 0);
     });
     
-    // 监控页面可见性变化
     document.addEventListener('visibilitychange', () => {
-      debug(LOG_LAYERS.PERFORMANCE, `Page Visibility Changed: ${document.visibilityState}`, {
+      log.debug(LOG_LAYERS.PERFORMANCE, `Page Visibility Changed: ${document.visibilityState}`, {
         visibility_state: document.visibilityState,
         timestamp: new Date().toISOString()
       });
@@ -246,9 +212,6 @@ function monitorNavigationPerformance() {
   }
 }
 
-/**
- * 监控内存使用
- */
 function monitorMemoryUsage() {
   if (!performanceConfig.enableMemoryMonitoring || !performance.memory) return;
   
@@ -264,24 +227,30 @@ function monitorMemoryUsage() {
     
     const isHighMemory = memory.usedJSHeapSize > performanceConfig.memoryWarningThreshold;
     
-    // 按照日志规范格式发送性能日志
-    const logFn = isHighMemory ? warn : info;
     const message = isHighMemory 
       ? `Slow memory_usage: App (${Math.round(memory.usedJSHeapSize / 1024 / 1024)}MB > ${Math.round(performanceConfig.memoryWarningThreshold / 1024 / 1024)}MB)`
       : `Perf: memory_usage = ${Math.round(memory.usedJSHeapSize / 1024 / 1024)}MB`;
     
-    logFn(LOG_LAYERS.PERFORMANCE, message, {
-      metric_name: 'memory_usage',
-      metric_value: memory.usedJSHeapSize,
-      metric_unit: 'bytes',
-      threshold_ms: performanceConfig.memoryWarningThreshold,
-      is_slow: isHighMemory,
-      ...memoryUsage
-    });
+    if (isHighMemory) {
+      log.warn(LOG_LAYERS.PERFORMANCE, message, {
+        metric_name: 'memory_usage',
+        metric_value: memory.usedJSHeapSize,
+        metric_unit: 'bytes',
+        threshold_ms: performanceConfig.memoryWarningThreshold,
+        is_slow: isHighMemory,
+        ...memoryUsage
+      });
+    } else {
+      log.info(LOG_LAYERS.PERFORMANCE, message, {
+        metric_name: 'memory_usage',
+        metric_value: memory.usedJSHeapSize,
+        metric_unit: 'bytes',
+        ...memoryUsage
+      });
+    }
     
     performanceStats.memoryUsage.push(memoryUsage);
     
-    // 限制统计数据大小
     if (performanceStats.memoryUsage.length > 100) {
       performanceStats.memoryUsage = performanceStats.memoryUsage.slice(-50);
     }
@@ -291,20 +260,6 @@ function monitorMemoryUsage() {
   }
 }
 
-/**
- * 生成性能报告
- * 注意：定期报告已禁用，只记录慢查询
- */
-function generatePerformanceReport() {
-  // 禁用定期报告，只关注慢查询
-  // 慢查询已在网络监控中实时记录
-}
-
-/**
- * 安装性能拦截器
- * @param {Object} config - 配置选项
- * @returns {boolean} 是否安装成功
- */
 export function installPerformanceInterceptor(config = {}) {
   if (isInstalled) {
     console.warn('[PerformanceInterceptor] Already installed');
@@ -312,21 +267,17 @@ export function installPerformanceInterceptor(config = {}) {
   }
   
   try {
-    // 更新配置
     Object.assign(performanceConfig, config);
     
-    // 安装网络监控（慢查询检测）
     monitorNetworkPerformance();
     
-    // 开发环境启用完整监控
     if (import.meta.env.DEV) {
       monitorNavigationPerformance();
-      memoryMonitoringInterval = setInterval(monitorMemoryUsage, 30000); // 30秒检查一次内存
+      memoryMonitoringInterval = setInterval(monitorMemoryUsage, 30000);
     }
     
     isInstalled = true;
     
-    // 只在开发环境且启用调试日志时显示安装成功信息
     if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_AOP_DEBUG_LOGS === 'true') {
       console.log('[PerformanceInterceptor] Installed successfully');
     }
@@ -338,10 +289,6 @@ export function installPerformanceInterceptor(config = {}) {
   }
 }
 
-/**
- * 卸载性能拦截器
- * @returns {boolean} 是否卸载成功
- */
 export function uninstallPerformanceInterceptor() {
   if (!isInstalled) {
     console.warn('[PerformanceInterceptor] Not installed');
@@ -349,7 +296,6 @@ export function uninstallPerformanceInterceptor() {
   }
   
   try {
-    // 清除定时器
     if (monitoringInterval) {
       clearInterval(monitoringInterval);
       monitoringInterval = null;
@@ -369,18 +315,10 @@ export function uninstallPerformanceInterceptor() {
   }
 }
 
-/**
- * 检查拦截器是否已安装
- * @returns {boolean} 是否已安装
- */
 export function isPerformanceInterceptorInstalled() {
   return isInstalled;
 }
 
-/**
- * 获取性能统计信息
- * @returns {Object} 统计信息
- */
 export function getPerformanceInterceptorStats() {
   return {
     isInstalled,
@@ -395,9 +333,6 @@ export function getPerformanceInterceptorStats() {
   };
 }
 
-/**
- * 重置性能统计信息
- */
 export function resetPerformanceInterceptorStats() {
   performanceStats.networkRequests = [];
   performanceStats.renderMetrics = [];
@@ -407,15 +342,10 @@ export function resetPerformanceInterceptorStats() {
   performanceStats.errors = [];
 }
 
-/**
- * 更新配置
- * @param {Object} newConfig - 新配置
- */
 export function updatePerformanceConfig(newConfig) {
   Object.assign(performanceConfig, newConfig);
 }
 
-// 默认导出
 export default {
   install: installPerformanceInterceptor,
   uninstall: uninstallPerformanceInterceptor,

@@ -74,14 +74,17 @@ class HealthService:
         raise RuntimeError("No database session factory configured")
     
     @classmethod
-    async def get_system_health(cls) -> Dict[str, Any]:
+    async def get_system_health(cls, skip_external: bool = False) -> Dict[str, Any]:
         """
         获取完整的系统健康状态
+        
+        Args:
+            skip_external: 是否跳过外部服务检查（防止循环调用）
         """
         config = cls._get_config()
         
         # 检查缓存
-        cache_key = "system_health"
+        cache_key = f"system_health_{skip_external}"
         if cache_key in cls._cache:
             cached = cls._cache[cache_key]
             if time.time() - cached["timestamp"] < config.cache_ttl:
@@ -94,8 +97,8 @@ class HealthService:
             cls._check_storage(),
         ]
         
-        # 添加外部服务检查
-        if config.enable_external_services and config.external_services:
+        # 添加外部服务检查（仅当未跳过时）
+        if not skip_external and config.enable_external_services and config.external_services:
             tasks.append(cls._check_external_services())
         
         # 添加自定义检查
@@ -301,6 +304,12 @@ class HealthService:
                         url = f"{service_config.url}/api/health"
                     else:
                         url = service_config.url
+                    
+                    # 添加 skip_external=true 防止循环调用
+                    if "?" in url:
+                        url += "&skip_external=true"
+                    else:
+                        url += "?skip_external=true"
                     
                     response = await client.get(url)
                     response_time = round((time.time() - start_time) * 1000, 2)

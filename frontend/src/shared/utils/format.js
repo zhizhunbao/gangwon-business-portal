@@ -350,3 +350,130 @@ export function formatYearQuarter(year, quarter) {
   return `${year}년 ${quarterMap[quarter] || quarter}`;
 }
 
+// =============================================================================
+// 日志路径解析函数
+// =============================================================================
+
+/**
+ * Parse module path from full file path
+ * 
+ * Examples:
+ *   /opt/render/project/src/backend/src/common/modules/exception/recorder.py
+ *   -> common.modules.exception
+ *   
+ *   src.common.modules.interceptor.router
+ *   -> common.modules.interceptor
+ *   
+ *   common.modules.interceptor.router
+ *   -> common.modules.interceptor
+ *   
+ *   index-CddmaCi5.js (frontend bundled)
+ *   -> -
+ * 
+ * @param {string} fullPath - Full file path or module path
+ * @returns {string} Module path without filename
+ */
+export function parseModulePath(fullPath) {
+  if (!fullPath) return '-';
+  
+  // Frontend bundled files
+  if (fullPath.includes('.js')) return '-';
+  
+  let path = fullPath;
+  
+  // If it's a file path (contains / or \)
+  if (path.includes('/') || path.includes('\\')) {
+    // Normalize separators
+    path = path.replace(/\\/g, '/');
+    
+    // Remove .py extension
+    path = path.replace(/\.py$/, '');
+    
+    // Find the last 'src/' and extract from there
+    const lastSrcIdx = path.lastIndexOf('/src/');
+    if (lastSrcIdx !== -1) {
+      path = path.substring(lastSrcIdx + 5); // Skip '/src/'
+    }
+    
+    // Convert to dot notation
+    path = path.replace(/\//g, '.');
+  }
+  
+  // Remove 'src.' prefix if present (for dot notation paths like src.common.modules.xxx)
+  if (path.startsWith('src.')) {
+    path = path.substring(4);
+  }
+  
+  // Remove filename (last part after the last dot)
+  const parts = path.split('.');
+  if (parts.length > 1) {
+    return parts.slice(0, -1).join('.') || '-';
+  }
+  
+  return path || '-';
+}
+
+/**
+ * Parse filename from full file path
+ * 
+ * Examples:
+ *   /opt/render/project/src/backend/src/common/modules/exception/recorder.py
+ *   -> recorder.py
+ *   
+ *   common.modules.interceptor.router (backend)
+ *   -> router.py
+ *   
+ *   shared.interceptors (frontend, with filePath)
+ *   -> auth.interceptor.js
+ *   
+ *   shared.interceptors (frontend, no filePath)
+ *   -> interceptors.js
+ *   
+ *   index-CddmaCi5.js (frontend bundled)
+ *   -> index-CddmaCi5.js
+ * 
+ * @param {string} fullPath - Full file path or module path
+ * @param {string} source - Log source ('backend' or 'frontend')
+ * @param {string} filePath - Optional file_path field from log
+ * @returns {string} Filename
+ */
+export function parseFilename(fullPath, source = 'backend', filePath = null) {
+  if (!fullPath) return '-';
+  
+  // If filePath is provided and contains a filename, use it
+  if (filePath) {
+    const parts = filePath.split('/');
+    const filename = parts[parts.length - 1];
+    if (filename && filename.includes('.')) {
+      return filename;
+    }
+  }
+  
+  // Frontend bundled files - return as-is
+  if (fullPath.includes('.js')) {
+    const parts = fullPath.split('/');
+    return parts[parts.length - 1];
+  }
+  
+  let path = fullPath;
+  
+  // If it's a file path (contains /)
+  if (path.includes('/') || path.includes('\\')) {
+    // Normalize and get last part
+    path = path.replace(/\\/g, '/');
+    const parts = path.split('/');
+    const filename = parts[parts.length - 1];
+    // Already has .py extension
+    if (filename.endsWith('.py')) return filename;
+    // Already has .js extension
+    if (filename.endsWith('.js') || filename.endsWith('.jsx')) return filename;
+    // Add extension based on source
+    return filename + (source === 'frontend' ? '.js' : '.py');
+  }
+  
+  // Dot notation - get last part and add extension based on source
+  const parts = path.split('.');
+  const filename = parts[parts.length - 1];
+  return filename + (source === 'frontend' ? '.js' : '.py');
+}
+

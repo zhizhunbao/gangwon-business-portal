@@ -6,28 +6,27 @@
  * Features:
  * - 记录组件 mount/unmount 事件
  * - 自动追踪组件生命周期
- * - 集成日志上下文管理
  * - 支持组件渲染性能监控
+ * - 支持模块路径注入
  *
  * Requirements: 4.3, 4.4
  */
 
 import React, { useEffect, useRef, useCallback } from "react";
-import { info, debug, warn, LOG_LAYERS } from "@shared/logger";
+import { LOG_LAYERS } from "@shared/logger";
 import { getLayerLogLevel } from "@shared/logger/config";
-
-// 从配置文件获取组件层日志级别
-const componentLogLevel = getLayerLogLevel('component');
-const logFn = componentLogLevel === 'DEBUG' ? debug : info;
+import { logWithModule } from "./useLogger";
 
 /**
  * 组件日志记录 Hook
  * @param {string} componentName - 组件名称
  * @param {Object} options - 配置选项
+ * @param {string} options.filePath - 文件路径，如 'member/components/MessageList.jsx'
  * @returns {Object} 日志记录工具函数
  */
 export function useComponentLog(componentName, options = {}) {
   const {
+    filePath = null,
     enableLogging = true,
     trackProps = false,
     trackRenders = false,
@@ -39,6 +38,15 @@ export function useComponentLog(componentName, options = {}) {
   const lastRenderTimeRef = useRef(null);
   const propsRef = useRef(null);
 
+  // 获取日志级别
+  const componentLogLevel = getLayerLogLevel('component');
+  const logLevel = componentLogLevel === 'DEBUG' ? 'DEBUG' : 'INFO';
+
+  // 内部日志函数
+  const log = useCallback((level, message, data) => {
+    logWithModule(filePath, level, LOG_LAYERS.COMPONENT, message, data);
+  }, [filePath]);
+
   // 组件 Mount 日志 - Requirements 4.3
   useEffect(() => {
     if (!enableLogging) return;
@@ -46,16 +54,10 @@ export function useComponentLog(componentName, options = {}) {
     try {
       mountTimeRef.current = performance.now();
 
-      // 按规范格式: Component: {name} {lifecycle}
-      const logMessage = `Component: ${componentName} mounted`;
-      const logData = {
+      log(logLevel, `Component: ${componentName} mounted`, {
         component_name: componentName,
         lifecycle: "mount",
-        props: {},  // 脱敏后的 props
-      };
-
-      // 使用配置的日志级别
-      logFn(LOG_LAYERS.COMPONENT, logMessage, logData);
+      });
     } catch (error) {
       console.warn("Failed to log component mount:", error);
     }
@@ -69,33 +71,26 @@ export function useComponentLog(componentName, options = {}) {
           ? Math.round(performance.now() - mountTimeRef.current)
           : null;
 
-        // 按规范格式: Component: {name} {lifecycle}
-        const logMessage = `Component: ${componentName} unmounted`;
-        const logData = {
+        log(logLevel, `Component: ${componentName} unmounted`, {
           component_name: componentName,
           lifecycle: "unmount",
-          props: {},
           duration_ms: mountDuration,
-        };
-
-        // 使用配置的日志级别
-        logFn(LOG_LAYERS.COMPONENT, logMessage, logData);
+        });
       } catch (error) {
         console.warn("Failed to log component unmount:", error);
       }
     };
-  }, [componentName, enableLogging]);
+  }, [componentName, enableLogging, log, logLevel]);
 
   // 记录组件渲染的工具函数
   const logRender = useCallback(
     (renderInfo = {}) => {
-      if (!enableLogging || !trackRenders) return;
+      if (!enableLogging || !trackRenders) return () => {};
 
       try {
         const renderStartTime = performance.now();
         renderCountRef.current += 1;
 
-        // 返回一个函数来记录渲染完成
         return () => {
           const renderTime = Math.round(performance.now() - renderStartTime);
           lastRenderTimeRef.current = renderTime;
@@ -107,30 +102,21 @@ export function useComponentLog(componentName, options = {}) {
             duration_ms: renderTime,
           };
 
-          // 慢渲染警告
           if (renderTime > slowRenderThreshold) {
-            warn(
-              LOG_LAYERS.COMPONENT,
-              `Component: ${componentName} slow render`,
-              {
-                ...logData,
-                threshold_ms: slowRenderThreshold,
-              }
-            );
+            log('WARNING', `Component: ${componentName} slow render`, {
+              ...logData,
+              threshold_ms: slowRenderThreshold,
+            });
           } else {
-            debug(
-              LOG_LAYERS.COMPONENT,
-              `Component: ${componentName} update`,
-              logData
-            );
+            log('DEBUG', `Component: ${componentName} update`, logData);
           }
         };
       } catch (error) {
         console.warn("Failed to log component render:", error);
-        return () => {}; // 返回空函数避免错误
+        return () => {};
       }
     },
-    [componentName, enableLogging, trackRenders, slowRenderThreshold]
+    [componentName, enableLogging, trackRenders, slowRenderThreshold, log]
   );
 
   // 记录组件事件的工具函数
@@ -139,20 +125,16 @@ export function useComponentLog(componentName, options = {}) {
       if (!enableLogging) return;
 
       try {
-        info(
-          LOG_LAYERS.COMPONENT,
-          `Component: ${componentName} ${eventName}`,
-          {
-            component_name: componentName,
-            lifecycle: eventName,
-            props: sanitizeRenderInfo(eventData),
-          }
-        );
+        log('INFO', `Component: ${componentName} ${eventName}`, {
+          component_name: componentName,
+          lifecycle: eventName,
+          props: sanitizeRenderInfo(eventData),
+        });
       } catch (error) {
         console.warn("Failed to log component event:", error);
       }
     },
-    [componentName, enableLogging]
+    [componentName, enableLogging, log]
   );
 
   // 记录组件错误的工具函数
@@ -161,7 +143,7 @@ export function useComponentLog(componentName, options = {}) {
       if (!enableLogging) return;
 
       try {
-        warn(LOG_LAYERS.COMPONENT, `Component: ${componentName} error`, {
+        log('WARNING', `Component: ${componentName} error`, {
           component_name: componentName,
           lifecycle: "error",
           props: sanitizeRenderInfo(errorInfo),
@@ -172,7 +154,7 @@ export function useComponentLog(componentName, options = {}) {
         console.warn("Failed to log component error:", logError);
       }
     },
-    [componentName, enableLogging]
+    [componentName, enableLogging, log]
   );
 
   // 记录 Props 变更的工具函数
@@ -185,15 +167,11 @@ export function useComponentLog(componentName, options = {}) {
         const changedProps = getChangedProps(oldProps, newProps);
 
         if (changedProps.length > 0) {
-          debug(
-            LOG_LAYERS.COMPONENT,
-            `Component: ${componentName} props changed`,
-            {
-              component_name: componentName,
-              lifecycle: "update",
-              props: { changed_fields: changedProps },
-            }
-          );
+          log('DEBUG', `Component: ${componentName} props changed`, {
+            component_name: componentName,
+            lifecycle: "update",
+            props: { changed_fields: changedProps },
+          });
         }
 
         propsRef.current = newProps;
@@ -201,7 +179,7 @@ export function useComponentLog(componentName, options = {}) {
         console.warn("Failed to log component props change:", error);
       }
     },
-    [componentName, enableLogging, trackProps]
+    [componentName, enableLogging, trackProps, log]
   );
 
   return {
@@ -220,8 +198,6 @@ export function useComponentLog(componentName, options = {}) {
 
 /**
  * 清理渲染信息，移除敏感数据
- * @param {any} info - 渲染信息
- * @returns {any} 清理后的信息
  */
 function sanitizeRenderInfo(info) {
   if (!info || typeof info !== "object") {
@@ -230,8 +206,6 @@ function sanitizeRenderInfo(info) {
 
   try {
     const sanitized = { ...info };
-
-    // 移除敏感字段
     const sensitiveFields = ["password", "token", "secret", "key", "auth"];
     sensitiveFields.forEach((field) => {
       if (sanitized[field]) {
@@ -239,7 +213,6 @@ function sanitizeRenderInfo(info) {
       }
     });
 
-    // 限制对象大小
     const jsonStr = JSON.stringify(sanitized);
     if (jsonStr.length > 300) {
       return {
@@ -257,9 +230,6 @@ function sanitizeRenderInfo(info) {
 
 /**
  * 获取 Props 变更信息
- * @param {Object} oldProps - 旧的 Props
- * @param {Object} newProps - 新的 Props
- * @returns {string[]} 变更的 Props 列表
  */
 function getChangedProps(oldProps, newProps) {
   const changedProps = [];
@@ -268,14 +238,12 @@ function getChangedProps(oldProps, newProps) {
     return changedProps;
   }
 
-  // 检查新增或变更的 props
   for (const key in newProps) {
     if (newProps[key] !== oldProps[key]) {
       changedProps.push(key);
     }
   }
 
-  // 检查删除的 props
   for (const key in oldProps) {
     if (!(key in newProps)) {
       changedProps.push(`-${key}`);
@@ -287,9 +255,6 @@ function getChangedProps(oldProps, newProps) {
 
 /**
  * 组件日志装饰器 HOC
- * @param {string} componentName - 组件名称
- * @param {Object} options - 配置选项
- * @returns {Function} HOC 函数
  */
 export function withComponentLog(componentName, options = {}) {
   return function (WrappedComponent) {
@@ -299,7 +264,6 @@ export function withComponentLog(componentName, options = {}) {
         options
       );
 
-      // 记录 Props 变更
       useEffect(() => {
         logPropsChange(props);
       }, [props, logPropsChange]);
