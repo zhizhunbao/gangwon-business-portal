@@ -1039,6 +1039,7 @@ class DatabaseLogWriter:
         module: Optional[str] = None,
         function: Optional[str] = None,
         line_number: Optional[int] = None,
+        file_path: Optional[str] = None,
         trace_id: Optional[str] = None,
         user_id: Optional[UUID] = None,
         ip_address: Optional[str] = None,
@@ -1064,6 +1065,7 @@ class DatabaseLogWriter:
             module: Module name
             function: Function name
             line_number: Line number
+            file_path: Full file path
             trace_id: Request trace ID
             user_id: User ID
             ip_address: IP address
@@ -1092,6 +1094,7 @@ class DatabaseLogWriter:
                 module=module,
                 function=function,
                 line_number=line_number,
+                file_path=file_path,
                 trace_id=trace_id,
                 user_id=user_id,
                 ip_address=ip_address,
@@ -1131,6 +1134,7 @@ class DatabaseLogWriter:
         module: Optional[str] = None,
         function: Optional[str] = None,
         line_number: Optional[int] = None,
+        file_path: Optional[str] = None,
         extra_data: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Write a system log entry to system_logs table (async, non-blocking).
@@ -1144,6 +1148,7 @@ class DatabaseLogWriter:
             module: Module name
             function: Function name
             line_number: Line number
+            file_path: Full file path
             extra_data: Additional system data (server, host, port, workers)
         """
         if not self._enabled:
@@ -1164,6 +1169,7 @@ class DatabaseLogWriter:
                 module=module,
                 function=function,
                 line_number=line_number,
+                file_path=file_path,
                 extra_data=extra_data,
             )
             
@@ -1211,6 +1217,7 @@ class DatabaseLogWriter:
         module: Optional[str] = None,
         function: Optional[str] = None,
         line_number: Optional[int] = None,
+        file_path: Optional[str] = None,
         result: str = "SUCCESS",
     ) -> Optional[dict[str, Any]]:
         """Write an audit log entry to audit_logs table (async, non-blocking).
@@ -1229,6 +1236,7 @@ class DatabaseLogWriter:
             module: Module path relative to project root
             function: Function name
             line_number: Line number
+            file_path: Full file path
             result: Action result (SUCCESS/FAILED)
             
         Returns:
@@ -1273,6 +1281,7 @@ class DatabaseLogWriter:
                 module=module or "",
                 function=function or "",
                 line_number=line_number or 0,
+                file_path=file_path,
                 user_id=user_id,
                 resource_type=resource_type,
                 resource_id=resource_id,

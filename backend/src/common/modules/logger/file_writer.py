@@ -588,6 +588,7 @@ class FileLogWriter:
             module=error_log.module,
             function=error_log.function,
             line_number=error_log.line_number,
+            file_path=error_log.file_path,
             trace_id=error_log.trace_id,
             user_id=error_log.user_id,
             ip_address=error_log.ip_address,
@@ -628,6 +629,7 @@ class FileLogWriter:
             module=getattr(audit_log, 'module', "") or "",
             function=getattr(audit_log, 'function', "") or "",
             line_number=getattr(audit_log, 'line_number', 0) or 0,
+            file_path=getattr(audit_log, 'file_path', None),
             user_id=audit_log.user_id,
             resource_type=audit_log.resource_type,
             resource_id=audit_log.resource_id,
@@ -875,13 +877,14 @@ class FileLogWriter:
         module: Optional[str] = None,
         function: Optional[str] = None,
         line_number: Optional[int] = None,
+        file_path: Optional[str] = None,
         result: str = "SUCCESS",
         extra_data: Optional[dict[str, Any]] = None,
     ) -> str:
         """Format an audit log entry as JSON using AuditLogCreate schema.
         
         按照日志规范输出:
-        - timestamp, source, level, message, layer, module, function, line_number (必需)
+        - timestamp, source, level, message, layer, module, function, line_number, file_path (必需)
         - trace_id, user_id (追踪字段，按需)
         - extra_data: action, result, ip_address, user_agent (Audit 层独有)
         """
@@ -909,9 +912,10 @@ class FileLogWriter:
             source="backend",
             level="INFO",
             layer="Auth",
-            module=module or "common.modules.audit",
+            module=module or "src.common.modules.audit",
             function=function or "audit_action",
             line_number=line_number or 0,
+            file_path=file_path,
             user_id=user_uuid,
             resource_type=resource_type,
             resource_id=resource_uuid,
@@ -937,6 +941,7 @@ class FileLogWriter:
         module: Optional[str] = None,
         function: Optional[str] = None,
         line_number: Optional[int] = None,
+        file_path: Optional[str] = None,
         component_name: Optional[str] = None,
         trace_id: Optional[str] = None,
         request_id: Optional[str] = None,
@@ -988,6 +993,7 @@ class FileLogWriter:
             "module": module or "",
             "function": function or "",
             "line_number": line_number or 0,
+            "file_path": file_path,
         }
         
         # Add trace fields only if present
@@ -1019,13 +1025,14 @@ class FileLogWriter:
         module: Optional[str] = None,
         function: Optional[str] = None,
         line_number: Optional[int] = None,
+        file_path: Optional[str] = None,
         result: str = "SUCCESS",
         extra_data: Optional[dict[str, Any]] = None,
     ) -> None:
         """Write an audit log entry to audit.log file.
 
         按照日志规范输出:
-        - timestamp, source, level, message, layer, module, function, line_number (必需)
+        - timestamp, source, level, message, layer, module, function, line_number, file_path (必需)
         - trace_id, user_id (追踪字段，按需)
         - extra_data: action, result, ip_address, user_agent (Audit 层独有)
 
@@ -1043,6 +1050,7 @@ class FileLogWriter:
             module: Module path relative to project root
             function: Function name
             line_number: Line number
+            file_path: Full file path
             result: Action result (SUCCESS/FAILED)
             extra_data: Additional context data
         """
@@ -1060,6 +1068,7 @@ class FileLogWriter:
             module=module,
             function=function,
             line_number=line_number,
+            file_path=file_path,
             result=result,
             extra_data=extra_data,
         )

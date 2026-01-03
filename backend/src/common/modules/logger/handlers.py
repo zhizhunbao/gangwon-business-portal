@@ -134,6 +134,15 @@ class DatabaseSystemLogHandler(logging.Handler):
                         pass
                 extra_data["workers"] = 1
             
+            # Extract file path
+            file_path = None
+            if hasattr(record, "pathname") and record.pathname:
+                pathname = record.pathname.replace("\\", "/")
+                if "/backend/src/" in pathname:
+                    file_path = "src/" + pathname.split("/backend/src/")[-1]
+                elif "/src/" in pathname:
+                    file_path = "src/" + pathname.split("/src/")[-1]
+            
             # Write to system_logs table using unified db_log_writer
             # Use getMessage() for raw message, not format() which returns JSON
             db_log_writer.write_system_log(
@@ -143,6 +152,7 @@ class DatabaseSystemLogHandler(logging.Handler):
                 module=module_path,
                 function=func_name,
                 line_number=line_num,
+                file_path=file_path,
                 extra_data=extra_data,
             )
             
@@ -159,16 +169,20 @@ class DatabaseSystemLogHandler(logging.Handler):
         """
         # 优先使用 logger 名称
         if record.name and record.name != "root":
-            return record.name
+            name = record.name
+            # 确保有 src. 前缀
+            if not name.startswith("src.") and not name.startswith("uvicorn") and not name.startswith("sqlalchemy"):
+                name = "src." + name
+            return name
         
         # Fallback: 从 pathname 提取相对路径
         if hasattr(record, "pathname") and record.pathname:
             pathname = record.pathname.replace("\\", "/")
             # 查找 backend/src 或 src 开头的路径
             if "/backend/src/" in pathname:
-                return pathname.split("/backend/src/")[-1].replace("/", ".").replace(".py", "")
+                return "src." + pathname.split("/backend/src/")[-1].replace("/", ".").replace(".py", "")
             elif "/src/" in pathname:
-                return pathname.split("/src/")[-1].replace("/", ".").replace(".py", "")
+                return "src." + pathname.split("/src/")[-1].replace("/", ".").replace(".py", "")
             # 第三方包（site-packages）
             if "site-packages/" in pathname:
                 parts = pathname.split("site-packages/")
