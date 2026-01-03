@@ -113,7 +113,8 @@ class HealthService:
         storage_health = results[2] if not isinstance(results[2], Exception) else {"status": "unhealthy", "error": str(results[2])}
         
         external_health = {}
-        if config.enable_external_services and config.external_services:
+        # 只有当添加了外部服务检查任务时才访问 results[3]
+        if not skip_external and config.enable_external_services and config.external_services:
             external_health = results[3] if not isinstance(results[3], Exception) else {}
         
         # 计算整体状态
