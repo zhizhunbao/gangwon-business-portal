@@ -29,6 +29,10 @@ class AuditLogService:
         request_id: Optional[str] = None,
         request_method: Optional[str] = None,
         request_path: Optional[str] = None,
+        module: Optional[str] = None,
+        function: Optional[str] = None,
+        line_number: Optional[int] = None,
+        file_path: Optional[str] = None,
     ) -> dict:
         """
         Create an audit log entry using Supabase API (no database session required).
@@ -73,13 +77,20 @@ class AuditLogService:
                 request_id=request_id,
                 request_method=request_method,
                 request_path=request_path,
+                module=module,
+                function=function,
+                line_number=line_number,
+                file_path=file_path,
             )
             if created_log:
                 db_write_success = True
+            else:
+                import logging
+                logging.warning(f"Audit log DB write returned None for action={action}")
         except Exception as e:
             # Log error but continue with file write
             import logging
-            logging.warning(f"Failed to write audit log to database: {str(e)}", exc_info=False)
+            logging.warning(f"Failed to write audit log to database: {str(e)}", exc_info=True)
         
         # Write to audit log file (always attempt, even if DB write failed)
         try:
@@ -91,7 +102,7 @@ class AuditLogService:
                 }
             
             file_log_writer.write_audit_log(
-                action=action,
+                action,  # 第一个位置参数
                 user_id=user_id,
                 resource_type=resource_type,
                 resource_id=resource_id,
@@ -101,13 +112,19 @@ class AuditLogService:
                 request_id=request_id,
                 request_method=request_method,
                 request_path=request_path,
+                module=module,
+                function=function,
+                line_number=line_number,
+                file_path=file_path,
                 extra_data=extra_data,
             )
             file_write_success = True
+            import logging
+            logging.info(f"Audit log file write success for action={action}")
         except Exception as e:
             # Log error but don't fail the audit log creation
             import logging
-            logging.warning(f"Failed to write audit log to file: {str(e)}")
+            logging.warning(f"Failed to write audit log to file: {str(e)}", exc_info=True)
         
         # Log dual-write status for monitoring
         if not db_write_success and not file_write_success:
@@ -180,15 +197,18 @@ class AuditLogService:
             items.append(
                 AuditLogResponse(
                     id=log.id,
-                    source=log.source,
-                    level=log.level,
-                    message=log.message,
-                    layer=log.layer,
-                    module=log.module,
-                    function=log.function,
-                    line_number=log.line_number,
-                    trace_id=log.trace_id,
+                    source=log.source or "backend",
+                    level=log.level or "INFO",
+                    message=log.message or "",
+                    layer=log.layer or "Auth",
+                    module=log.module or "",
+                    function=log.function or "",
+                    line_number=log.line_number or 0,
+                    file_path=getattr(log, 'file_path', '') or "",
+                    trace_id=log.trace_id or "",
+                    request_id=getattr(log, 'request_id', '') or "",
                     user_id=log.user_id,
+                    duration_ms=getattr(log, 'duration_ms', None),
                     extra_data=extra,
                     created_at=log.created_at,
                 )

@@ -8,7 +8,14 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
 
 from ...common.modules.supabase.service import supabase_service
-from ...common.modules.exception import AuthorizationError, AuthenticationError
+from ...common.modules.exception import (
+    AuthorizationError, 
+    AuthenticationError,
+    CMessageTemplate,
+    format_auth_user_not_found,
+    format_auth_user_inactive,
+    format_permission_required,
+)
 from .service import AuthService
 
 # NOTE:
@@ -25,7 +32,7 @@ async def get_current_user(
     auth_service = AuthService()
 
     if credentials is None:
-        raise AuthenticationError("Not authenticated")
+        raise AuthenticationError(CMessageTemplate.AUTH_NOT_AUTHENTICATED)
 
     token = credentials.credentials
 
@@ -35,9 +42,9 @@ async def get_current_user(
         role: str = payload.get("role", "member")
         
         if user_id is None:
-            raise AuthenticationError("Invalid token payload")
+            raise AuthenticationError(CMessageTemplate.AUTH_INVALID_PAYLOAD)
     except Exception as e:
-        raise AuthenticationError(f"Could not validate credentials: {str(e)}")
+        raise AuthenticationError(CMessageTemplate.AUTH_CREDENTIAL_VALIDATION_FAILED.format(error=str(e)))
 
     try:
         if role == "admin":
@@ -46,12 +53,12 @@ async def get_current_user(
             user = await supabase_service.get_by_id('members', user_id)
         
         if user is None:
-            raise AuthenticationError("User not found")
+            raise AuthenticationError(format_auth_user_not_found("User"))
         
         user["role"] = role
         return user
     except ValueError:
-        raise AuthenticationError("Invalid user ID format")
+        raise AuthenticationError(CMessageTemplate.AUTH_INVALID_ID_FORMAT.format(user_type="User"))
 
 
 async def get_current_active_user(
@@ -62,10 +69,10 @@ async def get_current_active_user(
     
     if role == "admin":
         if current_user.get("is_active") != "true":
-            raise AuthenticationError("Inactive user")
+            raise AuthenticationError(format_auth_user_inactive("User"))
     else:
         if current_user.get("status") != "active":
-            raise AuthenticationError("Inactive user")
+            raise AuthenticationError(format_auth_user_inactive("User"))
     
     return current_user
 
@@ -149,10 +156,10 @@ async def get_current_active_user_compat(
     role = current_user.get("role", "member")
     
     if role != "member":
-        raise AuthorizationError("Member access required")
+        raise AuthorizationError(format_permission_required("Member"))
     
     if current_user.get("status") != "active":
-        raise AuthenticationError("Inactive user")
+        raise AuthenticationError(format_auth_user_inactive("User"))
     
     return MemberCompat(current_user)
 
@@ -164,7 +171,7 @@ async def get_current_member_user(
     auth_service = AuthService()
 
     if credentials is None:
-        raise AuthenticationError("Not authenticated")
+        raise AuthenticationError(CMessageTemplate.AUTH_NOT_AUTHENTICATED)
 
     token = credentials.credentials
 
@@ -174,27 +181,27 @@ async def get_current_member_user(
         role: str = payload.get("role", "member")
         
         if user_id is None:
-            raise AuthenticationError("Invalid token payload")
+            raise AuthenticationError(CMessageTemplate.AUTH_INVALID_PAYLOAD)
         
         if role == "member" or role is None:
             try:
                 member = await supabase_service.get_by_id('members', user_id)
                 if member is None:
-                    raise AuthenticationError("Member not found")
+                    raise AuthenticationError(format_auth_user_not_found("Member"))
                 
                 if member.get("status") != "active":
-                    raise AuthenticationError("Member account is inactive")
+                    raise AuthenticationError(format_auth_user_inactive("Member"))
                 
                 return MemberCompat(member)
             except ValueError:
-                raise AuthenticationError("Invalid member ID format")
+                raise AuthenticationError(CMessageTemplate.AUTH_INVALID_ID_FORMAT.format(user_type="Member"))
         else:
-            raise AuthorizationError("Member access required")
+            raise AuthorizationError(format_permission_required("Member"))
             
     except AuthorizationError:
         raise
     except Exception as e:
-        raise AuthenticationError(f"Could not validate credentials: {str(e)}")
+        raise AuthenticationError(CMessageTemplate.AUTH_CREDENTIAL_VALIDATION_FAILED.format(error=str(e)))
 
 
 async def get_current_admin_user(
@@ -204,7 +211,7 @@ async def get_current_admin_user(
     auth_service = AuthService()
 
     if credentials is None:
-        raise AuthenticationError("Not authenticated")
+        raise AuthenticationError(CMessageTemplate.AUTH_NOT_AUTHENTICATED)
 
     token = credentials.credentials
 
@@ -214,24 +221,24 @@ async def get_current_admin_user(
         role: str = payload.get("role", "member")
         
         if user_id is None:
-            raise AuthenticationError("Invalid token payload")
+            raise AuthenticationError(CMessageTemplate.AUTH_INVALID_PAYLOAD)
         
         if role == "admin":
             try:
                 admin = await supabase_service.get_by_id('admins', user_id)
                 if admin is None:
-                    raise AuthenticationError("Admin not found")
+                    raise AuthenticationError(format_auth_user_not_found("Admin"))
                 
                 if admin.get("is_active") != "true":
-                    raise AuthenticationError("Admin account is inactive")
+                    raise AuthenticationError(format_auth_user_inactive("Admin"))
                 
                 return admin
             except ValueError:
-                raise AuthenticationError("Invalid admin ID format")
+                raise AuthenticationError(CMessageTemplate.AUTH_INVALID_ID_FORMAT.format(user_type="Admin"))
         else:
-            raise AuthorizationError("Admin access required")
+            raise AuthorizationError(format_permission_required("Admin"))
             
     except AuthorizationError:
         raise
     except Exception as e:
-        raise AuthenticationError(f"Could not validate credentials: {str(e)}")
+        raise AuthenticationError(CMessageTemplate.AUTH_CREDENTIAL_VALIDATION_FAILED.format(error=str(e)))

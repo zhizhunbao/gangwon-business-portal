@@ -97,20 +97,17 @@ export default function NotificationBell({ userType = 'member', variant = 'light
     setLoading(false);
   };
 
+  // 点击打开时才加载未读数和通知列表
   useEffect(() => {
-    // 检查是否有有效的 token，避免无效请求
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      setUnreadCount(0);
-      return;
+    if (isOpen) {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        setUnreadCount(0);
+        return;
+      }
+      loadUnreadCount();
+      loadNotifications();
     }
-    
-    loadUnreadCount();
-    // 不再轮询，只在页面加载时获取一次
-  }, [userType]);
-
-  useEffect(() => {
-    if (isOpen) loadNotifications();
   }, [isOpen]);
 
   useEffect(() => {

@@ -88,7 +88,6 @@ from .database import (
     DatabaseOperationLogger,
     DatabaseExceptionHandler,
     create_unified_supabase_client,
-    create_unified_client,
 )
 
 
@@ -244,5 +243,4 @@ __all__ = [
     "DatabaseOperationLogger",
     "DatabaseExceptionHandler",
     "create_unified_supabase_client",
-    "create_unified_client",
 ]

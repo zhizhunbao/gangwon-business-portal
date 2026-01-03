@@ -1,140 +1,134 @@
-# Exception 异常处理模块
+# Exception Module Guidelines
 
-## 概述
-
-提供统一的异常处理系统，包括自定义异常类、异常分类、上下文收集和日志集成。
-
-## 文件结构
+## 目录结构
 
 ```
 exception/
-├── __init__.py       # 模块导出
-├── exceptions.py     # 自定义异常类
-├── handlers.py       # FastAPI 异常处理器
-├── classifier.py     # 异常分类器
-├── recorder.py       # 异常记录器
-├── monitor.py        # 异常监控
-├── service.py        # 异常服务
-├── schemas.py        # Pydantic 模型
-├── router.py         # API 路由
-└── responses.py      # 响应格式
+├── _01_contracts/              # 契约层 - 接口和数据契约
+│   ├── __init__.py
+│   ├── i_exception.py          # 异常接口
+│   ├── i_exception_classifier.py
+│   ├── i_exception_recorder.py
+│   ├── i_exception_monitor.py
+│   ├── i_exception_service.py
+│   ├── i_layer_rule.py
+│   ├── d_exception_context.py  # 数据契约
+│   ├── d_exception_record.py
+│   └── d_exception_stats.py
+│
+├── _02_abstracts/              # 抽象层 - 抽象基类
+│   ├── __init__.py
+│   ├── abstract_classifier.py
+│   ├── abstract_recorder.py
+│   ├── abstract_monitor.py
+│   └── abstract_layer_rule.py
+│
+├── _03_impls/                  # 实现层 - 具体实现
+│   ├── __init__.py
+│   ├── impl_classifier.py
+│   ├── impl_recorder.py
+│   ├── impl_monitor.py
+│   ├── impl_layer_rule.py
+│   └── impl_custom_exception.py  # 自定义异常类
+│
+├── _04_services/               # 服务层 - 对外统一入口
+│   ├── __init__.py
+│   └── service_exception.py
+│
+├── _05_dtos/                   # DTO层 - 数据传输对象
+│   ├── __init__.py
+│   └── dto_frontend.py         # 前端异常上报 DTO
+│
+├── _06_models/                 # 模型层 - 数据库模型 (预留)
+│   └── __init__.py
+│
+├── _07_router/                 # 路由层 - API 端点
+│   ├── __init__.py
+│   └── router_exception.py
+│
+├── _08_utils/                  # 辅助层 - 工具类
+│   ├── __init__.py
+│   ├── code_error.py           # 错误码定义
+│   ├── const_exception.py      # 常量定义
+│   └── handler_exception.py    # 异常处理器
+│
+└── __init__.py                 # 统一导出
 ```
-
-## 异常类型
-
-| 异常类                 | HTTP 状态码 | 用途         |
-| ---------------------- | ----------- | ------------ |
-| `ValidationError`      | 400         | 数据验证失败 |
-| `AuthenticationError`  | 401         | 认证失败     |
-| `AuthorizationError`   | 403         | 权限不足     |
-| `NotFoundError`        | 404         | 资源不存在   |
-| `ConflictError`        | 409         | 资源冲突     |
-| `RateLimitError`       | 429         | 请求频率限制 |
-| `DatabaseError`        | 500         | 数据库错误   |
-| `ExternalServiceError` | 502         | 外部服务错误 |
-| `InternalError`        | 500         | 内部错误     |
 
 ## 使用方式
 
 ### 抛出异常
 
 ```python
-from ...common.modules.exception import (
+from common.modules.exception import (
     ValidationError,
-    NotFoundError,
     AuthenticationError,
+    NotFoundError,
+    ConflictError,
+    DatabaseError,
 )
 
 # 验证错误
 raise ValidationError(
-    "Invalid email format",
+    message="Invalid email format",
     field_errors={"email": "Invalid format"}
 )
 
-# 资源不存在
-raise NotFoundError("Member")
+# 认证错误
+raise AuthenticationError("Token expired")
 
-# 认证失败
-raise AuthenticationError("Invalid credentials")
+# 资源未找到
+raise NotFoundError(
+    message="User not found",
+    resource_type="User",
+    resource_id="123"
+)
 ```
 
-### 注册异常处理器
+### 使用错误码
 
 ```python
-# main.py
-from src.common.modules.exception import register_exception_handlers
+from common.modules.exception import ErrorCode, ValidationError
 
-app = FastAPI()
-register_exception_handlers(app)
+raise ValidationError(
+    message=ErrorCode.INVALID_EMAIL_FORMAT.message,
+    context={"error_code": ErrorCode.INVALID_EMAIL_FORMAT}
+)
 ```
 
-## 响应格式
-
-```json
-{
-  "error": {
-    "type": "ValidationError",
-    "message": "Validation failed",
-    "code": "ValidationError",
-    "field_errors": {
-      "email": "Invalid format"
-    }
-  },
-  "trace_id": "abc123",
-  "request_id": "req-456"
-}
-```
-
-## 扩展异常
+### 记录异常
 
 ```python
-from ...common.modules.exception import BaseCustomException, ExceptionType
+from common.modules.exception import exception_service, DExceptionContext
 
-class CustomError(BaseCustomException):
-    """自定义异常"""
+context = DExceptionContext(
+    trace_id=trace_id,
+    request_id=request_id,
+    user_id=user_id,
+)
 
-    @property
-    def http_status_code(self) -> int:
-        return 422
-
-    @property
-    def exception_type(self) -> ExceptionType:
-        return ExceptionType.VALIDATION_ERROR
+await exception_service.record_exception(exc, context)
 ```
 
-## 业务错误码规范 (Business Error Codes)
+## 异常类型
 
-为了更细粒度地处理认证、授权和业务逻辑错误，我们采用分段式数字编码 (`error_code`)。这些代码会在异常响应的 `error.code` 字段中返回。
+| 异常类 | HTTP 状态码 | 用途 |
+|--------|------------|------|
+| ValidationError | 400 | 数据验证失败 |
+| AuthenticationError | 401 | 认证失败 |
+| AuthorizationError | 403 | 授权失败 |
+| NotFoundError | 404 | 资源未找到 |
+| ConflictError | 409 | 资源冲突 |
+| RateLimitError | 429 | 限流 |
+| DatabaseError | 500 | 数据库错误 |
+| ExternalServiceError | 502 | 外部服务错误 |
+| InternalError | 500 | 内部错误 |
 
-### 编码段划分
+## 层级规则
 
-| 代码范围        | 分类 (Category)    | 描述                                        |
-| :-------------- | :----------------- | :------------------------------------------ |
-| **1000 - 1999** | **Authentication** | 登录失败、凭据无效、Token 相关问题          |
-| **2000 - 2999** | **Account Status** | 账号状态问题（待审批、已停用、已删除）      |
-| **3000 - 3999** | **Authorization**  | 权限不足、角色不匹配、资源所有权 (ACL) 问题 |
-| **4000 - 4999** | **Validation**     | 业务逻辑检查失败、格式错误、重复录入        |
-| **5000 - 5999** | **System**         | 数据库/代码层异常、外部服务异常             |
+异常只能在特定层级抛出：
 
-### 具体代码定义 (Initial)
-
-- **1001**: `INVALID_CREDENTIALS` - 账号或密码错误 (Member)
-- **1002**: `INVALID_ADMIN_CREDENTIALS` - 管理员凭据错误
-- **2001**: `ACCOUNT_PENDING_APPROVAL` - 账号正在审核中
-- **2002**: `ACCOUNT_SUSPENDED` - 账号已停用/封禁
-- **3001**: `ADMIN_REQUIRED` - 需要管理员权限
-- **3002**: `MEMBER_REQUIRED` - 需要普通会员权限
-
-### 最佳实践
-
-1. **抛出异常时指定代码**：
-   ```python
-   raise AuthorizationError(
-       "Invalid credentials",
-       context={"error_code": "1001"}
-   )
-   ```
-2. **前端分类处理**：
-   前端 `ApiErrorClassifier` 应根据代码区间（如 `1000~1999`）自动判定错误的子类型 (`subCategory`)。
-3. **i18n 映射**：
-   前端应将这些数字代码直接映射到各语言版本的 `locales/{lang}.json` 中，确保提示语的一致性。
+- **Router 层**: 业务异常 (ValidationError, NotFoundError, etc.)
+- **Service 层**: 所有业务异常
+- **Repository 层**: DatabaseError
+- **外部服务层**: ExternalServiceError

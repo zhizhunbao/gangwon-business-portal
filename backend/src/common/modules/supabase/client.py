@@ -85,23 +85,14 @@ def get_supabase_service_client() -> Client:
 
 
 def get_unified_supabase_client() -> UnifiedSupabaseClient:
-    """获取统一的 Supabase 客户端实例（推荐使用）"""
+    """获取统一的 Supabase 客户端实例"""
     client = get_supabase_client()
     return create_unified_supabase_client(client)
 
 
-# 向后兼容的别名
-def get_logged_supabase_client() -> UnifiedSupabaseClient:
-    """获取带日志功能的 Supabase 客户端实例（已废弃，请使用 get_unified_supabase_client）"""
-    return get_unified_supabase_client()
-
-
 # 导出客户端实例
 supabase_client = get_supabase_client()
-unified_supabase_client = get_unified_supabase_client()  # 推荐使用
-
-# 向后兼容的别名
-logged_supabase_client = unified_supabase_client
+unified_supabase_client = get_unified_supabase_client()
 
 
 # 健康检查

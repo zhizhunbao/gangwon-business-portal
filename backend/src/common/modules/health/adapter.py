@@ -13,15 +13,37 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ============================================================
-# 数据库适配
-# 迁移时修改这个 import 路径指向新项目的数据库 session
+# 数据库适配 - 优先使用 Supabase 客户端
 # ============================================================
 
+# Lazy initialization to avoid circular imports
+SUPABASE_CLIENT = None
+USE_SUPABASE = False
+_supabase_initialized = False
+
+def _init_supabase():
+    """Lazy initialize Supabase client"""
+    global SUPABASE_CLIENT, USE_SUPABASE, _supabase_initialized
+    if _supabase_initialized:
+        return
+    _supabase_initialized = True
+    
+    try:
+        from ..supabase.client import get_supabase_client
+        SUPABASE_CLIENT = get_supabase_client()
+        USE_SUPABASE = True
+        logger.info("[Health Module] Using Supabase client for health checks")
+    except Exception as e:
+        SUPABASE_CLIENT = None
+        USE_SUPABASE = False
+        logger.warning(f"[Health Module] Supabase client not available: {e}, falling back to SQLAlchemy")
+
+# Fallback to SQLAlchemy (legacy)
 try:
     from ..db.session import AsyncSessionLocal
 except ImportError:
     AsyncSessionLocal = None
-    logger.warning("[Health Module] AsyncSessionLocal not found, database checks will be disabled")
+    logger.warning("[Health Module] SQLAlchemy session not found")
 
 
 # ============================================================
@@ -55,10 +77,34 @@ except ImportError:
 # ============================================================
 
 def get_db_session_factory():
-    """获取数据库 session 工厂"""
+    """获取数据库 session 工厂（仅用于 SQLAlchemy 回退）"""
     if AsyncSessionLocal is None:
         return None
     return AsyncSessionLocal
+
+
+def get_supabase_client_instance():
+    """获取 Supabase 客户端实例"""
+    _init_supabase()
+    return SUPABASE_CLIENT
+
+
+def is_using_supabase():
+    """检查是否使用 Supabase 客户端"""
+    _init_supabase()
+    return USE_SUPABASE
+
+
+async def check_database_health():
+    """检查数据库健康状态（自动选择 Supabase 或 SQLAlchemy）"""
+    _init_supabase()
+    if USE_SUPABASE:
+        try:
+            from ..supabase.client import check_supabase_health
+            return await check_supabase_health()
+        except Exception:
+            pass
+    return None
 
 
 def get_app_version():

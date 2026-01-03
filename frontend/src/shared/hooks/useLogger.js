@@ -23,7 +23,7 @@ import { loggerCore, LOG_LAYERS } from '../logger/core.js';
  */
 function parseFilePath(filePath) {
   if (!filePath) {
-    return { module: '-', fullPath: null };
+    return { module: '', fullPath: '' };
   }
   
   // 去掉开头的 ./
@@ -36,7 +36,7 @@ function parseFilePath(filePath) {
   
   // 提取模块路径（去掉文件名，转换为点分格式，保留 src 前缀）
   const lastSlash = cleanPath.lastIndexOf('/');
-  let module = '-';
+  let module = '';
   if (lastSlash > 0) {
     module = cleanPath.substring(0, lastSlash).replace(/\//g, '.');
   }

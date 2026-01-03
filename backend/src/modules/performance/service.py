@@ -10,7 +10,7 @@ from datetime import datetime
 import json
 
 from ...common.modules.supabase.service import supabase_service
-from ...common.modules.exception import NotFoundError, ValidationError, AuthorizationError
+from ...common.modules.exception import NotFoundError, ValidationError, AuthorizationError, CMessageTemplate
 from .schemas import PerformanceRecordCreate, PerformanceRecordUpdate, PerformanceListQuery
 
 
@@ -91,11 +91,13 @@ class PerformanceService:
         record = await supabase_service.get_by_id('performance_records', str(performance_id))
 
         if not record:
-            raise NotFoundError("Performance record")
+            raise NotFoundError(resource_type="Performance record")
 
         # Compare as strings to handle both UUID objects and string IDs
         if str(record["member_id"]) != str(member_id):
-            raise AuthorizationError("You don't have permission to access this record")
+            raise AuthorizationError(
+                CMessageTemplate.AUTHZ_NO_PERMISSION.format(action="access this record")
+            )
 
         return record
 
@@ -154,8 +156,7 @@ class PerformanceService:
         # Only allow editing draft or revision_requested records
         if record["status"] not in ["draft", "revision_requested"]:
             raise ValidationError(
-                f"Cannot edit performance record with status '{record['status']}'. "
-                "Only 'draft' or 'revision_requested' records can be edited."
+                CMessageTemplate.PERFORMANCE_EDIT_NOT_ALLOWED.format(status=record['status'])
             )
 
         # Build update data
@@ -192,8 +193,7 @@ class PerformanceService:
         # Only allow deleting draft records
         if record["status"] != "draft":
             raise ValidationError(
-                f"Cannot delete performance record with status '{record['status']}'. "
-                "Only 'draft' records can be deleted."
+                CMessageTemplate.PERFORMANCE_DELETE_NOT_ALLOWED.format(status=record['status'])
             )
 
         # Use helper method for soft delete
@@ -222,8 +222,7 @@ class PerformanceService:
         # Only allow submitting draft or revision_requested records
         if record["status"] not in ["draft", "revision_requested"]:
             raise ValidationError(
-                f"Cannot submit performance record with status '{record['status']}'. "
-                "Only 'draft' or 'revision_requested' records can be submitted."
+                CMessageTemplate.PERFORMANCE_SUBMIT_NOT_ALLOWED.format(status=record['status'])
             )
 
         update_data = {
@@ -283,7 +282,7 @@ class PerformanceService:
         record = await supabase_service.get_by_id('performance_records', str(performance_id))
 
         if not record:
-            raise NotFoundError("Performance record")
+            raise NotFoundError(resource_type="Performance record")
 
         # Get attachments using existing method
         attachments = await supabase_service.get_attachments_by_resource(
@@ -333,8 +332,7 @@ class PerformanceService:
         # Only allow approving submitted records
         if record["status"] != "submitted":
             raise ValidationError(
-                f"Cannot approve performance record with status '{record['status']}'. "
-                "Only 'submitted' records can be approved."
+                CMessageTemplate.PERFORMANCE_APPROVE_NOT_ALLOWED.format(status=record['status'])
             )
 
         # Update record status and review fields in one operation - use helper method
@@ -394,8 +392,7 @@ class PerformanceService:
         # Only allow requesting revision for submitted records
         if record["status"] != "submitted":
             raise ValidationError(
-                f"Cannot request revision for performance record with status '{record['status']}'. "
-                "Only 'submitted' records can be sent back for revision."
+                CMessageTemplate.PERFORMANCE_REVISION_NOT_ALLOWED.format(status=record['status'])
             )
 
         # Update record status and review fields in one operation - use helper method
@@ -457,8 +454,7 @@ class PerformanceService:
         # Only allow rejecting submitted records
         if record["status"] != "submitted":
             raise ValidationError(
-                f"Cannot reject performance record with status '{record['status']}'. "
-                "Only 'submitted' records can be rejected."
+                CMessageTemplate.PERFORMANCE_REJECT_NOT_ALLOWED.format(status=record['status'])
             )
 
         # Update record status and review fields in one operation - use helper method

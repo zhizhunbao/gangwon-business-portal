@@ -74,7 +74,7 @@ async def get_audit_log(
     """
     log = await audit_log_service.get_audit_log(db, log_id)
     if not log:
-        raise NotFoundError("Audit log")
+        raise NotFoundError(resource_type="Audit log")
 
     # Convert to response
     user_email = None
@@ -138,6 +138,6 @@ async def delete_audit_log(
     await db.commit()
     
     if result.rowcount == 0:
-        raise NotFoundError("Audit log")
+        raise NotFoundError(resource_type="Audit log")
     
     return {"status": "ok", "deleted": 1}

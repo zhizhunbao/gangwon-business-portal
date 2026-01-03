@@ -12,7 +12,8 @@ Usage:
 """
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
-from typing import Optional, TYPE_CHECKING
+from sqlalchemy.orm import selectinload
+from typing import Optional, TYPE_CHECKING, Type, Any, List
 from uuid import UUID
 import logging
 
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 # Use TYPE_CHECKING to avoid circular import
 if TYPE_CHECKING:
-    from ..db.models import AppLog, ErrorLog, AuditLog, PerformanceLog, Member
+    from ..db.models import AppLog, ErrorLog, AuditLog, PerformanceLog, SystemLog, Member
 
 
 class LoggingService:
@@ -164,94 +165,138 @@ class LoggingService:
     # Query Methods - 查询方法
     # =========================================================================
 
-    async def list_logs(
+    def _get_model_for_type(self, log_type: str) -> Type[Any]:
+        """Get the database model class for a given log type."""
+        from ..db.models import AppLog, ErrorLog, PerformanceLog, SystemLog, AuditLog
+        return {
+            "app": AppLog,
+            "error": ErrorLog,
+            "performance": PerformanceLog,
+            "system": SystemLog,
+            "audit": AuditLog,
+        }.get(log_type, AppLog)
+
+    def _build_conditions(self, model: Type[Any], query: LogListQuery, log_type: str) -> List[Any]:
+        """Build query conditions based on log type and query parameters.
+        
+        Args:
+            model: The database model class
+            query: Query parameters
+            log_type: Type of log (app, error, performance, system, audit)
+            
+        Returns:
+            List of SQLAlchemy conditions
+        """
+        conditions = []
+        
+        # Common filters available on most log types
+        if query.level and hasattr(model, 'level'):
+            levels = [l.strip() for l in query.level.split(',')]
+            if len(levels) == 1:
+                conditions.append(model.level == levels[0])
+            else:
+                conditions.append(model.level.in_(levels))
+        
+        if query.trace_id and hasattr(model, 'trace_id'):
+            conditions.append(model.trace_id == query.trace_id)
+        
+        if query.user_id and hasattr(model, 'user_id'):
+            conditions.append(model.user_id == query.user_id)
+        
+        if query.start_date and hasattr(model, 'created_at'):
+            conditions.append(model.created_at >= query.start_date)
+        
+        if query.end_date and hasattr(model, 'created_at'):
+            conditions.append(model.created_at <= query.end_date)
+        
+        # Type-specific filters
+        if log_type in ("app", "performance"):
+            if query.source and hasattr(model, 'source'):
+                conditions.append(model.source == query.source)
+        
+        if log_type == "app":
+            if query.layer and hasattr(model, 'layer'):
+                conditions.append(model.layer == query.layer)
+        
+        return conditions
+
+    def _to_response(self, log: Any, log_type: str) -> AppLogResponse:
+        """Convert a log model to AppLogResponse.
+        
+        Args:
+            log: The log model instance
+            log_type: Type of log (app, error, performance, system, audit)
+            
+        Returns:
+            AppLogResponse instance
+        """
+        return AppLogResponse(
+            id=log.id,
+            source=getattr(log, 'source', None) or log_type,
+            level=getattr(log, 'level', None) or "INFO",
+            message=getattr(log, 'message', None) or "",
+            layer=getattr(log, 'layer', None),
+            module=getattr(log, 'module', None),
+            function=getattr(log, 'function', None),
+            line_number=getattr(log, 'line_number', None),
+            file_path=getattr(log, 'file_path', None),
+            trace_id=getattr(log, 'trace_id', None),
+            user_id=getattr(log, 'user_id', None),
+            duration_ms=getattr(log, 'duration_ms', None),
+            extra_data=getattr(log, 'extra_data', None),
+            created_at=log.created_at,
+            user_email=None,
+            user_company_name=None,
+        )
+
+    async def _list_logs(
         self,
         db: AsyncSession,
         query: LogListQuery,
+        log_type: str,
     ) -> LogListResponse:
-        """
-        List application logs with filtering and pagination.
-
+        """Unified method to list logs with filtering and pagination.
+        
         Args:
             db: Database session
             query: Query parameters
-
+            log_type: Type of log (app, error, performance, system, audit)
+            
         Returns:
-            Paginated list of application logs
+            Paginated list of logs
         """
-        # Lazy import to avoid circular dependency
-        from ..db.models import AppLog
+        model = self._get_model_for_type(log_type)
         
-        # Build base query (no user relationship - user_id has no FK)
-        base_query = select(AppLog)
-
-        # Apply filters
-        conditions = []
-        if query.source:
-            conditions.append(AppLog.source == query.source)
-        if query.level:
-            # 支持逗号分隔的多级别查询，如 "ERROR,CRITICAL"
-            levels = [l.strip() for l in query.level.split(',')]
-            if len(levels) == 1:
-                conditions.append(AppLog.level == levels[0])
-            else:
-                conditions.append(AppLog.level.in_(levels))
-        if query.layer:
-            conditions.append(AppLog.layer == query.layer)
-        if query.trace_id:
-            conditions.append(AppLog.trace_id == query.trace_id)
-        if query.user_id:
-            conditions.append(AppLog.user_id == query.user_id)
-        if query.start_date:
-            conditions.append(AppLog.created_at >= query.start_date)
-        if query.end_date:
-            conditions.append(AppLog.created_at <= query.end_date)
-
+        # Build base query
+        base_query = select(model)
+        
+        # Build and apply conditions
+        conditions = self._build_conditions(model, query, log_type)
         if conditions:
             base_query = base_query.where(and_(*conditions))
-
+        
         # Get total count
-        count_query = select(func.count()).select_from(AppLog)
+        count_query = select(func.count()).select_from(model)
         if conditions:
             count_query = count_query.where(and_(*conditions))
-
+        
         total_result = await db.execute(count_query)
         total = total_result.scalar() or 0
-
+        
         # Apply pagination and ordering
         offset = (query.page - 1) * query.page_size
-        base_query = base_query.order_by(AppLog.created_at.desc())
+        base_query = base_query.order_by(model.created_at.desc())
         base_query = base_query.offset(offset).limit(query.page_size)
-
+        
         # Execute query
         result = await db.execute(base_query)
         logs = result.scalars().all()
-
-        # Convert to response models (no user relationship)
-        items = [
-            AppLogResponse(
-                id=log.id,
-                source=log.source,
-                level=log.level,
-                message=log.message,
-                layer=log.layer,
-                module=log.module,
-                function=log.function,
-                line_number=log.line_number,
-                file_path=log.file_path,
-                trace_id=log.trace_id,
-                user_id=log.user_id,
-                duration_ms=log.duration_ms,
-                extra_data=log.extra_data,
-                created_at=log.created_at,
-                user_email=None,  # No user relationship
-                user_company_name=None,
-            )
-            for log in logs
-        ]
-
+        
+        # Convert to response models
+        items = [self._to_response(log, log_type) for log in logs]
+        
         total_pages = (total + query.page_size - 1) // query.page_size
-
+        
         return LogListResponse(
             items=items,
             total=total,
@@ -259,268 +304,46 @@ class LoggingService:
             page_size=query.page_size,
             total_pages=total_pages,
         )
+
+    async def list_logs(
+        self,
+        db: AsyncSession,
+        query: LogListQuery,
+    ) -> LogListResponse:
+        """List application logs with filtering and pagination."""
+        return await self._list_logs(db, query, "app")
 
     async def list_error_logs(
         self,
         db: AsyncSession,
         query: LogListQuery,
     ) -> LogListResponse:
-        """
-        List error logs with filtering and pagination.
-
-        Args:
-            db: Database session
-            query: Query parameters
-
-        Returns:
-            Paginated list of error logs
-        """
-        from ..db.models import ErrorLog
-        
-        # Build base query
-        base_query = select(ErrorLog)
-
-        # Apply filters
-        conditions = []
-        if query.level:
-            levels = [l.strip() for l in query.level.split(',')]
-            if len(levels) == 1:
-                conditions.append(ErrorLog.level == levels[0])
-            else:
-                conditions.append(ErrorLog.level.in_(levels))
-        if query.trace_id:
-            conditions.append(ErrorLog.trace_id == query.trace_id)
-        if query.user_id:
-            conditions.append(ErrorLog.user_id == query.user_id)
-        if query.start_date:
-            conditions.append(ErrorLog.created_at >= query.start_date)
-        if query.end_date:
-            conditions.append(ErrorLog.created_at <= query.end_date)
-
-        if conditions:
-            base_query = base_query.where(and_(*conditions))
-
-        # Get total count
-        count_query = select(func.count()).select_from(ErrorLog)
-        if conditions:
-            count_query = count_query.where(and_(*conditions))
-
-        total_result = await db.execute(count_query)
-        total = total_result.scalar() or 0
-
-        # Apply pagination and ordering
-        offset = (query.page - 1) * query.page_size
-        base_query = base_query.order_by(ErrorLog.created_at.desc())
-        base_query = base_query.offset(offset).limit(query.page_size)
-
-        # Execute query
-        result = await db.execute(base_query)
-        logs = result.scalars().all()
-
-        # Convert to response models
-        items = [
-            AppLogResponse(
-                id=log.id,
-                source=log.source,
-                level=log.level,
-                message=log.message,
-                layer=log.layer,
-                module=log.module,
-                function=log.function,
-                line_number=log.line_number,
-                file_path=log.file_path,
-                trace_id=log.trace_id,
-                user_id=log.user_id,
-                duration_ms=None,
-                extra_data=log.extra_data,
-                created_at=log.created_at,
-                user_email=None,
-                user_company_name=None,
-            )
-            for log in logs
-        ]
-
-        total_pages = (total + query.page_size - 1) // query.page_size
-
-        return LogListResponse(
-            items=items,
-            total=total,
-            page=query.page,
-            page_size=query.page_size,
-            total_pages=total_pages,
-        )
+        """List error logs with filtering and pagination."""
+        return await self._list_logs(db, query, "error")
 
     async def list_performance_logs(
         self,
         db: AsyncSession,
         query: LogListQuery,
     ) -> LogListResponse:
-        """
-        List performance logs with filtering and pagination.
-
-        Args:
-            db: Database session
-            query: Query parameters
-
-        Returns:
-            Paginated list of performance logs
-        """
-        from ..db.models import PerformanceLog
-        
-        # Build base query
-        base_query = select(PerformanceLog)
-
-        # Apply filters
-        conditions = []
-        if query.source:
-            conditions.append(PerformanceLog.source == query.source)
-        if query.trace_id:
-            conditions.append(PerformanceLog.trace_id == query.trace_id)
-        if query.user_id:
-            conditions.append(PerformanceLog.user_id == query.user_id)
-        if query.start_date:
-            conditions.append(PerformanceLog.created_at >= query.start_date)
-        if query.end_date:
-            conditions.append(PerformanceLog.created_at <= query.end_date)
-
-        if conditions:
-            base_query = base_query.where(and_(*conditions))
-
-        # Get total count
-        count_query = select(func.count()).select_from(PerformanceLog)
-        if conditions:
-            count_query = count_query.where(and_(*conditions))
-
-        total_result = await db.execute(count_query)
-        total = total_result.scalar() or 0
-
-        # Apply pagination and ordering
-        offset = (query.page - 1) * query.page_size
-        base_query = base_query.order_by(PerformanceLog.created_at.desc())
-        base_query = base_query.offset(offset).limit(query.page_size)
-
-        # Execute query
-        result = await db.execute(base_query)
-        logs = result.scalars().all()
-
-        # Convert to response models
-        items = [
-            AppLogResponse(
-                id=log.id,
-                source=log.source,
-                level=log.level,
-                message=log.message,
-                layer=log.layer,
-                module=log.module,
-                function=log.function,
-                line_number=log.line_number,
-                file_path=log.file_path,
-                trace_id=log.trace_id,
-                user_id=log.user_id,
-                duration_ms=log.duration_ms,
-                extra_data=log.extra_data,
-                created_at=log.created_at,
-                user_email=None,
-                user_company_name=None,
-            )
-            for log in logs
-        ]
-
-        total_pages = (total + query.page_size - 1) // query.page_size
-
-        return LogListResponse(
-            items=items,
-            total=total,
-            page=query.page,
-            page_size=query.page_size,
-            total_pages=total_pages,
-        )
+        """List performance logs with filtering and pagination."""
+        return await self._list_logs(db, query, "performance")
 
     async def list_system_logs(
         self,
         db: AsyncSession,
         query: LogListQuery,
     ) -> LogListResponse:
-        """
-        List system logs with filtering and pagination.
+        """List system logs with filtering and pagination."""
+        return await self._list_logs(db, query, "system")
 
-        Args:
-            db: Database session
-            query: Query parameters
-
-        Returns:
-            Paginated list of system logs
-        """
-        from ..db.models import SystemLog
-        
-        # Build base query
-        base_query = select(SystemLog)
-
-        # Apply filters
-        conditions = []
-        if query.level:
-            levels = [l.strip() for l in query.level.split(',')]
-            if len(levels) == 1:
-                conditions.append(SystemLog.level == levels[0])
-            else:
-                conditions.append(SystemLog.level.in_(levels))
-        if query.start_date:
-            conditions.append(SystemLog.created_at >= query.start_date)
-        if query.end_date:
-            conditions.append(SystemLog.created_at <= query.end_date)
-
-        if conditions:
-            base_query = base_query.where(and_(*conditions))
-
-        # Get total count
-        count_query = select(func.count()).select_from(SystemLog)
-        if conditions:
-            count_query = count_query.where(and_(*conditions))
-
-        total_result = await db.execute(count_query)
-        total = total_result.scalar() or 0
-
-        # Apply pagination and ordering
-        offset = (query.page - 1) * query.page_size
-        base_query = base_query.order_by(SystemLog.created_at.desc())
-        base_query = base_query.offset(offset).limit(query.page_size)
-
-        # Execute query
-        result = await db.execute(base_query)
-        logs = result.scalars().all()
-
-        # Convert to response models
-        items = [
-            AppLogResponse(
-                id=log.id,
-                source="system",
-                level=log.level,
-                message=log.message,
-                layer=log.layer,
-                module=log.module,
-                function=log.function,
-                line_number=log.line_number,
-                file_path=log.file_path,
-                trace_id=None,
-                user_id=None,
-                duration_ms=None,
-                extra_data=log.extra_data,
-                created_at=log.created_at,
-                user_email=None,
-                user_company_name=None,
-            )
-            for log in logs
-        ]
-
-        total_pages = (total + query.page_size - 1) // query.page_size
-
-        return LogListResponse(
-            items=items,
-            total=total,
-            page=query.page,
-            page_size=query.page_size,
-            total_pages=total_pages,
-        )
+    async def list_audit_logs(
+        self,
+        db: AsyncSession,
+        query: LogListQuery,
+    ) -> LogListResponse:
+        """List audit logs with filtering and pagination."""
+        return await self._list_logs(db, query, "audit")
 
     async def get_log(
         self,

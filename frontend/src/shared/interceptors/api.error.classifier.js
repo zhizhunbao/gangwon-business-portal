@@ -23,7 +23,19 @@ export class ApiErrorClassifier {
     const errorObj = data.error || {};
     const errorCode = Number(errorObj.code || data.error_code || data.code || error.code || 0);
 
-    // 网络错误
+    // 超时错误 (优先检查，因为超时也没有 response)
+    if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+      return {
+        type: "TIMEOUT_ERROR",
+        category: "NETWORK",
+        recoverable: true,
+        retryable: true,
+        severity: "MEDIUM",
+        userImpact: "MEDIUM",
+      };
+    }
+
+    // 网络错误 (无响应但有请求)
     if (!response && request) {
       return {
         type: "NETWORK_ERROR",
@@ -102,17 +114,6 @@ export class ApiErrorClassifier {
       }
 
       return { ...classification, code: errorCode };
-    }
-
-    // 超时错误
-    if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
-      return {
-        type: "TIMEOUT_ERROR",
-        category: "NETWORK",
-        recoverable: true,
-        retryable: true,
-        severity: "MEDIUM",
-      };
     }
 
     // CORS 错误

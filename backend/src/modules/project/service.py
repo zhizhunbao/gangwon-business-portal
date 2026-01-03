@@ -9,8 +9,7 @@ from datetime import datetime
 
 from ...common.modules.db.models import Project, ProjectApplication  # 保留用于类型提示和文档
 from ...common.modules.supabase.service import supabase_service
-from ...common.modules.exception import NotFoundError, ValidationError
-from ...common.modules.exception.codes import ErrorCode
+from ...common.modules.exception import NotFoundError, ValidationError, ErrorCode, CMessageTemplate
 from .schemas import (
     ProjectCreate,
     ProjectUpdate,
@@ -82,7 +81,7 @@ class ProjectService:
         project = await supabase_service.get_by_id('projects', str(project_id))
 
         if not project:
-            raise NotFoundError("Project")
+            raise NotFoundError(resource_type="Project")
 
         return project
 
@@ -112,8 +111,7 @@ class ProjectService:
 
         if project["status"] != "active":
             raise ValidationError(
-                f"Cannot apply to project with status '{project['status']}'. "
-                "Only active projects accept applications."
+                CMessageTemplate.PROJECT_INACTIVE.format(status=project['status'])
             )
 
         # Check for duplicate application - use direct client for complex query
@@ -127,7 +125,7 @@ class ProjectService:
         
         if existing_app.data:
             raise ValidationError(
-                "Project already applied",
+                CMessageTemplate.PROJECT_ALREADY_APPLIED,
                 context={"error_code": ErrorCode.PROJECT_ALREADY_APPLIED}
             )
 
@@ -334,7 +332,7 @@ class ProjectService:
         application = await supabase_service.get_by_id('project_applications', str(application_id))
 
         if not application:
-            raise NotFoundError("Project application")
+            raise NotFoundError(resource_type="Project application")
 
         # Build update data
         update_data = {"status": status.value}

@@ -46,7 +46,7 @@ class LogsService {
     // Map backend response to frontend format
     if (response && response.items) {
       return {
-        items: response.items.map(this._mapLogItem),
+        items: response.items.map(item => this._mapLogItem(item)),
         total: response.total,
         page: response.page,
         pageSize: response.page_size,
@@ -81,7 +81,7 @@ class LogsService {
 
     if (response && response.items) {
       return {
-        items: response.items.map(this._mapLogItem),
+        items: response.items.map(item => this._mapLogItem(item)),
         total: response.total,
         page: response.page,
         pageSize: response.page_size,
@@ -141,7 +141,7 @@ class LogsService {
 
     if (response && response.items) {
       return {
-        items: response.items.map(this._mapLogItem),
+        items: response.items.map(item => this._mapLogItem(item)),
         total: response.total,
         page: response.page,
         pageSize: response.page_size,
@@ -178,7 +178,7 @@ class LogsService {
 
     if (response && response.items) {
       return {
-        items: response.items.map(this._mapLogItem),
+        items: response.items.map(item => this._mapLogItem(item)),
         total: response.total,
         page: response.page,
         pageSize: response.page_size,
@@ -237,17 +237,18 @@ class LogsService {
    * @returns {Promise<Object>} Recent errors
    */
   async getRecentErrors(params = {}) {
+    // 使用 error_logs 表，与异常列表保持一致
     const queryParams = {
       page: 1,
       page_size: params.limit || 10,
-      level: 'ERROR',
+      level: 'ERROR,CRITICAL',
     };
 
-    const response = await apiService.get(`${API_PREFIX}/v1/logging/logs`, queryParams);
+    const response = await apiService.get(`${API_PREFIX}/v1/logging/errors`, queryParams);
 
     if (response && response.items) {
       return {
-        items: response.items.map(this._mapLogItem),
+        items: response.items.map(item => this._mapLogItem(item)),
         total: response.total,
       };
     }
@@ -267,25 +268,21 @@ class LogsService {
     const queryParams = {
       page: 1,
       page_size: params.limit || 10,
-      // Filter for performance logs with slow flag or high duration
     };
 
     try {
-      // Try to get performance logs
-      const response = await apiService.get(`${API_PREFIX}/v1/logging/logs`, {
-        ...queryParams,
-        level: 'WARNING',
-      });
+      // Get performance logs (slow requests are in performance_logs table)
+      const response = await apiService.get(`${API_PREFIX}/v1/logging/performance`, queryParams);
 
       if (response && response.items) {
-        // Filter for slow requests based on duration or message
+        // Filter for slow requests (duration > 500ms)
         const slowItems = response.items.filter(item => 
-          item.duration_ms > 500 || 
+          (item.duration_ms && item.duration_ms > 500) || 
           (item.message && item.message.toLowerCase().includes('slow'))
         );
         
         return {
-          items: slowItems.map(this._mapLogItem),
+          items: slowItems.map(item => this._mapLogItem(item)),
           total: slowItems.length,
         };
       }
@@ -330,7 +327,7 @@ class LogsService {
         });
         
         return {
-          items: securityItems.map(this._mapLogItem),
+          items: securityItems.map(item => this._mapLogItem(item)),
           total: securityItems.length,
         };
       }

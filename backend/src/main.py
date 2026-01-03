@@ -96,7 +96,7 @@ from .modules.upload.router import router as upload_router
 from .modules.dashboard.router import router as dashboard_router
 from .modules.messages.router import router as messages_router
 from .common.modules.audit.router import router as audit_router
-from .common.modules.exception.router import router as exception_router
+from .common.modules.exception._07_router import router as exception_router
 from .common.modules.logger import get_logging_router
 from .common.modules.health import router as health_router
 

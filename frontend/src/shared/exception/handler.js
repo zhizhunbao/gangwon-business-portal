@@ -191,13 +191,18 @@ export class FrontendExceptionClassifier {
       return ExceptionType.UNHANDLED_PROMISE_REJECTION;
     }
     
+    // 超时异常 (优先检查，因为 Axios 超时错误的 message 不包含 fetch/XMLHttpRequest)
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      return ExceptionType.TIMEOUT_ERROR;
+    }
+    
     // 网络相关异常
-    if (error.message.includes('fetch') || error.message.includes('XMLHttpRequest')) {
+    if (error.message.includes('fetch') || error.message.includes('XMLHttpRequest') || error.name === 'AxiosError') {
       if (error.message.includes('CORS')) {
         return ExceptionType.CORS_ERROR;
       }
-      if (error.message.includes('timeout')) {
-        return ExceptionType.TIMEOUT_ERROR;
+      if (error.message.includes('Network Error') || !error.response) {
+        return ExceptionType.NETWORK_ERROR;
       }
       return ExceptionType.NETWORK_ERROR;
     }

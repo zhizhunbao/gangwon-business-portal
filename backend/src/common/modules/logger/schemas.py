@@ -4,7 +4,15 @@ Logging schemas.
 Pydantic models for application log API requests and responses.
 All log creation schemas include to_db_dict() and to_file_dict() methods
 for consistent data conversion between database and file writers.
+
+This module provides:
+- BaseLogSchema: Abstract base class for all log schemas
+- AppLogCreate, ErrorLogCreate, etc.: Concrete log creation schemas
+- Response schemas for API responses
+
+Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6
 """
+from abc import ABC
 from datetime import datetime
 from typing import Optional, Any, Union
 from uuid import UUID, uuid4
@@ -14,56 +22,80 @@ from ...utils.formatters import now_utc, now_est
 
 
 def format_timestamp_db() -> str:
-    """Format timestamp in ISO format with UTC timezone for database storage."""
+    """Format timestamp in ISO format with UTC timezone for database storage.
+    
+    Requirements: 4.6
+    """
     return now_utc().isoformat()
 
 
 def format_timestamp_file() -> str:
-    """Format timestamp in Ottawa time (EST) for file logging."""
+    """Format timestamp in Ottawa time (EST) for file logging.
+    
+    Requirements: 4.5
+    """
     return now_est().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
 
 # =============================================================================
-# Log Creation Schemas - 用于创建日志对象
+# Base Log Schema - 统一基类
 # =============================================================================
 
-class AppLogCreate(BaseModel):
-    """Schema for creating an application log entry.
+class BaseLogSchema(BaseModel, ABC):
+    """Base schema for all log types.
+    
+    Defines common fields and conversion methods that all log schemas share.
+    Subclasses should override _build_extra_data() to add type-specific fields.
     
     按日志规范：
-    - 通用字段（9个）：timestamp, source, level, message, layer, module, function, line_number, file_path
-    - 追踪字段（4个）：trace_id, request_id, user_id, duration_ms
-    - 扩展字段：extra_data（包含 ip_address, user_agent, request_method, request_path, response_status 等）
+    - 必填字段（9个）：timestamp, source, level, message, layer, module, function, line_number, file_path
+    - 追踪字段（4个）：trace_id, request_id（必填）, user_id, duration_ms（选填）
+    - 扩展字段：extra_data（各日志类型特有的业务数据）
+    
+    Requirements: 4.1, 4.2, 4.3, 4.4
     """
     
     # Timestamp (optional - frontend provides, backend generates if not provided)
     timestamp: Optional[str] = Field(None, description="Timestamp (frontend provides, backend generates if not provided)")
     
-    # Common fields (9)
+    # Common fields (9) - 必填 - Requirements 4.1
     source: str = Field(default="backend", description="Source of the log (backend/frontend)")
     level: str = Field(default="INFO", description="Log level (DEBUG/INFO/WARNING/ERROR/CRITICAL)")
-    message: str = Field(..., description="Log message")
-    layer: Optional[str] = Field(None, description="AOP layer (Service, Router, Auth, Database, etc.)")
-    module: Optional[str] = Field(None, description="Module name/path")
-    function: Optional[str] = Field(None, description="Function name")
-    line_number: Optional[int] = Field(None, description="Line number")
-    file_path: Optional[str] = Field(None, description="Full file path for debugging")
+    message: str = Field(default="", description="Log message")
+    layer: str = Field(default="", description="AOP layer (Service, Router, Auth, Database, etc.)")
+    module: str = Field(default="", description="Module name/path")
+    function: str = Field(default="", description="Function name")
+    line_number: int = Field(default=0, description="Line number")
+    file_path: str = Field(default="", description="Full file path for debugging")
     
-    # Trace fields (4)
-    trace_id: Optional[str] = Field(None, description="Request trace ID")
-    request_id: Optional[str] = Field(None, description="Request ID")
-    user_id: Optional[UUID] = Field(None, description="User ID")
-    duration_ms: Optional[int] = Field(None, description="Duration in milliseconds")
+    # Trace fields - trace_id, request_id 必填，user_id, duration_ms 选填
+    trace_id: str = Field(default="", description="Request trace ID")
+    request_id: str = Field(default="", description="Request ID")
+    user_id: Optional[UUID] = Field(None, description="User ID (optional - not available when not logged in)")
+    duration_ms: Optional[int] = Field(None, description="Duration in milliseconds (optional - only for HTTP requests)")
     
-    # Fields that go into extra_data (for backward compatibility, accepted but stored in extra_data)
-    ip_address: Optional[str] = Field(None, description="IP address -> extra_data")
-    user_agent: Optional[str] = Field(None, description="User agent -> extra_data")
-    request_method: Optional[str] = Field(None, description="HTTP method -> extra_data")
-    request_path: Optional[str] = Field(None, description="Request path -> extra_data")
-    response_status: Optional[int] = Field(None, description="HTTP response status -> extra_data")
-    
-    # Extra data
+    # Extra data for type-specific fields
     extra_data: Optional[dict[str, Any]] = Field(None, description="Additional context data")
+    
+    # Common fields list for from_model extraction
+    _COMMON_FIELDS = [
+        "source", "level", "message", "layer", "module", "function", 
+        "line_number", "file_path", "trace_id", "request_id", "user_id", "duration_ms", "extra_data"
+    ]
+    
+    @classmethod
+    def _extract_common_fields(cls, model: Any) -> dict[str, Any]:
+        """Extract common fields from a database model.
+        
+        This helper method extracts all common fields that exist on the model.
+        Subclasses can use this to avoid repeating field extraction.
+        """
+        data = {}
+        for field in cls._COMMON_FIELDS:
+            value = getattr(model, field, None)
+            if value is not None:
+                data[field] = value
+        return data
     
     @field_validator("level")
     @classmethod
@@ -74,35 +106,68 @@ class AppLogCreate(BaseModel):
         if upper_v not in valid_levels:
             raise ValueError(f"Invalid log level: {v}. Must be one of {valid_levels}")
         return upper_v
-
-    @field_validator("ip_address", mode="before")
-    @classmethod
-    def normalize_ip(cls, v: Optional[str]) -> Optional[str]:
-        """Normalize IPv6 localhost to IPv4."""
-        if v == "::1":
-            return "127.0.0.1"
-        return v
-
-    def to_db_dict(self) -> dict:
-        """Convert to dictionary for database insertion (new schema)."""
-        # Build extra_data from HTTP context fields
-        extra = dict(self.extra_data) if self.extra_data else {}
-        if self.ip_address:
-            extra["ip_address"] = self.ip_address
-        if self.user_agent:
-            extra["user_agent"] = self.user_agent[:200] if len(self.user_agent) > 200 else self.user_agent
-        if self.request_method:
-            extra["request_method"] = self.request_method
-        if self.request_path:
-            extra["request_path"] = self.request_path
-        if self.response_status:
-            extra["response_status"] = self.response_status
+    
+    @staticmethod
+    def _normalize_ip(ip: Optional[str]) -> Optional[str]:
+        """Normalize IPv6 localhost to IPv4.
         
-        data = {
+        This is a utility method that can be used by subclasses.
+        """
+        if ip == "::1":
+            return "127.0.0.1"
+        return ip
+    
+    @staticmethod
+    def _truncate_user_agent(user_agent: Optional[str], max_length: int = 200) -> Optional[str]:
+        """Truncate user agent string to max length.
+        
+        This is a utility method that can be used by subclasses.
+        """
+        if user_agent and len(user_agent) > max_length:
+            return user_agent[:max_length]
+        return user_agent
+    
+    def _build_extra_data(self) -> dict[str, Any]:
+        """Build extra_data dict from type-specific fields.
+        
+        Override in subclasses to add type-specific fields to extra_data.
+        
+        Returns:
+            Dictionary containing type-specific extra data
+        """
+        return dict(self.extra_data) if self.extra_data else {}
+    
+    def _generate_message(self) -> str:
+        """Generate message for this log type.
+        
+        Override in subclasses to provide type-specific message formatting.
+        
+        Returns:
+            Formatted message string
+        """
+        return self.message
+    
+    def to_db_dict(self) -> dict:
+        """Convert to dictionary for database insertion (UTC timestamps).
+        
+        按日志规范输出数据库格式：
+        - 使用 UTC 时间戳
+        - 包含所有通用字段和追踪字段（始终输出，保持格式一致）
+        - extra_data 包含类型特有字段
+        
+        Requirements: 4.3, 4.6
+        
+        Returns:
+            Dictionary suitable for database insertion
+        """
+        extra = self._build_extra_data()
+        
+        # 所有字段始终输出，保持格式一致（无值时为 null）
+        return {
             "id": str(uuid4()),
             "source": self.source,
             "level": self.level,
-            "message": self.message,
+            "message": self._generate_message(),
             "layer": self.layer,
             "module": self.module,
             "function": self.function,
@@ -111,84 +176,119 @@ class AppLogCreate(BaseModel):
             "trace_id": self.trace_id,
             "request_id": self.request_id,
             "user_id": str(self.user_id) if self.user_id else None,
-            "duration_ms": self.duration_ms,
+            "duration_ms": int(self.duration_ms) if self.duration_ms is not None else None,
             "extra_data": extra if extra else None,
         }
-        return {k: v for k, v in data.items() if v is not None}
-
+    
     def to_file_dict(self) -> dict:
-        """Convert to dictionary for file logging.
+        """Convert to dictionary for file logging (EST timestamps).
         
-        按规范格式输出：
-        - 通用字段（8个）：timestamp, source, level, message, layer, module, function, line_number
-        - 追踪字段（4个）：trace_id, request_id, user_id, duration_ms
-        - 扩展字段：extra_data（包含 Layer 独有业务数据）
+        按日志规范输出文件格式：
+        - 使用 Ottawa 时间 (EST)
+        - 包含所有通用字段（始终输出，保持格式一致）
+        - 追踪字段始终输出（无值时为 null）
+        - extra_data 包含类型特有字段
+        
+        Requirements: 4.4, 4.5
+        
+        Returns:
+            Dictionary suitable for file logging
         """
-        # 构建 extra_data（合并 HTTP 字段和原有 extra_data）
-        extra = {}
+        # 通用字段（始终输出，保持格式一致）
+        result = {
+            "timestamp": self.timestamp if self.timestamp else format_timestamp_file(),
+            "source": self.source,
+            "level": self.level,
+            "message": self._generate_message(),
+            "layer": self.layer,
+            "module": self.module,
+            "function": self.function,
+            "line_number": self.line_number,
+            "file_path": self.file_path,
+            # 追踪字段（始终输出，保持格式一致）
+            "trace_id": self.trace_id,
+            "request_id": self.request_id,
+            "user_id": str(self.user_id) if self.user_id else None,
+            "duration_ms": int(self.duration_ms) if self.duration_ms is not None else None,
+        }
+        
+        # 扩展字段
+        extra = self._build_extra_data()
+        if extra:
+            result["extra_data"] = extra
+        
+        return result
+    
+    class Config:
+        from_attributes = True
+
+
+# =============================================================================
+# Log Creation Schemas - 用于创建日志对象
+# =============================================================================
+
+class AppLogCreate(BaseLogSchema):
+    """Schema for creating an application log entry.
+    
+    继承 BaseLogSchema，添加 HTTP 上下文字段到 extra_data。
+    
+    Requirements: 6.1, 7.2
+    """
+    
+    # Override message to be required
+    message: str = Field(..., description="Log message")
+    
+    # Fields that go into extra_data (for backward compatibility)
+    ip_address: Optional[str] = Field(None, description="IP address -> extra_data")
+    user_agent: Optional[str] = Field(None, description="User agent -> extra_data")
+    request_method: Optional[str] = Field(None, description="HTTP method -> extra_data")
+    request_path: Optional[str] = Field(None, description="Request path -> extra_data")
+    response_status: Optional[int] = Field(None, description="HTTP response status -> extra_data")
+
+    @field_validator("ip_address", mode="before")
+    @classmethod
+    def normalize_ip(cls, v: Optional[str]) -> Optional[str]:
+        """Normalize IPv6 localhost to IPv4."""
+        return BaseLogSchema._normalize_ip(v)
+
+    @classmethod
+    def from_model(cls, model: Any) -> "AppLogCreate":
+        """Create schema from AppLog database model."""
+        data = cls._extract_common_fields(model)
+        # Add AppLog-specific fields
+        for field in ["ip_address", "user_agent", "request_method", "request_path", "response_status"]:
+            value = getattr(model, field, None)
+            if value is not None:
+                data[field] = value
+        return cls(**data)
+
+    def _build_extra_data(self) -> dict[str, Any]:
+        """Build extra_data from HTTP context fields."""
+        extra = dict(self.extra_data) if self.extra_data else {}
         if self.ip_address:
             extra["ip_address"] = self.ip_address
         if self.user_agent:
-            extra["user_agent"] = self.user_agent[:100] if self.user_agent else None
+            extra["user_agent"] = self._truncate_user_agent(self.user_agent)
         if self.request_method:
             extra["request_method"] = self.request_method
         if self.request_path:
             extra["request_path"] = self.request_path
         if self.response_status:
             extra["response_status"] = self.response_status
-        if self.extra_data:
-            extra.update(self.extra_data)
-        
-        result = {
-            # 通用字段（使用前端 timestamp 或后端生成）
-            "timestamp": self.timestamp if self.timestamp else format_timestamp_file(),
-            "source": self.source,
-            "level": self.level,
-            "message": self.message,
-            "layer": self.layer,
-            "module": self.module,
-            "function": self.function,
-            "line_number": self.line_number,
-            "file_path": self.file_path,
-        }
-        
-        # 追踪字段（只在有值时添加）
-        if self.trace_id:
-            result["trace_id"] = self.trace_id
-        if self.request_id:
-            result["request_id"] = self.request_id
-        if self.user_id:
-            result["user_id"] = str(self.user_id)
-        if self.duration_ms is not None:
-            result["duration_ms"] = self.duration_ms
-        
-        # 扩展字段
-        if extra:
-            result["extra_data"] = extra
-        
-        return result
-
-    class Config:
-        from_attributes = True
+        return extra
 
 
-class ErrorLogCreate(BaseModel):
+class ErrorLogCreate(BaseLogSchema):
     """Schema for creating an error log entry.
     
-    按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number, file_path
-    - 追踪字段：trace_id, request_id, user_id
-    - 扩展字段：extra_data (包含 error_type, error_message, stack_trace, error_code, status_code, request_method, request_path, ip_address)
+    继承 BaseLogSchema，添加错误字段到 extra_data。
+    
+    Requirements: 6.2, 6.6
     """
     
-    # Common fields
-    source: str = Field(default="backend", description="Source of the error (backend/frontend)")
+    # Override defaults
     level: str = Field(default="ERROR", description="Log level")
     layer: str = Field(default="Router", description="AOP layer")
-    module: str = Field(default="", description="Module path relative to project root")
-    function: str = Field(default="", description="Function name")
-    line_number: int = Field(default=0, description="Line number")
-    file_path: Optional[str] = Field(None, description="Full file path for debugging")
     
     # Error info (will be stored in extra_data)
     error_type: str = Field(..., description="Exception class name -> extra_data")
@@ -196,11 +296,6 @@ class ErrorLogCreate(BaseModel):
     error_code: Optional[str] = Field(None, description="Application error code -> extra_data")
     status_code: Optional[int] = Field(None, description="HTTP status code -> extra_data")
     stack_trace: Optional[str] = Field(None, description="Full stack trace -> extra_data")
-    
-    # Trace fields
-    trace_id: Optional[str] = Field(None, description="Request trace ID")
-    request_id: Optional[str] = Field(None, description="Request ID")
-    user_id: Optional[UUID] = Field(None, description="User ID")
     
     # HTTP context (will be stored in extra_data)
     ip_address: Optional[str] = Field(None, description="IP address -> extra_data")
@@ -216,23 +311,18 @@ class ErrorLogCreate(BaseModel):
     @classmethod
     def normalize_ip(cls, v: Optional[str]) -> Optional[str]:
         """Normalize IPv6 localhost to IPv4."""
-        if v == "::1":
-            return "127.0.0.1"
-        return v
+        return BaseLogSchema._normalize_ip(v)
 
     def _generate_message(self) -> str:
-        """Generate message according to log specification.
-        
-        规范格式: `{error_type}: {error_message}`
-        """
+        """Generate message: `{error_type}: {error_message}`"""
         return f"{self.error_type}: {self.error_message}"
 
-    def to_db_dict(self) -> dict:
-        """Convert to dictionary for database insertion (new schema)."""
-        # Build extra_data from error and HTTP context fields
-        extra: dict[str, Any] = {}
-        extra["error_type"] = self.error_type
-        extra["error_message"] = self.error_message
+    def _build_extra_data(self) -> dict[str, Any]:
+        """Build extra_data from error and HTTP context fields."""
+        extra: dict[str, Any] = {
+            "error_type": self.error_type,
+            "error_message": self.error_message,
+        }
         if self.stack_trace:
             extra["stack_trace"] = self.stack_trace
         if self.error_code:
@@ -242,7 +332,7 @@ class ErrorLogCreate(BaseModel):
         if self.ip_address:
             extra["ip_address"] = self.ip_address
         if self.user_agent:
-            extra["user_agent"] = self.user_agent[:200] if len(self.user_agent) > 200 else self.user_agent
+            extra["user_agent"] = self._truncate_user_agent(self.user_agent)
         if self.request_method:
             extra["request_method"] = self.request_method
         if self.request_path:
@@ -251,101 +341,21 @@ class ErrorLogCreate(BaseModel):
             extra.update(self.error_details)
         if self.context_data:
             extra.update(self.context_data)
-        
-        data = {
-            "id": str(uuid4()),
-            "source": self.source,
-            "level": self.level,
-            "message": self._generate_message(),
-            "layer": self.layer,
-            "module": self.module,
-            "function": self.function,
-            "line_number": self.line_number,
-            "file_path": self.file_path,
-            "trace_id": self.trace_id,
-            "request_id": self.request_id,
-            "user_id": str(self.user_id) if self.user_id else None,
-            "extra_data": extra,
-        }
-        return {k: v for k, v in data.items() if v is not None}
-
-    def to_file_dict(self) -> dict:
-        """Convert to dictionary for file logging.
-        
-        按照日志规范输出:
-        - timestamp, source, level, message, layer, module, function, line_number, file_path (必需)
-        - trace_id, request_id, user_id (追踪字段，按需)
-        - extra_data: error_type, error_message, stack_trace (Error 层独有)
-        """
-        # Build extra_data according to spec
-        error_extra_data: dict[str, Any] = {
-            "error_type": self.error_type,
-            "error_message": self.error_message,
-        }
-        if self.stack_trace:
-            error_extra_data["stack_trace"] = self.stack_trace
-        if self.error_code:
-            error_extra_data["error_code"] = self.error_code
-        if self.status_code:
-            error_extra_data["status_code"] = self.status_code
-        if self.request_method:
-            error_extra_data["request_method"] = self.request_method
-        if self.request_path:
-            error_extra_data["request_path"] = self.request_path
-        if self.ip_address:
-            error_extra_data["ip_address"] = self.ip_address
-        if self.error_details:
-            error_extra_data.update(self.error_details)
-        
-        result: dict[str, Any] = {
-            "timestamp": format_timestamp_file(),
-            "source": self.source,
-            "level": self.level,
-            "message": self._generate_message(),
-            "layer": self.layer,
-            "module": self.module,
-            "function": self.function,
-            "line_number": self.line_number,
-            "file_path": self.file_path,
-        }
-        
-        # Add trace fields only if present
-        if self.trace_id:
-            result["trace_id"] = self.trace_id
-        if self.request_id:
-            result["request_id"] = self.request_id
-        if self.user_id:
-            result["user_id"] = str(self.user_id)
-        
-        result["extra_data"] = error_extra_data
-        return result
-
-    class Config:
-        from_attributes = True
+        return extra
 
 
-class PerformanceLogCreate(BaseModel):
+class PerformanceLogCreate(BaseLogSchema):
     """Schema for creating a performance log entry.
     
-    按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number, file_path
-    - 追踪字段：trace_id, request_id, user_id, duration_ms
-    - 扩展字段：extra_data (包含 metric_name, metric_value, metric_unit, threshold_ms, is_slow, component_name, web_vitals)
+    继承 BaseLogSchema，添加性能指标字段到 extra_data。
+    
+    Requirements: 6.3, 6.6
     """
     
-    # Common fields
-    source: str = Field(default="backend", description="Source (backend/frontend)")
-    level: str = Field(default="INFO", description="Log level")
+    # Override defaults
     layer: str = Field(default="Performance", description="AOP layer")
-    module: str = Field(default="", description="Module path relative to project root")
-    function: str = Field(default="", description="Function name")
-    line_number: int = Field(default=0, description="Line number")
-    file_path: Optional[str] = Field(None, description="Full file path for debugging")
     
-    # Trace fields
-    trace_id: Optional[str] = Field(None, description="Request trace ID")
-    request_id: Optional[str] = Field(None, description="Request ID")
-    user_id: Optional[UUID] = Field(None, description="User ID")
+    # Override duration_ms to accept float
     duration_ms: Optional[float] = Field(None, description="Duration in milliseconds")
     
     # Performance fields (will be stored in extra_data)
@@ -356,15 +366,9 @@ class PerformanceLogCreate(BaseModel):
     threshold_ms: Optional[float] = Field(None, description="Performance threshold in ms -> extra_data")
     is_slow: bool = Field(default=False, description="Whether threshold was exceeded -> extra_data")
     web_vitals: Optional[dict[str, Any]] = Field(None, description="Web Vitals metrics -> extra_data")
-    
-    # Extra data
-    extra_data: Optional[dict[str, Any]] = Field(None, description="Additional context data")
 
     def _generate_message(self) -> str:
-        """Generate message according to log specification.
-        
-        规范格式: `Slow {type}: {target} ({duration}ms > {threshold}ms)`
-        """
+        """Generate message: `Slow {type}: {target} ({duration}ms > {threshold}ms)`"""
         target = self.component_name or self.metric_name
         duration = self.duration_ms if self.duration_ms is not None else self.metric_value
         
@@ -373,9 +377,8 @@ class PerformanceLogCreate(BaseModel):
         else:
             return f"Perf: {self.metric_name} = {self.metric_value}{self.metric_unit}"
 
-    def to_db_dict(self) -> dict:
-        """Convert to dictionary for database insertion (new schema)."""
-        # Build extra_data from performance fields
+    def _build_extra_data(self) -> dict[str, Any]:
+        """Build extra_data from performance fields."""
         extra: dict[str, Any] = {
             "metric_name": self.metric_name,
             "metric_value": self.metric_value,
@@ -390,197 +393,101 @@ class PerformanceLogCreate(BaseModel):
             extra["web_vitals"] = self.web_vitals
         if self.extra_data:
             extra.update(self.extra_data)
-        
-        data = {
-            "id": str(uuid4()),
-            "source": self.source,
-            "level": self.level,
-            "message": self._generate_message(),
-            "layer": self.layer,
-            "module": self.module,
-            "function": self.function,
-            "line_number": self.line_number,
-            "file_path": self.file_path,
-            "trace_id": self.trace_id,
-            "request_id": self.request_id,
-            "user_id": str(self.user_id) if self.user_id else None,
-            "duration_ms": int(self.duration_ms) if self.duration_ms is not None else None,
-            "extra_data": extra,
-        }
-        return {k: v for k, v in data.items() if v is not None}
+        return extra
 
-    def to_file_dict(self) -> dict:
-        """Convert to dictionary for file logging.
+    def to_db_dict(self) -> dict:
+        """Convert to dictionary for database insertion.
         
-        按照日志规范输出:
-        - timestamp, source, level, message, layer, module, function, line_number, file_path (必需)
-        - trace_id, request_id, user_id, duration_ms (追踪字段，按需)
-        - extra_data: threshold_ms, is_slow (Performance 层独有)
+        Override to convert duration_ms float to int for database.
         """
-        # Build extra_data according to spec
-        perf_extra_data: dict[str, Any] = {
-            "metric_name": self.metric_name,
-            "metric_value": self.metric_value,
-            "metric_unit": self.metric_unit,
-        }
-        if self.threshold_ms is not None:
-            perf_extra_data["threshold_ms"] = self.threshold_ms
-        perf_extra_data["is_slow"] = self.is_slow
-        if self.component_name:
-            perf_extra_data["component_name"] = self.component_name
-        if self.web_vitals:
-            perf_extra_data["web_vitals"] = self.web_vitals
-        if self.extra_data:
-            perf_extra_data.update(self.extra_data)
-        
-        result: dict[str, Any] = {
-            "timestamp": format_timestamp_file(),
-            "source": self.source,
-            "level": self.level,
-            "message": self._generate_message(),
-            "layer": self.layer,
-            "module": self.module,
-            "function": self.function,
-            "line_number": self.line_number,
-            "file_path": self.file_path,
-        }
-        
-        # Add trace fields only if present
-        if self.trace_id:
-            result["trace_id"] = self.trace_id
-        if self.request_id:
-            result["request_id"] = self.request_id
-        if self.user_id:
-            result["user_id"] = str(self.user_id)
+        result = super().to_db_dict()
         if self.duration_ms is not None:
-            result["duration_ms"] = self.duration_ms
-        
-        result["extra_data"] = perf_extra_data
+            result["duration_ms"] = int(self.duration_ms)
         return result
 
-    class Config:
-        from_attributes = True
 
-
-class SystemLogCreate(BaseModel):
+class SystemLogCreate(BaseLogSchema):
     """Schema for creating a system log entry.
     
-    按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number, file_path
-    - 扩展字段：extra_data (包含 server, host, port, workers, logger_name)
+    继承 BaseLogSchema，添加系统字段到 extra_data。
+    
+    Requirements: 6.5
     """
     
-    # Common fields
-    source: str = Field(default="backend", description="Source (backend)")
-    level: str = Field(default="INFO", description="Log level")
+    # Override message to be required
     message: str = Field(..., description="Log message")
+    
+    # Override defaults
     layer: str = Field(default="System", description="AOP layer")
-    module: str = Field(default="", description="Module name")
-    function: str = Field(default="", description="Function name")
-    line_number: int = Field(default=0, description="Line number")
-    file_path: Optional[str] = Field(None, description="Full file path for debugging")
     
     # Legacy field (will be stored in extra_data)
     logger_name: Optional[str] = Field(None, description="Logger name -> extra_data")
-    
-    # Extra data
-    extra_data: Optional[dict[str, Any]] = Field(None, description="Additional system data")
 
-    @field_validator("level")
-    @classmethod
-    def validate_level(cls, v: str) -> str:
-        """Validate and normalize log level."""
-        valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
-        upper_v = v.upper()
-        if upper_v not in valid_levels:
-            raise ValueError(f"Invalid log level: {v}. Must be one of {valid_levels}")
-        return upper_v
+    def _get_effective_module(self) -> str:
+        """Get effective module name (module or logger_name fallback)."""
+        return self.module or self.logger_name or ""
 
-    def to_db_dict(self) -> dict:
-        """Convert to dictionary for database insertion (new schema)."""
-        # Build extra_data - merge provided extra_data with logger_name
+    def _build_extra_data(self) -> dict[str, Any]:
+        """Build extra_data from system fields."""
         extra = dict(self.extra_data) if self.extra_data else {}
         if self.logger_name and self.logger_name != self.module:
-            # Only add logger_name if different from module
             extra["logger_name"] = self.logger_name
+        return extra
+
+    def to_db_dict(self) -> dict:
+        """Convert to dictionary for database insertion.
         
-        data = {
+        Override to only include columns that exist in system_logs table.
+        system_logs has: id, source, level, message, layer, module, function, 
+                        line_number, file_path, extra_data, created_at
+        """
+        extra = self._build_extra_data()
+        
+        return {
             "id": str(uuid4()),
             "source": self.source,
             "level": self.level,
-            "message": self.message,
+            "message": self._generate_message(),
             "layer": self.layer,
+            "module": self.module or self.logger_name,  # logger_name -> module fallback
+            "function": self.function,
+            "line_number": self.line_number,
+            "file_path": self.file_path,
+            "extra_data": extra if extra else None,
         }
-        
-        # Add optional fields only if they have meaningful values
-        if self.module:
-            data["module"] = self.module
-        elif self.logger_name:
-            data["module"] = self.logger_name
-        
-        if self.function:
-            data["function"] = self.function
-        
-        if self.line_number and self.line_number > 0:
-            data["line_number"] = self.line_number
-        
-        if self.file_path:
-            data["file_path"] = self.file_path
-        
-        if extra:
-            data["extra_data"] = extra
-        
-        return data
 
     def to_file_dict(self) -> dict:
         """Convert to dictionary for file logging.
         
-        按照日志规范输出:
-        - timestamp, source, level, message, layer, module, function, line_number, file_path (必需)
-        - extra_data: server, host, port, workers (System 层独有)
+        Override to only include fields relevant to system logs,
+        consistent with to_db_dict().
         """
-        result: dict[str, Any] = {
-            "timestamp": format_timestamp_file(),
+        extra = self._build_extra_data()
+        
+        return {
+            "timestamp": self.timestamp if self.timestamp else format_timestamp_file(),
             "source": self.source,
             "level": self.level,
-            "message": self.message,
+            "message": self._generate_message(),
             "layer": self.layer,
-            "module": self.module or self.logger_name or "",
+            "module": self.module or self.logger_name,
             "function": self.function,
             "line_number": self.line_number,
             "file_path": self.file_path,
+            "extra_data": extra if extra else None,
         }
-        
-        if self.extra_data:
-            result["extra_data"] = self.extra_data
-        
-        return result
-
-    class Config:
-        from_attributes = True
 
 
-class AuditLogCreate(BaseModel):
+class AuditLogCreate(BaseLogSchema):
     """Schema for creating an audit log entry.
     
-    按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number, file_path
-    - 追踪字段：trace_id, user_id
-    - 扩展字段：extra_data (包含 action, result, ip_address, user_agent, resource_type, resource_id)
+    继承 BaseLogSchema，添加审计字段到 extra_data。
+    
+    Requirements: 6.4, 6.6
     """
     
-    # Common fields
-    source: str = Field(default="backend", description="Source (backend)")
-    level: str = Field(default="INFO", description="Log level")
+    # Override defaults
     layer: str = Field(default="Auth", description="AOP layer")
-    module: str = Field(default="", description="Module path relative to project root")
-    function: str = Field(default="", description="Function name")
-    line_number: int = Field(default=0, description="Line number")
-    file_path: Optional[str] = Field(None, description="Full file path for debugging")
-    
-    # Trace fields
-    trace_id: Optional[str] = Field(None, description="Request trace ID")
-    user_id: Optional[UUID] = Field(None, description="User ID who performed the action")
     
     # Audit fields (will be stored in extra_data)
     action: str = Field(..., description="Action type -> extra_data")
@@ -596,9 +503,7 @@ class AuditLogCreate(BaseModel):
     @classmethod
     def normalize_ip(cls, v: Optional[str]) -> Optional[str]:
         """Normalize IPv6 localhost to IPv4."""
-        if v == "::1":
-            return "127.0.0.1"
-        return v
+        return BaseLogSchema._normalize_ip(v)
 
     @field_validator("action", mode="before")
     @classmethod
@@ -607,17 +512,13 @@ class AuditLogCreate(BaseModel):
         return v.upper() if v else v
 
     def _generate_message(self) -> str:
-        """Generate message according to log specification.
-        
-        规范格式: `Audit: {action} {result}`
-        """
+        """Generate message: `Audit: {action} {result}`"""
         action_desc = self.action.replace("_", " ").title()
         result_desc = "successful" if self.result == "SUCCESS" else "failed"
         return f"Audit: {action_desc} {result_desc}"
 
-    def to_db_dict(self) -> dict:
-        """Convert to dictionary for database insertion (new schema)."""
-        # Build extra_data from audit fields
+    def _build_extra_data(self) -> dict[str, Any]:
+        """Build extra_data from audit fields."""
         extra: dict[str, Any] = {
             "action": self.action,
             "result": self.result,
@@ -625,7 +526,7 @@ class AuditLogCreate(BaseModel):
         if self.ip_address:
             extra["ip_address"] = self.ip_address
         if self.user_agent:
-            extra["user_agent"] = self.user_agent[:200] if len(self.user_agent) > 200 else self.user_agent
+            extra["user_agent"] = self._truncate_user_agent(self.user_agent)
         if self.resource_type:
             extra["resource_type"] = self.resource_type
         if self.resource_id:
@@ -634,68 +535,7 @@ class AuditLogCreate(BaseModel):
             extra["request_method"] = self.request_method
         if self.request_path:
             extra["request_path"] = self.request_path
-        
-        data = {
-            "id": str(uuid4()),
-            "source": self.source,
-            "level": self.level,
-            "message": self._generate_message(),
-            "layer": self.layer,
-            "module": self.module,
-            "function": self.function,
-            "line_number": self.line_number,
-            "file_path": self.file_path,
-            "trace_id": self.trace_id,
-            "user_id": str(self.user_id) if self.user_id else None,
-            "extra_data": extra,
-        }
-        return {k: v for k, v in data.items() if v is not None}
-
-    def to_file_dict(self) -> dict:
-        """Convert to dictionary for file logging.
-        
-        按照日志规范输出:
-        - timestamp, source, level, message, layer, module, function, line_number, file_path (必需)
-        - trace_id, user_id (追踪字段，按需)
-        - extra_data: action, result, ip_address, user_agent (Audit 层独有)
-        """
-        # Build extra_data according to spec
-        audit_extra_data: dict[str, Any] = {
-            "action": self.action,
-            "result": self.result,
-        }
-        if self.ip_address:
-            audit_extra_data["ip_address"] = self.ip_address
-        if self.user_agent:
-            audit_extra_data["user_agent"] = self.user_agent
-        if self.resource_type:
-            audit_extra_data["resource_type"] = self.resource_type
-        if self.resource_id:
-            audit_extra_data["resource_id"] = str(self.resource_id)
-        
-        result: dict[str, Any] = {
-            "timestamp": format_timestamp_file(),
-            "source": self.source,
-            "level": self.level,
-            "message": self._generate_message(),
-            "layer": self.layer,
-            "module": self.module,
-            "function": self.function,
-            "line_number": self.line_number,
-            "file_path": self.file_path,
-        }
-        
-        # Add trace fields only if present
-        if self.trace_id:
-            result["trace_id"] = self.trace_id
-        if self.user_id:
-            result["user_id"] = str(self.user_id)
-        
-        result["extra_data"] = audit_extra_data
-        return result
-
-    class Config:
-        from_attributes = True
+        return extra
 
 
 # =============================================================================

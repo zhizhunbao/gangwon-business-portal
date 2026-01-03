@@ -422,7 +422,7 @@ class AuditLog(Base):
     
     按日志规范：
     - 通用字段：source, level, message, layer, module, function, line_number, file_path
-    - 追踪字段：trace_id, user_id
+    - 追踪字段：trace_id, request_id, user_id, duration_ms
     - 扩展字段：extra_data (包含 action, result, ip_address, user_agent, resource_type, resource_id)
     """
 
@@ -442,7 +442,9 @@ class AuditLog(Base):
     
     # Trace fields
     trace_id = Column(String(100))
+    request_id = Column(String(100))
     user_id = Column(UUID(as_uuid=True), nullable=True)  # No FK - can be admin or member
+    duration_ms = Column(Integer)
     
     # Extension field
     extra_data = Column(JSONB)  # action, result, ip_address, user_agent, resource_type, resource_id

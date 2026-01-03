@@ -53,10 +53,10 @@ function getCallerInfo(skipFrames = 0) {
   
   if (!stack) {
     return {
-      module: '-',
-      file_path: null,
-      line_number: null,
-      function: 'unknown'
+      module: '',
+      file_path: '',
+      line_number: 0,
+      function: ''
     };
   }
   
@@ -139,10 +139,10 @@ function getCallerInfo(skipFrames = 0) {
   }
   
   return {
-    module: 'unknown',
-    file_path: null,
-    line_number: null,
-    function: 'unknown'
+    module: '',
+    file_path: '',
+    line_number: 0,
+    function: ''
   };
 }
 
@@ -153,7 +153,7 @@ function getCallerInfo(skipFrames = 0) {
  */
 function extractModulePath(filePath) {
   if (!filePath || filePath === 'unknown') {
-    return '-';
+    return '';
   }
   
   // 去掉查询参数（Vite 的 ?t=xxx）
@@ -163,7 +163,7 @@ function extractModulePath(filePath) {
   // 打包后的文件通常在 /assets/ 目录下，且文件名包含哈希
   const bundledFilePattern = /\/(assets|dist)\/[^/]*-[a-zA-Z0-9]{6,}\.(js|css)$/;
   if (bundledFilePattern.test(cleanPath)) {
-    return '-'; // 打包后无法获取源码模块路径
+    return ''; // 打包后无法获取源码模块路径
   }
   
   // 处理 URL 格式 (http://localhost:5173/src/...)
@@ -216,7 +216,7 @@ function extractModulePath(filePath) {
   
   // 检测打包后的哈希文件名模式（如 index-CddmaCi5.js）
   if (/^[a-zA-Z]+-[a-zA-Z0-9]{6,}\.(js|css)$/.test(fileName)) {
-    return '-'; // 打包后无法获取源码模块路径
+    return ''; // 打包后无法获取源码模块路径
   }
   
   const dotIndex = fileName.lastIndexOf('.');
@@ -287,18 +287,22 @@ function formatTimestamp(date = new Date()) {
  * @throws {Error} 如果缺少必填字段
  */
 function validateRequiredFields(logEntry) {
-  // 前端传输必填字段
-  const requiredFields = ['timestamp', 'source', 'level', 'message', 'layer', 'module', 'function'];
+  // 必填字段（必须存在且不能为 undefined）
+  const requiredFields = [
+    'timestamp', 'source', 'level', 'message', 'layer',
+    'module', 'function', 'line_number', 'file_path',
+    'trace_id', 'request_id'
+  ];
   
   for (const field of requiredFields) {
-    if (logEntry[field] === undefined || logEntry[field] === null) {
+    if (logEntry[field] === undefined) {
       throw new Error(`Missing required field: ${field}`);
     }
   }
   
-  // line_number 可以为 null，但必须存在
-  if (!('line_number' in logEntry)) {
-    throw new Error('Missing required field: line_number');
+  // message 不能为空
+  if (logEntry.message === null || logEntry.message === '') {
+    throw new Error(`Field 'message' cannot be null or empty`);
   }
   
   // 验证 source 必须是 'frontend'
@@ -368,21 +372,20 @@ export class LoggerCore {
     // 提取自定义的位置信息（如果有）
     const { _function, _module, _line_number, _file_path, ...restExtra } = extra || {};
     
-    // 始终获取调用栈信息，用于补充缺失的字段
-    const callerInfo = getCallerInfo();
-    
     // 获取上下文信息
-    const traceId = this._contextManager ? this._contextManager.getTraceId() : null;
-    const requestId = this._contextManager ? this._contextManager.getCurrentRequestId() : null;
+    const traceId = this._contextManager ? this._contextManager.getTraceId() : '';
+    const requestId = this._contextManager ? this._contextManager.getCurrentRequestId() : '';
     const userId = this._contextManager ? this._contextManager.getUserId() : null;
     
-    // 确定各字段值（优先使用传入的值，否则使用调用栈信息）
-    const moduleValue = _module || (callerInfo ? callerInfo.module : 'unknown');
-    const filePathValue = _file_path || (callerInfo ? callerInfo.file_path : null);
-    const functionValue = _function || (callerInfo ? callerInfo.function : 'unknown');
-    const lineNumberValue = _line_number !== undefined ? _line_number : (callerInfo ? callerInfo.line_number : null);
+    // 必填字段使用空字符串/0 作为默认值
+    const moduleValue = _module || '';
+    const filePathValue = _file_path || '';
+    const functionValue = _function || '';
+    const lineNumberValue = _line_number !== undefined ? _line_number : 0;
     
     // 创建日志数据（包含 timestamp）
+    // 必填字段：timestamp, source, level, message, layer, module, function, line_number, file_path, trace_id, request_id
+    // 选填字段：user_id, duration_ms
     const logEntry = {
       timestamp: formatTimestamp(),
       source: 'frontend',
@@ -392,23 +395,17 @@ export class LoggerCore {
       module: moduleValue,
       function: functionValue,
       line_number: lineNumberValue,
-      file_path: filePathValue
+      file_path: filePathValue,
+      trace_id: traceId,
+      request_id: requestId,
     };
     
-    // 添加追踪字段（只在有值时添加）
-    if (traceId) {
-      logEntry.trace_id = traceId;
-    }
-    
-    if (requestId) {
-      logEntry.request_id = requestId;
-    }
-    
+    // 选填字段：user_id（未登录时为 null）
     if (userId) {
       logEntry.user_id = userId;
     }
     
-    // 添加 duration_ms（如果有）
+    // 选填字段：duration_ms（只有 HTTP 请求有）
     if (restExtra.duration_ms !== undefined) {
       logEntry.duration_ms = restExtra.duration_ms;
       delete restExtra.duration_ms;

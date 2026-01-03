@@ -13,21 +13,24 @@ class AuditLogResponse(BaseModel):
     """Audit log response schema.
     
     按日志规范：
-    - 通用字段：source, level, message, layer, module, function, line_number
-    - 追踪字段：trace_id, user_id
+    - 通用字段：source, level, message, layer, module, function, line_number, file_path
+    - 追踪字段：trace_id, request_id, user_id, duration_ms
     - 扩展字段：extra_data
     """
 
     id: UUID
-    source: Optional[str] = None
-    level: Optional[str] = None
-    message: Optional[str] = None
-    layer: Optional[str] = None
-    module: Optional[str] = None
-    function: Optional[str] = None
-    line_number: Optional[int] = None
-    trace_id: Optional[str] = None
+    source: str = ""
+    level: str = "INFO"
+    message: str = ""
+    layer: str = ""
+    module: str = ""
+    function: str = ""
+    line_number: int = 0
+    file_path: str = ""
+    trace_id: str = ""
+    request_id: str = ""
     user_id: Optional[UUID] = None
+    duration_ms: Optional[int] = None
     extra_data: Optional[dict] = None
     created_at: datetime
 

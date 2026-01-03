@@ -36,9 +36,11 @@ Usage:
 """
 import logging
 
-from .config import setup_logging
+from .config import setup_logging, LogConfig, get_log_config
 from .formatter import JSONFormatter
+from .base_writer import BaseLogWriter
 from .file_writer import file_log_writer
+from .db_writer import db_log_writer
 from .service import LoggingService
 # NOTE: router is imported lazily to avoid circular import with db.session
 # Use get_logging_router() instead of logging_router directly
@@ -89,8 +91,12 @@ def get_logging_router():
 __all__ = [
     "get_logger",
     "setup_logging",
+    "LogConfig",
+    "get_log_config",
     "JSONFormatter",
+    "BaseLogWriter",
     "file_log_writer",
+    "db_log_writer",
     "LoggingService",
     "logging_service",
     "get_logging_router",

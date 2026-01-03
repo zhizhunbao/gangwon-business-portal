@@ -8,7 +8,7 @@ from uuid import UUID
 from datetime import datetime, date
 
 from ...common.modules.db.models import Member  # Member table now includes profile fields
-from ...common.modules.exception import NotFoundError, ValidationError, ConflictError
+from ...common.modules.exception import NotFoundError, ValidationError, ConflictError, CMessageTemplate
 from ...common.modules.supabase.service import supabase_service
 from ...common.modules.integrations.nice_dnb.schemas import NiceDnBResponse
 from .schemas import MemberProfileUpdate, MemberListQuery, MemberProfileResponse
@@ -35,7 +35,7 @@ class MemberService:
         # Use existing supabase_service method
         member, profile = await supabase_service.get_member_profile(str(member_id))
         if not member:
-            raise NotFoundError("Member")
+            raise NotFoundError(resource_type="Member")
 
         return member, profile
 
@@ -162,7 +162,7 @@ class MemberService:
                 data.email, exclude_member_id=str(member_id)
             )
             if not is_unique:
-                raise ValidationError("Email already in use")
+                raise ValidationError(CMessageTemplate.VALIDATION_EMAIL_IN_USE)
             member_update['email'] = data.email
 
         # Update member if needed - use helper method
@@ -265,7 +265,7 @@ class MemberService:
         # Use helper method to get member
         member = await supabase_service.get_by_id('members', str(member_id))
         if not member:
-            raise NotFoundError("Member")
+            raise NotFoundError(resource_type="Member")
 
         # Use helper method to update
         updated_member = await supabase_service.update_record(
@@ -310,7 +310,7 @@ class MemberService:
         # Use helper method to get member
         member = await supabase_service.get_by_id('members', str(member_id))
         if not member:
-            raise NotFoundError("Member")
+            raise NotFoundError(resource_type="Member")
 
         # Use helper method to update
         updated_member = await supabase_service.update_record(
@@ -352,7 +352,7 @@ class MemberService:
         """
         member = await supabase_service.get_by_id('members', str(member_id))
         if not member:
-            raise NotFoundError("Member")
+            raise NotFoundError(resource_type="Member")
 
         updated_member = await supabase_service.update_record(
             'members',

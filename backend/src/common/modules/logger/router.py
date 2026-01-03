@@ -211,7 +211,7 @@ async def delete_system_log(
     
     if result.rowcount == 0:
         from ..exception import NotFoundError
-        raise NotFoundError("System log")
+        raise NotFoundError(resource_type="System log")
     
     return {"status": "ok", "deleted": 1}
 
@@ -461,7 +461,7 @@ async def get_log(
     
     if not log:
         from ..exception import NotFoundError
-        raise NotFoundError("Application log")
+        raise NotFoundError(resource_type="Application log")
     
     user_email = None
     user_company_name = None
@@ -512,27 +512,21 @@ async def get_log_stats(
     """
     from sqlalchemy import select, func, and_, cast, Date
     from datetime import date, timedelta
-    from ..db.models import AppLog
+    from ..db.models import AppLog, ErrorLog, PerformanceLog
     
     today = date.today()
     yesterday = today - timedelta(days=1)
     
-    # Today's errors
-    today_errors_query = select(func.count()).select_from(AppLog).where(
-        and_(
-            cast(AppLog.created_at, Date) == today,
-            AppLog.level.in_(["ERROR", "CRITICAL"])
-        )
+    # Today's errors (from error_logs table)
+    today_errors_query = select(func.count()).select_from(ErrorLog).where(
+        cast(ErrorLog.created_at, Date) == today
     )
     today_errors_result = await db.execute(today_errors_query)
     today_errors = today_errors_result.scalar() or 0
     
     # Yesterday's errors (for comparison)
-    yesterday_errors_query = select(func.count()).select_from(AppLog).where(
-        and_(
-            cast(AppLog.created_at, Date) == yesterday,
-            AppLog.level.in_(["ERROR", "CRITICAL"])
-        )
+    yesterday_errors_query = select(func.count()).select_from(ErrorLog).where(
+        cast(ErrorLog.created_at, Date) == yesterday
     )
     yesterday_errors_result = await db.execute(yesterday_errors_query)
     yesterday_errors = yesterday_errors_result.scalar() or 0
@@ -544,17 +538,17 @@ async def get_log_stats(
     elif today_errors > 0:
         error_change = 100
     
-    # Slow requests (duration > 500ms)
-    slow_requests_query = select(func.count()).select_from(AppLog).where(
+    # Slow requests (from performance_logs table, duration > 500ms)
+    slow_requests_query = select(func.count()).select_from(PerformanceLog).where(
         and_(
-            cast(AppLog.created_at, Date) == today,
-            AppLog.duration_ms > 500
+            cast(PerformanceLog.created_at, Date) == today,
+            PerformanceLog.duration_ms > 500
         )
     )
     slow_requests_result = await db.execute(slow_requests_query)
     slow_requests = slow_requests_result.scalar() or 0
     
-    # Security alerts (auth warnings/errors)
+    # Security alerts (auth warnings/errors from app_logs)
     security_query = select(func.count()).select_from(AppLog).where(
         and_(
             cast(AppLog.created_at, Date) == today,
@@ -565,18 +559,18 @@ async def get_log_stats(
     security_result = await db.execute(security_query)
     security_alerts = security_result.scalar() or 0
     
-    # Today's total requests
+    # Today's total requests (from app_logs)
     today_requests_query = select(func.count()).select_from(AppLog).where(
         cast(AppLog.created_at, Date) == today
     )
     today_requests_result = await db.execute(today_requests_query)
     today_requests = today_requests_result.scalar() or 0
     
-    # Average response time
-    avg_response_query = select(func.avg(AppLog.duration_ms)).select_from(AppLog).where(
+    # Average response time (from performance_logs)
+    avg_response_query = select(func.avg(PerformanceLog.duration_ms)).select_from(PerformanceLog).where(
         and_(
-            cast(AppLog.created_at, Date) == today,
-            AppLog.duration_ms.isnot(None)
+            cast(PerformanceLog.created_at, Date) == today,
+            PerformanceLog.duration_ms.isnot(None)
         )
     )
     avg_response_result = await db.execute(avg_response_query)
@@ -642,7 +636,7 @@ async def delete_log(
     
     if result.rowcount == 0:
         from ..exception import NotFoundError
-        raise NotFoundError("Application log")
+        raise NotFoundError(resource_type="Application log")
     
     return {"status": "ok", "deleted": 1}
 
@@ -688,7 +682,7 @@ async def delete_error_log(
     
     if result.rowcount == 0:
         from ..exception import NotFoundError
-        raise NotFoundError("Error log")
+        raise NotFoundError(resource_type="Error log")
     
     return {"status": "ok", "deleted": 1}
 
@@ -734,7 +728,7 @@ async def delete_performance_log(
     
     if result.rowcount == 0:
         from ..exception import NotFoundError
-        raise NotFoundError("Performance log")
+        raise NotFoundError(resource_type="Performance log")
     
     return {"status": "ok", "deleted": 1}
 

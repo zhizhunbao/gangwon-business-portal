@@ -221,14 +221,13 @@ function monitorMemoryUsage() {
       used: memory.usedJSHeapSize,
       total: memory.totalJSHeapSize,
       limit: memory.jsHeapSizeLimit,
-      usage_percentage: Math.round((memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100),
-      timestamp: new Date().toISOString()
+      usage_percentage: Math.round((memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100)
     };
     
     const isHighMemory = memory.usedJSHeapSize > performanceConfig.memoryWarningThreshold;
     
     const message = isHighMemory 
-      ? `Slow memory_usage: App (${Math.round(memory.usedJSHeapSize / 1024 / 1024)}MB > ${Math.round(performanceConfig.memoryWarningThreshold / 1024 / 1024)}MB)`
+      ? `High memory_usage: App (${Math.round(memory.usedJSHeapSize / 1024 / 1024)}MB > ${Math.round(performanceConfig.memoryWarningThreshold / 1024 / 1024)}MB)`
       : `Perf: memory_usage = ${Math.round(memory.usedJSHeapSize / 1024 / 1024)}MB`;
     
     if (isHighMemory) {
@@ -236,8 +235,8 @@ function monitorMemoryUsage() {
         metric_name: 'memory_usage',
         metric_value: memory.usedJSHeapSize,
         metric_unit: 'bytes',
-        threshold_ms: performanceConfig.memoryWarningThreshold,
-        is_slow: isHighMemory,
+        threshold_bytes: performanceConfig.memoryWarningThreshold,
+        is_high: true,
         ...memoryUsage
       });
     } else {

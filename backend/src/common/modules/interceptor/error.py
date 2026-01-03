@@ -52,8 +52,7 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         from ..logger.request import get_trace_id, get_request_id, generate_request_id
-        from ..exception.service import exception_service, ExceptionContext
-        from ..exception.exceptions import BaseCustomException
+        from ..exception import exception_service, DExceptionContext, AbstractCustomException
 
         start_time = time.time()
         trace_id = get_trace_id(request)
@@ -72,7 +71,7 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             duration = time.time() - start_time
 
-            context = ExceptionContext(
+            context = DExceptionContext(
                 trace_id=trace_id,
                 request_id=request_id,
                 user_id=getattr(request.state, "user_id", None),
@@ -90,7 +89,7 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
             except Exception as log_exc:
                 logger.error(f"Failed to record exception: {log_exc}", exc_info=True)
 
-            if isinstance(exc, BaseCustomException):
+            if isinstance(exc, AbstractCustomException):
                 classified_exc = exc
             else:
                 classified_exc = exception_service.classify_exception(exc)

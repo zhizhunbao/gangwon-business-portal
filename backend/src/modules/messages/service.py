@@ -8,7 +8,7 @@ from typing import List, Tuple, Optional
 from uuid import UUID, uuid4
 from datetime import datetime, timezone, timedelta
 
-from ...common.modules.exception import NotFoundError, ValidationError
+from ...common.modules.exception import NotFoundError, ValidationError, CMessageTemplate
 from ...common.modules.supabase.message_service import message_db_service
 from ...common.modules.supabase.service import supabase_service
 from ...common.modules.email.service import EmailService
@@ -135,7 +135,7 @@ class MessageService:
         message = await self.db.get_message_with_access_check(str(message_id), str(user_id))
 
         if not message:
-            raise NotFoundError("Message")
+            raise NotFoundError(resource_type="Message")
 
         # Mark as read if user is recipient and message is unread
         if message.get('recipient_id') == str(user_id) and not message.get('is_read', False):
@@ -165,7 +165,9 @@ class MessageService:
 
         message = await self.db.insert_message(message_data)
         if not message:
-            raise ValidationError("Failed to create message")
+            raise ValidationError(
+                CMessageTemplate.VALIDATION_OPERATION_FAILED.format(operation="create message")
+            )
 
         await self._enrich_message_with_sender(message)
         return message
@@ -174,7 +176,7 @@ class MessageService:
         """Update a message (mark as read/unread, important)."""
         message = await self.db.get_message_with_access_check(str(message_id), str(user_id))
         if not message:
-            raise NotFoundError("Message")
+            raise NotFoundError(resource_type="Message")
 
         update_data = {}
         if hasattr(data, 'is_read') and data.is_read is not None:
@@ -195,7 +197,7 @@ class MessageService:
         """Soft delete a message."""
         message = await self.db.get_message_with_access_check(str(message_id), str(user_id))
         if not message:
-            raise NotFoundError("Message")
+            raise NotFoundError(resource_type="Message")
 
         await self.db.soft_delete_message(str(message_id))
 
@@ -237,7 +239,7 @@ class MessageService:
         """Mark a message as read."""
         message = await self.db.get_message_by_id(str(message_id))
         if not message or message.get('recipient_id') != str(user_id):
-            raise NotFoundError("Message")
+            raise NotFoundError(resource_type="Message")
 
         await self.db.mark_as_read(str(message_id))
         message['is_read'] = True
@@ -364,7 +366,7 @@ class MessageService:
         """Create a message in an existing thread."""
         thread = await self.db.get_thread_by_id(str(thread_id))
         if not thread:
-            raise NotFoundError("Thread")
+            raise NotFoundError(resource_type="Thread")
 
         now = datetime.now(timezone.utc)
         message_id = str(uuid4())
@@ -447,12 +449,12 @@ class MessageService:
         """Get thread with all messages (optimized with batch queries)."""
         thread = await self.db.get_thread_by_id(str(thread_id))
         if not thread:
-            raise NotFoundError("Thread")
+            raise NotFoundError(resource_type="Thread")
 
         # Check access
         is_admin = await self._is_admin(str(user_id))
         if not is_admin and thread.get('sender_id') != str(user_id):
-            raise NotFoundError("Thread")
+            raise NotFoundError(resource_type="Thread")
 
         # Get messages and member name in parallel-ish (could use asyncio.gather for true parallel)
         messages = await self.db.get_thread_messages_list(str(thread_id))
@@ -480,12 +482,12 @@ class MessageService:
         """Update thread status."""
         thread = await self.db.get_thread_by_id(str(thread_id))
         if not thread:
-            raise NotFoundError("Thread")
+            raise NotFoundError(resource_type="Thread")
 
         # Check access
         is_admin = await self._is_admin(str(user_id))
         if not is_admin and thread.get('sender_id') != str(user_id):
-            raise NotFoundError("Thread")
+            raise NotFoundError(resource_type="Thread")
 
         update_data = {}
         if hasattr(data, 'status') and data.status:
@@ -507,7 +509,7 @@ class MessageService:
         """Create and send a broadcast message."""
         is_admin = await self._is_admin(str(sender_id))
         if not is_admin:
-            raise ValidationError("Only admins can send broadcast messages")
+            raise ValidationError(CMessageTemplate.MESSAGE_BROADCAST_ADMIN_ONLY)
 
         # Get recipient IDs
         if data.send_to_all:
@@ -516,7 +518,7 @@ class MessageService:
             recipient_ids = [str(rid) for rid in (data.recipient_ids or [])]
 
         if not recipient_ids:
-            raise ValidationError("No recipients specified")
+            raise ValidationError(CMessageTemplate.MESSAGE_NO_RECIPIENTS)
 
         # Create messages for each recipient
         messages_to_insert = []
@@ -540,7 +542,9 @@ class MessageService:
 
         result = await self.db.insert_messages_batch(messages_to_insert)
         if not result:
-            raise ValidationError("Failed to create broadcast")
+            raise ValidationError(
+                CMessageTemplate.VALIDATION_OPERATION_FAILED.format(operation="create broadcast")
+            )
 
         return {
             "broadcast_id": broadcast_id,

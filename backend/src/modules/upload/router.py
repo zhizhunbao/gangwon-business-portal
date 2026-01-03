@@ -11,7 +11,7 @@ from uuid import UUID
 from fastapi import Request
 
 from ...common.modules.audit import audit_log
-from ...common.modules.exception import AppException
+from ...common.modules.exception import ICustomException
 from ..user.dependencies import get_current_active_user
 from .service import UploadService
 from .schemas import FileUploadResponse, FileDownloadResponse
@@ -20,8 +20,8 @@ router = APIRouter()
 service = UploadService()
 
 
-def _handle_app_exception(exc: AppException) -> None:
-    """Convert internal AppException into FastAPI HTTPException."""
+def _handle_exception(exc: ICustomException) -> None:
+    """Convert ICustomException into FastAPI HTTPException."""
     raise HTTPException(status_code=exc.http_status_code, detail=exc.message)
 
 
@@ -50,8 +50,8 @@ async def upload_public_file(
             resource_type=resource_type,
             resource_id=resource_id,
         )
-    except AppException as exc:
-        _handle_app_exception(exc)
+    except ICustomException as exc:
+        _handle_exception(exc)
     
     return FileUploadResponse(**attachment)
 
@@ -81,8 +81,8 @@ async def upload_private_file(
             resource_type=resource_type,
             resource_id=resource_id,
         )
-    except AppException as exc:
-        _handle_app_exception(exc)
+    except ICustomException as exc:
+        _handle_exception(exc)
     
     return FileUploadResponse(**attachment)
 
@@ -107,8 +107,8 @@ async def download_file(
             file_id=file_id,
             user=current_user,
         )
-    except AppException as exc:
-        _handle_app_exception(exc)
+    except ICustomException as exc:
+        _handle_exception(exc)
     
     return FileDownloadResponse(
         file_url=attachment["file_url"],
@@ -135,8 +135,8 @@ async def redirect_to_file(
             file_id=file_id,
             user=current_user,
         )
-    except AppException as exc:
-        _handle_app_exception(exc)
+    except ICustomException as exc:
+        _handle_exception(exc)
     
     return RedirectResponse(url=attachment["file_url"], status_code=status.HTTP_302_FOUND)
 
@@ -161,7 +161,7 @@ async def delete_file(
             file_id=file_id,
             user=current_user,
         )
-    except AppException as exc:
-        _handle_app_exception(exc)
+    except ICustomException as exc:
+        _handle_exception(exc)
     
     return None

@@ -40,10 +40,6 @@ def now_est() -> datetime:
     return datetime.now(EST)
 
 
-# 别名，保持向后兼容
-now_local = now_est
-
-
 # =============================================================================
 # 时区转换函数
 # =============================================================================
@@ -118,7 +114,6 @@ def format_est(dt: Union[str, datetime, None], fmt: str = "%Y-%m-%d %H:%M:%S.") 
     return est_dt.strftime(fmt)
 
 
-# 别名，保持向后兼容
 def format_kst_display(dt: Union[str, datetime, None]) -> str:
     """格式化为韩国时间显示 (YYYY-MM-DD HH:MM)"""
     return format_kst(dt, "%Y-%m-%d %H:%M")

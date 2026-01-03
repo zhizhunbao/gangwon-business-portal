@@ -1,0 +1,383 @@
+# 软件设计原则 (Software Design Principles)
+
+## 概述
+
+本规范定义了项目开发中必须遵循的 7 大设计原则：SOLID (5个) + DRY + KISS。
+
+---
+
+## SOLID 原则
+
+### S - 单一职责原则 (Single Responsibility Principle)
+
+**定义**: 一个类/模块只应该有一个引起它变化的原因。
+
+**✅ 正确做法:**
+```python
+# 每个类只负责一件事
+class UserValidator:
+    """只负责用户数据验证"""
+    def validate_email(self, email: str) -> bool: ...
+    def validate_password(self, password: str) -> bool: ...
+
+class UserRepository:
+    """只负责用户数据持久化"""
+    def save(self, user: User) -> None: ...
+    def find_by_id(self, id: int) -> User: ...
+
+class UserService:
+    """只负责用户业务编排"""
+    def __init__(self, validator: UserValidator, repo: UserRepository): ...
+    def register(self, data: dict) -> User: ...
+```
+
+**❌ 错误做法:**
+```python
+# 一个类做太多事情
+class UserManager:
+    def validate_email(self, email: str) -> bool: ...
+    def save_to_database(self, user: User) -> None: ...
+    def send_welcome_email(self, user: User) -> None: ...
+    def generate_report(self) -> str: ...
+```
+
+**检查清单:**
+- [ ] 这个类/模块的职责能用一句话描述吗？
+- [ ] 修改这个类的原因只有一个吗？
+- [ ] 类名是否准确反映了它的唯一职责？
+
+---
+
+### O - 开闭原则 (Open/Closed Principle)
+
+**定义**: 软件实体应该对扩展开放，对修改关闭。
+
+**✅ 正确做法:**
+```python
+# 通过接口扩展，不修改现有代码
+from abc import ABC, abstractmethod
+
+class PaymentProcessor(ABC):
+    @abstractmethod
+    def process(self, amount: float) -> bool: ...
+
+class CreditCardProcessor(PaymentProcessor):
+    def process(self, amount: float) -> bool:
+        # 信用卡支付逻辑
+        ...
+
+class AlipayProcessor(PaymentProcessor):
+    def process(self, amount: float) -> bool:
+        # 支付宝支付逻辑（新增，无需修改现有代码）
+        ...
+
+# 使用时通过接口
+def checkout(processor: PaymentProcessor, amount: float):
+    return processor.process(amount)
+```
+
+**❌ 错误做法:**
+```python
+# 每次新增支付方式都要修改这个函数
+def process_payment(payment_type: str, amount: float) -> bool:
+    if payment_type == "credit_card":
+        # 信用卡逻辑
+        ...
+    elif payment_type == "alipay":
+        # 支付宝逻辑
+        ...
+    elif payment_type == "wechat":  # 新增时必须修改
+        ...
+```
+
+**检查清单:**
+- [ ] 新增功能是否需要修改现有代码？
+- [ ] 是否使用了接口/抽象类来定义扩展点？
+- [ ] 是否使用了策略模式、工厂模式等设计模式？
+
+---
+
+### L - 里氏替换原则 (Liskov Substitution Principle)
+
+**定义**: 子类必须能够替换其父类，且程序行为不变。
+
+**✅ 正确做法:**
+```python
+class Bird(ABC):
+    @abstractmethod
+    def move(self) -> None: ...
+
+class Sparrow(Bird):
+    def move(self) -> None:
+        print("Flying")
+
+class Penguin(Bird):
+    def move(self) -> None:
+        print("Swimming")  # 企鹅不会飞，但可以移动
+
+# 任何 Bird 子类都可以替换
+def let_bird_move(bird: Bird):
+    bird.move()  # 无论传入什么鸟，都能正常工作
+```
+
+**❌ 错误做法:**
+```python
+class Bird:
+    def fly(self) -> None:
+        print("Flying")
+
+class Penguin(Bird):
+    def fly(self) -> None:
+        raise Exception("Penguins can't fly!")  # 违反 LSP
+```
+
+**检查清单:**
+- [ ] 子类是否完全实现了父类的所有方法？
+- [ ] 子类的方法是否抛出父类未声明的异常？
+- [ ] 用子类替换父类后，程序是否仍然正确运行？
+
+---
+
+### I - 接口隔离原则 (Interface Segregation Principle)
+
+**定义**: 客户端不应该被迫依赖它不使用的接口。
+
+**✅ 正确做法:**
+```python
+# 拆分成小接口
+class Readable(ABC):
+    @abstractmethod
+    def read(self) -> str: ...
+
+class Writable(ABC):
+    @abstractmethod
+    def write(self, data: str) -> None: ...
+
+class Deletable(ABC):
+    @abstractmethod
+    def delete(self) -> None: ...
+
+# 只实现需要的接口
+class ReadOnlyFile(Readable):
+    def read(self) -> str: ...
+
+class FullAccessFile(Readable, Writable, Deletable):
+    def read(self) -> str: ...
+    def write(self, data: str) -> None: ...
+    def delete(self) -> None: ...
+```
+
+**❌ 错误做法:**
+```python
+# 一个大接口包含所有方法
+class FileOperations(ABC):
+    @abstractmethod
+    def read(self) -> str: ...
+    @abstractmethod
+    def write(self, data: str) -> None: ...
+    @abstractmethod
+    def delete(self) -> None: ...
+    @abstractmethod
+    def compress(self) -> None: ...
+    @abstractmethod
+    def encrypt(self) -> None: ...
+
+# 只读文件被迫实现不需要的方法
+class ReadOnlyFile(FileOperations):
+    def read(self) -> str: ...
+    def write(self, data: str) -> None:
+        raise NotImplementedError()  # 被迫实现
+    def delete(self) -> None:
+        raise NotImplementedError()  # 被迫实现
+    ...
+```
+
+**检查清单:**
+- [ ] 接口是否足够小且专注？
+- [ ] 实现类是否需要实现所有接口方法？
+- [ ] 是否有"胖接口"需要拆分？
+
+---
+
+### D - 依赖倒置原则 (Dependency Inversion Principle)
+
+**定义**: 高层模块不应该依赖低层模块，两者都应该依赖抽象。
+
+**✅ 正确做法:**
+```python
+# 定义抽象接口
+class IUserRepository(ABC):
+    @abstractmethod
+    def save(self, user: User) -> None: ...
+    @abstractmethod
+    def find_by_id(self, id: int) -> User: ...
+
+# 高层模块依赖抽象
+class UserService:
+    def __init__(self, repo: IUserRepository):  # 依赖接口
+        self._repo = repo
+    
+    def register(self, data: dict) -> User:
+        user = User(**data)
+        self._repo.save(user)
+        return user
+
+# 低层模块实现抽象
+class MySQLUserRepository(IUserRepository):
+    def save(self, user: User) -> None: ...
+    def find_by_id(self, id: int) -> User: ...
+
+# 依赖注入
+repo = MySQLUserRepository()
+service = UserService(repo)  # 注入具体实现
+```
+
+**❌ 错误做法:**
+```python
+# 高层直接依赖低层具体实现
+class UserService:
+    def __init__(self):
+        self._repo = MySQLUserRepository()  # 直接依赖具体类
+    
+    def register(self, data: dict) -> User:
+        ...
+```
+
+**检查清单:**
+- [ ] 高层模块是否依赖接口而非具体实现？
+- [ ] 是否使用依赖注入？
+- [ ] 更换底层实现时是否需要修改高层代码？
+
+---
+
+## DRY 原则 (Don't Repeat Yourself)
+
+**定义**: 每一个知识点在系统中都应该有一个单一、明确、权威的表示。
+
+**✅ 正确做法:**
+```python
+# 集中定义，复用
+class ValidationRules:
+    EMAIL_PATTERN = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    PASSWORD_MIN_LENGTH = 8
+    
+    @staticmethod
+    def validate_email(email: str) -> bool:
+        return bool(re.match(ValidationRules.EMAIL_PATTERN, email))
+
+# 各处复用
+class UserValidator:
+    def validate(self, user: User) -> bool:
+        return ValidationRules.validate_email(user.email)
+
+class AdminValidator:
+    def validate(self, admin: Admin) -> bool:
+        return ValidationRules.validate_email(admin.email)
+```
+
+**❌ 错误做法:**
+```python
+# 重复代码散落各处
+class UserValidator:
+    def validate_email(self, email: str) -> bool:
+        pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'  # 重复
+        return bool(re.match(pattern, email))
+
+class AdminValidator:
+    def validate_email(self, email: str) -> bool:
+        pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'  # 重复
+        return bool(re.match(pattern, email))
+```
+
+**检查清单:**
+- [ ] 是否有复制粘贴的代码？
+- [ ] 修改一个逻辑是否需要改多处？
+- [ ] 常量、配置是否集中管理？
+
+---
+
+## KISS 原则 (Keep It Simple, Stupid)
+
+**定义**: 保持简单，避免不必要的复杂性。
+
+**✅ 正确做法:**
+```python
+# 简单直接
+def is_adult(age: int) -> bool:
+    return age >= 18
+
+# 使用内置函数
+def get_max_value(numbers: list[int]) -> int:
+    return max(numbers)
+
+# 清晰的条件判断
+def get_discount(user: User) -> float:
+    if user.is_vip:
+        return 0.2
+    if user.orders_count > 10:
+        return 0.1
+    return 0.0
+```
+
+**❌ 错误做法:**
+```python
+# 过度设计
+class AgeCheckerFactory:
+    def create_checker(self, country: str) -> AgeChecker:
+        ...
+
+class AgeChecker(ABC):
+    @abstractmethod
+    def check(self, age: int) -> bool: ...
+
+class AdultAgeChecker(AgeChecker):
+    def __init__(self, threshold: int = 18):
+        self._threshold = threshold
+    
+    def check(self, age: int) -> bool:
+        return age >= self._threshold
+
+# 只是判断是否成年，不需要这么复杂
+
+# 过度使用设计模式
+def get_max_value(numbers: list[int]) -> int:
+    strategy = MaxValueStrategy()
+    context = CalculationContext(strategy)
+    return context.execute(numbers)
+```
+
+**检查清单:**
+- [ ] 这个设计是否是解决问题的最简单方案？
+- [ ] 是否过度使用设计模式？
+- [ ] 新人能否快速理解这段代码？
+- [ ] 是否为了"可能的未来需求"而过度设计？
+
+---
+
+## 原则优先级
+
+当原则冲突时，按以下优先级权衡：
+
+1. **KISS** - 首先保持简单
+2. **SRP** - 确保职责单一
+3. **DRY** - 消除重复
+4. **OCP/DIP** - 考虑扩展性
+5. **LSP/ISP** - 优化接口设计
+
+**记住**: 原则是指导，不是教条。根据实际场景灵活应用。
+
+---
+
+## 代码审查检查点
+
+在代码审查时，检查以下问题：
+
+| 原则 | 检查问题 |
+|------|---------|
+| SRP | 这个类/函数是否只做一件事？ |
+| OCP | 新增功能是否需要修改现有代码？ |
+| LSP | 子类是否可以安全替换父类？ |
+| ISP | 接口是否足够小且专注？ |
+| DIP | 是否依赖抽象而非具体实现？ |
+| DRY | 是否有重复代码？ |
+| KISS | 是否过度设计？ |

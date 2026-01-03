@@ -11,7 +11,15 @@ from uuid import UUID, uuid4
 
 from ...common.modules.config import settings
 from ...common.modules.supabase.service import supabase_service
-from ...common.modules.exception import AuthorizationError, AuthenticationError, ValidationError, NotFoundError, ErrorCode
+from ...common.modules.exception import (
+    AuthorizationError, 
+    AuthenticationError, 
+    ValidationError, 
+    NotFoundError, 
+    ErrorCode,
+    CMessageTemplate,
+    format_operation_failed,
+)
 from .schemas import MemberRegisterRequest
 
 from enum import Enum
@@ -82,7 +90,7 @@ class AuthService:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
             return payload
         except JWTError:
-            raise AuthorizationError("Invalid or expired token")
+            raise AuthorizationError(CMessageTemplate.AUTH_INVALID_TOKEN)
 
     async def register_member(
         self, data: MemberRegisterRequest
@@ -102,12 +110,12 @@ class AuthService:
         # Check if business number already exists - use existing method
         existing_member = await supabase_service.get_member_by_business_number(data.business_number)
         if existing_member:
-            raise ValidationError("Business number already registered")
+            raise ValidationError(CMessageTemplate.VALIDATION_BUSINESS_NUMBER_IN_USE)
 
         # Check if email already exists - use existing method
         existing_email = await supabase_service.get_member_by_email(data.email)
         if existing_email:
-            raise ValidationError("Email already registered")
+            raise ValidationError(CMessageTemplate.VALIDATION_EMAIL_IN_USE)
 
         member_id = str(uuid4())
         
@@ -136,7 +144,7 @@ class AuthService:
         # Use helper method
         member = await supabase_service.create_record('members', member_data)
         if not member:
-            raise ValidationError("Failed to create member")
+            raise ValidationError(format_operation_failed("create member"))
 
         # Send registration confirmation email in background (non-blocking)
         from ...common.modules.email import email_service
@@ -171,13 +179,13 @@ class AuthService:
         member = await supabase_service.get_member_by_business_number(business_number)
 
         if not member or not self.verify_password(password, member.get("password_hash", "")):
-            raise AuthenticationError("Invalid credentials", context={"error_code": ErrorCode.INVALID_CREDENTIALS})
+            raise AuthenticationError(CMessageTemplate.AUTH_INVALID_CREDENTIALS, context={"error_code": ErrorCode.INVALID_CREDENTIALS})
 
         if member.get("approval_status") == UserStatus.PENDING_APPROVAL.value:
-            raise AuthorizationError("Account pending approval", context={"error_code": ErrorCode.ACCOUNT_PENDING_APPROVAL})
+            raise AuthorizationError(CMessageTemplate.USER_ACCOUNT_PENDING, context={"error_code": ErrorCode.ACCOUNT_PENDING_APPROVAL})
 
         if member.get("status") in [UserStatus.SUSPENDED.value, UserStatus.DELETED.value]:
-            raise AuthorizationError("Account is suspended", context={"error_code": ErrorCode.ACCOUNT_SUSPENDED})
+            raise AuthorizationError(CMessageTemplate.USER_ACCOUNT_SUSPENDED, context={"error_code": ErrorCode.ACCOUNT_SUSPENDED})
 
         return member
 
@@ -197,7 +205,7 @@ class AuthService:
         # Use helper method
         member = await supabase_service.get_by_id('members', member_id)
         if not member:
-            raise NotFoundError("Member")
+            raise NotFoundError(resource_type="Member")
         return member
 
     async def is_admin(self, user_id: str) -> bool:
@@ -239,10 +247,10 @@ class AuthService:
         admin = await supabase_service.get_admin_by_email(email)
 
         if not admin or not self.verify_password(password, admin.get("password_hash", "")):
-            raise AuthorizationError("Invalid admin credentials", context={"error_code": ErrorCode.INVALID_ADMIN_CREDENTIALS})
+            raise AuthorizationError(CMessageTemplate.AUTH_INVALID_CREDENTIALS, context={"error_code": ErrorCode.INVALID_ADMIN_CREDENTIALS})
 
         if admin.get("is_active") in [UserStatus.SUSPENDED.value, UserStatus.DELETED.value]:
-            raise AuthorizationError("Account is suspended", context={"error_code": ErrorCode.ACCOUNT_SUSPENDED})
+            raise AuthorizationError(CMessageTemplate.USER_ACCOUNT_SUSPENDED, context={"error_code": ErrorCode.ACCOUNT_SUSPENDED})
 
         return admin
 
@@ -278,7 +286,7 @@ class AuthService:
 
         if not member or member.get("email") != email:
             # Don't reveal whether the member exists (security best practice)
-            raise NotFoundError("Member with matching email")
+            raise NotFoundError(resource_type="Member with matching email")
 
         # Generate reset token
         reset_token = self.generate_reset_token()
@@ -318,19 +326,19 @@ class AuthService:
         member = await supabase_service.get_member_by_reset_token(token)
 
         if not member:
-            raise AuthorizationError("Invalid reset token")
+            raise AuthorizationError(CMessageTemplate.USER_INVALID_RESET_TOKEN)
 
         # Check if token has expired
         token_expires_str = member.get("reset_token_expires")
         if not token_expires_str:
-            raise AuthorizationError("Reset token has expired")
+            raise AuthorizationError(CMessageTemplate.USER_RESET_TOKEN_EXPIRED)
         
         try:
             token_expires = datetime.fromisoformat(token_expires_str.replace('Z', '+00:00'))
             if token_expires < datetime.utcnow():
-                raise AuthorizationError("Reset token has expired")
+                raise AuthorizationError(CMessageTemplate.USER_RESET_TOKEN_EXPIRED)
         except (ValueError, AttributeError):
-            raise AuthorizationError("Reset token has expired")
+            raise AuthorizationError(CMessageTemplate.USER_RESET_TOKEN_EXPIRED)
 
         # Update password and clear reset token - use helper method
         update_data = {
@@ -342,7 +350,7 @@ class AuthService:
         
         updated_member = await supabase_service.update_record('members', member["id"], update_data)
         if not updated_member:
-            raise ValidationError("Failed to update password")
+            raise ValidationError(format_operation_failed("update password"))
 
         return updated_member
 
@@ -366,7 +374,7 @@ class AuthService:
         """
         # Verify current password
         if not self.verify_password(current_password, member.get("password_hash", "")):
-            raise AuthorizationError("Current password is incorrect")
+            raise AuthorizationError(CMessageTemplate.USER_CURRENT_PASSWORD_INCORRECT)
 
         # Update password - use helper method
         update_data = {
@@ -376,7 +384,7 @@ class AuthService:
         
         updated_member = await supabase_service.update_record('members', member["id"], update_data)
         if not updated_member:
-            raise ValidationError("Failed to update password")
+            raise ValidationError(format_operation_failed("update password"))
 
         return updated_member
 

@@ -81,7 +81,7 @@ class SupportService:
         # Check if FAQ exists using generic helper
         existing_faq = await supabase_service.get_by_id('faqs', str(faq_id))
         if not existing_faq:
-            raise NotFoundError("FAQ")
+            raise NotFoundError(resource_type="FAQ")
 
         # Build update data (only include non-None fields)
         update_data = {}
@@ -114,7 +114,7 @@ class SupportService:
         # Check if FAQ exists using generic helper
         existing_faq = await supabase_service.get_by_id('faqs', str(faq_id))
         if not existing_faq:
-            raise NotFoundError("FAQ")
+            raise NotFoundError(resource_type="FAQ")
         
         # Use generic hard delete method
         await supabase_service.hard_delete_record('faqs', str(faq_id))
@@ -135,7 +135,7 @@ class SupportService:
         # Use generic helper method
         faq = await supabase_service.get_by_id('faqs', str(faq_id))
         if not faq:
-            raise NotFoundError("FAQ")
+            raise NotFoundError(resource_type="FAQ")
         return faq
 
     async def list_faqs_with_pagination(

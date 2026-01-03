@@ -32,6 +32,12 @@ def _get_app_log_create():
     return AppLogCreate
 
 
+def _get_error_log_create():
+    """延迟导入避免循环依赖"""
+    from ..logger.schemas import ErrorLogCreate
+    return ErrorLogCreate
+
+
 def _get_request_context():
     """延迟导入避免循环依赖"""
     from ..logger.request import get_request_context
@@ -168,22 +174,46 @@ async def _log_method_call(
             extra_data["error_type"] = type(error).__name__
         
         # 记录日志
-        AppLogCreate = _get_app_log_create()
-        await _get_logging_service().log(AppLogCreate(
-            source="backend",
-            level=level,
-            message=message,
-            layer=layer,
-            module="src.common.modules.interceptor",
-            function=method_name,
-            line_number=line_number,
-            file_path="src/common/modules/interceptor/service.py",
-            trace_id=trace_id,
-            request_id=request_id,
-            user_id=user_id,
-            duration_ms=int(duration_ms),
-            extra_data=extra_data if extra_data else None,
-        ))
+        logging_svc = _get_logging_service()
+        
+        if error:
+            # 异常使用 ErrorLogCreate 写入 error_logs
+            ErrorLogCreate = _get_error_log_create()
+            await logging_svc.error(ErrorLogCreate(
+                source="backend",
+                level=level,
+                error_type=extra_data.get("error_type", "UnknownError") if extra_data else "UnknownError",
+                error_message=extra_data.get("error", str(error)) if extra_data else str(error),
+                layer=layer,
+                module="src.common.modules.interceptor",
+                function=method_name,
+                line_number=line_number,
+                file_path="src/common/modules/interceptor/service.py",
+                trace_id=trace_id,
+                request_id=request_id,
+                user_id=user_id,
+                duration_ms=int(duration_ms) if duration_ms else None,
+                context_data={k: v for k, v in (extra_data or {}).items() 
+                             if k not in ("error", "error_type")},
+            ))
+        else:
+            # 正常日志使用 AppLogCreate 写入 app_logs
+            AppLogCreate = _get_app_log_create()
+            await logging_svc.app(AppLogCreate(
+                source="backend",
+                level=level,
+                message=message,
+                layer=layer,
+                module="src.common.modules.interceptor",
+                function=method_name,
+                line_number=line_number,
+                file_path="src/common/modules/interceptor/service.py",
+                trace_id=trace_id,
+                request_id=request_id,
+                user_id=user_id,
+                duration_ms=int(duration_ms),
+                extra_data=extra_data if extra_data else None,
+            ))
         
     except Exception as log_exc:
         import logging

@@ -491,12 +491,15 @@ async def update_banner_by_key(
     If banner doesn't exist, creates a new one.
     If banner exists, updates it.
     """
-    from ...common.modules.exception import ValidationError
+    from ...common.modules.exception import ValidationError, CMessageTemplate
     
     # Validate banner key (直接使用前端值)
     if banner_key not in BANNER_KEYS:
         raise ValidationError(
-            f"Invalid banner_key. Must be one of: {', '.join(BANNER_KEYS)}"
+            CMessageTemplate.VALIDATION_INVALID_VALUE.format(
+                field="banner_key",
+                allowed_values=", ".join(BANNER_KEYS)
+            )
         )
     
     banner_type = banner_key  # 直接使用，无需映射
@@ -543,7 +546,9 @@ async def update_banner_by_key(
         # Create new banner
         from .schemas import BannerCreate
         if not image_url:
-            raise ValidationError("Image is required when creating a new banner")
+            raise ValidationError(
+                CMessageTemplate.VALIDATION_REQUIRED_FIELD.format(field="Image")
+            )
         
         create_data = BannerCreate(
             banner_type=banner_type,
@@ -797,10 +802,15 @@ async def get_legal_content(
     
     - **content_type**: 'terms_of_service' or 'privacy_policy'
     """
-    from ...common.modules.exception import ValidationError
+    from ...common.modules.exception import ValidationError, CMessageTemplate
     
     if content_type not in ['terms_of_service', 'privacy_policy']:
-        raise ValidationError("Invalid content_type. Must be 'terms_of_service' or 'privacy_policy'")
+        raise ValidationError(
+            CMessageTemplate.VALIDATION_INVALID_VALUE.format(
+                field="content_type",
+                allowed_values="terms_of_service, privacy_policy"
+            )
+        )
     
     legal_content = await service.get_legal_content(content_type)
     
@@ -830,10 +840,15 @@ async def update_legal_content(
     
     - **content_type**: 'terms_of_service' or 'privacy_policy'
     """
-    from ...common.modules.exception import ValidationError
+    from ...common.modules.exception import ValidationError, CMessageTemplate
     
     if content_type not in ['terms_of_service', 'privacy_policy']:
-        raise ValidationError("Invalid content_type. Must be 'terms_of_service' or 'privacy_policy'")
+        raise ValidationError(
+            CMessageTemplate.VALIDATION_INVALID_VALUE.format(
+                field="content_type",
+                allowed_values="terms_of_service, privacy_policy"
+            )
+        )
     
     legal_content = await service.update_legal_content(
         content_type=content_type,

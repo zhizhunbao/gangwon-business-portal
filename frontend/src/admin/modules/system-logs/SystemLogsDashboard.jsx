@@ -286,7 +286,7 @@ function OverviewTab({ tl, stats, healthData, dbMetrics, renderStatus, errors, s
           <div className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium text-gray-900 flex items-center gap-2">
-                �️ {tl('(overview.serverStatus') || '服务状态'}
+                🖥️ {tl('overview.serverStatus') || '服务状态'}
               </h3>
               <button onClick={goToServer} className="text-sm text-blue-600 hover:text-blue-800">
                 {tl('issues.viewAll') || '查看详情'} →

@@ -209,7 +209,8 @@
         "location": "위치",
         "noLogs": "로그 없음",
         "errorMessage": "오류 메시지",
-        "extraData": "추가 데이터"
+        "extraData": "추가 데이터",
+        "stackTrace": "예외 스택"
       },
       "pagination": {
         "info": "총 {{total}}건, {{page}}/{{totalPages}} 페이지",

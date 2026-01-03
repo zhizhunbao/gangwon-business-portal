@@ -33,6 +33,12 @@ def _get_app_log_create():
     return AppLogCreate
 
 
+def _get_error_log_create():
+    """延迟导入避免循环依赖"""
+    from ..logger.schemas import ErrorLogCreate
+    return ErrorLogCreate
+
+
 def _get_request_context():
     """延迟导入避免循环依赖"""
     from ..logger.request import get_request_context
@@ -41,7 +47,7 @@ def _get_request_context():
 
 def _get_database_error():
     """延迟导入避免循环依赖"""
-    from ..exception.exceptions import DatabaseError
+    from ..exception import DatabaseError
     return DatabaseError
 
 
@@ -115,26 +121,45 @@ class DatabaseOperationLogger:
                         if k != "extra_data":
                             extra_data[f"param_{k}"] = v
             
-            if error:
-                extra_data["error"] = str(error)
-                extra_data["error_type"] = type(error).__name__
+            logging_svc = _get_logging_service()
             
-            AppLogCreate = _get_app_log_create()
-            await _get_logging_service().log(AppLogCreate(
-                source="backend",
-                level=level,
-                message=message,
-                layer="Database",
-                module="src.common.modules.interceptor",
-                function="log_operation",
-                line_number=68,
-                file_path="src/common/modules/interceptor/database.py",
-                trace_id=context.get("trace_id"),
-                request_id=context.get("request_id"),
-                user_id=context.get("user_id"),
-                duration_ms=int(duration_ms),
-                extra_data=extra_data,
-            ))
+            if error:
+                # 异常使用 ErrorLogCreate 写入 error_logs
+                ErrorLogCreate = _get_error_log_create()
+                await logging_svc.error(ErrorLogCreate(
+                    source="backend",
+                    level=level,
+                    error_type=type(error).__name__,
+                    error_message=str(error),
+                    layer="Database",
+                    module="src.common.modules.interceptor",
+                    function="log_operation",
+                    line_number=68,
+                    file_path="src/common/modules/interceptor/database.py",
+                    trace_id=context.get("trace_id"),
+                    request_id=context.get("request_id"),
+                    user_id=context.get("user_id"),
+                    duration_ms=int(duration_ms),
+                    context_data=extra_data,
+                ))
+            else:
+                # 正常日志使用 AppLogCreate 写入 app_logs
+                AppLogCreate = _get_app_log_create()
+                await logging_svc.app(AppLogCreate(
+                    source="backend",
+                    level=level,
+                    message=message,
+                    layer="Database",
+                    module="src.common.modules.interceptor",
+                    function="log_operation",
+                    line_number=68,
+                    file_path="src/common/modules/interceptor/database.py",
+                    trace_id=context.get("trace_id"),
+                    request_id=context.get("request_id"),
+                    user_id=context.get("user_id"),
+                    duration_ms=int(duration_ms),
+                    extra_data=extra_data,
+                ))
             
         except Exception as log_exc:
             logger.error(f"Failed to log DB operation: {log_exc}", exc_info=True)
@@ -148,8 +173,8 @@ class DatabaseExceptionHandler:
     """数据库异常处理器"""
     
     def __init__(self, exception_context=None):
-        from ..exception.service import ExceptionContext
-        self._exception_context = exception_context or ExceptionContext()
+        from ..exception import DExceptionContext
+        self._exception_context = exception_context or DExceptionContext()
     
     async def handle_exception(
         self,
@@ -160,7 +185,7 @@ class DatabaseExceptionHandler:
     ):
         """处理数据库异常"""
         try:
-            from ..exception.service import exception_service, ExceptionContext
+            from ..exception import exception_service, DExceptionContext
             
             DatabaseError = _get_database_error()
             db_error = DatabaseError(
@@ -170,7 +195,7 @@ class DatabaseExceptionHandler:
                 original_exception=exception
             )
             
-            context = ExceptionContext(
+            context = DExceptionContext(
                 trace_id=self._exception_context.trace_id,
                 request_id=self._exception_context.request_id,
                 user_id=self._exception_context.user_id,
@@ -359,6 +384,3 @@ def create_unified_supabase_client(client: "Client", context=None, config: Datab
     return UnifiedSupabaseClient(client, context, config)
 
 
-# 别名，向后兼容
-DatabaseLogger = DatabaseOperationLogger
-create_unified_client = create_unified_supabase_client

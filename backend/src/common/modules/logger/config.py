@@ -1,8 +1,10 @@
 """Logging configuration and setup."""
 import json
 import logging
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import Dict, List, Optional
 
 from ..config import settings
 from .filters import SensitiveDataFilter, ContextFilter
@@ -10,6 +12,170 @@ from .formatter import JSONFormatter
 from .handlers import create_file_handler, DatabaseSystemLogHandler
 # from .handlers import create_console_handler  # Uncomment if console logging is needed
 
+
+# =============================================================================
+# LogConfig - 统一日志配置类
+# =============================================================================
+
+@dataclass
+class LogConfig:
+    """Unified log configuration class.
+    
+    Centralizes all log-related configuration with environment-based defaults.
+    
+    Attributes:
+        # Log level configuration (per log type)
+        level_app: Minimum level for app.log
+        level_error: Minimum level for error.log
+        level_audit: Minimum level for audit.log
+        level_performance: Minimum level for performance.log
+        level_system: Minimum level for system.log
+        
+        # Batch settings (for database writer)
+        batch_size: Number of logs to batch before writing
+        batch_interval: Seconds to wait before flushing batch
+        
+        # Queue settings
+        max_queue_size: Maximum queue size before dropping logs
+        
+        # Feature flags
+        db_enabled: Whether database logging is enabled
+        file_enabled: Whether file logging is enabled
+        
+    Requirements: 8.1, 8.2, 8.3, 8.4, 8.5
+    """
+    
+    # Log level configuration (per log type)
+    level_app: str = "INFO"
+    level_error: str = "INFO"
+    level_audit: str = "INFO"
+    level_performance: str = "INFO"
+    level_system: str = "INFO"
+    
+    # Database log level configuration
+    db_level_app: str = "INFO"
+    db_level_system: str = "INFO"
+    
+    # Batch settings (for database writer)
+    batch_size: int = 50
+    batch_interval: float = 5.0
+    
+    # Queue settings
+    max_queue_size: int = 10000
+    
+    # Feature flags
+    db_enabled: bool = True
+    file_enabled: bool = True
+    
+    # Sensitive fields to mask
+    sensitive_fields: List[str] = field(default_factory=lambda: [
+        "password", "token", "secret", "api_key", "authorization"
+    ])
+    
+    @classmethod
+    def from_settings(cls) -> "LogConfig":
+        """Create LogConfig from application settings.
+        
+        Reads configuration from environment variables via settings module.
+        Applies environment-based defaults (DEBUG mode vs production).
+        
+        Returns:
+            LogConfig instance with values from settings
+        """
+        is_debug = getattr(settings, "DEBUG", False)
+        
+        # Environment-based defaults
+        # Production: INFO for app/audit/error, WARNING for system/performance
+        # Development: DEBUG for app/audit/error, INFO for system/performance
+        default_app_level = "DEBUG" if is_debug else "INFO"
+        default_system_level = "INFO" if is_debug else "WARNING"
+        
+        return cls(
+            # File log levels
+            level_app=getattr(settings, "LOG_LEVEL_APP", None) or default_app_level,
+            level_error=getattr(settings, "LOG_LEVEL_ERROR", None) or default_app_level,
+            level_audit=getattr(settings, "LOG_LEVEL_AUDIT", None) or default_app_level,
+            level_performance=getattr(settings, "LOG_LEVEL_PERFORMANCE", None) or default_system_level,
+            level_system=getattr(settings, "LOG_LEVEL_SYSTEM", None) or default_system_level,
+            
+            # Database log levels
+            db_level_app=getattr(settings, "LOG_DB_APP_MIN_LEVEL", "INFO"),
+            db_level_system=getattr(settings, "LOG_DB_SYSTEM_MIN_LEVEL", "INFO"),
+            
+            # Batch settings
+            batch_size=getattr(settings, "LOG_DB_BATCH_SIZE", 50),
+            batch_interval=getattr(settings, "LOG_DB_BATCH_INTERVAL", 5.0),
+            
+            # Queue settings
+            max_queue_size=10000,  # Fixed default, not in settings
+            
+            # Feature flags
+            db_enabled=getattr(settings, "LOG_DB_ENABLED", True),
+            file_enabled=getattr(settings, "LOG_ENABLE_FILE", True),
+            
+            # Sensitive fields
+            sensitive_fields=getattr(settings, "LOG_SENSITIVE_FIELDS", [
+                "password", "token", "secret", "api_key", "authorization"
+            ]),
+        )
+    
+    def get_level_for_type(self, log_type: str) -> str:
+        """Get the file log level for a given log type.
+        
+        Args:
+            log_type: Type of log (app, error, audit, performance, system)
+            
+        Returns:
+            Log level string (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        """
+        return {
+            "app": self.level_app,
+            "error": self.level_error,
+            "audit": self.level_audit,
+            "performance": self.level_performance,
+            "system": self.level_system,
+        }.get(log_type, "INFO")
+    
+    def get_db_level_for_type(self, log_type: str) -> str:
+        """Get the database log level for a given log type.
+        
+        Args:
+            log_type: Type of log (app, error, audit, performance, system)
+            
+        Returns:
+            Log level string (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        """
+        return {
+            "app": self.db_level_app,
+            "system": self.db_level_system,
+            # Error, audit, performance don't have level filtering in DB
+            "error": "DEBUG",
+            "audit": "DEBUG",
+            "performance": "DEBUG",
+        }.get(log_type, "INFO")
+
+
+# Global config instance (lazy initialization)
+_log_config: Optional[LogConfig] = None
+
+
+def get_log_config() -> LogConfig:
+    """Get the global LogConfig instance.
+    
+    Creates the instance on first call (lazy initialization).
+    
+    Returns:
+        LogConfig instance
+    """
+    global _log_config
+    if _log_config is None:
+        _log_config = LogConfig.from_settings()
+    return _log_config
+
+
+# =============================================================================
+# Helper functions
+# =============================================================================
 
 def get_log_level(level_name: str) -> int:
     """Convert log level name to logging constant.
@@ -31,55 +197,34 @@ def get_log_level(level_name: str) -> int:
 
 
 class SystemLogFormatter(logging.Formatter):
-    """Formatter for system.log that follows LOGS_GUIDELINES.md specification."""
+    """Formatter for system.log that follows LOGS_GUIDELINES.md specification.
+    
+    Uses SystemLogCreate schema for consistent formatting with database output.
+    """
     
     def format(self, record: logging.LogRecord) -> str:
-        """Format log record as JSON following the specification."""
-        # 使用韩国时区 (UTC+9)
-        from datetime import timezone, timedelta
-        kst = timezone(timedelta(hours=9))
-        timestamp = datetime.now(kst).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        """Format log record as JSON using SystemLogCreate schema."""
+        from .schemas import SystemLogCreate
         
-        # Build module path - convert pathname to relative path or use logger name
-        module_path = self._get_module_path(record)
+        # Build module path
+        module_path = self._get_module_path(record) or ""
         
-        # Extract function name (filter out meaningless values)
-        func_name = None
+        # Extract function name
+        func_name = ""
         if record.funcName and record.funcName != "<module>":
             func_name = record.funcName
         
-        # Extract line number (filter out 0 or invalid values)
-        line_num = None
-        if record.lineno and record.lineno > 0:
-            line_num = record.lineno
+        # Extract line number
+        line_num = record.lineno if record.lineno and record.lineno > 0 else 0
         
-        # Build log entry following LOGS_GUIDELINES.md
-        log_data = {
-            "timestamp": timestamp,
-            "source": "backend",
-            "level": record.levelname,
-            "message": self._build_message(record),
-            "layer": "System",
-        }
-        
-        # Add optional fields only if they have meaningful values
-        if module_path:
-            log_data["module"] = module_path
-        if func_name:
-            log_data["function"] = func_name
-        if line_num:
-            log_data["line_number"] = line_num
-        
-        # Add extra_data for System layer
+        # Build extra_data
         extra_data = {
             "server": "uvicorn",
-            "logger_name": record.name,  # 保留原始 logger 名称
         }
         
         # Parse uvicorn startup messages for extra_data
         msg = record.getMessage()
         if "running on" in msg.lower() or "started" in msg.lower():
-            # Try to extract host:port from message
             if "http://" in msg:
                 try:
                     url_part = msg.split("http://")[1].split()[0].rstrip("()")
@@ -91,34 +236,69 @@ class SystemLogFormatter(logging.Formatter):
                     pass
             extra_data["workers"] = 1
         
-        log_data["extra_data"] = extra_data
+        # Extract file path from pathname
+        file_path = ""
+        if hasattr(record, "pathname") and record.pathname:
+            pathname = record.pathname.replace("\\", "/")
+            if "/backend/src/" in pathname:
+                file_path = "src/" + pathname.split("/backend/src/")[-1]
+            elif "/src/" in pathname:
+                file_path = "src/" + pathname.split("/src/")[-1]
         
-        return json.dumps(log_data, ensure_ascii=False, default=str)
+        # Create schema and use to_file_dict() for consistent output
+        schema = SystemLogCreate(
+            level=record.levelname,
+            message=self._build_message(record),
+            logger_name=record.name,
+            module=module_path,
+            function=func_name,
+            line_number=line_num,
+            file_path=file_path,
+            extra_data=extra_data,
+        )
+        
+        return json.dumps(schema.to_file_dict(), ensure_ascii=False, default=str)
     
     def _get_module_path(self, record: logging.LogRecord) -> str:
         """Get module path from record, converting to relative path format.
         
-        优先使用 record.name (logger 名称)，因为它反映了实际调用模块。
+        返回模块级别路径（不包含文件名），如 src.common.modules.logger
         """
-        # 优先使用 logger 名称（如 src.modules.member.router）
+        # 优先使用 logger 名称
         if record.name and record.name != "root":
-            return record.name
+            module_name = record.name
+            # 确保项目内代码有 src. 前缀
+            if module_name.startswith("common.") or module_name.startswith("modules."):
+                module_name = "src." + module_name
+            # 移除最后一级（文件名），保留模块路径
+            parts = module_name.rsplit(".", 1)
+            if len(parts) > 1:
+                return parts[0]
+            return module_name
         
         # Fallback: 从 pathname 提取相对路径
         if record.pathname:
             pathname = record.pathname.replace("\\", "/")
-            # 查找 backend/src 或 src 开头的路径
             if "/backend/src/" in pathname:
-                return pathname.split("/backend/src/")[-1].replace("/", ".").replace(".py", "")
+                rel_path = pathname.split("/backend/src/")[-1].replace("/", ".").replace(".py", "")
             elif "/src/" in pathname:
-                return pathname.split("/src/")[-1].replace("/", ".").replace(".py", "")
-            # 第三方包（site-packages）
-            if "site-packages" in pathname:
+                rel_path = pathname.split("/src/")[-1].replace("/", ".").replace(".py", "")
+            elif "site-packages" in pathname:
                 parts = pathname.split("site-packages/")
                 if len(parts) > 1:
-                    return parts[1].replace("/", ".").replace(".py", "")
+                    rel_path = parts[1].replace("/", ".").replace(".py", "")
+                else:
+                    return record.name or ""
+            else:
+                return record.name or ""
+            
+            # 移除最后一级（文件名），保留模块路径
+            parts = ("src." + rel_path).rsplit(".", 1)
+            if len(parts) > 1:
+                return parts[0]
+            return "src." + rel_path
         
-        return record.name or "unknown"
+        return record.name or ""
     
     def _build_message(self, record: logging.LogRecord) -> str:
         """Build message following System layer format: Server {event}: {detail}"""

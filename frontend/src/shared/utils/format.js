@@ -376,8 +376,8 @@ export function formatYearQuarter(year, quarter) {
 export function parseModulePath(fullPath) {
   if (!fullPath) return '-';
   
-  // Frontend bundled files
-  if (fullPath.includes('.js')) return '-';
+  // Frontend bundled files (like index-CddmaCi5.js)
+  if (/^[a-zA-Z]+-[a-zA-Z0-9]+\.js$/.test(fullPath)) return '-';
   
   let path = fullPath;
   
@@ -386,30 +386,27 @@ export function parseModulePath(fullPath) {
     // Normalize separators
     path = path.replace(/\\/g, '/');
     
-    // Remove .py extension
-    path = path.replace(/\.py$/, '');
+    // Remove .py or .js extension
+    path = path.replace(/\.(py|js|jsx)$/, '');
     
-    // Find the last 'src/' and extract from there
+    // Find the last 'src/' and extract from there, keep 'src.' prefix
     const lastSrcIdx = path.lastIndexOf('/src/');
     if (lastSrcIdx !== -1) {
-      path = path.substring(lastSrcIdx + 5); // Skip '/src/'
+      path = 'src.' + path.substring(lastSrcIdx + 5).replace(/\//g, '.');
+    } else {
+      // Convert to dot notation
+      path = path.replace(/\//g, '.');
     }
     
-    // Convert to dot notation
-    path = path.replace(/\//g, '.');
+    // Remove filename (last part after the last dot) for file paths
+    const parts = path.split('.');
+    if (parts.length > 1) {
+      return parts.slice(0, -1).join('.') || '-';
+    }
   }
   
-  // Remove 'src.' prefix if present (for dot notation paths like src.common.modules.xxx)
-  if (path.startsWith('src.')) {
-    path = path.substring(4);
-  }
-  
-  // Remove filename (last part after the last dot)
-  const parts = path.split('.');
-  if (parts.length > 1) {
-    return parts.slice(0, -1).join('.') || '-';
-  }
-  
+  // For dot notation paths (like src.common.modules.interceptor), return as-is
+  // These are already module paths without filenames
   return path || '-';
 }
 

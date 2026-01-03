@@ -13,7 +13,13 @@ from datetime import datetime
 from sqlalchemy import text
 
 from .config import get_default_config, HealthModuleConfig, ServiceConfig
-from .adapter import get_db_session_factory, get_app_version
+from .adapter import (
+    get_db_session_factory, 
+    get_app_version, 
+    is_using_supabase, 
+    get_supabase_client_instance,
+    check_database_health
+)
 
 logger = logging.getLogger(__name__)
 
@@ -160,6 +166,24 @@ class HealthService:
             return {"status": "disabled", "message": "Database metrics disabled"}
         
         try:
+            # 优先使用 Supabase 客户端
+            if is_using_supabase():
+                client = get_supabase_client_instance()
+                if client:
+                    start_time = time.time()
+                    # 测试连接响应时间
+                    result = client.table('members').select('id').limit(1).execute()
+                    response_time = round((time.time() - start_time) * 1000, 2)
+                    
+                    return {
+                        "status": "healthy",
+                        "responseTimeMs": response_time,
+                        "type": "supabase",
+                        "note": "Detailed metrics not available via Supabase REST API",
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+            
+            # 回退到 SQLAlchemy 获取详细指标
             async with await cls._get_db_session() as session:
                 # 测试连接响应时间
                 start_time = time.time()
@@ -226,8 +250,24 @@ class HealthService:
     
     @classmethod
     async def _check_database(cls) -> Dict[str, Any]:
-        """检查数据库连接"""
+        """检查数据库连接 - 优先使用 Supabase"""
         try:
+            # 优先使用 Supabase 客户端（REST API，更快）
+            if is_using_supabase():
+                client = get_supabase_client_instance()
+                if client:
+                    start_time = time.time()
+                    # 简单查询测试连接
+                    result = client.table('members').select('id').limit(1).execute()
+                    response_time = round((time.time() - start_time) * 1000, 2)
+                    
+                    return {
+                        "status": "healthy" if response_time < 1000 else "degraded",
+                        "responseTimeMs": response_time,
+                        "type": "supabase"
+                    }
+            
+            # 回退到 SQLAlchemy
             async with await cls._get_db_session() as session:
                 start_time = time.time()
                 await session.execute(text("SELECT 1"))

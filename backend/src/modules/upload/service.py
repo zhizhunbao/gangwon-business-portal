@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 from ...common.modules.supabase.service import supabase_service
 from ...common.modules.storage import storage_service
 from ...common.modules.config import settings
-from ...common.modules.exception import NotFoundError, AuthenticationError, ValidationError
+from ...common.modules.exception import NotFoundError, AuthorizationError, ValidationError, CMessageTemplate
 
 
 class UploadService:
@@ -55,7 +55,10 @@ class UploadService:
             max_size_mb = max_size / 1024 / 1024
             file_size_mb = size / 1024 / 1024
             raise ValidationError(
-                f"File size ({file_size_mb:.2f}MB) exceeds maximum allowed size of {max_size_mb}MB for {file_category} files"
+                CMessageTemplate.VALIDATION_FILE_SIZE.format(
+                    actual_size=f"{file_size_mb:.2f}",
+                    max_size=f"{max_size_mb:.0f}"
+                )
             )
 
         # Validate file extension
@@ -74,26 +77,42 @@ class UploadService:
             
             if file_ext not in allowed_extensions:
                 raise ValidationError(
-                    f"File extension '{file_ext}' is not allowed for {file_category} files. Allowed extensions: {', '.join(allowed_extensions)}"
+                    CMessageTemplate.VALIDATION_FILE_EXTENSION.format(
+                        extension=file_ext,
+                        allowed_extensions=", ".join(allowed_extensions)
+                    )
                 )
 
         # Validate MIME type
         if file.content_type:
             # Basic MIME type validation
             if file_category == "image" and not file.content_type.startswith("image/"):
-                raise ValidationError(f"MIME type '{file.content_type}' is not allowed for image files")
+                raise ValidationError(
+                    CMessageTemplate.UPLOAD_MIME_TYPE_NOT_ALLOWED.format(
+                        mime_type=file.content_type,
+                        file_category="image"
+                    )
+                )
             elif file_category == "document" and not (
                 file.content_type.startswith("application/") or 
                 file.content_type.startswith("text/") or
                 file.content_type == "application/pdf"
             ):
-                raise ValidationError(f"MIME type '{file.content_type}' is not allowed for document files")
+                raise ValidationError(
+                    CMessageTemplate.UPLOAD_MIME_TYPE_NOT_ALLOWED.format(
+                        mime_type=file.content_type,
+                        file_category="document"
+                    )
+                )
             
             # Additional validation against allowed types list (for backward compatibility)
             allowed_types = [t.strip() for t in settings.ALLOWED_FILE_TYPES.split(",")]
             if file.content_type not in allowed_types and file_category == "general":
                 raise ValidationError(
-                    f"File type '{file.content_type}' is not allowed. Allowed types: {settings.ALLOWED_FILE_TYPES}"
+                    CMessageTemplate.VALIDATION_FILE_TYPE.format(
+                        file_type=file.content_type,
+                        allowed_types=settings.ALLOWED_FILE_TYPES
+                    )
                 )
 
     def _determine_file_category(self, file: UploadFile) -> str:
@@ -215,7 +234,9 @@ class UploadService:
 
         attachment = await supabase_service.create_record('attachments', attachment_data)
         if not attachment:
-            raise ValidationError("Failed to create attachment record")
+            raise ValidationError(
+                CMessageTemplate.VALIDATION_OPERATION_FAILED.format(operation="create attachment record")
+            )
 
         return attachment
 
@@ -291,7 +312,9 @@ class UploadService:
 
         attachment = await supabase_service.create_record('attachments', attachment_data)
         if not attachment:
-            raise ValidationError("Failed to create attachment record")
+            raise ValidationError(
+                CMessageTemplate.VALIDATION_OPERATION_FAILED.format(operation="create attachment record")
+            )
 
         return attachment
 
@@ -318,7 +341,7 @@ class UploadService:
         attachment = await supabase_service.get_by_id('attachments', str(file_id))
 
         if not attachment:
-            raise NotFoundError("File not found")
+            raise NotFoundError(CMessageTemplate.UPLOAD_FILE_NOT_FOUND)
 
         # Check permissions
         # For public files, anyone can access
@@ -349,7 +372,9 @@ class UploadService:
                 has_permission = True
 
             if not has_permission:
-                raise AuthenticationError("You don't have permission to access this file")
+                raise AuthorizationError(
+                    CMessageTemplate.AUTHZ_NO_PERMISSION.format(action="access this file")
+                )
 
         # Generate download URL
         if attachment.get("resource_type") == "public" or attachment.get("file_url", "").startswith("http"):
@@ -373,7 +398,11 @@ class UploadService:
             except ValueError as e:
                 error_msg = str(e)
                 if "Object not found" in error_msg or "404" in error_msg:
-                    raise NotFoundError(f"文件不存在或已被删除: {attachment.get('original_name', path)}")
+                    raise NotFoundError(
+                        CMessageTemplate.UPLOAD_FILE_DELETED.format(
+                            filename=attachment.get('original_name', path)
+                        )
+                    )
                 raise
 
         # Return attachment with modified file_url
@@ -403,7 +432,7 @@ class UploadService:
         attachment = await supabase_service.get_by_id('attachments', str(file_id))
 
         if not attachment:
-            raise NotFoundError("File not found")
+            raise NotFoundError(CMessageTemplate.UPLOAD_FILE_NOT_FOUND)
 
         # Check permissions
         from ...modules.user.service import AuthService
@@ -411,7 +440,9 @@ class UploadService:
         is_admin = await auth_service.is_admin(user["id"])
 
         if not is_admin and attachment.get("resource_id") != user["id"]:
-            raise AuthenticationError("You don't have permission to delete this file")
+            raise AuthorizationError(
+                CMessageTemplate.AUTHZ_NO_PERMISSION.format(action="delete this file")
+            )
 
         # Determine bucket and path
         project_prefix = "gangwon-portal"
@@ -463,7 +494,9 @@ class UploadService:
         # Delete from database - use helper method
         success = await supabase_service.delete_record('attachments', str(file_id))
         if not success:
-            raise ValidationError("Failed to delete attachment record")
+            raise ValidationError(
+                CMessageTemplate.VALIDATION_OPERATION_FAILED.format(operation="delete attachment record")
+            )
 
         return True
 

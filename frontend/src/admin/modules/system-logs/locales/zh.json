@@ -209,6 +209,7 @@
         "noLogs": "暂无日志",
         "errorMessage": "错误信息",
         "extraData": "额外数据",
+        "stackTrace": "异常堆栈",
         "time": "时间"
       },
       "pagination": {

@@ -14,17 +14,17 @@ class ServiceConfig(BaseModel):
     url: str
     type: str = "api"  # api, static, database
     health_endpoint: Optional[str] = None  # 自定义健康检查端点
-    timeout: float = 5.0  # Reduced from 10.0 to fail faster on cold starts
+    timeout: float = 3.0  # Reduced from 5.0 to fail faster on cold starts
 
 
 class HealthModuleConfig(BaseModel):
     """健康检查模块配置"""
     
     # 缓存配置
-    cache_ttl: int = 30
+    cache_ttl: int = 60  # Increased from 30 to reduce external service checks
     
     # 检查超时
-    default_timeout: float = 5.0  # Reduced from 10.0 for faster failure on cold starts
+    default_timeout: float = 3.0  # Reduced from 5.0 for faster failure on cold starts
     
     # 外部服务配置（如 Render 部署的服务）
     external_services: Dict[str, ServiceConfig] = {}
@@ -69,8 +69,8 @@ def get_default_config() -> HealthModuleConfig:
             }
         
         _default_config = HealthModuleConfig(
-            cache_ttl=int(os.getenv("HEALTH_CACHE_TTL", "30")),
-            default_timeout=float(os.getenv("HEALTH_TIMEOUT", "10.0")),
+            cache_ttl=int(os.getenv("HEALTH_CACHE_TTL", "60")),  # Cache for 60s to reduce DB queries
+            default_timeout=float(os.getenv("HEALTH_TIMEOUT", "5.0")),
             external_services=external_services,
             enable_database_metrics=os.getenv("HEALTH_ENABLE_DB_METRICS", "true").lower() == "true",
             enable_external_services=os.getenv("HEALTH_ENABLE_EXTERNAL", "true").lower() == "true",

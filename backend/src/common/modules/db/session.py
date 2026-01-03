@@ -30,41 +30,60 @@ from ..config import settings
 
 
 # ============================================================================
-# Database Connection (Direct Connection, No Pooling)
+# Database Connection
 # ============================================================================
 #
 # Connection Strategy:
-#   - Uses NullPool for direct connections (no connection pooling)
-#   - Each connection is automatically closed after use
-#   - Prefers DIRECT_URL (direct Postgres connection, bypasses PgBouncer)
-#   - Falls back to DATABASE_URL if DIRECT_URL is not configured
+#   - Uses DATABASE_URL for runtime (with PgBouncer pooling on port 6543)
+#   - DIRECT_URL is reserved for migrations only (Alembic needs direct connection)
+#   - When using PgBouncer: NullPool is required (PgBouncer handles pooling)
+#   - When using direct connection: SQLAlchemy pooling for better performance
 #   - Supports raw SQL execution: session.execute(text("SELECT ..."))
 #
 # Performance Considerations:
-#   - NullPool is simpler but may have higher connection overhead
-#   - Suitable for low to moderate traffic scenarios
-#   - For high-traffic scenarios, consider using connection pooling
+#   - PgBouncer reduces connection overhead significantly
+#   - For Supabase: always use port 6543 (pooler) for runtime
 # ============================================================================
 
-# Get database URL (prefer direct connection URL)
-database_url = settings.DIRECT_URL or settings.DATABASE_URL
+# Get database URL
+# For runtime: prefer DATABASE_URL (with PgBouncer pooling)
+# DIRECT_URL is only for migrations (Alembic) that need direct connection
+database_url = settings.DATABASE_URL
 
 # Ensure asyncpg driver is used for async operations
 # Convert postgresql:// or postgres:// to postgresql+asyncpg://
 if database_url.startswith("postgresql://") or database_url.startswith("postgres://"):
     database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1).replace("postgres://", "postgresql+asyncpg://", 1)
 
-# Create async database engine with NullPool (no connection pooling)
-# Each connection is created on demand and closed after use
-engine = create_async_engine(
-    database_url,
-    echo=False,  # Disable SQL query logging (use logging config instead)
-    future=True,  # Use SQLAlchemy 2.0 style
-    poolclass=NullPool,  # Disable connection pooling - direct connections only
-    connect_args={
-        "statement_cache_size": 0,  # Disable statement cache for simplicity
-    },
-)
+# Check if using PgBouncer (transaction mode) - detected by port 6543
+is_pgbouncer = ":6543" in database_url
+
+# Create async database engine
+# - With PgBouncer: use NullPool (PgBouncer handles pooling)
+# - Without PgBouncer: use connection pooling for better performance
+if is_pgbouncer:
+    # PgBouncer mode: NullPool required (PgBouncer manages connections)
+    engine = create_async_engine(
+        database_url,
+        echo=False,
+        future=True,
+        poolclass=NullPool,
+        connect_args={
+            "statement_cache_size": 0,  # Required for PgBouncer transaction mode
+        },
+    )
+else:
+    # Direct connection mode: use connection pooling
+    engine = create_async_engine(
+        database_url,
+        echo=False,
+        future=True,
+        pool_size=5,  # Maintain 5 connections
+        max_overflow=10,  # Allow up to 15 total connections
+        pool_timeout=30,  # Wait up to 30s for a connection
+        pool_recycle=1800,  # Recycle connections after 30 minutes
+        pool_pre_ping=True,  # Verify connections before use
+    )
 
 
 # ============================================================================

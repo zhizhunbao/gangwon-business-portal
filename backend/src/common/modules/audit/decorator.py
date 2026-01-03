@@ -74,6 +74,30 @@ def audit_log(
             ...
     """
     def decorator(func: Callable) -> Callable:
+        # 在装饰时获取被装饰函数的信息
+        import inspect
+        func_module = func.__module__ or ""
+        func_name = func.__name__ or ""
+        try:
+            source_file = inspect.getfile(func)
+            source_file = source_file.replace("\\", "/")
+            if "/backend/src/" in source_file:
+                func_file_path = source_file.split("/backend/")[-1]
+                func_module_path = "src." + source_file.split("/backend/src/")[-1].replace("/", ".").replace(".py", "")
+            elif "/src/" in source_file:
+                func_file_path = "src/" + source_file.split("/src/")[-1]
+                func_module_path = "src." + source_file.split("/src/")[-1].replace("/", ".").replace(".py", "")
+            else:
+                func_file_path = source_file
+                func_module_path = func_module
+            
+            # 获取函数定义的行号
+            func_line_number = inspect.getsourcelines(func)[1]
+        except (TypeError, OSError):
+            func_file_path = ""
+            func_module_path = func_module
+            func_line_number = 0
+        
         @wraps(func)
         async def wrapper(*args, **kwargs):
             # Execute the original function
@@ -246,6 +270,10 @@ def audit_log(
                     request_id=request_id,
                     request_method=request_method,
                     request_path=request_path,
+                    module=func_module_path,
+                    function=func_name,
+                    line_number=func_line_number,
+                    file_path=func_file_path,
                 )
             except Exception as e:
                 # Log error but don't fail the operation

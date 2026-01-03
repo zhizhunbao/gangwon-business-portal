@@ -1,11 +1,7 @@
-"""
-Global exception handlers for FastAPI application.
+"""Global exception handlers for FastAPI application.
 
-This module provides centralized exception handling for all types of exceptions
-that can occur in the application, ensuring consistent error responses and
-proper logging/monitoring.
+Provides centralized exception handling for all types of exceptions.
 """
-import traceback
 from typing import Union, Dict, Any
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
@@ -13,10 +9,11 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from pydantic import ValidationError as PydanticValidationError
 
-from ..logger.request import get_trace_id, get_request_id
-from .service import exception_service, ExceptionContext
-from .exceptions import (
-    BaseCustomException,
+from ...logger.request import get_trace_id, get_request_id
+from .._04_services import exception_service
+from .._01_contracts import DExceptionContext
+from .._03_impls import (
+    AbstractCustomException,
     ValidationError,
     AuthenticationError,
     AuthorizationError,
@@ -24,27 +21,13 @@ from .exceptions import (
     ConflictError,
     RateLimitError,
     DatabaseError,
-    ExternalServiceError,
     InternalError,
 )
 
 
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """
-    Handle all unhandled exceptions in the application.
-    
-    This is the catch-all handler for any exception that isn't handled by
-    more specific handlers.
-    
-    Args:
-        request: The FastAPI request object
-        exc: The unhandled exception
-    
-    Returns:
-        JSONResponse: Standardized error response
-    """
-    # Extract context information
-    context = ExceptionContext(
+    """Handle all unhandled exceptions in the application."""
+    context = DExceptionContext(
         trace_id=get_trace_id(request),
         request_id=get_request_id(request),
         user_id=getattr(request.state, 'user_id', None),
@@ -55,23 +38,18 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
         }
     )
     
-    # Record the exception
     try:
         await exception_service.record_exception(exc, context, source="backend")
     except Exception as log_exc:
-        # Don't let logging failures break error handling
         import logging
         logging.error(f"Failed to record exception: {log_exc}", exc_info=True)
     
-    # Classify and handle the exception
     classified_exc = exception_service.classify_exception(exc)
     
-    # Build error response
     error_response = {
         "error": classified_exc.to_dict(),
         "trace_id": str(context.trace_id) if context.trace_id else None,
         "request_id": context.request_id,
-        "timestamp": context.additional_data.get('timestamp') if context.additional_data else None,
     }
     
     return JSONResponse(
@@ -80,19 +58,9 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
     )
 
 
-async def custom_exception_handler(request: Request, exc: BaseCustomException) -> JSONResponse:
-    """
-    Handle custom application exceptions.
-    
-    Args:
-        request: The FastAPI request object
-        exc: The custom exception
-    
-    Returns:
-        JSONResponse: Standardized error response
-    """
-    # Extract context information
-    context = ExceptionContext(
+async def custom_exception_handler(request: Request, exc: AbstractCustomException) -> JSONResponse:
+    """Handle custom application exceptions."""
+    context = DExceptionContext(
         trace_id=get_trace_id(request),
         request_id=get_request_id(request),
         user_id=getattr(request.state, 'user_id', None),
@@ -103,20 +71,16 @@ async def custom_exception_handler(request: Request, exc: BaseCustomException) -
         }
     )
     
-    # Record the exception
     try:
         await exception_service.record_exception(exc, context, source="backend")
     except Exception as log_exc:
-        # Don't let logging failures break error handling
         import logging
         logging.error(f"Failed to record exception: {log_exc}", exc_info=True)
     
-    # Build error response
     error_response = {
         "error": exc.to_dict(),
         "trace_id": str(context.trace_id) if context.trace_id else None,
         "request_id": context.request_id,
-        "timestamp": context.additional_data.get('timestamp') if context.additional_data else None,
     }
     
     return JSONResponse(
@@ -125,33 +89,24 @@ async def custom_exception_handler(request: Request, exc: BaseCustomException) -
     )
 
 
-async def validation_exception_handler(request: Request, exc: Union[RequestValidationError, PydanticValidationError]) -> JSONResponse:
-    """
-    Handle validation exceptions from FastAPI/Pydantic.
-    
-    Args:
-        request: The FastAPI request object
-        exc: The validation exception
-    
-    Returns:
-        JSONResponse: Structured validation error response
-    """
-    # Extract field errors
+async def validation_exception_handler(
+    request: Request, 
+    exc: Union[RequestValidationError, PydanticValidationError]
+) -> JSONResponse:
+    """Handle validation exceptions from FastAPI/Pydantic."""
     field_errors = {}
     if hasattr(exc, 'errors'):
         for error in exc.errors():
             field_path = '.'.join(str(loc) for loc in error['loc'])
             field_errors[field_path] = error['msg']
     
-    # Create custom validation error
     validation_error = ValidationError(
         message="Validation failed",
         field_errors=field_errors,
         original_exception=exc
     )
     
-    # Extract context information
-    context = ExceptionContext(
+    context = DExceptionContext(
         trace_id=get_trace_id(request),
         request_id=get_request_id(request),
         user_id=getattr(request.state, 'user_id', None),
@@ -162,20 +117,16 @@ async def validation_exception_handler(request: Request, exc: Union[RequestValid
         }
     )
     
-    # Record the exception
     try:
         await exception_service.record_exception(validation_error, context, source="backend")
     except Exception as log_exc:
-        # Don't let logging failures break error handling
         import logging
         logging.error(f"Failed to record exception: {log_exc}", exc_info=True)
     
-    # Build error response
     error_response = {
         "error": validation_error.to_dict(),
         "trace_id": str(context.trace_id) if context.trace_id else None,
         "request_id": context.request_id,
-        "timestamp": context.additional_data.get('timestamp') if context.additional_data else None,
     }
     
     return JSONResponse(
@@ -184,18 +135,11 @@ async def validation_exception_handler(request: Request, exc: Union[RequestValid
     )
 
 
-async def http_exception_handler(request: Request, exc: Union[HTTPException, StarletteHTTPException]) -> JSONResponse:
-    """
-    Handle HTTP exceptions (404, 401, etc.).
-    
-    Args:
-        request: The FastAPI request object
-        exc: The HTTP exception
-    
-    Returns:
-        JSONResponse: Standardized HTTP error response
-    """
-    # Map HTTP status codes to custom exceptions
+async def http_exception_handler(
+    request: Request, 
+    exc: Union[HTTPException, StarletteHTTPException]
+) -> JSONResponse:
+    """Handle HTTP exceptions (404, 401, etc.)."""
     status_code = exc.status_code
     detail = exc.detail if hasattr(exc, 'detail') else str(exc)
     
@@ -212,8 +156,7 @@ async def http_exception_handler(request: Request, exc: Union[HTTPException, Sta
     else:
         custom_exc = InternalError(detail)
     
-    # Extract context information
-    context = ExceptionContext(
+    context = DExceptionContext(
         trace_id=get_trace_id(request),
         request_id=get_request_id(request),
         user_id=getattr(request.state, 'user_id', None),
@@ -224,20 +167,16 @@ async def http_exception_handler(request: Request, exc: Union[HTTPException, Sta
         }
     )
     
-    # Record the exception
     try:
         await exception_service.record_exception(custom_exc, context, source="backend")
     except Exception as log_exc:
-        # Don't let logging failures break error handling
         import logging
         logging.error(f"Failed to record exception: {log_exc}", exc_info=True)
     
-    # Build error response
     error_response = {
         "error": custom_exc.to_dict(),
         "trace_id": str(context.trace_id) if context.trace_id else None,
         "request_id": context.request_id,
-        "timestamp": context.additional_data.get('timestamp') if context.additional_data else None,
     }
     
     return JSONResponse(
@@ -247,24 +186,13 @@ async def http_exception_handler(request: Request, exc: Union[HTTPException, Sta
 
 
 async def database_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """
-    Handle database-related exceptions.
-    
-    Args:
-        request: The FastAPI request object
-        exc: The database exception
-    
-    Returns:
-        JSONResponse: Database error response
-    """
-    # Create database error
+    """Handle database-related exceptions."""
     db_error = DatabaseError(
         message="Database operation failed",
         original_exception=exc
     )
     
-    # Extract context information
-    context = ExceptionContext(
+    context = DExceptionContext(
         trace_id=get_trace_id(request),
         request_id=get_request_id(request),
         user_id=getattr(request.state, 'user_id', None),
@@ -275,15 +203,12 @@ async def database_exception_handler(request: Request, exc: Exception) -> JSONRe
         }
     )
     
-    # Record the exception
     try:
         await exception_service.record_exception(db_error, context, source="backend")
     except Exception as log_exc:
-        # Don't let logging failures break error handling
         import logging
         logging.error(f"Failed to record exception: {log_exc}", exc_info=True)
     
-    # Build error response (don't expose internal database details)
     error_response = {
         "error": {
             "type": "DatabaseError",
@@ -292,7 +217,6 @@ async def database_exception_handler(request: Request, exc: Exception) -> JSONRe
         },
         "trace_id": str(context.trace_id) if context.trace_id else None,
         "request_id": context.request_id,
-        "timestamp": context.additional_data.get('timestamp') if context.additional_data else None,
     }
     
     return JSONResponse(
@@ -302,48 +226,25 @@ async def database_exception_handler(request: Request, exc: Exception) -> JSONRe
 
 
 def register_exception_handlers(app):
-    """
-    Register all exception handlers with the FastAPI application.
-    
-    Args:
-        app: The FastAPI application instance
-    """
-    # Custom exception handlers (most specific first)
-    app.add_exception_handler(BaseCustomException, custom_exception_handler)
+    """Register all exception handlers with the FastAPI application."""
+    app.add_exception_handler(AbstractCustomException, custom_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(PydanticValidationError, validation_exception_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
-    
-    # Database exception handlers (add specific database exception types as needed)
-    # app.add_exception_handler(DatabaseSpecificException, database_exception_handler)
-    
-    # Global catch-all handler (least specific, handles everything else)
     app.add_exception_handler(Exception, global_exception_handler)
 
 
-# Exception handler utilities
 def create_error_response(
-    exception: BaseCustomException,
+    exception: AbstractCustomException,
     trace_id: str = None,
     request_id: str = None
 ) -> Dict[str, Any]:
-    """
-    Create a standardized error response dictionary.
-    
-    Args:
-        exception: The exception to create response for
-        trace_id: Optional trace ID for correlation
-        request_id: Optional request ID for correlation
-    
-    Returns:
-        Dict: Standardized error response
-    """
+    """Create a standardized error response dictionary."""
     return {
         "error": exception.to_dict(),
         "trace_id": trace_id,
         "request_id": request_id,
-        "timestamp": None,  # Will be set by the handler
     }
 
 
@@ -357,7 +258,6 @@ def is_server_error(status_code: int) -> bool:
     return 500 <= status_code < 600
 
 
-def should_log_stack_trace(exception: BaseCustomException) -> bool:
+def should_log_stack_trace(exception: AbstractCustomException) -> bool:
     """Determine if stack trace should be logged for this exception."""
-    # Don't log stack traces for client errors (4xx)
     return not is_client_error(exception.http_status_code)

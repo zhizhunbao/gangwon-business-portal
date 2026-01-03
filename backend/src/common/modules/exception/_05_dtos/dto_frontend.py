@@ -1,8 +1,6 @@
-"""
-Exception schemas.
+"""Frontend exception DTOs.
 
-Pydantic models for application exception API requests.
-Database-related response schemas removed (table dropped).
+Pydantic models for frontend exception API requests/responses.
 """
 from typing import Optional, Any, Union, List
 from pydantic import BaseModel, Field, field_validator
@@ -16,7 +14,7 @@ class FrontendExceptionCreate(BaseModel):
     error_code: Optional[str] = None
     status_code: Optional[int] = None
     trace_id: Optional[str] = None
-    user_id: Optional[Union[str, int]] = None  # Accept string or number, will be converted to UUID
+    user_id: Optional[Union[str, int]] = None
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     request_method: Optional[str] = None
@@ -32,16 +30,12 @@ class FrontendExceptionCreate(BaseModel):
         """Convert user_id from number to string if needed."""
         if v is None:
             return None
-        # Convert number to string, or keep string as is
         return str(v) if isinstance(v, (int, float)) else v
 
 
 class FrontendExceptionBatch(BaseModel):
     """Schema for batch frontend exception reporting."""
     
-    # 支持两种格式：
-    # 1. { exceptions: [...] } - 批量格式
-    # 2. { exception: {...} } - 单条格式（前端实际发送的格式）
     exceptions: Optional[List[dict]] = Field(None, description="Array of exception objects from frontend")
     exception: Optional[dict] = Field(None, description="Single exception object from frontend")
     metadata: Optional[dict] = Field(None, description="Batch metadata (size, timestamp, etc.)")

@@ -125,7 +125,7 @@ class ContentService:
         # Use helper method to get notice
         notice = await supabase_service.get_by_id('notices', str(notice_id))
         if not notice:
-            raise NotFoundError("Notice")
+            raise NotFoundError(resource_type="Notice")
         
         # Increment view count - use direct client for atomic operation
         supabase_service.client.table('notices')\
@@ -175,7 +175,7 @@ class ContentService:
         # Check if notice exists
         existing_notice = await supabase_service.get_by_id('notices', str(notice_id))
         if not existing_notice:
-            raise NotFoundError("Notice")
+            raise NotFoundError(resource_type="Notice")
 
         # Build update data
         update_data = {}
@@ -205,7 +205,7 @@ class ContentService:
         # Check if notice exists
         existing_notice = await supabase_service.get_by_id('notices', str(notice_id))
         if not existing_notice:
-            raise NotFoundError("Notice")
+            raise NotFoundError(resource_type="Notice")
 
         # Use helper method for soft delete
         await supabase_service.delete_record('notices', str(notice_id))
@@ -270,7 +270,7 @@ class ContentService:
         # Use helper method
         press = await supabase_service.get_by_id('press_releases', str(press_id))
         if not press:
-            raise NotFoundError("Press Release")
+            raise NotFoundError(resource_type="Press Release")
         return press
 
     async def create_press_release(self, data: PressReleaseCreate) -> Dict[str, Any]:
@@ -309,7 +309,7 @@ class ContentService:
         # Check if press release exists
         existing_press = await supabase_service.get_by_id('press_releases', str(press_id))
         if not existing_press:
-            raise NotFoundError("Press Release")
+            raise NotFoundError(resource_type="Press Release")
 
         # Build update data
         update_data = {}
@@ -339,7 +339,7 @@ class ContentService:
         # Check if press release exists
         existing_press = await supabase_service.get_by_id('press_releases', str(press_id))
         if not existing_press:
-            raise NotFoundError("Press Release")
+            raise NotFoundError(resource_type="Press Release")
 
         # Use helper method for soft delete
         await supabase_service.delete_record('press_releases', str(press_id))
@@ -458,7 +458,7 @@ class ContentService:
         # Check if banner exists
         existing_banner = await supabase_service.get_by_id('banners', str(banner_id))
         if not existing_banner:
-            raise NotFoundError("Banner")
+            raise NotFoundError(resource_type="Banner")
 
         # Build update data
         update_data = {}
@@ -500,7 +500,7 @@ class ContentService:
         # Check if banner exists
         existing_banner = await supabase_service.get_by_id('banners', str(banner_id))
         if not existing_banner:
-            raise NotFoundError("Banner")
+            raise NotFoundError(resource_type="Banner")
 
         # Use helper method for hard delete
         await supabase_service.hard_delete_record('banners', str(banner_id))

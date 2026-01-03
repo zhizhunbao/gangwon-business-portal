@@ -536,17 +536,32 @@ class AdminService {
       const result = {
         logs: response.items.map((item) => ({
           id: item.id,
+          // 通用字段
+          source: item.source || 'backend',
+          level: item.level || 'INFO',
+          message: item.message || '',
+          layer: item.layer || 'Auth',
+          module: item.module || '',
+          function: item.function || '',
+          lineNumber: item.line_number || 0,
+          filePath: item.file_path || '',
+          // 追踪字段
+          traceId: item.trace_id || '',
+          requestId: item.request_id || '',
           userId: item.user_id,
-          action: item.action || item.extra_data?.action,
-          resourceType: item.resource_type || item.extra_data?.resource_type,
-          resourceId: item.resource_id || item.extra_data?.resource_id,
-          ipAddress: item.ip_address || item.extra_data?.ip_address,
-          userAgent: item.user_agent || item.extra_data?.user_agent,
+          durationMs: item.duration_ms,
+          // 扩展字段
+          extraData: item.extra_data,
+          // 兼容旧字段（从 extra_data 提取）
+          action: item.extra_data?.action || '',
+          resourceType: item.extra_data?.resource_type || '',
+          resourceId: item.extra_data?.resource_id || '',
+          ipAddress: item.extra_data?.ip_address || '',
+          userAgent: item.extra_data?.user_agent || '',
+          // 时间戳
           createdAt: item.created_at,
           userEmail: item.user_email,
           userCompanyName: item.user_company_name,
-          message: item.message,
-          extraData: item.extra_data,
         })),
         pagination: {
           total: response.total,

@@ -3,15 +3,18 @@ Member router.
 
 API endpoints for member management.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi import APIRouter, Depends, Query, Response, status
 from typing import Optional
-from math import ceil
-from datetime import datetime, date
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import Request
 
 from ...common.modules.audit import audit_log
+from ...common.modules.exception import (
+    ExternalServiceError,
+    CMessageTemplate,
+)
 
 from ...common.modules.integrations.nice_dnb import nice_dnb_client
 from .schemas import (
@@ -409,9 +412,11 @@ async def search_nice_dnb(
     """
     # Check if API is configured
     if not nice_dnb_client._is_configured():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Nice D&B API is not configured. Please set NICE_DNB_API_KEY and NICE_DNB_API_SECRET_KEY environment variables.",
+        raise ExternalServiceError(
+            message=CMessageTemplate.EXTERNAL_SERVICE_NOT_CONFIGURED.format(
+                service_name="Nice D&B API"
+            ),
+            service_name="Nice D&B",
         )
     
     # Clean business number (remove hyphens)
@@ -422,9 +427,11 @@ async def search_nice_dnb(
     
     if not response:
         # API request failed (network error, authentication error, etc.)
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Nice D&B API request failed. Please check the API configuration, network connection, or try again later.",
+        raise ExternalServiceError(
+            message=CMessageTemplate.EXTERNAL_SERVICE_REQUEST_FAILED.format(
+                service_name="Nice D&B API"
+            ),
+            service_name="Nice D&B",
         )
     
     # Prepare response data for frontend
