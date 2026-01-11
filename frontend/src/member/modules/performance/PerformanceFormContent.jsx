@@ -15,7 +15,7 @@ import Select from '@shared/components/Select';
 import { Tabs, Modal, ModalFooter } from '@shared/components';
 import { performanceService } from '@shared/services';
 import { useUpload } from '@shared/hooks';
-import { deepSnakeToCamel } from '@shared/utils/helpers';
+import { toCamelCase } from '@shared/utils/helpers';
 import { 
   DocumentIcon,
   CheckCircleIcon, 
@@ -74,13 +74,13 @@ export default function PerformanceFormContent() {
       
       // Convert snake_case keys to camelCase for frontend use
       const salesEmploymentData = dataJson.sales_employment 
-        ? deepSnakeToCamel(dataJson.sales_employment) 
+        ? toCamelCase(dataJson.sales_employment) 
         : formData.salesEmployment;
       const governmentSupportData = dataJson.government_support 
-        ? deepSnakeToCamel(dataJson.government_support) 
+        ? toCamelCase(dataJson.government_support) 
         : [];
       const intellectualPropertyData = dataJson.intellectual_property 
-        ? deepSnakeToCamel(dataJson.intellectual_property) 
+        ? toCamelCase(dataJson.intellectual_property) 
         : [];
       
       setFormData({

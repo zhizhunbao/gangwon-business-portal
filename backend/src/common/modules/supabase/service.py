@@ -321,7 +321,9 @@ class SupabaseService:
             'region', 'address', 'representative', 'representative_birth_date',
             'representative_gender', 'legal_number', 'phone', 'website', 'logo_url',
             'contact_person_name', 'contact_person_department', 'contact_person_position',
-            'main_business', 'description', 'cooperation_fields'
+            'main_business', 'description', 'cooperation_fields',
+            'startup_type', 'ksic_major', 'ksic_sub', 'category',
+            'participation_programs', 'investment_status'
         ]
         profile = {k: member.get(k) for k in profile_fields if k in member}
         profile['member_id'] = member_id

@@ -6,7 +6,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
-import { useAuthStore } from '@shared/stores';
+import { useAuth } from '@shared/hooks';
 import LanguageSwitcher from '@shared/components/LanguageSwitcher';
 import {
   MenuIcon,
@@ -24,7 +24,7 @@ export default function Header({ onToggleSidebar, onToggleDesktopSidebar }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

@@ -98,6 +98,7 @@ class Member(Base):
     startup_type = Column(String(50))  # 창업구분: preliminary, startup_under_3years, growth_over_7years, restart
     ksic_major = Column(String(10))  # 한국표준산업분류코드[대분류]: A-U
     ksic_sub = Column(String(10))  # 지역주력산업코드[중분류]: 2-digit code
+    category = Column(String(50))  # 기업 유형: tech, manufacturing, service, retail, other
     
     # New fields for Task 6 - 참여 프로그램, 투자 유치
     participation_programs = Column(Text)  # 참여 프로그램 (JSON array as text)

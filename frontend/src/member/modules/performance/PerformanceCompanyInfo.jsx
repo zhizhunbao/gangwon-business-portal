@@ -264,6 +264,7 @@ export default function PerformanceCompanyInfo() {
       startupType: companyData.startupType,
       ksicMajor: companyData.ksicMajor,
       ksicSub: companyData.ksicSub,
+      category: companyData.category,
       // New fields for Task 6
       participationPrograms: companyData.participationPrograms,
       investmentStatus: companyData.investmentStatus

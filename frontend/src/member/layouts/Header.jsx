@@ -6,7 +6,7 @@
 import { useTranslation } from "react-i18next";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { useAuthStore } from "@shared/stores";
+import { useAuth } from "@shared/hooks";
 import LanguageSwitcher from "@shared/components/LanguageSwitcher";
 import { LoginModal } from "@shared/components";
 import {
@@ -43,7 +43,7 @@ function Header() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);

@@ -87,6 +87,7 @@ class MemberService:
             startup_type=profile.get("startup_type") if profile else None,
             ksic_major=profile.get("ksic_major") if profile else None,
             ksic_sub=profile.get("ksic_sub") if profile else None,
+            category=profile.get("category") if profile else None,
             # New fields for Task 6
             participation_programs=profile.get("participation_programs") if profile else None,
             investment_status=profile.get("investment_status") if profile else None,
@@ -144,6 +145,7 @@ class MemberService:
             startup_type=profile.get("startup_type") if profile else None,
             ksic_major=profile.get("ksic_major") if profile else None,
             ksic_sub=profile.get("ksic_sub") if profile else None,
+            category=profile.get("category") if profile else None,
             # New fields for Task 6
             participation_programs=profile.get("participation_programs") if profile else None,
             investment_status=profile.get("investment_status") if profile else None,
@@ -250,6 +252,8 @@ class MemberService:
             profile_update['ksic_major'] = data.ksic_major
         if data.ksic_sub is not None:
             profile_update['ksic_sub'] = data.ksic_sub
+        if data.category is not None:
+            profile_update['category'] = data.category
         # New fields for Task 6
         if data.participation_programs is not None:
             profile_update['participation_programs'] = data.participation_programs

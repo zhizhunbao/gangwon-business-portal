@@ -490,7 +490,47 @@ function checkServiceFile(filePath) {
     violations: responseDefaultViolations,
   });
 
-  // 15. 检查参数校验（带 params 参数的方法必须有校验）
+  // 15. 检查请求数据空值处理（发送到后端的数据必须将空字符串转为 null）
+  const emptyStringViolations = [];
+  if (template.required?.emptyStringToNull !== false) {
+    // 只检查直接赋值模式: requestData.xxx = data.xxx;
+    // 跳过在 if 块内的赋值（条件赋值通常是有意为之）
+    const requestDataAssignRegex = /requestData\.(\w+)\s*=\s*data\.(\w+)\s*;/g;
+    let match;
+    while ((match = requestDataAssignRegex.exec(code)) !== null) {
+      const fieldName = match[1];
+      const fullLine = code.split('\n').find(line => line.includes(match[0]));
+      if (fullLine && fullLine.includes('JSON.stringify')) continue;
+      
+      // 检查这行是否在 if 块内
+      const matchIndex = match.index;
+      const codeBeforeMatch = code.substring(0, matchIndex);
+      
+      // 找到最近的 if 语句开始位置
+      const lastIfIndex = codeBeforeMatch.lastIndexOf('if (');
+      if (lastIfIndex !== -1) {
+        // 检查 if 块是否已经闭合
+        const codeBetween = codeBeforeMatch.substring(lastIfIndex);
+        const openBraces = (codeBetween.match(/\{/g) || []).length;
+        const closeBraces = (codeBetween.match(/\}/g) || []).length;
+        // 如果在未闭合的 if 块内，跳过
+        if (openBraces > closeBraces) continue;
+      }
+      
+      emptyStringViolations.push({
+        line: findLineNumber(code, match[0]),
+        message: `字段 ${fieldName} 未处理空值`,
+        suggestion: `使用 data.${match[2]} || null 将空字符串转为 null，避免后端 Pydantic 验证失败`,
+      });
+    }
+  }
+  results.checks.push({
+    name: '空值处理',
+    passed: emptyStringViolations.length === 0,
+    violations: emptyStringViolations,
+  });
+
+  // 16. 检查参数校验（带 params 参数的方法必须有校验）
   const paramValidationViolations = [];
   if (template.required?.paramValidation) {
     // 如果使用 createService 包装，则跳过手动校验检查

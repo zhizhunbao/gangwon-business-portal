@@ -13,12 +13,12 @@ const variantStyles = {
 };
 
 const sizeStyles = {
-  small: 'px-3 py-1.5 text-sm',
-  sm: 'px-3 py-1.5 text-sm',
-  medium: 'px-4 py-2 text-base',
-  md: 'px-4 py-2 text-base',
-  large: 'px-6 py-3 text-lg',
-  lg: 'px-6 py-3 text-lg'
+  small: 'px-3 py-1.5 text-sm min-h-[32px]',
+  sm: 'px-3 py-1.5 text-sm min-h-[32px]',
+  medium: 'px-4 py-2 text-base min-h-[40px]',
+  md: 'px-4 py-2 text-base min-h-[40px]',
+  large: 'px-6 py-3 text-lg min-h-[48px]',
+  lg: 'px-6 py-3 text-lg min-h-[48px]'
 };
 
 export function Button({

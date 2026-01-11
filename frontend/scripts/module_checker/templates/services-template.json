@@ -12,7 +12,8 @@
 
   "required": {
     "imports": ["apiService", "API_PREFIX"],
-    "paramValidation": true
+    "paramValidation": true,
+    "emptyStringToNull": true
   },
 
   "imports": {
@@ -55,6 +56,7 @@
     "可选字段使用 ?? null，禁止 || '' 或 || []",
     "参数不提供默认值，调用方必须传入所有参数",
     "响应不提供默认值，后端必须提供所有字段",
-    "带 params 参数的方法必须有参数校验"
+    "带 params 参数的方法必须有参数校验",
+    "发送到后端的数据必须将空字符串转为 null，避免 Pydantic 验证失败"
   ]
 }
