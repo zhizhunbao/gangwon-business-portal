@@ -203,19 +203,19 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
           <button
             type="submit"
             className={cn(
-              "w-full px-6 py-3.5 text-base font-medium leading-relaxed text-center text-white",
+              "w-full px-6 py-3.5 min-h-[52px] text-base font-medium leading-relaxed text-center text-white",
               "bg-[#0052a4] border-none rounded-md cursor-pointer transition-all duration-200",
               "inline-flex items-center justify-center gap-2 box-border",
               "hover:bg-[#003d7a] active:bg-[#003d7a]",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-              isLoading && "relative text-transparent"
+              "disabled:opacity-50 disabled:cursor-not-allowed"
             )}
             disabled={isLoading}
           >
-            {isLoading && (
-              <div className="absolute w-4.5 h-4.5 top-1/2 left-1/2 -ml-2.25 -mt-2.25 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
+            ) : (
+              t("common.login")
             )}
-            {!isLoading && t("common.login")}
           </button>
         </form>
 
