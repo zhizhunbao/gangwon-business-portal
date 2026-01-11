@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "강원창업톡",
+    "appName": "강원 창업톡",
     "welcome": "환영합니다",
     "login": "로그인",
     "logout": "로그아웃",
@@ -51,7 +51,9 @@
     "total": "총",
     "approve": "승인",
     "reject": "거절",
-    "notifications": "알림"
+    "notifications": "알림",
+    "characters": "자",
+    "personUnit": "명"
   },
   "notifications": {
     "empty": "알림이 없습니다",
@@ -279,7 +281,7 @@
   },
   "admin": {
     "header": {
-      "title": "강원창업톡 관리자",
+      "title": "강원 창업톡 관리자",
       "admin": "관리자",
       "profile": "프로필",
       "logout": "로그아웃",
@@ -293,7 +295,7 @@
       "dashboard": "대시보드",
       "members": "기업 회원",
       "performance": "실적 관리",
-      "projects": "프로젝트",
+      "projects": "사업공고",
       "content": "콘텐츠 관리",
       "messages": "알림 센터",
       "settings": "시스템 설정",
@@ -302,7 +304,7 @@
       "systemLogs": "시스템 모니터링"
     },
     "footer": {
-      "copyright": "강원창업톡. All rights reserved.",
+      "copyright": "강원 창업톡. All rights reserved.",
       "version": "버전"
     },
     "auth": {
@@ -1609,7 +1611,7 @@
     }
   },
   "header": {
-    "title": "강원창업톡",
+    "title": "강원 창업톡",
     "searchPlaceholder": "검색...",
     "toggleSidebar": "사이드바 토글",
     "toggleMenu": "메뉴 토글",
@@ -1622,7 +1624,7 @@
   },
   "menu": {
     "home": "홈",
-    "projects": "프로젝트",
+    "projects": "사업공고",
     "performance": "실적 관리",
     "support": "원스톱 지원",
     "about": "시스템 소개"
@@ -1638,12 +1640,12 @@
     "legal": "법적 고지",
     "termsOfService": "이용약관",
     "privacyPolicy": "개인정보처리방침",
-    "copyright": "강원창업톡. All rights reserved.",
+    "copyright": "강원 창업톡. All rights reserved.",
     "version": "버전"
   },
   "about": {
     "title": "시스템 소개",
-    "subtitle": "강원창업톡 - 창업 기업을 위한 원스톱 지원 시스템",
+    "subtitle": "강원 창업톡 - 창업 기업을 위한 원스톱 지원 시스템",
     "tabs": {
       "overview": "시스템 개요",
       "features": "주요 기능",
@@ -1652,7 +1654,7 @@
     },
     "overview": {
       "title": "시스템 개요",
-      "description1": "강원창업톡은 강원특별자치도 내 창업 기업들이 사업 참여, 실적 관리, 자료 제출을 효율적으로 수행할 수 있도록 지원하는 통합 플랫폼입니다.",
+      "description1": "강원 창업톡은 강원특별자치도 내 창업 기업들이 사업 참여, 실적 관리, 자료 제출을 효율적으로 수행할 수 있도록 지원하는 통합 플랫폼입니다.",
       "description2": "기업은 이 시스템을 통해 정부 지원 사업 공고를 확인하고 신청할 수 있으며, 분기별/연도별 실적 데이터를 체계적으로 관리하고 제출할 수 있습니다.",
       "description3": "또한 관리자의 승인 프로세스를 통해 투명하고 신뢰할 수 있는 데이터 관리 체계를 구축하고 있습니다."
     },
@@ -1785,7 +1787,7 @@
   },
   "home": {
     "banner": {
-      "welcome": "강원창업톡에 오신 것을 환영합니다",
+      "welcome": "강원 창업톡에 오신 것을 환영합니다",
       "subtitle": "창업 기업을 위한 원스톱 지원 시스템"
     },
     "quickLinks": {

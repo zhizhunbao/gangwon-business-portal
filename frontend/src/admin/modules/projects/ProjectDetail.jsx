@@ -224,7 +224,7 @@ export default function ProjectDetail() {
                   }}
                   className="text-green-600 hover:text-green-900 font-medium text-sm"
                 >
-                  {t('common.approve', '批准')}
+                  {t('common.approve', '승인')}
                 </button>
                 <span className="text-gray-300">|</span>
                 <button
@@ -234,7 +234,7 @@ export default function ProjectDetail() {
                   }}
                   className="text-red-600 hover:text-red-900 font-medium text-sm"
                 >
-                  {t('common.reject', '拒绝')}
+                  {t('common.reject', '거절')}
                 </button>
               </>
             )}
@@ -253,7 +253,7 @@ export default function ProjectDetail() {
       <div className="p-12 text-center text-red-600">
         <p className="mb-6">{t('admin.projects.detail.notFound', '项目不存在')}</p>
         <Button onClick={() => navigate('/admin/projects')}>
-          {t('common.backToList', '返回')}
+          {t('common.backToList', '목록으로')}
         </Button>
       </div>
     );
@@ -268,7 +268,7 @@ export default function ProjectDetail() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={() => navigate('/admin/projects')}>
-            {t('common.backToList', '返回')}
+            {t('common.backToList', '목록으로')}
           </Button>
         </div>
         <div className="flex gap-4">
@@ -468,7 +468,7 @@ export default function ProjectDetail() {
               </div>
               <div className="p-4 bg-green-50 rounded-lg">
                 <label className="text-sm text-gray-600 font-medium block mb-2">
-                  {t('admin.projects.detail.approvedApplications', '已批准')}
+                  {t('admin.projects.detail.approvedApplications', '승인됨')}
                 </label>
                 <span className="text-2xl font-bold text-green-600">
                   {applications.filter(app => app.status === 'approved').length}
@@ -484,10 +484,10 @@ export default function ProjectDetail() {
               </div>
             </div>
 
-            {/* 申请列表 */}
+            {/* 신청 목록 */}
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                {t('admin.projects.detail.applicationList', '申请列表')}
+                {t('admin.projects.detail.applicationList', '신청 목록')}
               </h3>
               <Table
                 columns={applicationColumns}
@@ -592,14 +592,14 @@ export default function ProjectDetail() {
                       variant="outline"
                       onClick={() => handleStatusChange(selectedApplication.id, 'approved')}
                     >
-                      {t('common.approve', '批准')}
+                      {t('common.approve', '승인')}
                     </Button>
                     <Button
                       variant="outline"
                       className="text-red-600 border-red-200 hover:bg-red-50"
                       onClick={() => handleStatusChange(selectedApplication.id, 'rejected')}
                     >
-                      {t('common.reject', '拒绝')}
+                      {t('common.reject', '거절')}
                     </Button>
                   </>
                 )}

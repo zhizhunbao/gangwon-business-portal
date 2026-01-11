@@ -51,7 +51,9 @@
     "total": "共",
     "approve": "批准",
     "reject": "拒绝",
-    "notifications": "通知"
+    "notifications": "通知",
+    "characters": "字",
+    "personUnit": "人"
   },
   "notifications": {
     "empty": "暂无通知",
@@ -293,7 +295,7 @@
       "dashboard": "仪表盘",
       "members": "企业会员",
       "performance": "业绩管理",
-      "projects": "项目管理",
+      "projects": "事业公告",
       "content": "内容管理",
       "messages": "通知中心",
       "settings": "系统设置",
@@ -1622,7 +1624,7 @@
   },
   "menu": {
     "home": "首页",
-    "projects": "项目",
+    "projects": "事业公告",
     "performance": "业绩管理",
     "support": "一站式支持",
     "about": "系统介绍"
@@ -1801,14 +1803,14 @@
       "supportDesc": "1:1咨询及查看FAQ"
     },
     "notices": {
-      "title": "最新公告",
+      "title": "事业公告",
       "description": "查看最新公告和重要通知",
       "important": "重要",
       "empty": "暂无公告",
       "noContent": "暂无内容"
     },
     "news": {
-      "title": "新闻资料",
+      "title": "新公告",
       "description": "查看最新新闻资料和资讯",
       "empty": "暂无新闻资料",
       "noContent": "暂无内容"

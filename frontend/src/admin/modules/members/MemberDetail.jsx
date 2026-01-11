@@ -391,7 +391,7 @@ export default function MemberDetail() {
                 </div>
               )}
 
-              {/* 财务历史数据表格 */}
+              {/* 재무 이력 데이터 테이블 */}
               {niceDnbData.financials && niceDnbData.financials.length > 0 && (
                 <div>
                   <h4 className="text-md font-medium text-gray-700 mb-4">{t('admin.members.detail.financialHistory', '재무 이력 데이터')}</h4>

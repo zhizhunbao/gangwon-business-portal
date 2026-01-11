@@ -156,8 +156,8 @@ function Header() {
   };
 
   return (
-    <header className="member-header fixed top-0 left-0 right-0 flex items-center justify-between px-8 z-[1000] h-[70px] max-md:h-[60px] max-md:px-4 border-b-[3px] border-[#003d82] shadow-md"
-      style={{ backgroundColor: '#003d82' }}>
+    <header className="member-header fixed top-0 left-0 right-0 flex items-center justify-between px-8 z-[1000] h-[70px] max-md:h-[60px] max-md:px-4 border-b-[3px] border-[#001a33] shadow-md"
+      style={{ backgroundColor: '#002244' }}>
       <div className="flex items-center gap-4 flex-shrink-0">
         <button
           className={`hidden max-md:flex bg-transparent border-none cursor-pointer py-2 px-3 text-white transition-all duration-200 rounded items-center justify-center mr-2 ${HOVER_STYLES.dark}`}

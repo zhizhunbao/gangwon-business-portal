@@ -143,16 +143,20 @@ function Unauthorized() {
   const isFromMember = fromParam.startsWith('/member');
   
   const getHomePath = () => {
+    // 优先根据用户角色决定跳转路径
     if (user?.role === 'admin') return '/admin';
-    if (isFromAdmin) return '/admin';
+    if (user?.role === 'member') return '/member';
+    // 未登录时根据来源路径决定
+    if (isFromAdmin) return '/admin/login';
     return '/member';
   };
 
   const homePath = getHomePath();
-  const isAdminPath = isFromAdmin || user?.role === 'admin';
+  const isAdminPath = user?.role === 'admin';
 
   const handleNavigate = (path) => {
-    navigate(path, { replace: true });
+    // 使用 window.location.href 确保跳转可靠
+    window.location.href = path;
   };
 
   return (
