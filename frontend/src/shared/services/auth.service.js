@@ -27,8 +27,8 @@ class AuthService {
 
     const response = await apiService.post(`${API_PREFIX}/auth/login`, requestData);
 
-    if (response.access_token) {
-      setStorage(ACCESS_TOKEN_KEY, response.access_token);
+    if (response.accessToken) {
+      setStorage(ACCESS_TOKEN_KEY, response.accessToken);
       const userInfo = {
         ...response.user,
         role: response.user.role || "member",
@@ -50,8 +50,8 @@ class AuthService {
 
     const response = await apiService.post(`${API_PREFIX}/auth/admin-login`, requestData);
 
-    if (response.access_token) {
-      setStorage(ACCESS_TOKEN_KEY, response.access_token);
+    if (response.accessToken) {
+      setStorage(ACCESS_TOKEN_KEY, response.accessToken);
       const userInfo = {
         ...response.user,
         role: "admin",
