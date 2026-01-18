@@ -25,16 +25,7 @@ export default function MessageAnalytics() {
   const loadAnalytics = useCallback(async () => {
     setLoading(true);
     const response = await messagesService.getAnalytics({ timeRange });
-    
-    // Handle both camelCase and snake_case responses
-    setAnalytics({
-      totalMessages: response.totalMessages ?? response.total_messages ?? 0,
-      unreadMessages: response.unreadMessages ?? response.unread_messages ?? 0,
-      responseTime: response.responseTime ?? response.response_time ?? 0,
-      messagesByDay: response.messagesByDay ?? response.messages_by_day ?? [],
-      messagesByCategory: response.messagesByCategory ?? response.messages_by_category ?? [],
-      responseTimeByDay: response.responseTimeByDay ?? response.response_time_by_day ?? []
-    });
+    setAnalytics(response);
     setLoading(false);
   }, [timeRange]);
 

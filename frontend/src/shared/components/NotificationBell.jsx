@@ -31,7 +31,7 @@ export default function NotificationBell({ userType = 'member', variant = 'light
   const viewAllPath = userType === 'admin' ? '/admin/messages' : '/member/support/inquiry-history';
   const iconColorClass = variant === 'dark' 
     ? 'text-white hover:text-yellow-100' 
-    : 'text-gray-600 hover:text-gray-900';
+    : 'text-[#002244] hover:text-blue-600';
 
   const loadUnreadCount = async () => {
     try {

@@ -236,32 +236,13 @@ class MessageService(SupabaseService):
         if not messages:
             return messages
         
-        # 批量获取消息的附件
-        message_ids = [msg['id'] for msg in messages]
-        attachments_result = self.client.table('attachments')\
-            .select('id, resource_id, file_url, original_name, stored_name, file_size, mime_type')\
-            .eq('resource_type', 'thread')\
-            .in_('resource_id', message_ids)\
-            .is_('deleted_at', 'null')\
-            .execute()
-        
-        # 按 message_id 分组附件
-        attachments_map = {}
-        for att in (attachments_result.data or []):
-            resource_id = att['resource_id']
-            if resource_id not in attachments_map:
-                attachments_map[resource_id] = []
-            attachments_map[resource_id].append({
-                'id': att['id'],
-                'file_url': att['file_url'],
-                'file_name': att['original_name'] or att['stored_name'],
-                'file_size': att['file_size'],
-                'mime_type': att['mime_type']
-            })
-        
-        # 将附件添加到消息中
+        # 附件数据已经存储在 messages 表的 attachments 字段中（JSONB）
+        # 确保 attachments 字段存在且为数组格式
         for msg in messages:
-            msg['attachments'] = attachments_map.get(msg['id'], [])
+            if msg.get('attachments') is None:
+                msg['attachments'] = []
+            elif not isinstance(msg.get('attachments'), list):
+                msg['attachments'] = []
         
         return messages
     

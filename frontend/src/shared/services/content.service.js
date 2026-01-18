@@ -1,37 +1,23 @@
-// Content Service - 内容管理服务
+// Content Service - 内容管理服务（Admin）
 
 import apiService from "./api.service";
 import { API_PREFIX } from "@shared/utils/constants";
 import { toCamelCase, toSnakeCase, createService } from "@shared/utils/helpers";
 
 class ContentService {
+  // ============================================================================
+  // 公告管理（Admin）
+  // ============================================================================
+
   // 获取公告列表
-  async listNotices(params) {
-    const queryParams = {
-      page: params.page,
-      page_size: params.pageSize,
+  async listNotices(params = {}) {
+    const response = await apiService.get(`${API_PREFIX}/admin/content/notices`, { params: toSnakeCase(params) });
+    return {
+      items: response.items?.map(toCamelCase) || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      pageSize: response.page_size || 10,
     };
-    if (params.search) queryParams.search = params.search;
-
-    const response = await apiService.get(`${API_PREFIX}/notices`, queryParams);
-
-    if (response && response.items) {
-      return {
-        items: response.items.map(toCamelCase),
-        total: response.total,
-        page: response.page,
-        pageSize: response.page_size,
-        totalPages: response.total_pages,
-      };
-    }
-
-    throw new Error("Invalid response format");
-  }
-
-  // 获取最新5条公告
-  async getLatestNotices() {
-    const response = await apiService.get(`${API_PREFIX}/notices/latest5`);
-    return (response ?? []).map(toCamelCase);
   }
 
   // 获取公告详情
@@ -46,6 +32,7 @@ class ContentService {
       title: data.title,
       contentHtml: data.contentHtml,
       boardType: data.boardType,
+      attachments: data.attachments,
     });
     const response = await apiService.post(`${API_PREFIX}/admin/content/notices`, payload);
     return toCamelCase(response);
@@ -63,66 +50,32 @@ class ContentService {
     return await apiService.delete(`${API_PREFIX}/admin/content/notices/${noticeId}`);
   }
 
-  // 获取新闻稿列表
-  async listPressReleases(params) {
-    const queryParams = {
-      page: params.page,
-      page_size: params.pageSize,
-    };
+  // ============================================================================
+  // 项目管理（Admin）
+  // ============================================================================
 
-    const response = await apiService.get(`${API_PREFIX}/press`, queryParams);
-
-    if (response && response.items) {
-      return {
-        items: response.items.map(toCamelCase),
-        total: response.total,
-        page: response.page,
-        pageSize: response.page_size,
-        totalPages: response.total_pages,
-      };
-    }
-
-    throw new Error("Invalid response format");
-  }
-
-  // 获取最新1条新闻稿
-  async getLatestPressRelease() {
-    const response = await apiService.get(`${API_PREFIX}/press/latest1`);
-    return response ? toCamelCase(response) : null;
-  }
-
-  // 获取新闻稿详情
-  async getPressRelease(pressId) {
-    const response = await apiService.get(`${API_PREFIX}/press/${pressId}`);
-    return toCamelCase(response);
-  }
-
-
-  // 创建新闻稿
-  async createPressRelease(data) {
+  // 创建项目
+  async createProject(data) {
     const payload = toSnakeCase({ title: data.title, imageUrl: data.imageUrl });
-    const response = await apiService.post(`${API_PREFIX}/admin/content/press`, payload);
+    const response = await apiService.post(`${API_PREFIX}/admin/content/project`, payload);
     return toCamelCase(response);
   }
 
-  // 更新新闻稿
-  async updatePressRelease(pressId, data) {
+  // 更新项目
+  async updateProject(projectId, data) {
     const payload = toSnakeCase(data);
-    const response = await apiService.put(`${API_PREFIX}/admin/content/press/${pressId}`, payload);
+    const response = await apiService.put(`${API_PREFIX}/admin/content/project/${projectId}`, payload);
     return toCamelCase(response);
   }
 
-  // 删除新闻稿
-  async deletePressRelease(pressId) {
-    return await apiService.delete(`${API_PREFIX}/admin/content/press/${pressId}`);
+  // 删除项目
+  async deleteProject(projectId) {
+    return await apiService.delete(`${API_PREFIX}/admin/content/project/${projectId}`);
   }
 
-  // 获取活跃横幅
-  async getBanners(params) {
-    const queryParams = params?.bannerType ? { banner_type: params.bannerType } : {};
-    const response = await apiService.get(`${API_PREFIX}/banners`, queryParams);
-    return response.items.map(toCamelCase);
-  }
+  // ============================================================================
+  // 横幅管理（Admin）
+  // ============================================================================
 
   // 获取所有横幅
   async getAllBanners() {
@@ -155,10 +108,14 @@ class ContentService {
     return await apiService.delete(`${API_PREFIX}/admin/content/banners/${bannerId}`);
   }
 
+  // ============================================================================
+  // 系统信息管理（Admin）
+  // ============================================================================
+
   // 获取系统信息
   async getSystemInfo() {
-    const response = await apiService.get(`${API_PREFIX}/system-info`);
-    return response ? toCamelCase(response) : null;
+    const response = await apiService.get(`${API_PREFIX}/admin/content/system-info`);
+    return toCamelCase(response);
   }
 
   // 更新系统信息
@@ -168,11 +125,9 @@ class ContentService {
     return toCamelCase(response);
   }
 
-  // 获取活跃弹窗
-  async getActivePopup() {
-    const response = await apiService.get(`${API_PREFIX}/popup`);
-    return response ? toCamelCase(response) : null;
-  }
+  // ============================================================================
+  // 弹窗管理（Admin）
+  // ============================================================================
 
   // 获取所有弹窗
   async getAllPopups() {
@@ -216,11 +171,9 @@ class ContentService {
     return await apiService.delete(`${API_PREFIX}/admin/content/popups/${popupId}`);
   }
 
-  // 获取法律内容
-  async getLegalContent(contentType) {
-    const response = await apiService.get(`${API_PREFIX}/legal-content/${contentType}`);
-    return response ? toCamelCase(response) : null;
-  }
+  // ============================================================================
+  // 法律内容管理（Admin）
+  // ============================================================================
 
   // 更新法律内容
   async updateLegalContent(contentType, data) {

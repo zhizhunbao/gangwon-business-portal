@@ -21,11 +21,11 @@ from .schemas import (
     NoticeResponse,
     NoticeListItem,
     NoticeListResponse,
-    PressReleaseCreate,
-    PressReleaseUpdate,
-    PressReleaseResponse,
-    PressListItem,
-    PressListResponse,
+    ContentProjectCreate,
+    ContentProjectUpdate,
+    ContentProjectResponse,
+    ContentProjectListItem,
+    ContentProjectListResponse,
     BannerCreate,
     BannerUpdate,
     BannerResponse,
@@ -58,7 +58,7 @@ BANNER_KEYS = ['main_primary', 'about', 'projects', 'performance', 'support']
 )
 async def list_notices(
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    page_size: Annotated[int, Query(ge=1, le=1000)] = 20,
     search: Optional[str] = None,
 ):
     """
@@ -113,6 +113,36 @@ async def get_notice(
 
 
 # Admin Notice Endpoints
+
+@router.get(
+    "/api/admin/content/notices",
+    response_model=NoticeListResponse,
+    tags=["content", "admin"],
+    summary="List notices (admin)",
+)
+async def list_notices_admin(
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=1000)] = 20,
+    search: Optional[str] = None,
+    current_user: Member = Depends(get_current_admin_user),
+):
+    """
+    List notices with pagination and optional search (admin only).
+    
+    - **page**: Page number (default: 1)
+    - **page_size**: Items per page (default: 20, max: 100)
+    - **search**: Optional search term for title
+    """
+    notices, total = await service.get_notices(page, page_size, search)
+
+    return NoticeListResponse(
+        items=[NoticeListItem.from_db_dict(n, include_admin_fields=True) for n in notices],
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=ceil(total / page_size) if total > 0 else 0,
+    )
+
 
 @router.post(
     "/api/admin/content/notices",
@@ -174,30 +204,30 @@ async def delete_notice(
     await service.delete_notice(notice_id)
 
 
-# Public Press Release Endpoints
+# Public Project Endpoints
 
 @router.get(
-    "/api/press",
-    response_model=PressListResponse,
+    "/api/project",
+    response_model=ContentProjectListResponse,
     tags=["content"],
-    summary="List press releases",
+    summary="List projects",
 )
-async def list_press_releases(
+async def list_projects(
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    page_size: Annotated[int, Query(ge=1, le=1000)] = 20,
 ):
     """
-    List press releases with pagination.
+    List projects with pagination.
     Data formatting is handled by schemas.
 
     - **page**: Page number (default: 1)
     - **page_size**: Items per page (default: 20, max: 100)
     """
-    press_releases, total = await service.get_press_releases(page, page_size)
+    projects, total = await service.get_projects(page, page_size)
 
     # Use schema to format data - no manual conversion needed
-    return PressListResponse(
-        items=[PressListItem.from_db_dict(p, include_admin_fields=False) for p in press_releases],
+    return ContentProjectListResponse(
+        items=[ContentProjectListItem.from_db_dict(p, include_admin_fields=False) for p in projects],
         total=total,
         page=page,
         page_size=page_size,
@@ -206,96 +236,34 @@ async def list_press_releases(
 
 
 @router.get(
-    "/api/press/latest1",
-    response_model=Optional[PressReleaseResponse],
+    "/api/project/latest1",
+    response_model=Optional[ContentProjectResponse],
     tags=["content"],
-    summary="Get latest press release",
+    summary="Get latest project",
 )
-async def get_latest_press():
-    """Get latest press release for homepage."""
-    press = await service.get_press_latest1()
+async def get_latest_project():
+    """Get latest project for homepage."""
+    project = await service.get_project_latest1()
     
-    if not press:
+    if not project:
         return None
     
-    return PressReleaseResponse(**press)
+    return ContentProjectResponse(**project)
 
 
 @router.get(
-    "/api/press/{press_id}",
-    response_model=PressReleaseResponse,
+    "/api/project/{press_id}",
+    response_model=ContentProjectResponse,
     tags=["content"],
-    summary="Get press release detail",
+    summary="Get project detail",
 )
-async def get_press_release(
+async def get_project(
     press_id: UUID,
 ):
-    """Get press release detail by ID."""
-    press = await service.get_press_by_id(press_id)
+    """Get project detail by ID."""
+    project = await service.get_project_by_id(press_id)
     
-    return PressReleaseResponse(**press)
-
-
-# Admin Press Release Endpoints
-
-@router.post(
-    "/api/admin/content/press",
-    response_model=PressReleaseResponse,
-    status_code=status.HTTP_201_CREATED,
-    tags=["content", "admin"],
-    summary="Create press release",
-)
-@audit_log(action="create", resource_type="press_release")
-async def create_press_release(
-    data: PressReleaseCreate,
-    request: Request,
-    current_user = Depends(get_current_admin_user),
-):
-    """Create a new press release (admin only)."""
-    press = await service.create_press_release(data)
-    
-    # Admin users don't have company_name, use full_name or email instead
-    author_name = getattr(current_user, 'full_name', None) or getattr(current_user, 'email', 'Admin')
-    
-    # Create a copy of press dict and update author_name
-    press_data = press.copy()
-    press_data['author_name'] = author_name
-    return PressReleaseResponse(**press_data)
-
-
-@router.put(
-    "/api/admin/content/press/{press_id}",
-    response_model=PressReleaseResponse,
-    tags=["content", "admin"],
-    summary="Update press release",
-)
-@audit_log(action="update", resource_type="press_release")
-async def update_press_release(
-    press_id: UUID,
-    data: PressReleaseUpdate,
-    request: Request,
-    current_user: Member = Depends(get_current_admin_user),
-):
-    """Update a press release (admin only)."""
-    press = await service.update_press_release(press_id, data)
-    
-    return PressReleaseResponse(**press)
-
-
-@router.delete(
-    "/api/admin/content/press/{press_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-    tags=["content", "admin"],
-    summary="Delete press release",
-)
-@audit_log(action="delete", resource_type="press_release")
-async def delete_press_release(
-    press_id: UUID,
-    request: Request,
-    current_user: Member = Depends(get_current_admin_user),
-):
-    """Delete a press release (admin only)."""
-    await service.delete_press_release(press_id)
+    return ContentProjectResponse(**project)
 
 
 # Public Banner Endpoints
@@ -606,6 +574,24 @@ async def get_system_info():
 
 # Admin SystemInfo Endpoints
 
+@router.get(
+    "/api/admin/content/system-info",
+    response_model=Optional[SystemInfoResponse],
+    tags=["content", "admin"],
+    summary="Get system information (admin)",
+)
+async def get_system_info_admin(
+    current_user: Member = Depends(get_current_admin_user),
+):
+    """Get system introduction content (admin only)."""
+    system_info = await service.get_system_info()
+    
+    if not system_info:
+        return None
+    
+    return SystemInfoResponse(**system_info)
+
+
 @router.put(
     "/api/admin/content/system-info",
     response_model=SystemInfoResponse,
@@ -820,15 +806,16 @@ async def get_legal_content(
     """
     Get legal content by type.
     
-    - **content_type**: 'terms_of_service' or 'privacy_policy'
+    - **content_type**: 'terms_of_service', 'privacy_policy', 'third_party_sharing', or 'marketing_consent'
     """
     from ...common.modules.exception import ValidationError, CMessageTemplate
     
-    if content_type not in ['terms_of_service', 'privacy_policy']:
+    allowed_types = ['terms_of_service', 'privacy_policy', 'third_party_sharing', 'marketing_consent']
+    if content_type not in allowed_types:
         raise ValidationError(
             CMessageTemplate.VALIDATION_INVALID_VALUE.format(
                 field="content_type",
-                allowed_values="terms_of_service, privacy_policy"
+                allowed_values=", ".join(allowed_types)
             )
         )
     
@@ -858,15 +845,16 @@ async def update_legal_content(
     """
     Update legal content (admin only, upsert pattern).
     
-    - **content_type**: 'terms_of_service' or 'privacy_policy'
+    - **content_type**: 'terms_of_service', 'privacy_policy', 'third_party_sharing', or 'marketing_consent'
     """
     from ...common.modules.exception import ValidationError, CMessageTemplate
     
-    if content_type not in ['terms_of_service', 'privacy_policy']:
+    allowed_types = ['terms_of_service', 'privacy_policy', 'third_party_sharing', 'marketing_consent']
+    if content_type not in allowed_types:
         raise ValidationError(
             CMessageTemplate.VALIDATION_INVALID_VALUE.format(
                 field="content_type",
-                allowed_values="terms_of_service, privacy_policy"
+                allowed_values=", ".join(allowed_types)
             )
         )
     

@@ -32,11 +32,8 @@ __all__ = [
     "Project",
     "ProjectApplication",
     "ApplicationStatusHistory",
-    "ApplicationAttachment",
     "Notification",
-    "Attachment",
     "Notice",
-    "PressRelease",
     "Banner",
     "SystemInfo",
     "LegalContent",
@@ -79,15 +76,17 @@ class Member(Base):
     representative = Column(String(100))
     representative_birth_date = Column(Date)  # 代表者出生日期
     representative_gender = Column(String(10))  # 代表者性别 (male/female)
+    representative_phone = Column(String(20))  # 代表者电话号码
     legal_number = Column(String(20))
-    phone = Column(String(20))
+    phone = Column(String(20))  # 企业电话号码
     website = Column(String(255))
     logo_url = Column(String(500))
     
-    # Contact person fields (担当者信息)
+    # Contact person fields (担当者信息 - 登录系统的经办人员)
     contact_person_name = Column(String(100))
     contact_person_department = Column(String(100))
     contact_person_position = Column(String(100))
+    contact_person_phone = Column(String(20))  # 担当者电话号码
     
     # Business info fields
     main_business = Column(Text)  # 主要事业及产品
@@ -156,10 +155,12 @@ class PerformanceRecord(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
+    # Attachments stored as JSONB
+    attachments = Column(JSONB, nullable=True)
+    
     # Relationships (removed reviews relationship since it's merged)
     member = relationship("Member", back_populates="performance_records", foreign_keys=[member_id])
     reviewer = relationship("Admin", foreign_keys=[reviewer_id])
-    # Note: attachments are queried via Attachment.resource_type='performance' and Attachment.resource_id=self.id
 
     # Indexes
     __table_args__ = (
@@ -185,6 +186,7 @@ class Project(Base):
     end_date = Column(Date)
     image_url = Column(String(500))
     status = Column(String(50), default="active")  # active, inactive, archived
+    attachments = Column(JSONB, nullable=True)  # Store file attachments as JSON array
     
     # Soft delete field
     deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
@@ -194,7 +196,6 @@ class Project(Base):
 
     # Relationships
     applications = relationship("ProjectApplication", back_populates="project", cascade="all, delete-orphan")
-    # Note: attachments are queried via Attachment.resource_type='project' and Attachment.resource_id=self.id
 
     # Indexes
     __table_args__ = (
@@ -224,6 +225,9 @@ class ProjectApplication(Base):
     material_request = Column(Text, nullable=True)  # 补充材料请求
     material_response = Column(Text, nullable=True)  # 会员补充材料回复
     
+    # Attachments stored as JSONB
+    attachments = Column(JSONB, nullable=True)
+    
     # Soft delete field
     deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
     
@@ -232,7 +236,6 @@ class ProjectApplication(Base):
     # Relationships
     member = relationship("Member", back_populates="project_applications")
     project = relationship("Project", back_populates="applications")
-    # Note: attachments are queried via Attachment.resource_type='project_application' and Attachment.resource_id=self.id
 
     # Indexes
     __table_args__ = (
@@ -268,31 +271,6 @@ class ApplicationStatusHistory(Base):
         return f"<ApplicationStatusHistory(id={self.id}, application_id={self.application_id}, new_status={self.new_status})>"
 
 
-class ApplicationAttachment(Base):
-    """Attachments for project applications."""
-
-    __tablename__ = "application_attachments"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    application_id = Column(UUID(as_uuid=True), nullable=False)
-    file_id = Column(UUID(as_uuid=True), nullable=True)
-    file_name = Column(String(255), nullable=False)
-    file_size = Column(Integer, nullable=True)
-    file_type = Column(String(100), nullable=True)
-    file_url = Column(String(500), nullable=False)
-    uploaded_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
-    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
-
-    # Indexes
-    __table_args__ = (
-        Index("idx_attachments_application_id", "application_id"),
-        Index("idx_application_attachments_deleted_at", "deleted_at"),
-    )
-
-    def __repr__(self):
-        return f"<ApplicationAttachment(id={self.id}, application_id={self.application_id}, file_name={self.file_name})>"
-
-
 class Notification(Base):
     """Member notifications."""
 
@@ -321,51 +299,6 @@ class Notification(Base):
         return f"<Notification(id={self.id}, member_id={self.member_id}, type={self.type})>"
 
 
-class Attachment(Base):
-    """File attachment metadata.
-    
-    This model uses a polymorphic pattern where resource_type and resource_id
-    together identify the parent resource. Query attachments like:
-    
-        attachments = await db.execute(
-            select(Attachment).where(
-                Attachment.resource_type == 'performance',
-                Attachment.resource_id == performance_record_id
-            )
-        )
-    """
-
-    __tablename__ = "attachments"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    file_id = Column(UUID(as_uuid=True), nullable=True)  # Optional reference to file storage
-    resource_type = Column(String(50), nullable=False)  # performance, project, project_application, etc.
-    resource_id = Column(UUID(as_uuid=True), nullable=False)
-    file_type = Column(String(50))  # image, document, etc.
-    file_url = Column(String(500), nullable=False)
-    original_name = Column(String(255), nullable=False)
-    stored_name = Column(String(255), nullable=False)
-    file_size = Column(Integer)
-    mime_type = Column(String(100))
-    uploaded_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-    
-    # Soft delete field
-    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
-
-    # Note: This model uses polymorphic relationships.
-    # Parent models (PerformanceRecord, Project, ProjectApplication) should query
-    # attachments via resource_type and resource_id instead of using ORM relationships.
-
-    # Indexes
-    __table_args__ = (
-        Index("idx_attachments_resource", "resource_type", "resource_id"),
-        Index("idx_attachments_deleted_at", "deleted_at"),
-    )
-
-    def __repr__(self):
-        return f"<Attachment(id={self.id}, resource_type={self.resource_type}, resource_id={self.resource_id})>"
-
-
 class Notice(Base):
     """Announcement/notice board."""
 
@@ -377,6 +310,7 @@ class Notice(Base):
     content_html = Column(Text)
     author_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)  # Can be NULL for admin-created content
     view_count = Column(Integer, default=0)
+    attachments = Column(JSONB, nullable=True)  # Store file attachments as JSON array
     
     # Soft delete field
     deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
@@ -395,33 +329,6 @@ class Notice(Base):
 
     def __repr__(self):
         return f"<Notice(id={self.id}, title={self.title})>"
-
-
-class PressRelease(Base):
-    """Press release/news articles."""
-
-    __tablename__ = "press_releases"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    title = Column(String(255), nullable=False)
-    image_url = Column(String(500), nullable=False)
-    author_id = Column(UUID(as_uuid=True), ForeignKey("members.id"), nullable=True)  # Can be NULL for admin-created content
-    
-    # Soft delete field
-    deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
-    
-    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
-
-    # Relationships
-    author = relationship("Member", foreign_keys=[author_id])
-
-    # Indexes
-    __table_args__ = (
-        Index("idx_press_releases_deleted_at", "deleted_at"),
-    )
-
-    def __repr__(self):
-        return f"<PressRelease(id={self.id}, title={self.title})>"
 
 
 class Banner(Base):
@@ -783,12 +690,12 @@ class Message(Base):
     broadcast_count = Column(Integer, nullable=True)  # For broadcast messages
     read_at = Column(TIMESTAMP(timezone=True), nullable=True)
     sent_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
+    # Attachments stored as JSONB
+    attachments = Column(JSONB, nullable=True)
+    
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    attachments = relationship("Attachment", 
-                             primaryjoin="and_(Message.id == foreign(Attachment.resource_id), "
-                                        "Attachment.resource_type == 'message')",
-                             viewonly=True)
 
     # Indexes
     __table_args__ = (

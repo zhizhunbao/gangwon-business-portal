@@ -48,4 +48,313 @@
   .error-message {
     @apply text-gray-600 mb-8;
   }
+
+  /* Markdown Editor Styles */
+  .markdown-preview {
+    @apply prose prose-sm max-w-none;
+  }
+
+  .markdown-preview h1 {
+    @apply text-3xl font-bold my-4 text-gray-900;
+  }
+
+  .markdown-preview h2 {
+    @apply text-2xl font-bold my-3 text-gray-900;
+  }
+
+  .markdown-preview h3 {
+    @apply text-xl font-bold my-2 text-gray-900;
+  }
+
+  .markdown-preview p {
+    @apply my-2 text-gray-700 leading-relaxed;
+  }
+
+  .markdown-preview ul,
+  .markdown-preview ol {
+    @apply pl-6 my-2;
+  }
+
+  .markdown-preview ul {
+    @apply list-disc;
+  }
+
+  .markdown-preview ol {
+    @apply list-decimal;
+  }
+
+  .markdown-preview li {
+    @apply my-1;
+  }
+
+  .markdown-preview a {
+    @apply text-blue-600 hover:text-blue-800 underline;
+  }
+
+  .markdown-preview img {
+    @apply max-w-full h-auto rounded shadow-sm my-4;
+  }
+
+  .markdown-preview code {
+    @apply bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-red-600;
+  }
+
+  .markdown-preview pre {
+    @apply bg-gray-900 text-gray-100 p-4 rounded my-4 overflow-x-auto;
+  }
+
+  .markdown-preview pre code {
+    @apply bg-transparent text-gray-100 p-0;
+  }
+
+  .markdown-preview blockquote {
+    @apply border-l-4 border-gray-300 pl-4 my-4 text-gray-600 italic;
+  }
+
+  .markdown-preview hr {
+    @apply border-gray-300 my-6;
+  }
+
+  .markdown-preview table {
+    @apply border-collapse border border-gray-300 my-4 w-full;
+  }
+
+  .markdown-preview th,
+  .markdown-preview td {
+    @apply border border-gray-300 px-3 py-2;
+  }
+
+  .markdown-preview th {
+    @apply bg-gray-100 font-semibold;
+  }
+
+  .markdown-preview input[type="checkbox"] {
+    @apply mr-2;
+  }
+
+  /* Markdown Editor - Typora Style */
+  .markdown-preview-typora {
+    @apply text-gray-800 leading-relaxed;
+  }
+
+  .markdown-preview-typora h1 {
+    @apply text-3xl font-bold mt-6 mb-4 pb-2 border-b-2 border-gray-200;
+  }
+
+  .markdown-preview-typora h2 {
+    @apply text-2xl font-bold mt-5 mb-3 pb-2 border-b border-gray-200;
+  }
+
+  .markdown-preview-typora h3 {
+    @apply text-xl font-semibold mt-4 mb-2;
+  }
+
+  .markdown-preview-typora h4 {
+    @apply text-lg font-semibold mt-3 mb-2;
+  }
+
+  .markdown-preview-typora p {
+    @apply my-3 leading-7;
+  }
+
+  .markdown-preview-typora strong {
+    @apply font-semibold text-gray-900;
+  }
+
+  .markdown-preview-typora em {
+    @apply italic;
+  }
+
+  .markdown-preview-typora ul,
+  .markdown-preview-typora ol {
+    @apply my-3 pl-6;
+  }
+
+  .markdown-preview-typora ul {
+    @apply list-disc;
+  }
+
+  .markdown-preview-typora ol {
+    @apply list-decimal;
+  }
+
+  .markdown-preview-typora li {
+    @apply my-1 leading-7;
+  }
+
+  .markdown-preview-typora a {
+    @apply text-blue-600 hover:text-blue-700 underline decoration-1 underline-offset-2;
+  }
+
+  .markdown-preview-typora img {
+    @apply max-w-full h-auto my-4 rounded;
+  }
+
+  .markdown-preview-typora code {
+    @apply bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono text-pink-600;
+  }
+
+  .markdown-preview-typora pre {
+    @apply bg-gray-900 text-gray-100 p-4 rounded-lg my-4 overflow-x-auto;
+  }
+
+  .markdown-preview-typora pre code {
+    @apply bg-transparent text-gray-100 p-0 text-pink-100;
+  }
+
+  .markdown-preview-typora blockquote {
+    @apply border-l-4 border-gray-300 pl-4 my-4 text-gray-600;
+  }
+
+  .markdown-preview-typora hr {
+    @apply border-0 border-t border-gray-300 my-8;
+  }
+
+  .markdown-preview-typora table {
+    @apply border-collapse w-full my-4;
+  }
+
+  .markdown-preview-typora th,
+  .markdown-preview-typora td {
+    @apply border border-gray-300 px-4 py-2 text-left;
+  }
+
+  .markdown-preview-typora th {
+    @apply bg-gray-50 font-semibold;
+  }
+
+  .markdown-preview-typora thead {
+    @apply bg-gray-50;
+  }
+
+  /* Markdown Editor - Split View */
+  .markdown-preview-split h1 {
+    @apply text-2xl font-bold mt-4 mb-3 text-gray-900;
+  }
+
+  .markdown-preview-split h2 {
+    @apply text-xl font-bold mt-3 mb-2 text-gray-900;
+  }
+
+  .markdown-preview-split h3 {
+    @apply text-lg font-semibold mt-2 mb-2 text-gray-900;
+  }
+
+  .markdown-preview-split p {
+    @apply my-2 leading-relaxed text-gray-700;
+  }
+
+  .markdown-preview-split strong {
+    @apply font-semibold text-gray-900;
+  }
+
+  .markdown-preview-split ul,
+  .markdown-preview-split ol {
+    @apply my-2 pl-5;
+  }
+
+  .markdown-preview-split li {
+    @apply my-1;
+  }
+
+  .markdown-preview-split a {
+    @apply text-blue-600 hover:text-blue-700 underline;
+  }
+
+  .markdown-preview-split img {
+    @apply max-w-full h-auto my-3 rounded;
+  }
+
+  .markdown-preview-split code {
+    @apply bg-gray-200 px-1.5 py-0.5 rounded text-sm font-mono text-pink-600;
+  }
+
+  .markdown-preview-split pre {
+    @apply bg-gray-900 text-gray-100 p-3 rounded my-3 overflow-x-auto;
+  }
+
+  .markdown-preview-split pre code {
+    @apply bg-transparent text-gray-100 p-0;
+  }
+
+  .markdown-preview-split blockquote {
+    @apply border-l-4 border-gray-300 pl-3 my-3 text-gray-600;
+  }
+
+  .markdown-preview-split table {
+    @apply border-collapse w-full my-3;
+  }
+
+  .markdown-preview-split th,
+  .markdown-preview-split td {
+    @apply border border-gray-300 px-3 py-2;
+  }
+
+  .markdown-preview-split th {
+    @apply bg-gray-100 font-semibold;
+  }
+
+  /* Tiptap Editor Styles */
+  .tiptap-editor-wrapper .ProseMirror {
+    @apply focus:outline-none;
+  }
+
+  /* Tiptap Image Resize Styles */
+  .tiptap-editor-wrapper .ProseMirror [data-node-view-wrapper] {
+    @apply inline-block relative;
+  }
+
+  .tiptap-editor-wrapper .ProseMirror .ProseMirror-selectednode {
+    @apply outline outline-2 outline-blue-500;
+  }
+
+  .tiptap-editor-wrapper .ProseMirror [data-node-view-wrapper].ProseMirror-selectednode::after {
+    content: '';
+    @apply absolute inset-0 pointer-events-none ring-2 ring-blue-500;
+  }
+
+  /* Resize handles */
+  .tiptap-editor-wrapper .ProseMirror [data-node-view-wrapper] .resize-handle {
+    @apply absolute w-3 h-3 bg-blue-500 border border-white rounded-sm cursor-pointer z-10;
+  }
+
+  .tiptap-editor-wrapper .ProseMirror [data-node-view-wrapper] .resize-handle.top-left {
+    @apply -top-1.5 -left-1.5 cursor-nwse-resize;
+  }
+
+  .tiptap-editor-wrapper .ProseMirror [data-node-view-wrapper] .resize-handle.top-right {
+    @apply -top-1.5 -right-1.5 cursor-nesw-resize;
+  }
+
+  .tiptap-editor-wrapper .ProseMirror [data-node-view-wrapper] .resize-handle.bottom-left {
+    @apply -bottom-1.5 -left-1.5 cursor-nesw-resize;
+  }
+
+  .tiptap-editor-wrapper .ProseMirror [data-node-view-wrapper] .resize-handle.bottom-right {
+    @apply -bottom-1.5 -right-1.5 cursor-nwse-resize;
+  }
+
+  /* Custom Scrollbar Styles */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(107, 114, 128, 0.7);
+  }
 }

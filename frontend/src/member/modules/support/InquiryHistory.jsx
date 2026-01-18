@@ -8,77 +8,49 @@ import { useTranslation } from 'react-i18next';
 import { formatDateTime } from '@shared/utils';
 import { useNavigate } from 'react-router-dom';
 import Card, { CardBody } from '@shared/components/Card';
-import { Badge, Pagination } from '@shared/components';
+import { Badge } from '@shared/components';
 import Button from '@shared/components/Button';
+import SearchInput from '@shared/components/SearchInput';
 import { Table, TableHead, TableBody, TableRow, TableHeader, TableCell } from '@shared/components/Table';
 import { messagesService } from '@shared/services';
-import { SearchIcon } from '@shared/components/Icons';
 import ThreadDetailModal from '@shared/components/ThreadDetailModal';
 
 export default function InquiryHistory() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [threads, setThreads] = useState([]);
+  const [allThreads, setAllThreads] = useState([]);
+  const [filteredThreads, setFilteredThreads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedThreadId, setSelectedThreadId] = useState(null);
-  
-  // 搜索和过滤状态
-  const [searchKeyword, setSearchKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  
-  // 分页状态
-  const [pagination, setPagination] = useState({
-    page: 1,
-    pageSize: 20,
-    total: 0,
-    totalPages: 0
-  });
 
-  const loadThreads = useCallback(async (page = 1) => {
+  // 使用 useCallback 包装 setFilteredThreads 避免无限循环
+  const handleFilterChange = useCallback((filtered) => {
+    setFilteredThreads(filtered);
+  }, []);
+
+  const loadThreads = useCallback(async () => {
     setLoading(true);
     try {
       const response = await messagesService.getMemberThreads({
-        page,
-        pageSize: pagination.pageSize,
+        page: 1,
+        pageSize: 1000,
         status: statusFilter || undefined
       });
-      setThreads(response.items);
-      setPagination(prev => ({
-        ...prev,
-        page: response.page,
-        total: response.total,
-        totalPages: response.totalPages
-      }));
+      setAllThreads(response.items || []);
+      setFilteredThreads(response.items || []);
     } catch (error) {
       console.error('Failed to load threads:', error);
-      setThreads([]);
+      setAllThreads([]);
+      setFilteredThreads([]);
     } finally {
       setLoading(false);
     }
-  }, [pagination.pageSize, statusFilter]);
+  }, [statusFilter]);
 
   useEffect(() => {
-    loadThreads(1);
+    loadThreads();
   }, [loadThreads]);
-
-  const handlePageChange = (newPage) => {
-    loadThreads(newPage);
-  };
-
-  // 过滤后的线程列表（客户端搜索）
-  const filteredThreads = useMemo(() => {
-    return threads.filter(thread => {
-      // 关键词搜索（标题）
-      if (searchKeyword) {
-        const keyword = searchKeyword.toLowerCase();
-        const subject = (thread.subject || '').toLowerCase();
-        if (!subject.includes(keyword)) {
-          return false;
-        }
-      }
-      return true;
-    });
-  }, [threads, searchKeyword]);
 
   // 状态选项
   const statusOptions = [
@@ -120,6 +92,30 @@ export default function InquiryHistory() {
     return <Badge variant={config.variant} size="sm">{config.label}</Badge>;
   };
 
+  // 定义搜索列
+  const columns = useMemo(() => [
+    {
+      key: 'subject',
+      render: (value) => value || ''
+    },
+    {
+      key: 'category',
+      render: (value) => getCategoryLabel(value)
+    },
+    {
+      key: 'status',
+      render: (value) => t(`support.status.${value}`, value)
+    },
+    {
+      key: 'createdAt',
+      render: (value) => value ? formatDateTime(value) : '-'
+    },
+    {
+      key: 'lastMessageAt',
+      render: (value) => value ? formatDateTime(value) : '-'
+    }
+  ], [t]);
+
   // 打开详情模态框
   const openDetailModal = (threadId) => {
     setSelectedThreadId(threadId);
@@ -129,7 +125,7 @@ export default function InquiryHistory() {
   const closeDetailModal = () => {
     setSelectedThreadId(null);
     // 刷新列表
-    loadThreads(pagination.page);
+    loadThreads();
   };
 
   return (
@@ -143,20 +139,13 @@ export default function InquiryHistory() {
       {/* 搜索和筛选 */}
       <Card className="p-4 sm:p-5 lg:p-6 mb-4">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex-1 min-w-[200px] max-w-md">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                placeholder={t('support.searchPlaceholder')}
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-              />
-            </div>
-          </div>
+          <SearchInput
+            data={allThreads}
+            columns={columns}
+            onFilter={handleFilterChange}
+            placeholder={t('support.searchPlaceholder', '搜索标题')}
+            className="flex-1 min-w-[200px] max-w-md"
+          />
           <div className="w-full sm:w-48 sm:flex-shrink-0">
             <select
               value={statusFilter}
@@ -183,9 +172,9 @@ export default function InquiryHistory() {
           ) : filteredThreads.length === 0 ? (
             <div className="text-center py-12 px-4">
               <p className="text-base text-gray-500 m-0 mb-4">
-                {threads.length === 0 ? t('support.noInquiries') : t('support.noMatchingInquiries')}
+                {allThreads.length === 0 ? t('support.noInquiries', '暂无咨询记录') : t('support.noMatchingInquiries', '没有找到匹配的咨询')}
               </p>
-              {threads.length === 0 && (
+              {allThreads.length === 0 && (
                 <Button
                   variant="primary"
                   onClick={() => navigate('/member/support/inquiry')}
@@ -214,8 +203,8 @@ export default function InquiryHistory() {
                       <TableCell>
                         <span className="font-medium">{thread.subject}</span>
                       </TableCell>
-                      <TableCell className="text-gray-600 text-sm">
-                        {getCategoryLabel(thread.category)}
+                      <TableCell>
+                        {getCategoryBadge(thread.category)}
                       </TableCell>
                       <TableCell>{getStatusBadge(thread.status)}</TableCell>
                       <TableCell className="text-gray-600 text-sm">
@@ -239,22 +228,6 @@ export default function InquiryHistory() {
                   ))}
                 </TableBody>
               </Table>
-
-              {/* 分页 */}
-              {pagination.totalPages > 1 && (
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div className="text-sm text-gray-600">
-                      {t('common.total')} {pagination.total} {t('common.items')}
-                    </div>
-                    <Pagination
-                      currentPage={pagination.page}
-                      totalPages={pagination.totalPages}
-                      onPageChange={handlePageChange}
-                    />
-                  </div>
-                </div>
-              )}
             </>
           )}
         </CardBody>
@@ -265,7 +238,7 @@ export default function InquiryHistory() {
         threadId={selectedThreadId}
         isOpen={selectedThreadId !== null}
         onClose={closeDetailModal}
-        onMessageSent={() => loadThreads(pagination.page)}
+        onMessageSent={loadThreads}
       />
     </div>
   );

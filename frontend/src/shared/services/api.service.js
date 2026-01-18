@@ -13,6 +13,8 @@ import {
   setStorage,
   removeStorage,
   removeSessionStorage,
+  toCamelCase,
+  toSnakeCase,
 } from "@shared/utils/helpers";
 
 const apiClient = axios.create({
@@ -29,7 +31,17 @@ apiClient.interceptors.request.use(
     const language = getStorage("language") || "ko";
     config.headers["Accept-Language"] = language;
 
-    if (config.data instanceof FormData) delete config.headers["Content-Type"];
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
+    } else if (config.data && typeof config.data === 'object') {
+      // 自动将请求数据从 camelCase 转换为 snake_case
+      config.data = toSnakeCase(config.data);
+    }
+
+    // 自动将 URL 参数从 camelCase 转换为 snake_case
+    if (config.params && typeof config.params === 'object') {
+      config.params = toSnakeCase(config.params);
+    }
 
     return config;
   },
@@ -39,6 +51,12 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => {
     if (response.config.responseType === "blob") return response;
+    
+    // 自动将响应数据从 snake_case 转换为 camelCase
+    if (response.data && typeof response.data === 'object') {
+      return toCamelCase(response.data);
+    }
+    
     return response.data;
   },
   async (error) => {

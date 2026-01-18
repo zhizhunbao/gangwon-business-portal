@@ -12,16 +12,13 @@ from uuid import UUID
 class FileUploadResponse(BaseModel):
     """File upload response schema."""
     
-    id: UUID
-    resource_type: Optional[str] = Field(None, description="Resource type (e.g., 'performance', 'project')")
-    resource_id: Optional[UUID] = Field(None, description="Associated resource ID")
+    file_id: str = Field(..., description="Unique file identifier")
+    file_name: str = Field(..., description="Original file name")
+    file_url: str = Field(..., description="File URL or path")
+    file_size: int = Field(..., description="File size in bytes")
     file_type: Optional[str] = Field(None, description="File type (e.g., 'image', 'document')")
-    file_url: str = Field(..., description="File URL (public URL for public files, signed URL for private files)")
-    original_name: str = Field(..., description="Original filename")
-    stored_name: str = Field(..., description="Stored filename")
-    file_size: Optional[int] = Field(None, description="File size in bytes")
     mime_type: Optional[str] = Field(None, description="MIME type")
-    uploaded_at: datetime
+    uploaded_at: str = Field(..., description="Upload timestamp")
     
     class Config:
         from_attributes = True

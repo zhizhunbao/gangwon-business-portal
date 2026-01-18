@@ -46,7 +46,7 @@ service = MessageService()
 )
 async def get_messages(
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    page_size: Annotated[int, Query(ge=1, le=1000)] = 20,
     is_read: Optional[bool] = Query(None, description="Filter by read status"),
     is_important: Optional[bool] = Query(None, description="Filter by important status"),
     current_user = Depends(get_current_admin_user),
@@ -116,7 +116,7 @@ async def get_message_analytics(
 )
 async def list_admin_threads(
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    page_size: Annotated[int, Query(ge=1, le=1000)] = 20,
     status: Optional[str] = Query(None, description="Filter by status: open, resolved, closed"),
     has_unread: Optional[bool] = Query(None, description="Filter threads with unread messages"),
     current_user = Depends(get_current_admin_user),
@@ -222,7 +222,7 @@ async def delete_message(
 )
 async def get_member_messages(
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    page_size: Annotated[int, Query(ge=1, le=1000)] = 20,
     is_read: Optional[bool] = Query(None, description="Filter by read status"),
     is_important: Optional[bool] = Query(None, description="Filter by important status"),
     current_user: Member = Depends(get_current_member_user),
@@ -278,7 +278,7 @@ async def get_member_unread_count(
 )
 async def list_member_threads(
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=100)] = 20,
+    page_size: Annotated[int, Query(ge=1, le=1000)] = 20,
     status: Optional[str] = Query(None, description="Filter by status: open, resolved, closed"),
     current_user: Member = Depends(get_current_member_user),
 ):

@@ -59,14 +59,13 @@ class PerformanceService:
             record['member_company_name'] = member_company_name
             record['member_business_number'] = member_business_number
         
-        # Batch get attachments for all records (避免 N+1 查询)
-        if records:
-            record_ids = [str(r['id']) for r in records]
-            attachments_map = await supabase_service.get_attachments_by_resource_ids_batch(
-                'performance', record_ids
-            )
-            for record in records:
-                record['attachments'] = attachments_map.get(str(record['id']), [])
+        # 附件数据现在直接存储在记录的attachments字段中
+        for record in records:
+            # 确保attachments字段存在且为列表格式
+            if record.get('attachments') is None:
+                record['attachments'] = []
+            elif not isinstance(record.get('attachments'), list):
+                record['attachments'] = []
         
         return records, total
 
@@ -263,14 +262,13 @@ class PerformanceService:
             sort_order="desc",
         )
         
-        # Batch get attachments for all records (避免 N+1 查询)
-        if records:
-            record_ids = [str(r['id']) for r in records]
-            attachments_map = await supabase_service.get_attachments_by_resource_ids_batch(
-                'performance', record_ids
-            )
-            for record in records:
-                record['attachments'] = attachments_map.get(str(record['id']), [])
+        # 附件数据现在直接存储在记录的attachments字段中
+        for record in records:
+            # 确保attachments字段存在且为列表格式
+            if record.get('attachments') is None:
+                record['attachments'] = []
+            elif not isinstance(record.get('attachments'), list):
+                record['attachments'] = []
         
         return records, total
 
@@ -296,10 +294,16 @@ class PerformanceService:
             raise NotFoundError(resource_type="Performance record")
 
         # Get attachments using existing method
-        attachments = await supabase_service.get_attachments_by_resource(
-            'performance', str(performance_id)
-        )
-        record['attachments'] = attachments
+        try:
+            attachments = await supabase_service.get_attachments_by_resource(
+                'performance', str(performance_id)
+            )
+            record['attachments'] = attachments
+        except Exception as e:
+            # If attachments table doesn't exist, just set empty array
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to get attachments: {e}")
+            record['attachments'] = []
 
         # Reviews are now integrated into the main record, but for backward compatibility
         # create a reviews array if review data exists

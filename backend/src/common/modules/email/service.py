@@ -119,7 +119,7 @@ class EmailService:
     async def send_registration_confirmation_email(
         self, *, to_email: str, company_name: str, business_number: str
     ) -> bool:
-        dashboard_url = f"{self._settings.FRONTEND_URL.rstrip('/')}/member/login"
+        dashboard_url = "https://k-talk.kr/member/login"
         subject = "강원 비즈니스 포털 회원가입 신청이 접수되었습니다"
         context = {
             "title": subject,

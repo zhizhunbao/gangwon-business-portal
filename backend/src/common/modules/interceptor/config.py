@@ -13,8 +13,8 @@ from typing import Set, List
 
 # 敏感字段（会被过滤）
 SENSITIVE_FIELDS: Set[str] = {
-    "password", "token", "secret", "key", "auth",
-    "credential", "private", "api_key", "access_token",
+    "password", "secret", "key", "auth",
+    "credential", "private", "api_key",
 }
 
 # 敏感请求头

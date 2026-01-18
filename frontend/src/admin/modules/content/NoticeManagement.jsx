@@ -5,9 +5,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Input, RichTextEditor, Alert, Card, Modal, ModalFooter } from '@shared/components';
+import { Button, Input, TiptapEditor, Alert, Card, Modal, ModalFooter, FileAttachments } from '@shared/components';
 import { contentService } from '@shared/services';
 import { formatDate } from '@shared/utils';
+import { useUpload } from '@shared/hooks';
 import { validateNoticeForm } from './utils';
 
 export default function NoticeManagement() {
@@ -24,6 +25,9 @@ export default function NoticeManagement() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, noticeId: null });
+
+  // 文件上传
+  const { uploading, uploadAttachments } = useUpload();
 
   // Load notices
   const loadNotices = useCallback(async (pageNum = 1) => {
@@ -54,15 +58,50 @@ export default function NoticeManagement() {
     }
   };
 
-  const handleSelect = (notice) => {
-    setForm({
-      id: notice.id,
-      title: notice.title,
-      contentHtml: notice.contentHtml || '',
-      boardType: notice.boardType || 'notice'
-    });
-    setErrors({});
-    setMessage(null);
+  // 处理附件上传
+  const handleAttachmentsChange = async (files, action, index) => {
+    console.log('handleAttachmentsChange called:', { files, action, index });
+    
+    if (action === 'remove') {
+      // 删除附件
+      console.log('Removing attachment, new list:', files);
+      setForm((prev) => ({
+        ...prev,
+        attachments: files
+      }));
+      return;
+    }
+
+    // 上传新文件
+    const uploadedFiles = await uploadAttachments(files);
+    
+    if (uploadedFiles) {
+      setForm((prev) => ({
+        ...prev,
+        attachments: [...(prev.attachments || []), ...uploadedFiles]
+      }));
+    }
+  };
+
+  const handleSelect = async (notice) => {
+    try {
+      // 获取完整的公告详情（包括附件）
+      const fullNotice = await contentService.getNotice(notice.id);
+      
+      setForm({
+        id: fullNotice.id,
+        title: fullNotice.title,
+        contentHtml: fullNotice.contentHtml || '',
+        boardType: fullNotice.boardType || 'notice',
+        attachments: fullNotice.attachments || []
+      });
+      setErrors({});
+      setMessage(null);
+    } catch (error) {
+      console.error('Failed to load notice details:', error);
+      setMessageVariant('error');
+      setMessage(t('admin.content.notices.messages.loadFailed', '加载公告详情失败'));
+    }
   };
 
   const handleNew = () => {
@@ -88,6 +127,7 @@ export default function NoticeManagement() {
     } else {
       savedNotice = await contentService.createNotice(form);
     }
+    
     await loadNotices(page);
     setForm(savedNotice);
     setMessageVariant('success');
@@ -196,13 +236,41 @@ export default function NoticeManagement() {
               required
               error={errors.title}
             />
-            <RichTextEditor
+            
+            {/* 公告类型选择 */}
+            <div className="flex flex-col gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="boardType"
+                  checked={form.boardType === 'notice'}
+                  onChange={(e) => {
+                    const newValue = e.target.checked ? 'notice' : 'general';
+                    setForm((prev) => ({ ...prev, boardType: newValue }));
+                  }}
+                  className="w-4 h-4 text-red-600 focus:ring-red-500 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  {t('admin.content.notices.form.fields.boardTypeImportant', '重要')}
+                </span>
+              </label>
+            </div>
+            
+            <TiptapEditor
               label={t('admin.content.notices.form.fields.contentHtml', '内容')}
               value={form.contentHtml}
               onChange={handleFieldChange('contentHtml')}
               required
               error={errors.contentHtml}
               placeholder={t('admin.content.notices.form.fields.contentHtmlPlaceholder', '请输入公告内容...')}
+            />
+            <FileAttachments
+              label={t('admin.content.notices.form.fields.attachments', '附件')}
+              attachments={form.attachments || []}
+              onChange={handleAttachmentsChange}
+              maxFiles={5}
+              uploading={uploading}
+              error={errors.attachments}
             />
             <div className="flex justify-end">
               <Button
@@ -250,6 +318,7 @@ function createEmptyForm() {
     id: null,
     title: '',
     contentHtml: '',
-    boardType: 'notice'
+    boardType: 'general',
+    attachments: []
   };
 }

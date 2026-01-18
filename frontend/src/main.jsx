@@ -14,7 +14,8 @@ if (typeof window !== 'undefined') {
     const message = args[0];
     if (message && typeof message === 'string') {
       if (message.includes('Download the React DevTools') ||
-          message.includes('findDOMNode is deprecated')) {
+          message.includes('findDOMNode is deprecated') ||
+          message.includes('[tiptap warn]: Duplicate extension names')) {
         return;
       }
     }

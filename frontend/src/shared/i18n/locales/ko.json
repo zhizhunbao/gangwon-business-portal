@@ -19,6 +19,7 @@
     "backToList": "목록으로",
     "view": "보기",
     "viewAll": "전체 보기",
+    "preview": "미리보기",
     "loading": "로딩 중...",
     "noData": "데이터가 없습니다",
     "error": "오류",
@@ -32,6 +33,8 @@
     "previous": "이전",
     "download": "다운로드",
     "upload": "업로드",
+    "uploading": "업로드 중...",
+    "sending": "전송 중...",
     "add": "추가",
     "remove": "제거",
     "filter": "필터",
@@ -50,11 +53,14 @@
     "year": "년",
     "quarter": "분기",
     "total": "총",
+    "resultsCount": "총 {{count}}건",
     "approve": "승인",
     "reject": "거절",
     "notifications": "알림",
     "characters": "자",
-    "personUnit": "명"
+    "personUnit": "명",
+    "selectFile": "파일 선택",
+    "commaSeparatedHint": "여러 값은 쉼표로 구분하세요"
   },
   "notifications": {
     "empty": "알림이 없습니다",
@@ -70,7 +76,8 @@
     "representative": "대표자명",
     "representativeBirthDate": "대표자 생년월일",
     "representativeGender": "대표자 성별",
-    "phone": "전화번호",
+    "representativePhone": "대표자 전화번호",
+    "phone": "기업 전화번호",
     "address": "주소",
     "addressDetail": "상세주소",
     "region": "소재지",
@@ -90,6 +97,7 @@
     "contactPersonName": "담당자명",
     "contactPersonDepartment": "담당자 부서",
     "contactPersonPosition": "담당자 직책",
+    "contactPersonPhone": "담당자 전화번호",
     "mainBusiness": "주요 사업",
     "businessField": "사업분야",
     "cooperationFields": "산업협력 희망 분야",
@@ -101,7 +109,26 @@
     "ksicSub": "지역주력산업코드[중분류]",
     "selectMajorFirst": "대분류를 먼저 선택하세요",
     "male": "남성",
-    "female": "여성"
+    "female": "여성",
+    "regionGangwon": "강원특별자치도",
+    "regionOther": "강원 이외",
+    "categoryPre": "예비창업",
+    "categoryStartup": "초기창업",
+    "categoryIndividual": "개인사업자",
+    "categoryCorporation": "법인사업자",
+    "categoryNonProfit": "비영리사업자",
+    "logoUpload": "로고 업로드",
+    "businessLicenseFile": "사업자등록증 파일",
+    "representativePhone": "대표자 전화번호",
+    "websiteUrl": "웹사이트 주소",
+    "selectRegion": "소재지를 선택하세요",
+    "selectCategory": "기업 유형을 선택하세요",
+    "selectBusinessField": "사업분야를 선택하세요",
+    "selectStartupType": "창업구분을 선택하세요",
+    "selectKsicMajor": "대분류를 선택하세요",
+    "selectKsicSub": "중분류를 선택하세요",
+    "establishedDateHelp": "형식: yyyy-mm-dd (예: 2020-01-15)",
+    "phoneHelp": "형식: 010-1234-5678 또는 02-1234-5678"
   },
   "industryClassification": {
     "startupType": {
@@ -341,7 +368,7 @@
         "news": "뉴스 자료",
         "faq": "FAQ",
         "systemInfo": "시스템 소개",
-        "legal": "이용약관/개인정보"
+        "legal": "약관관리"
       },
       "banners": {
         "title": "배너 관리",
@@ -448,8 +475,12 @@
           "newTitle": "새 공지사항",
           "fields": {
             "title": "제목",
-            "contentHtml": "내용",
-            "contentHtmlPlaceholder": "공지사항 내용을 입력하세요..."
+            "contentHtml": "내容",
+            "contentHtmlPlaceholder": "공지사항 내용을 입력하세요...",
+            "attachments": "첨부파일",
+            "boardType": "공지 유형",
+            "boardTypeImportant": "중요",
+            "boardTypeGeneral": "일반"
           }
         },
         "actions": {
@@ -552,10 +583,12 @@
         }
       },
       "legal": {
-        "title": "이용약관/개인정보처리방침 관리",
+        "title": "약관관리",
         "description": "이용약관과 개인정보처리방침 내용을 관리합니다.",
         "termsOfService": "이용약관",
         "privacyPolicy": "개인정보 처리방침",
+        "thirdPartySharing": "제3자 정보 제공 동의",
+        "marketingConsent": "마케팅 정보 수신 동의",
         "contentPlaceholder": "내용을 입력하세요...",
         "helpTitle": "안내",
         "helpText": "여기서 입력한 내용은 회원가입 시 이용약관 및 개인정보처리방침 팝업에 표시됩니다.",
@@ -1402,7 +1435,7 @@
     },
     "status": {
       "approved": "승인 완료",
-      "submitted": "제출 완료",
+      "submitted": "심사중",
       "revisionRequested": "수정 필요",
       "draft": "임시저장",
       "rejected": "거부됨",
@@ -1650,8 +1683,8 @@
     "toggleMenu": "메뉴 토글",
     "notifications": "알림",
     "noNotifications": "알림이 없습니다",
-    "profile": "프로필",
-    "support": "고객지원",
+    "profile": "기업정보",
+    "support": "문의내역",
     "logout": "로그아웃",
     "login": "로그인"
   },
@@ -1810,11 +1843,35 @@
       "weak": "약함",
       "medium": "보통",
       "strong": "강함"
-    }
+    },
+    "registerStep1": "계정 정보",
+    "registerStep2": "기업 정보",
+    "registerStep3": "연락처 정보",
+    "registerStep4": "사업 정보",
+    "registerStep5": "약관 동의",
+    "removeFile": "파일 삭제",
+    "termsRequired": "필수 약관에 동의해주세요",
+    "termsRequiredLabel": "필수",
+    "termsOptionalLabel": "선택",
+    "agreeAll": "전체 동의",
+    "viewTerms": "내용 보기",
+    "nextStep": "다음 단계",
+    "previousStep": "이전 단계",
+    "registerPendingApproval": "회원가입 신청이 완료되었습니다. 관리자 승인 후 이메일로 안내드립니다.",
+    "businessNumberAlreadyRegistered": "이미 등록된 사업자등록번호입니다",
+    "emailAlreadyRegistered": "이미 등록된 이메일입니다",
+    "termsOfService": "이용약관",
+    "privacyPolicy": "개인정보처리방침",
+    "thirdPartySharing": "제3자 정보제공",
+    "marketingConsent": "마케팅 정보 수신"
   },
   "validation": {
     "required": "{{field}}을(를) 입력해주세요",
     "passwordMismatch": "비밀번호가 일치하지 않습니다",
+    "passwordMinLength": "비밀번호는 최소 8자 이상이어야 합니다",
+    "invalidDateFormat": "날짜 형식이 올바르지 않습니다. yyyy-mm-dd 형식으로 입력하세요",
+    "invalidPhoneFormat": "전화번호 형식이 올바르지 않습니다. 010-1234-5678 또는 02-1234-5678 형식으로 입력하세요",
+    "phoneMinLength": "전화번호는 최소 10자 이상이어야 합니다",
     "minLength": "최소 {{min}}자 이상 입력해주세요",
     "maxLength": "최대 {{max}}자까지 입력 가능합니다",
     "invalidFormat": "올바른 형식이 아닙니다"
@@ -1837,14 +1894,15 @@
       "supportDesc": "1:1 문의 및 FAQ 확인"
     },
     "notices": {
-      "title": "사업공고",
+      "title": "공지사항",
       "description": "최신 공고 및 중요 알림 확인",
       "important": "중요",
+      "normal": "일반",
       "empty": "공고가 없습니다",
       "noContent": "내용이 없습니다"
     },
     "news": {
-      "title": "신규공고",
+      "title": "사업공고",
       "description": "최신 뉴스 자료 및 정보 확인",
       "empty": "뉴스 자료가 없습니다",
       "noContent": "내용이 없습니다"
@@ -1944,10 +2002,17 @@
         "teamMembers": "참여 인력",
         "teamMembersPlaceholder": "이름, 역할, 경력 등을 입력하세요",
         "reason": "신청 사유",
-        "reasonPlaceholder": "이 사업에 신청하는 이유를 자세히 설명해주세요 (최소 10자 이상)"
+        "reasonPlaceholder": "이 사업에 신청하는 이유를 자세히 설명해주세요 (최소 10자 이상)",
+        "applicantName": "담당자 이름",
+        "applicantNamePlaceholder": "담당자 이름을 입력하세요",
+        "applicantPhone": "담당자 전화번호",
+        "applicantPhonePlaceholder": "전화번호를 입력하세요",
+        "attachments": "첨부파일"
       },
       "validationError": "필수 항목을 확인한 뒤 다시 시도해주세요.",
       "reasonMinLength": "신청 사유는 최소 10자 이상 입력해주세요",
+      "applicantNameRequired": "담당자 이름을 입력해주세요",
+      "applicantPhoneRequired": "담당자 전화번호를 입력해주세요",
       "attachments": {
         "title": "첨부 서류",
         "description": "사업자등록증, 사업계획서 등 필요한 서류를 첨부해주세요.",
@@ -2011,13 +2076,35 @@
       "noFilesSelected": "파일을 선택해주세요.",
       "fileTooLarge": "파일 크기가 너무 큽니다. (최대 10MB)",
       "featureComingSoon": "기능 준비 중입니다"
-    }
+    },
+    "alreadyApplied": "이미 신청한 프로젝트입니다",
+    "notFound": "프로젝트를 찾을 수 없습니다",
+    "applicationNotFound": "신청 기록을 찾을 수 없습니다",
+    "closed": "프로젝트가 마감되어 신청할 수 없습니다",
+    "deadlinePassed": "신청 마감일이 지났습니다",
+    "reapply": "재신청",
+    "resubmit": "재제출",
+    "canReapplyHint": "재신청이 가능합니다",
+    "applicationStatus": "신청 상태",
+    "submittedAt": "제출 시간",
+    "applicationDetail": "신청 상세"
   },
   "support": {
     "title": "원스톱 지원",
     "subtitle": "문의, FAQ",
     "inquiry": "1:1 문의",
     "faq": "자주 묻는 질문",
+    "faqCategory": {
+      "registration": "회원가입",
+      "general": "일반",
+      "performance": "성과관리",
+      "project": "프로젝트",
+      "profile": "기업프로필",
+      "support": "문의/지원",
+      "other": "기타"
+    },
+    "faqSearchPlaceholder": "질문 또는 답변 검색...",
+    "noFaqResults": "일치하는 질문을 찾을 수 없습니다",
     "newInquiry": "새 문의",
     "inquiryHistory": "문의 내역",
     "noInquiries": "문의 내역이 없습니다",
@@ -2068,6 +2155,7 @@
       "closed": "종료됨"
     },
     "createdDate": "작성 시간",
+    "lastReply": "최근 답변",
     "answeredDate": "답변 시간",
     "views": "조회수",
     "viewsLabel": "회 조회",
@@ -2101,5 +2189,34 @@
     "comment": "댓글",
     "like": "좋아요",
     "replyToThread": "답변하기"
+  },
+  "editor": {
+    "addLink": "링크 추가",
+    "linkText": "링크 텍스트",
+    "linkUrl": "링크 주소",
+    "bold": "굵게",
+    "italic": "기울임",
+    "underline": "밑줄",
+    "heading1": "제목 1",
+    "heading2": "제목 2",
+    "heading3": "제목 3",
+    "bulletList": "글머리 기호 목록",
+    "orderedList": "번호 매기기 목록",
+    "link": "링크",
+    "image": "이미지",
+    "table": "표",
+    "deleteTable": "표 삭제",
+    "undo": "실행 취소",
+    "redo": "다시 실행",
+    "uploading": "업로드 중..."
+  },
+  "fileAttachments": {
+    "addFiles": "첨부파일 추가",
+    "uploading": "업로드 중...",
+    "remaining": "{{count}}/{{max}} 개 파일 업로드 가능",
+    "hint": "파일당 최대 {{max}}",
+    "fileTooLarge": "파일 {{name}}이(가) 최대 크기 {{max}}를 초과했습니다",
+    "attachments": "첨부파일",
+    "viewAll": "{{count}}개 첨부파일"
   }
 }

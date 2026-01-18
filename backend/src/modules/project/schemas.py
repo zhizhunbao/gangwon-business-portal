@@ -48,6 +48,7 @@ class ProjectCreate(BaseModel):
     end_date: Optional[date] = Field(None, description="Project end date")
     image_url: Optional[str] = Field(None, max_length=500, description="Project image URL")
     status: Optional[ProjectStatus] = Field(ProjectStatus.active, description="Project status")
+    attachments: Optional[list] = Field(None, description="File attachments")
 
 
 class ProjectUpdate(BaseModel):
@@ -60,6 +61,7 @@ class ProjectUpdate(BaseModel):
     end_date: Optional[date] = None
     image_url: Optional[str] = Field(None, max_length=500)
     status: Optional[ProjectStatus] = None
+    attachments: Optional[list] = None
 
 
 class ProjectResponse(BaseModel):
@@ -73,6 +75,7 @@ class ProjectResponse(BaseModel):
     end_date: Optional[date]
     image_url: Optional[str]
     status: str
+    attachments: Optional[list] = None
     created_at: datetime
     updated_at: datetime
     applications_count: Optional[int] = Field(None, description="Number of applications (computed)")
@@ -92,6 +95,7 @@ class ProjectListItem(BaseModel):
     end_date: date
     image_url: Optional[str]
     status: str
+    attachments: Optional[list] = None
     applications_count: int
     
     # Formatted display fields
@@ -135,6 +139,7 @@ class ProjectListItem(BaseModel):
             "end_date": cls._parse_date(data["end_date"]),
             "image_url": data.get("image_url", ""),
             "status": data["status"],
+            "attachments": data.get("attachments", []),
             "applications_count": app_count,
             
             # Formatted display fields
@@ -209,6 +214,7 @@ class ProjectListResponsePaginated(BaseModel):
 class ProjectApplicationCreate(BaseModel):
     """Schema for creating a project application (member)."""
     application_reason: str = Field(..., min_length=10, description="Reason for applying")
+    attachments: Optional[list] = Field(None, description="File attachments")
 
 
 class ProjectApplicationResponse(BaseModel):
@@ -219,6 +225,7 @@ class ProjectApplicationResponse(BaseModel):
     project: Optional[ProjectResponse] = Field(None, description="Nested project details")
     status: str
     application_reason: str
+    attachments: Optional[list] = None
     submitted_at: datetime
     reviewed_at: Optional[datetime]
 
@@ -235,6 +242,7 @@ class ProjectApplicationListItem(BaseModel):
     company_name: str  # 必填，数据库里没有就报错
     status: str
     application_reason: str  # 必填，数据库里没有就报错
+    attachments: Optional[list] = None
     submitted_at: datetime
     reviewed_at: Optional[datetime]  # 这个可以为空，因为可能还没审核
     review_note: Optional[str] = None  # 审核备注/拒绝原因
@@ -249,7 +257,7 @@ class ApplicationListQuery(BaseModel):
     status: Optional[ApplicationStatus] = Field(None, description="Filter by status")
     search: Optional[str] = Field(None, description="Search in project title")
     page: Optional[int] = Field(1, ge=1, description="Page number")
-    page_size: Optional[int] = Field(10, ge=1, le=100, description="Items per page")
+    page_size: Optional[int] = Field(10, ge=1, le=1000, description="Items per page")
 
 
 class ApplicationListResponsePaginated(BaseModel):

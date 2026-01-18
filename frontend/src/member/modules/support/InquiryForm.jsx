@@ -103,15 +103,14 @@ export default function InquiryForm({ onSubmitSuccess }) {
     
     try {
       // 转换附件格式为 Threads 格式
-      // Threads API 期望: { fileName, filePath, fileSize, mimeType }
+      // Threads API 期望: { fileName, fileUrl, fileSize, mimeType }
       const threadAttachments = formData.attachments.map(att => {
-        // 优先使用 file_url 作为 filePath（Supabase 存储 URL）
-        const filePath = att.file_url || att.url || att.filePath;
-        const fileName = att.original_name || att.name || att.fileName || 'attachment';
-        const fileSize = att.file_size || att.size || att.fileSize || 0;
+        const fileUrl = att.fileUrl || att.url;
+        const fileName = att.originalName || att.name || att.fileName || 'attachment';
+        const fileSize = att.fileSize || att.size || 0;
         
         // 从文件名推断 MIME 类型
-        let mimeType = att.mime_type || att.mimeType || 'application/octet-stream';
+        let mimeType = att.mimeType || 'application/octet-stream';
         if (!mimeType || mimeType === 'application/octet-stream') {
           const ext = fileName.split('.').pop()?.toLowerCase();
           const mimeMap = {
@@ -130,7 +129,7 @@ export default function InquiryForm({ onSubmitSuccess }) {
         
         return {
           fileName,
-          filePath,
+          fileUrl,
           fileSize,
           mimeType
         };
@@ -241,11 +240,11 @@ export default function InquiryForm({ onSubmitSuccess }) {
                         <DocumentIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-gray-700 truncate">
-                            {att.original_name || att.name}
+                            {att.originalName || att.name}
                           </p>
-                          {(att.file_size || att.size) && (
+                          {(att.fileSize || att.size) && (
                             <p className="text-xs text-gray-500">
-                              {formatFileSize(att.file_size || att.size)}
+                              {formatFileSize(att.fileSize || att.size)}
                             </p>
                           )}
                         </div>

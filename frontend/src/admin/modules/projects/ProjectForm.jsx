@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, Button, Input, Select, Textarea, Loading, Alert } from '@shared/components';
+import { Card, Button, Input, Select, Textarea, Loading, Alert, FileAttachments } from '@shared/components';
 import { adminService } from '@shared/services';
 import { useUpload } from '@shared/hooks';
 
@@ -32,8 +32,8 @@ export default function ProjectForm() {
 
   const [formData, setFormData] = useState({
     title: '',
-    target_company_name: '',
-    target_business_number: '',
+    targetCompanyName: '',
+    targetBusinessNumber: '',
     startDate: '',
     endDate: '',
     status: 'active',
@@ -55,13 +55,13 @@ export default function ProjectForm() {
     if (data) {
       setFormData({
         title: data.title || '',
-        target_company_name: data.target_company_name || '',
-        target_business_number: data.target_business_number || '',
-        startDate: formatDateForInput(data.start_date || data.startDate),
-        endDate: formatDateForInput(data.end_date || data.endDate),
+        targetCompanyName: data.targetCompanyName || '',
+        targetBusinessNumber: data.targetBusinessNumber || '',
+        startDate: formatDateForInput(data.startDate),
+        endDate: formatDateForInput(data.endDate),
         status: data.status || 'active',
         content: data.description || data.content || '',
-        image: data.image_url || data.image || null,
+        image: data.imageUrl || data.image || null,
         attachments: data.attachments || []
       });
     }
@@ -97,12 +97,13 @@ export default function ProjectForm() {
       const payload = {
         title: formData.title,
         description: formData.content,
-        target_company_name: formData.target_company_name || null,
-        target_business_number: formData.target_business_number || null,
-        start_date: formData.startDate,
-        end_date: formData.endDate,
+        targetCompanyName: formData.targetCompanyName || null,
+        targetBusinessNumber: formData.targetBusinessNumber || null,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
         status: formData.status,
-        image_url: formData.image || null,
+        imageUrl: formData.image || null,
+        attachments: formData.attachments || [],
       };
 
       let successMessage;
@@ -136,8 +137,8 @@ export default function ProjectForm() {
       formDataUpload.append('file', file);
       formDataUpload.append('type', 'project');
       const result = await uploadFile(formDataUpload);
-      if (result?.file_url) {
-        setFormData(prev => ({ ...prev, image: result.file_url }));
+      if (result?.fileUrl) {
+        setFormData(prev => ({ ...prev, image: result.fileUrl }));
       }
     } catch (err) {
       console.error('Upload failed:', err);
@@ -146,6 +147,52 @@ export default function ProjectForm() {
       setTimeout(() => setMessage(null), 5000);
     } finally {
       e.target.value = '';
+    }
+  };
+
+  const handleAttachmentsChange = async (filesOrAttachments, action, index) => {
+    // 如果是删除操作
+    if (action === 'remove') {
+      setFormData(prev => ({ ...prev, attachments: filesOrAttachments }));
+      return;
+    }
+
+    // 如果是添加文件
+    if (!filesOrAttachments || filesOrAttachments.length === 0) {
+      return;
+    }
+
+    try {
+      const uploadPromises = Array.from(filesOrAttachments).map(async (file) => {
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', file);
+        formDataUpload.append('type', 'project');
+        const result = await uploadFile(formDataUpload);
+        
+        return {
+          fileId: result.fileId,
+          fileName: result.fileName || file.name,
+          fileUrl: result.fileUrl,
+          fileSize: result.fileSize || file.size,
+          originalName: result.fileName || file.name,
+          mimeType: result.mimeType || file.type
+        };
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+      setFormData(prev => ({
+        ...prev,
+        attachments: [...(prev.attachments || []), ...uploadedFiles]
+      }));
+      
+      setMessageVariant('success');
+      setMessage(t('admin.projects.form.attachmentUploadSuccess', `成功上传 ${uploadedFiles.length} 个附件`));
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      console.error('Attachment upload failed:', err);
+      setMessageVariant('error');
+      setMessage(t('admin.projects.form.attachmentUploadError', '附件上传失败，请重试'));
+      setTimeout(() => setMessage(null), 5000);
     }
   };
 
@@ -239,16 +286,16 @@ export default function ProjectForm() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
                     label={t('admin.projects.form.targetCompany', '目标企业名称')}
-                    name="target_company_name"
-                    value={formData.target_company_name}
+                    name="targetCompanyName"
+                    value={formData.targetCompanyName}
                     onChange={handleChange}
                     placeholder={t('admin.projects.form.targetCompanyPlaceholder', '留空表示公开招募')}
                   />
 
                   <Input
                     label={t('admin.projects.form.businessNumber', '营业执照号')}
-                    name="target_business_number"
-                    value={formData.target_business_number}
+                    name="targetBusinessNumber"
+                    value={formData.targetBusinessNumber}
                     onChange={handleChange}
                     placeholder={t('admin.projects.form.businessNumberPlaceholder', '例：123-45-67890')}
                     maxLength={12}
@@ -262,6 +309,14 @@ export default function ProjectForm() {
                   onChange={handleChange}
                   rows={8}
                   placeholder={t('admin.projects.form.descriptionPlaceholder', '请输入项目详细说明...')}
+                />
+
+                <FileAttachments
+                  attachments={formData.attachments}
+                  onChange={handleAttachmentsChange}
+                  maxFiles={5}
+                  maxFileSize={10 * 1024 * 1024}
+                  uploading={uploading}
                 />
               </div>
             </div>

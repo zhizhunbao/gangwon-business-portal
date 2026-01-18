@@ -246,6 +246,8 @@ class PerformanceListQuery(BaseModel):
     type: Optional[str] = Field(None, description="Filter by type (sales/support/ip)")
     member_id: Optional[UUID] = Field(None, description="Filter by member (admin only)")
     search_keyword: Optional[str] = Field(None, description="Search keyword for company name, business number, or year")
+    page: int = Field(1, ge=1, description="Page number")
+    page_size: int = Field(20, ge=1, le=1000, description="Items per page")
 
 
 class PerformanceListResponsePaginated(BaseModel):

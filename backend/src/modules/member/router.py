@@ -61,6 +61,8 @@ async def update_my_profile(
 @router.get("/api/admin/members", response_model=MemberListResponsePaginated)
 async def list_members(
     request: Request,
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=1000, description="Items per page"),
     search: Optional[str] = Query(None),
     industry: Optional[str] = Query(None),
     region: Optional[str] = Query(None),
@@ -73,6 +75,8 @@ async def list_members(
     Data formatting is handled by schemas.
     """
     query = MemberListQuery(
+        page=page,
+        page_size=page_size,
         search=search,
         industry=industry,
         region=region,

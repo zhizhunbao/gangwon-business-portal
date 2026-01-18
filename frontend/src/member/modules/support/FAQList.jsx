@@ -3,26 +3,40 @@
  * FAQ列表组件（问题标题列表，点击展开答案的折叠结构）
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import Card, { CardBody } from '@shared/components/Card';
-import { EyeIcon, ChevronDownIcon, ChevronUpIcon, SearchIcon } from '@shared/components/Icons';
+import { EyeIcon, ChevronDownIcon, ChevronUpIcon } from '@shared/components/Icons';
+import SearchInput from '@shared/components/SearchInput';
 import { supportService } from '@shared/services';
 
 export default function FAQList() {
   const { t } = useTranslation();
-  const [faqs, setFaqs] = useState([]);
+  const [allFaqs, setAllFaqs] = useState([]);
+  const [filteredFaqs, setFilteredFaqs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedIds, setExpandedIds] = useState(new Set());
-  const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+
+  // 使用 useCallback 包装 setFilteredFaqs 避免无限循环
+  const handleFilterChange = useCallback((filtered) => {
+    setFilteredFaqs(filtered);
+  }, []);
 
   useEffect(() => {
     const loadFAQs = async () => {
       setLoading(true);
-      const items = await supportService.listFAQs({});
-      setFaqs(items || []);
-      setLoading(false);
+      try {
+        const items = await supportService.listFAQs({});
+        setAllFaqs(items || []);
+        setFilteredFaqs(items || []);
+      } catch (error) {
+        console.error('Failed to load FAQs:', error);
+        setAllFaqs([]);
+        setFilteredFaqs([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadFAQs();
@@ -31,13 +45,13 @@ export default function FAQList() {
   // 获取所有分类
   const categories = useMemo(() => {
     const categorySet = new Set();
-    faqs.forEach(faq => {
+    allFaqs.forEach(faq => {
       if (faq.category) {
         categorySet.add(faq.category);
       }
     });
     return Array.from(categorySet);
-  }, [faqs]);
+  }, [allFaqs]);
 
   // FAQ 分类翻译映射
   const categoryTranslations = {
@@ -50,6 +64,22 @@ export default function FAQList() {
     '기타': t('support.faqCategory.other', '其他')
   };
 
+  // 定义搜索列
+  const columns = useMemo(() => [
+    {
+      key: 'question',
+      render: (value, row) => row.question || row.title || ''
+    },
+    {
+      key: 'answer',
+      render: (value, row) => row.answer || row.content || ''
+    },
+    {
+      key: 'category',
+      render: (value) => categoryTranslations[value] || value || ''
+    }
+  ], [categoryTranslations]);
+
   // 分类选项
   const categoryOptions = useMemo(() => [
     { value: '', label: t('common.all', '全部') },
@@ -59,23 +89,11 @@ export default function FAQList() {
     }))
   ], [categories, t]);
 
-  // 过滤后的 FAQ 列表
-  const filteredFaqs = useMemo(() => {
-    return faqs.filter(faq => {
-      if (searchKeyword) {
-        const keyword = searchKeyword.toLowerCase();
-        const question = (faq.question || faq.title || '').toLowerCase();
-        const answer = (faq.answer || faq.content || '').toLowerCase();
-        if (!question.includes(keyword) && !answer.includes(keyword)) {
-          return false;
-        }
-      }
-      if (selectedCategory && faq.category !== selectedCategory) {
-        return false;
-      }
-      return true;
-    });
-  }, [faqs, searchKeyword, selectedCategory]);
+  // 按分类过滤
+  const categoryFilteredFaqs = useMemo(() => {
+    if (!selectedCategory) return allFaqs;
+    return allFaqs.filter(faq => faq.category === selectedCategory);
+  }, [allFaqs, selectedCategory]);
 
   const toggleExpand = (id) => {
     setExpandedIds(prev => {
@@ -102,20 +120,13 @@ export default function FAQList() {
 
         {/* 搜索和筛选 */}
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex-1 min-w-[200px] max-w-md">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <SearchIcon className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                placeholder={t('support.faqSearchPlaceholder', '搜索问题或答案...')}
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-              />
-            </div>
-          </div>
+          <SearchInput
+            data={categoryFilteredFaqs}
+            columns={columns}
+            onFilter={handleFilterChange}
+            placeholder={t('support.faqSearchPlaceholder', '搜索问题或答案...')}
+            className="flex-1 min-w-[200px] max-w-md"
+          />
           {categories.length > 0 && (
             <div className="w-full sm:w-48">
               <select
@@ -146,9 +157,9 @@ export default function FAQList() {
             </div>
           ) : filteredFaqs.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
-              {searchKeyword || selectedCategory 
-                ? t('support.noFaqResults', '没有找到匹配的问题') 
-                : t('common.noData', '暂无数据')}
+              {allFaqs.length === 0 
+                ? t('common.noData', '暂无数据')
+                : t('support.noFaqResults', '没有找到匹配的问题')}
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -169,7 +180,7 @@ export default function FAQList() {
                         </h3>
                         {faq.category && (
                           <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-                            {faq.category}
+                            {categoryTranslations[faq.category] || faq.category}
                           </span>
                         )}
                       </div>

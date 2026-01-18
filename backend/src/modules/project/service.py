@@ -43,6 +43,46 @@ class ProjectService:
         )
         return projects, total
     
+    async def list_projects_paginated(
+        self, page: int = 1, page_size: int = 20, status: Optional[str] = None
+    ) -> tuple[list[dict], int]:
+        """
+        List projects with pagination (public access).
+
+        Args:
+            page: Page number (1-indexed)
+            page_size: Items per page
+            status: Optional status filter
+
+        Returns:
+            Tuple of (projects list, total count)
+        """
+        return await supabase_service.list_with_pagination(
+            table='projects',
+            page=page,
+            page_size=page_size,
+            order_by='created_at',
+            order_desc=True,
+            exclude_deleted=True,
+            filters={'status': status} if status else None
+        )
+    
+    async def get_latest_project(self) -> Optional[dict]:
+        """
+        Get latest project for homepage.
+
+        Returns:
+            Latest project dict or None
+        """
+        result = supabase_service.client.table('projects')\
+            .select('*')\
+            .is_('deleted_at', 'null')\
+            .order('created_at', desc=True)\
+            .limit(1)\
+            .execute()
+        
+        return result.data[0] if result.data else None
+    
     async def list_projects_admin(
         self, query: ProjectListQuery
     ) -> tuple[list[dict], int]:
@@ -83,6 +123,9 @@ class ProjectService:
         if not project:
             raise NotFoundError(resource_type="Project")
 
+        print(f"[DEBUG] Project detail: {project}")
+        print(f"[DEBUG] Attachments: {project.get('attachments')}")
+        
         return project
 
     async def apply_to_project(
@@ -114,12 +157,14 @@ class ProjectService:
                 CMessageTemplate.PROJECT_INACTIVE.format(status=project['status'])
             )
 
-        # Check for duplicate application - use direct client for complex query
+        # Check for duplicate application - only block if there's an active application
+        # Allow reapplication if previous application was cancelled or rejected
         existing_app = supabase_service.client.table('project_applications')\
-            .select('id')\
+            .select('id, status')\
             .eq('member_id', str(member_id))\
             .eq('project_id', str(project_id))\
             .is_('deleted_at', 'null')\
+            .not_.in_('status', ['cancelled', 'rejected'])\
             .limit(1)\
             .execute()
         
@@ -131,9 +176,11 @@ class ProjectService:
 
         # Create application - use helper method
         application_data = {
+            "id": str(uuid4()),
             "member_id": str(member_id),
             "project_id": str(project_id),
             "application_reason": data.application_reason,
+            "attachments": data.attachments,
             "status": "submitted",
         }
         return await supabase_service.create_record('project_applications', application_data)
@@ -273,6 +320,7 @@ class ProjectService:
             "end_date": data.end_date.isoformat() if data.end_date else None,
             "image_url": data.image_url,
             "status": data.status.value if data.status else "active",
+            "attachments": data.attachments,
         }
         # Use helper method
         return await supabase_service.create_record('projects', project_data)
@@ -313,6 +361,8 @@ class ProjectService:
             update_data["image_url"] = data.image_url
         if data.status is not None:
             update_data["status"] = data.status.value
+        if data.attachments is not None:
+            update_data["attachments"] = data.attachments
 
         # Use helper method
         return await supabase_service.update_record('projects', str(project_id), update_data)
@@ -472,6 +522,7 @@ class ProjectService:
                 "end_date": project.get("end_date"),
                 "image_url": project.get("image_url"),
                 "status": project["status"],
+                "attachments": project.get("attachments", []),
                 "applications_count": app_count,
                 "created_at": project.get("created_at"),
                 "updated_at": project.get("updated_at"),

@@ -117,12 +117,12 @@ export default function PerformanceDetail() {
       record.attachments.forEach(att => {
         attachments.push({
           id: att.id,
-          url: att.file_url,
-          name: att.original_name || att.stored_name || '附件',
+          url: att.fileUrl,
+          name: att.originalName || att.storedName || att.fileName || '附件',
           type: 'attachment',
-          fileSize: att.file_size,
-          mimeType: att.mime_type,
-          uploadedAt: att.uploaded_at
+          fileSize: att.fileSize,
+          mimeType: att.mimeType,
+          uploadedAt: att.uploadedAt
         });
       });
     }
@@ -135,23 +135,23 @@ export default function PerformanceDetail() {
       if (dataJson.attachments && Array.isArray(dataJson.attachments)) {
         dataJson.attachments.forEach(att => {
           // Avoid duplicates
-          if (!attachments.find(a => a.id === att.id || a.id === att.file_id)) {
+          if (!attachments.find(a => a.id === att.id || a.id === att.fileId)) {
             attachments.push({
-              id: att.id || att.file_id,
-              url: att.url || att.file_url,
-              name: att.name || att.original_name || att.fileName || '附件',
+              id: att.id || att.fileId,
+              url: att.url || att.fileUrl,
+              name: att.name || att.originalName || att.fileName || '附件',
               type: 'data_json'
             });
           }
         });
       }
       
-      // Check for file_id or file_url fields
+      // Check for fileId or fileUrl fields
       if (dataJson.fileId && !attachments.find(a => a.id === dataJson.fileId)) {
         attachments.push({
           id: dataJson.fileId,
           name: dataJson.fileName || dataJson.filename || '附件',
-          type: 'file_id'
+          type: 'fileId'
         });
       }
       
@@ -159,7 +159,7 @@ export default function PerformanceDetail() {
         attachments.push({
           url: dataJson.fileUrl,
           name: dataJson.fileName || dataJson.filename || '附件',
-          type: 'file_url'
+          type: 'fileUrl'
         });
       }
       
@@ -168,7 +168,7 @@ export default function PerformanceDetail() {
         attachments.push({
           id: dataJson.proofDocumentFileId,
           name: dataJson.proofDocumentFileName || '证明文件',
-          type: 'file_id'
+          type: 'fileId'
         });
       }
       
@@ -179,7 +179,7 @@ export default function PerformanceDetail() {
             attachments.push({
               id: item.proofDocumentFileId,
               name: item.proofDocumentFileName || `证明文件 ${index + 1}`,
-              type: 'file_id'
+              type: 'fileId'
             });
           }
           if (item.fileId && !attachments.find(a => a.id === item.fileId)) {
@@ -193,7 +193,7 @@ export default function PerformanceDetail() {
             attachments.push({
               url: item.fileUrl,
               name: item.fileName || item.filename || `附件 ${index + 1}`,
-              type: 'file_url'
+              type: 'fileUrl'
             });
           }
         });

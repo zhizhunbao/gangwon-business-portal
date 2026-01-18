@@ -15,77 +15,51 @@ export default function MemberList() {
   const navigate = useNavigate();
   const currentLanguage = i18n.language === 'zh' ? 'zh' : 'ko';
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [allMembers, setAllMembers] = useState([]); // 存储所有数据
+  const [allMembers, setAllMembers] = useState([]);
+  const [filteredMembers, setFilteredMembers] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [message, setMessage] = useState(null);
   const [messageVariant, setMessageVariant] = useState('success');
 
+  // 使用 useCallback 包装 setFilteredMembers 避免无限循环
+  const handleFilterChange = useCallback((filtered) => {
+    setFilteredMembers(filtered);
+    setCurrentPage(1);
+  }, []);
+
   // 一次性加载所有会员数据
   const loadAllMembers = useCallback(async () => {
     setLoading(true);
-    const params = {
-      page: 1,
-      pageSize: 10000, // 加载所有数据
-      approvalStatus: statusFilter !== 'all' ? statusFilter : undefined
-    };
-    const response = await adminService.listMembers(params);
-    
-    if (response) {
-      if (response.members && Array.isArray(response.members)) {
-        setAllMembers(response.members);
+    try {
+      const params = {
+        page: 1,
+        pageSize: 1000,
+        approvalStatus: statusFilter !== 'all' ? statusFilter : undefined
+      };
+      const response = await adminService.listMembers(params);
+      
+      if (response && response.items && Array.isArray(response.items)) {
+        setAllMembers(response.items);
+        setFilteredMembers(response.items);
       } else {
         setAllMembers([]);
+        setFilteredMembers([]);
       }
-    } else {
+    } catch (error) {
+      console.error('Failed to load members:', error);
       setAllMembers([]);
+      setFilteredMembers([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [statusFilter, t]);
+  }, [statusFilter]);
 
   useEffect(() => {
     loadAllMembers();
   }, [loadAllMembers]);
-
-  // 前端模糊搜索和过滤 - 匹配所有列
-  const filteredMembers = useMemo(() => {
-    return allMembers.filter(member => {
-      // 搜索关键词过滤
-      if (searchTerm) {
-        const keyword = searchTerm.toLowerCase();
-        const searchKeywordNormalized = searchTerm.replace(/-/g, '').toLowerCase();
-        
-        // 将所有字段值转换为可搜索的字符串
-        const searchableText = [
-          // 企业基本信息
-          member.companyName || '',
-          member.representative || '',
-          (member.businessNumber || '').replace(/-/g, ''),
-          member.address || '',
-          member.industry || '',
-          member.email || '',
-          // 状态（搜索原始值和翻译值）
-          member.approvalStatus || '',
-          member.approvalStatus ? t(`admin.members.status.${member.approvalStatus}`) : '',
-          // 创建时间（包含格式化后的时间，显示到分钟）
-          member.created_at_display || '',
-          member.createdAt ? formatDate(member.createdAt, 'yyyy-MM-dd HH:mm', currentLanguage) : '',
-          // ID（用于精确搜索）
-          member.id || '',
-        ].join(' ').toLowerCase();
-        
-        // 同时检查原始关键词和去除连字符后的关键词
-        if (!searchableText.includes(keyword) && 
-            !searchableText.includes(searchKeywordNormalized)) {
-          return false;
-        }
-      }
-      return true;
-    });
-  }, [allMembers, searchTerm, t, currentLanguage]);
 
   // 分页后的数据
   const members = useMemo(() => {
@@ -152,8 +126,47 @@ export default function MemberList() {
 
 
 
-  // 使用 useMemo 缓存 columns 配置，避免每次渲染都重新创建
-  const columns = useMemo(() => {
+  // 定义搜索列 - 简化版本用于搜索
+  const searchColumns = useMemo(() => [
+    {
+      key: 'companyName',
+      label: t('admin.members.table.companyName'),
+      render: (value) => value || ''
+    },
+    {
+      key: 'representative',
+      label: t('admin.members.table.representative'),
+      render: (value) => value || ''
+    },
+    {
+      key: 'businessNumber',
+      label: t('admin.members.table.businessNumber'),
+      render: (value) => value ? formatBusinessLicense(value) : ''
+    },
+    {
+      key: 'address',
+      label: t('admin.members.table.address'),
+      render: (value) => value || ''
+    },
+    {
+      key: 'industry',
+      label: t('admin.members.table.industry'),
+      render: (value) => value || ''
+    },
+    {
+      key: 'email',
+      label: t('admin.members.table.email', '邮箱'),
+      render: (value) => value || ''
+    },
+    {
+      key: 'approvalStatus',
+      label: t('admin.members.table.status'),
+      render: (value) => t(`admin.members.status.${value}`, value)
+    }
+  ], [t]);
+
+  // 使用 useMemo 缓存表格 columns 配置，避免每次渲染都重新创建
+  const tableColumns = useMemo(() => {
     return [
       {
         key: 'companyName',
@@ -281,16 +294,13 @@ export default function MemberList() {
         <h1 className="text-2xl font-semibold text-gray-900 mb-4">{t('admin.members.title')}</h1>
         
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <div className="flex-1 min-w-[200px] max-w-md">
-            <SearchInput
-              value={searchTerm}
-              onChange={(value) => {
-                setSearchTerm(value);
-                setCurrentPage(1);
-              }}
-              placeholder={t('admin.members.search.placeholder', '搜索所有列：企业名称、代表、营业执照号、地址、行业、邮箱、状态等')}
-            />
-          </div>
+          <SearchInput
+            data={allMembers}
+            columns={searchColumns}
+            onFilter={handleFilterChange}
+            placeholder={t('admin.members.search.placeholder', '搜索所有列：企业名称、代表、营业执照号、地址、行业、邮箱、状态等')}
+            className="flex-1 min-w-[200px] max-w-md"
+          />
           <div className="flex items-center space-x-2 md:ml-4 w-full md:w-auto">
             <Button 
               onClick={() => handleExport('excel')} 
@@ -331,7 +341,7 @@ export default function MemberList() {
             <>
               <div className="overflow-x-auto -mx-4 px-4">
                 <Table 
-                  columns={columns} 
+                  columns={tableColumns} 
                   data={members}
                 />
               </div>

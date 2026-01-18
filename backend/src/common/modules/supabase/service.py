@@ -348,39 +348,27 @@ class SupabaseService:
         return result.data[0] if result.data else None
 
     async def get_attachments_by_resource(self, resource_type: str, resource_id: str) -> List[Dict[str, Any]]:
-        """根据资源类型和ID获取附件列表"""
-        result = self.client.table('attachments')\
-            .select('*')\
-            .eq('resource_type', resource_type)\
-            .eq('resource_id', resource_id)\
-            .is_('deleted_at', 'null')\
-            .order('uploaded_at', desc=False)\
-            .execute()
+        """根据资源类型和ID获取附件列表
         
-        return result.data or []
+        注意：attachments表已被删除，附件数据现在存储在各个表的attachments字段中
+        这个方法现在返回空列表，调用方应该直接使用表记录中的attachments字段
+        """
+        # 由于独立的attachments表已被删除，返回空列表
+        # 调用方应该直接使用记录中的attachments字段
+        return []
 
     async def get_attachments_by_resource_ids_batch(self, resource_type: str, resource_ids: List[str]) -> Dict[str, List[Dict[str, Any]]]:
-        """批量获取多个资源的附件列表，返回 {resource_id: [attachments]} 格式"""
+        """批量获取多个资源的附件列表，返回 {resource_id: [attachments]} 格式
+        
+        注意：attachments表已被删除，附件数据现在存储在各个表的attachments字段中
+        这个方法现在返回空结果，调用方应该直接使用表记录中的attachments字段
+        """
         if not resource_ids:
             return {}
         
-        result = self.client.table('attachments')\
-            .select('*')\
-            .eq('resource_type', resource_type)\
-            .in_('resource_id', resource_ids)\
-            .is_('deleted_at', 'null')\
-            .order('uploaded_at', desc=False)\
-            .execute()
-        
-        # 按 resource_id 分组
-        attachments_map = {}
-        for att in (result.data or []):
-            rid = att['resource_id']
-            if rid not in attachments_map:
-                attachments_map[rid] = []
-            attachments_map[rid].append(att)
-        
-        return attachments_map
+        # 由于独立的attachments表已被删除，返回空映射
+        # 调用方应该直接使用记录中的attachments字段
+        return {resource_id: [] for resource_id in resource_ids}
 
     # Complex business methods that are still needed for backward compatibility
     async def list_members_with_filters(self, **kwargs) -> Tuple[List[Dict[str, Any]], int]:

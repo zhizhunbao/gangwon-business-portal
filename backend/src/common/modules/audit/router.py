@@ -32,7 +32,7 @@ def get_admin_user_dependency():
 @router.get("/api/admin/audit-logs", response_model=AuditLogListResponse)
 async def list_audit_logs(
     page: int = Query(default=1, ge=1, description="Page number"),
-    page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
+    page_size: int = Query(default=20, ge=1, le=1000, description="Items per page"),
     user_id: Optional[UUID] = Query(default=None, description="Filter by user ID"),
     action: Optional[str] = Query(default=None, description="Filter by action type"),
     resource_type: Optional[str] = Query(default=None, description="Filter by resource type"),

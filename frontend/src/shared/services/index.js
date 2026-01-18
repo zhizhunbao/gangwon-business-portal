@@ -9,6 +9,7 @@ export { default as adminService } from './admin.service';
 export { default as performanceService } from './performance.service';
 export { default as projectService } from './project.service';
 export { default as contentService } from './content.service';
+export { default as homeService } from './home.service';
 export { default as supportService } from './support.service';
 export { default as uploadService } from './upload.service';
 export { default as messagesService } from './messages.service';

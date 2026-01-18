@@ -8,16 +8,16 @@ from typing import Optional
 from datetime import datetime, date
 from uuid import UUID
 
-# Region options (supports Chinese and Korean)
-REGION_GANGWON_ZH = "江原特别自治道"
-REGION_GANGWON_KO = "강원특별자치도"
-REGION_OUTSIDE_GANGWON_ZH = "江原以外"
-REGION_OUTSIDE_GANGWON_KO = "강원 이외"
+# Region options - Gangwon Province cities and counties (supports Chinese and Korean)
 VALID_REGIONS = [
-    REGION_GANGWON_ZH,
-    REGION_GANGWON_KO,
-    REGION_OUTSIDE_GANGWON_ZH,
-    REGION_OUTSIDE_GANGWON_KO,
+    # Korean
+    "춘천시", "원주시", "강릉시", "동해시", "태백시", "속초시", "삼척시",
+    "홍천군", "횡성군", "영월군", "평창군", "정선군", "철원군", "화천군",
+    "양구군", "인제군", "고성군", "양양군", "기타 지역",
+    # Chinese
+    "春川市", "原州市", "江陵市", "东海市", "太白市", "束草市", "三陟市",
+    "洪川郡", "横城郡", "宁越郡", "平昌郡", "旌善郡", "铁原郡", "华川郡",
+    "杨口郡", "麟蹄郡", "高城郡", "襄阳郡", "其他地区",
 ]
 
 
@@ -43,7 +43,7 @@ class MemberRegisterRequest(BaseModel):
     region: str = Field(
         ...,
         max_length=100,
-        description="Region. Required. Options: 江原特别自治道/강원특별자치도, 江原以外/강원 이외"
+        description="Region. Required. Gangwon Province cities/counties or other regions"
     )
     company_type: Optional[str] = Field(None, max_length=100, description="Company type")
     corporate_number: Optional[str] = Field(None, max_length=20, description="Corporate number")
@@ -110,7 +110,9 @@ class TokenResponse(BaseModel):
     """Token response schema."""
 
     access_token: str = Field(..., description="JWT access token")
+    refresh_token: str = Field(..., description="JWT refresh token")
     token_type: str = Field(default="bearer", description="Token type")
+    expires_in: int = Field(default=3600, description="Token expiration time in seconds")
     user: dict = Field(..., description="User information")
 
 

@@ -53,7 +53,7 @@ class AuditLogListQuery(BaseModel):
     """Query parameters for listing audit logs."""
 
     page: int = Field(default=1, ge=1)
-    page_size: int = Field(default=20, ge=1, le=100)
+    page_size: int = Field(default=20, ge=1, le=1000)
     user_id: Optional[UUID] = None
     action: Optional[str] = None
     resource_type: Optional[str] = None

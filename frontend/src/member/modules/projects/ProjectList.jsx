@@ -9,71 +9,74 @@ import { Badge } from '@shared/components';
 import { formatDate } from '@shared/utils';
 import Card from '@shared/components/Card';
 import Button from '@shared/components/Button';
-import Input from '@shared/components/Input';
-import Select from '@shared/components/Select';
-import { Pagination } from '@shared/components';
+import SearchInput from '@shared/components/SearchInput';
 import { projectService } from '@shared/services';
-import { SearchIcon } from '@shared/components/Icons';
 import ApplicationModal from './ApplicationModal';
 import { PageContainer } from '@member/layouts';
 
 export default function ProjectList() {
   const { t, i18n } = useTranslation();
-  const [projects, setProjects] = useState([]);
+  const [allProjects, setAllProjects] = useState([]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [total, setTotal] = useState(0);
-  const [statusFilter, setStatusFilter] = useState('');
   const [showApplicationModal, setShowApplicationModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
 
+  // 使用 useCallback 包装 setFilteredProjects 避免无限循环
+  const handleFilterChange = useCallback((filtered) => {
+    setFilteredProjects(filtered);
+  }, []);
+
   const loadProjects = useCallback(async () => {
     setLoading(true);
-    const params = {
-      page: currentPage,
-      pageSize: pageSize,
-      search: searchKeyword || undefined,
-      status: statusFilter || undefined,
-    };
-    
-    const response = await projectService.listProjects(params);
-    if (response && response.records) {
-      setProjects(response.records);
-      setTotalPages(response.totalPages || 0);
-      setTotal(response.total || 0);
+    try {
+      const params = {
+        page: 1,
+        pageSize: 100,
+        status: 'active',
+      };
+      
+      const response = await projectService.listProjects(params);
+      if (response && response.items) {
+        setAllProjects(response.items);
+        setFilteredProjects(response.items);
+      } else {
+        setAllProjects([]);
+        setFilteredProjects([]);
+      }
+    } catch (error) {
+      console.error('Failed to load projects:', error);
+      setAllProjects([]);
+      setFilteredProjects([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [currentPage, pageSize, searchKeyword, statusFilter, i18n.language]);
+  }, [i18n.language]);
 
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
 
-  const handleSearch = useCallback((e) => {
-    e.preventDefault();
-    setCurrentPage(1);
-  }, []);
-
-  const handlePageChange = useCallback((page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  const handlePageSizeChange = useCallback((e) => {
-    setPageSize(parseInt(e.target.value));
-    setCurrentPage(1);
-  }, []);
-
-  const handleStatusFilterChange = useCallback((e) => {
-    setStatusFilter(e.target.value);
-    setCurrentPage(1);
-  }, []);
-
-  const handleApply = useCallback((project) => {
+  const handleApply = useCallback(async (project) => {
     setSelectedProject(project);
+    
+    // 检查是否已申请过此项目
+    try {
+      const response = await projectService.getMyApplications({ page: 1, pageSize: 100 });
+      const existingApplication = response.items?.find(app => app.projectId === project.id);
+      
+      if (existingApplication) {
+        // 如果已申请，设置为查看模式
+        setSelectedProject({
+          ...project,
+          existingApplication: existingApplication,
+          viewMode: true,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to check existing application:', error);
+    }
+    
     setShowApplicationModal(true);
   }, []);
 
@@ -83,13 +86,6 @@ export default function ProjectList() {
     // 刷新列表
     loadProjects();
   }, [loadProjects]);
-
-  const pageSizeOptions = [
-    { value: '10', label: '10' },
-    { value: '20', label: '20' },
-    { value: '30', label: '30' },
-    { value: '50', label: '50' }
-  ];
 
   // 获取状态显示文本和样式 - 映射后端状态到前端显示
   const getStatusInfo = useCallback((status) => {
@@ -123,6 +119,50 @@ export default function ProjectList() {
     return statusMap[status] || { label: status, variant: 'gray' };
   }, [t]);
 
+  // 定义搜索列
+  const columns = useMemo(() => [
+    {
+      key: 'title',
+      render: (value) => value || ''
+    },
+    {
+      key: 'description',
+      render: (value) => value || ''
+    },
+    {
+      key: 'status',
+      render: (value) => {
+        const statusInfo = getStatusInfo(value);
+        return statusInfo.label;
+      }
+    },
+    {
+      key: 'targetCompanyName',
+      render: (value) => value || ''
+    },
+    {
+      key: 'targetBusinessNumber',
+      render: (value) => value || ''
+    },
+    {
+      key: 'startDate',
+      render: (value) => value ? formatDate(value) : ''
+    },
+    {
+      key: 'endDate',
+      render: (value) => value ? formatDate(value) : ''
+    },
+    {
+      key: 'actions',
+      render: (_, row) => {
+        if (row.status === 'active') {
+          return t('projects.apply', '程序申请');
+        }
+        return t('projects.notAvailable', '不可申请');
+      }
+    }
+  ], [getStatusInfo, t]);
+
   // 显示列表
   return (
     <>
@@ -131,52 +171,19 @@ export default function ProjectList() {
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0">{t('projects.title', '项目')}</h1>
         </div>
 
-          {/* 搜索和分页设置 */}
+          {/* 搜索 */}
           <Card className="p-4 sm:p-5 lg:p-6 mb-4">
-            <div className="flex justify-between items-center gap-4 sm:gap-5 lg:gap-6 flex-wrap [&_.form-group]:mb-0">
-              <form onSubmit={handleSearch} className="flex-shrink-0 min-w-[200px] max-w-[400px] sm:max-w-[500px] lg:max-w-[600px]">
-                <div className="flex gap-3 items-center">
-                  <Input
-                    type="text"
-                    value={searchKeyword}
-                    onChange={(e) => setSearchKeyword(e.target.value)}
-                    placeholder={t('projects.searchPlaceholder', '按标题/内容搜索')}
-                    inline={true}
-                    className="w-full flex-1"
-                  />
-                  <Button type="submit" variant="primary">
-                    <SearchIcon className="w-5 h-5" />
-                    {t('common.search', '搜索')}
-                  </Button>
-                </div>
-              </form>
-              <div className="flex items-center gap-4 flex-wrap">
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <label className="text-sm text-gray-700 whitespace-nowrap">{t('projects.statusFilter', '状态筛选')}:</label>
-                  <Select
-                    value={statusFilter}
-                    onChange={handleStatusFilterChange}
-                    options={[
-                      { value: '', label: t('common.all', '全部') },
-                      { value: 'active', label: t('projects.status.active', '进行中') },
-                      { value: 'inactive', label: t('projects.status.inactive', '未激活') },
-                      { value: 'archived', label: t('projects.status.archived', '已归档') },
-                    ]}
-                    inline={true}
-                    className="w-40"
-                  />
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <label className="text-sm text-gray-700 whitespace-nowrap">{t('projects.itemsPerPage', '每页显示')}:</label>
-                  <Select
-                    value={pageSize.toString()}
-                    onChange={handlePageSizeChange}
-                    options={pageSizeOptions}
-                    placeholder={null}
-                    inline={true}
-                    className="w-28"
-                  />
-                </div>
+            <div className="flex justify-between items-center gap-4 flex-wrap">
+              <SearchInput
+                data={allProjects}
+                columns={columns}
+                onFilter={handleFilterChange}
+                placeholder={t('projects.searchPlaceholder', '按标题/内容搜索')}
+                className="flex-1 min-w-[200px] max-w-md"
+                debounceMs={300}
+              />
+              <div className="text-sm text-gray-600">
+                {t('common.resultsCount', '共{{count}}条记录', { count: filteredProjects.length })}
               </div>
             </div>
           </Card>
@@ -188,16 +195,17 @@ export default function ProjectList() {
               <p className="text-base text-gray-500 m-0">{t('common.loading', '加载中...')}</p>
             </div>
           </Card>
-        ) : projects.length === 0 ? (
+        ) : filteredProjects.length === 0 ? (
           <Card>
             <div className="text-center py-12 px-4">
-              <p className="text-base text-gray-500 m-0">{t('common.noData', '暂无数据')}</p>
+              <p className="text-base text-gray-500 m-0">
+                {allProjects.length === 0 ? t('common.noData', '暂无数据') : t('common.noSearchResults', '没有找到匹配的结果')}
+              </p>
             </div>
           </Card>
         ) : (
-          <>
-            <div className={`flex flex-col gap-4 sm:gap-5 lg:gap-6 ${totalPages > 1 ? 'pb-20' : 'pb-0'}`}>
-              {projects.map((project) => {
+          <div className="flex flex-col gap-4 sm:gap-5 lg:gap-6">
+            {filteredProjects.map((project) => {
                 const statusInfo = project.status ? getStatusInfo(project.status) : null;
                 
                 return (
@@ -248,14 +256,14 @@ export default function ProjectList() {
                           <p className="text-[0.9375rem] text-gray-700 leading-relaxed m-0 whitespace-pre-line">
                             {project.description || ''}
                           </p>
-                          {(project.target_company_name || project.target_business_number) && (
+                          {(project.targetCompanyName || project.targetBusinessNumber) && (
                             <p className="text-[0.9375rem] text-gray-700 leading-relaxed mt-2">
                               <strong>{t('projects.targetCompany', '목표 기업')}:</strong> 
-                              {project.target_company_name && (
-                                <span className="ml-1">{project.target_company_name}</span>
+                              {project.targetCompanyName && (
+                                <span className="ml-1">{project.targetCompanyName}</span>
                               )}
-                              {project.target_business_number && (
-                                <span className="ml-1 text-gray-600">({project.target_business_number})</span>
+                              {project.targetBusinessNumber && (
+                                <span className="ml-1 text-gray-600">({project.targetBusinessNumber})</span>
                               )}
                             </p>
                           )}
@@ -281,24 +289,7 @@ export default function ProjectList() {
                   </Card>
                 );
               })}
-            </div>
-
-            {/* 分页（固定在底部） */}
-            {totalPages > 1 && (
-              <div className="sticky bottom-0 mt-auto py-3">
-                <div className="flex justify-between items-center px-1 sm:px-0">
-                  <div className="text-xs text-gray-500 whitespace-nowrap">
-                    {t('common.itemsPerPage', '每页显示')}: {pageSize} · {t('common.total', '共')}: {total}
-                  </div>
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                </div>
-              </div>
-            )}
-          </>
+          </div>
         )}
 
       {/* 程序申请弹窗 */}

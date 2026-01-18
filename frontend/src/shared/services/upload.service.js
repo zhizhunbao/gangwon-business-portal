@@ -85,10 +85,14 @@ class UploadService {
     for (const file of files) {
       const response = await this.uploadPublic(file);
       uploadedFiles.push({
-        file_id: response.file_id ?? response.id,
-        file_url: response.file_url ?? response.url,
+        fileId: response.fileId ?? response.file_id ?? response.id,
+        fileUrl: response.fileUrl ?? response.file_url ?? response.url,
+        fileName: response.fileName ?? response.file_name ?? file.name,
+        fileSize: response.fileSize ?? response.file_size ?? file.size,
+        mimeType: response.mimeType ?? response.mime_type ?? file.type,
+        // 保持向后兼容的字段
         original_name: file.name,
-        stored_name: response.stored_name,
+        file_url: response.fileUrl ?? response.file_url ?? response.url,
         file_size: file.size,
       });
     }

@@ -8,15 +8,17 @@ import { useTranslation } from 'react-i18next';
 import { 
   Button, 
   Card, 
-  RichTextEditor,
+  TiptapEditor,
   Modal,
   Alert
 } from '@shared/components';
-import { contentService } from '@shared/services';
+import { contentService, homeService } from '@shared/services';
 
 const CONTENT_TYPES = {
   TERMS_OF_SERVICE: 'terms_of_service',
-  PRIVACY_POLICY: 'privacy_policy'
+  PRIVACY_POLICY: 'privacy_policy',
+  THIRD_PARTY_SHARING: 'third_party_sharing',
+  MARKETING_CONSENT: 'marketing_consent'
 };
 
 export default function LegalContentManagement() {
@@ -31,14 +33,16 @@ export default function LegalContentManagement() {
   const [messageVariant, setMessageVariant] = useState('success');
   const [formData, setFormData] = useState({
     [CONTENT_TYPES.TERMS_OF_SERVICE]: '',
-    [CONTENT_TYPES.PRIVACY_POLICY]: ''
+    [CONTENT_TYPES.PRIVACY_POLICY]: '',
+    [CONTENT_TYPES.THIRD_PARTY_SHARING]: '',
+    [CONTENT_TYPES.MARKETING_CONSENT]: ''
   });
 
   // 获取法律内容
   const fetchLegalContent = async (contentType) => {
     setLoading(true);
     try {
-      const response = await contentService.getLegalContent(contentType);
+      const response = await homeService.getLegalContent(contentType);
       if (response && response.contentHtml) {
         setFormData(prev => ({
           ...prev,
@@ -55,6 +59,8 @@ export default function LegalContentManagement() {
   useEffect(() => {
     fetchLegalContent(CONTENT_TYPES.TERMS_OF_SERVICE);
     fetchLegalContent(CONTENT_TYPES.PRIVACY_POLICY);
+    fetchLegalContent(CONTENT_TYPES.THIRD_PARTY_SHARING);
+    fetchLegalContent(CONTENT_TYPES.MARKETING_CONSENT);
   }, []);
 
   // 处理字段变化
@@ -100,6 +106,14 @@ export default function LegalContentManagement() {
     { 
       key: CONTENT_TYPES.PRIVACY_POLICY, 
       label: t('admin.content.legal.privacyPolicy', '개인정보 처리방침')
+    },
+    { 
+      key: CONTENT_TYPES.THIRD_PARTY_SHARING, 
+      label: t('admin.content.legal.thirdPartySharing', '제3자 정보 제공 동의')
+    },
+    { 
+      key: CONTENT_TYPES.MARKETING_CONSENT, 
+      label: t('admin.content.legal.marketingConsent', '마케팅 정보 수신 동의')
     }
   ];
 
@@ -123,7 +137,7 @@ export default function LegalContentManagement() {
 
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900 m-0 mb-1">
-          {t('admin.content.legal.title', '이용약관/개인정보처리방침 관리')}
+          {t('admin.content.legal.title', '약관관리')}
         </h2>
         <p className="text-gray-600 text-sm m-0">
           {t('admin.content.legal.description', '이용약관과 개인정보처리방침 내용을 관리합니다.')}
@@ -156,7 +170,7 @@ export default function LegalContentManagement() {
         <div className="lg:col-span-3">
           <Card>
             <div className="p-6">
-              <RichTextEditor
+              <TiptapEditor
                 value={formData[activeTab]}
                 onChange={handleContentChange}
                 placeholder={t('admin.content.legal.contentPlaceholder', '내용을 입력하세요...')}

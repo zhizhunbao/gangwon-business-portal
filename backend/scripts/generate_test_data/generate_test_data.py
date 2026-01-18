@@ -145,7 +145,6 @@ class Generator:
     def clear_all(self):
         # 表名和主键列的映射
         tables = [
-            ("attachments", "id"),
             ("project_applications", "id"),
             ("performance_records", "id"),
             ("messages", "id"),
@@ -398,32 +397,54 @@ class Generator:
     def gen_messages(self):
         """生成消息数据：1对1咨询(thread) + 系统通知(direct)"""
         
+        # 示例附件数据（使用已上传的项目图片）
+        sample_attachments = [
+            [{
+                "file_name": "사업계획서.pdf",
+                "file_url": f"{self.prefix}/projects/project_0.jpg",
+                "file_size": 245760,
+                "mime_type": "application/pdf"
+            }],
+            [{
+                "file_name": "재무제표_2023.xlsx",
+                "file_url": f"{self.prefix}/projects/project_1.jpg",
+                "file_size": 102400,
+                "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            }],
+            [{
+                "file_name": "스크린샷.png",
+                "file_url": f"{self.prefix}/projects/project_2.jpg",
+                "file_size": 156800,
+                "mime_type": "image/png"
+            }],
+        ]
+        
         # ========== 1. 生成1对1咨询 (Thread) ==========
         # 会员发起的咨询对话，包含多条来回消息
         thread_subjects = [
             ("사업 신청 관련 문의", "general", [
-                ("member", "안녕하세요. 2024년 중소기업 디지털 전환 지원사업에 신청하고 싶은데, 필요한 서류가 무엇인지 알려주실 수 있을까요?"),
-                ("admin", "안녕하세요. 해당 사업 신청에는 사업자등록증, 재무제표, 사업계획서가 필요합니다. 자세한 내용은 공지사항을 참고해 주세요."),
-                ("member", "감사합니다. 재무제표는 최근 몇 년치가 필요한가요?"),
-                ("admin", "최근 2년치 재무제표를 제출해 주시면 됩니다."),
+                ("member", "안녕하세요. 2024년 중소기업 디지털 전환 지원사업에 신청하고 싶은데, 필요한 서류가 무엇인지 알려주실 수 있을까요?", None),
+                ("admin", "안녕하세요. 해당 사업 신청에는 사업자등록증, 재무제표, 사업계획서가 필요합니다. 자세한 내용은 공지사항을 참고해 주세요.", None),
+                ("member", "감사합니다. 재무제표는 최근 몇 년치가 필요한가요?", sample_attachments[0]),
+                ("admin", "최근 2년치 재무제표를 제출해 주시면 됩니다.", None),
             ]),
             ("성과 제출 방법 문의", "performance", [
-                ("member", "분기별 성과 제출 시 매출액은 어떤 기준으로 입력해야 하나요?"),
-                ("admin", "매출액은 해당 분기의 세금계산서 발행 기준 금액을 입력해 주시면 됩니다."),
+                ("member", "분기별 성과 제출 시 매출액은 어떤 기준으로 입력해야 하나요?", None),
+                ("admin", "매출액은 해당 분기의 세금계산서 발행 기준 금액을 입력해 주시면 됩니다.", None),
             ]),
             ("회원 정보 수정 요청", "general", [
-                ("member", "회사 주소가 변경되었는데 어떻게 수정하나요?"),
-                ("admin", "마이페이지 > 기업 프로필에서 직접 수정하실 수 있습니다. 사업자등록증 변경이 필요한 경우 별도 문의 부탁드립니다."),
-                ("member", "확인했습니다. 감사합니다!"),
+                ("member", "회사 주소가 변경되었는데 어떻게 수정하나요?", None),
+                ("admin", "마이페이지 > 기업 프로필에서 직접 수정하실 수 있습니다. 사업자등록증 변경이 필요한 경우 별도 문의 부탁드립니다.", None),
+                ("member", "확인했습니다. 감사합니다!", None),
             ]),
             ("지원 프로그램 자격 문의", "general", [
-                ("member", "저희 회사가 스타트업 창업 지원 프로그램에 신청 가능한지 확인 부탁드립니다."),
+                ("member", "저희 회사가 스타트업 창업 지원 프로그램에 신청 가능한지 확인 부탁드립니다.", sample_attachments[1]),
             ]),
             ("기술 지원 요청", "technical", [
-                ("member", "시스템 로그인이 안 됩니다. 비밀번호를 여러 번 입력했는데 계속 실패합니다."),
-                ("admin", "계정을 확인해 보겠습니다. 잠시만 기다려 주세요."),
-                ("admin", "비밀번호를 초기화했습니다. 등록된 이메일로 재설정 링크를 보내드렸습니다."),
-                ("member", "해결되었습니다. 감사합니다."),
+                ("member", "시스템 로그인이 안 됩니다. 비밀번호를 여러 번 입력했는데 계속 실패합니다.", sample_attachments[2]),
+                ("admin", "계정을 확인해 보겠습니다. 잠시만 기다려 주세요.", None),
+                ("admin", "비밀번호를 초기화했습니다. 등록된 이메일로 재설정 링크를 보내드렸습니다.", None),
+                ("member", "해결되었습니다. 감사합니다.", None),
             ]),
         ]
         
@@ -511,24 +532,25 @@ class Generator:
                 }).execute()
 
     def gen_attachments(self):
-        templates = [
-            {"resource_type": "performance", "file_name": "성과보고서.pdf"},
-            {"resource_type": "message", "file_name": "첨부파일.pdf"},
-        ]
-        for i in range(self.counts["attachments"]):
-            t = templates[i % len(templates)]
-            rid = random.choice(self.perf_ids) if t["resource_type"] == "performance" and self.perf_ids else (random.choice(self.msg_ids) if self.msg_ids else str(uuid4()))
-            self.db.table("attachments").insert({
-                "id": str(uuid4()), "resource_type": t["resource_type"], "resource_id": rid,
-                "file_type": "document", "file_url": f"private-files/gangwon-portal/attachments/{uuid4()}.pdf",
-                "original_name": t["file_name"], "stored_name": f"{uuid4()}.pdf",
-                "file_size": random.randint(50000, 500000), "mime_type": "application/pdf"
-            }).execute()
+        """
+        Generate attachments as JSONB data.
+        Note: Attachments are now stored in JSONB fields, not in a separate table.
+        This method is kept for reference but does nothing.
+        """
+        # Attachments are now generated inline when creating records
+        # (e.g., notices, projects, performance_records, etc.)
+        pass
 
     def gen_legal_content(self):
-        """生成法律条款（服务条款、隐私政策）"""
+        """生成法律条款（服务条款、隐私政策、第三方信息提供同意、营销信息接收同意）"""
         legal_data = self.korean.get("legal_content", {})
-        for content_type in ["terms_of_service", "privacy_policy"]:
+        content_types = [
+            "terms_of_service",
+            "privacy_policy", 
+            "third_party_sharing",
+            "marketing_consent"
+        ]
+        for content_type in content_types:
             content_html = legal_data.get(content_type, f"<p>{content_type} content</p>")
             self.db.table("legal_content").insert({
                 "id": str(uuid4()),

@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
-  contentService,
+  homeService,
 } from "@shared/services";
 import { BANNER_TYPES, ROUTES } from "@shared/utils/constants";
 
@@ -196,7 +196,7 @@ export default function Banner({
     setIsLoading(true);
 
     try {
-      const banners = await contentService.getBanners({ bannerType });
+      const banners = await homeService.getBanners({ bannerType });
       let newBanners = [];
 
       if (Array.isArray(banners) && banners.length > 0) {

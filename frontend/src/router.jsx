@@ -335,8 +335,8 @@ const NoticesList = lazy(() =>
     default: m.default,
   }))
 );
-const PressList = lazy(() =>
-  import("@member/modules/home/PressList").then((m) => ({ default: m.default }))
+const ProjectList = lazy(() =>
+  import("@member/modules/home/ProjectList").then((m) => ({ default: m.default }))
 );
 
 // Lazy load admin modules
@@ -615,11 +615,11 @@ export const router = createBrowserRouter(
               ),
             },
             {
-              path: "press",
+              path: "project",
               element: (
                 <ProtectedRoute allowedRoles={["member"]}>
                   <LazyRoute>
-                    <PressList />
+                    <ProjectList />
                   </LazyRoute>
                 </ProtectedRoute>
               ),

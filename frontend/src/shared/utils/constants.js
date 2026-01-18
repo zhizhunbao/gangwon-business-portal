@@ -157,28 +157,134 @@ export const ERROR_CODES = {
   SERVER_ERROR: 'SERVER_ERROR',
   NETWORK_ERROR: 'NETWORK_ERROR',
   
-  // Numeric error codes from backend
+  // ============================================================
+  // 后端错误码 - 与 backend/src/common/modules/exception/_08_utils/code_error.py 保持一致
+  // ============================================================
+  
+  // --- 1000 - 1999: Authentication ---
   INVALID_CREDENTIALS: 1001,
   INVALID_ADMIN_CREDENTIALS: 1002,
   TOKEN_EXPIRED: 1003,
   INVALID_TOKEN: 1004,
+  INVALID_TOKEN_PAYLOAD: 1005,
+  CREDENTIALS_VALIDATION_FAILED: 1006,
+  NOT_AUTHENTICATED: 1007,
+  INVALID_USER_ID_FORMAT: 1008,
+  INACTIVE_USER: 1009,
+
+  // --- 2000 - 2999: Account Status ---
   ACCOUNT_PENDING_APPROVAL: 2001,
   ACCOUNT_SUSPENDED: 2002,
   ACCOUNT_DELETED: 2003,
+  CURRENT_PASSWORD_INCORRECT: 2004,
+  RESET_TOKEN_INVALID: 2005,
+  RESET_TOKEN_EXPIRED: 2006,
+
+  // --- 3000 - 3999: Authorization ---
   ADMIN_REQUIRED: 3001,
   MEMBER_REQUIRED: 3002,
   OWNERSHIP_REQUIRED: 3003,
+  PERMISSION_DENIED: 3004,
+  DELETE_PERMISSION_DENIED: 3005,
+
+  // --- 4000 - 4999: Validation ---
   VALIDATION_FAILED: 4001,
   DUPLICATE_RESOURCE: 4002,
-  PROJECT_ALREADY_APPLIED: 4003,
-  SYSTEM_ERROR: 5001,
-  DATABASE_ERROR: 5002,
-  EXTERNAL_SERVICE_ERROR: 5003
+  INVALID_EMAIL_FORMAT: 4003,
+  RECORD_CREATE_FAILED: 4004,
+  RECORD_UPDATE_FAILED: 4005,
+  RECORD_DELETE_FAILED: 4006,
+
+  // --- 5000 - 5999: Resource Not Found ---
+  RESOURCE_NOT_FOUND: 5001,
+
+  // --- 6000 - 6999: System ---
+  SYSTEM_ERROR: 6001,
+  DATABASE_ERROR: 6002,
+  EXTERNAL_SERVICE_ERROR: 6003,
+
+  // --- 10000 - 10999: User Module ---
+  USER_NOT_FOUND: 10001,
+  USER_ALREADY_EXISTS: 10002,
+  BUSINESS_NUMBER_ALREADY_REGISTERED: 10003,
+  EMAIL_ALREADY_REGISTERED: 10004,
+
+  // --- 11000 - 11999: Member Module ---
+  MEMBER_NOT_FOUND: 11001,
+  MEMBER_EMAIL_NOT_FOUND: 11002,
+  MEMBER_ALREADY_EXISTS: 11003,
+  MEMBER_PROFILE_INCOMPLETE: 11004,
+
+  // --- 12000 - 12999: Project Module ---
+  PROJECT_NOT_FOUND: 12001,
+  PROJECT_ALREADY_APPLIED: 12002,
+  APPLICATION_NOT_FOUND: 12003,
+  PROJECT_CLOSED: 12004,
+  PROJECT_DEADLINE_PASSED: 12005,
+
+  // --- 13000 - 13999: Upload Module ---
+  FILE_NOT_FOUND: 13001,
+  FILE_DELETED: 13002,
+  FILE_SIZE_EXCEEDED: 13003,
+  FILE_EXTENSION_NOT_ALLOWED: 13004,
+  FILE_TYPE_NOT_ALLOWED: 13005,
+  FILE_UPLOAD_FAILED: 13006,
+
+  // --- 14000 - 14999: Content Module ---
+  CONTENT_NOT_FOUND: 14001,
+  BANNER_NOT_FOUND: 14002,
+  INVALID_CONTENT_TYPE: 14003,
+
+  // --- 15000 - 15999: Messages Module ---
+  MESSAGE_NOT_FOUND: 15001,
+  MESSAGE_ALREADY_READ: 15002,
+  RECIPIENT_NOT_FOUND: 15003,
+
+  // --- 16000 - 16999: Performance Module ---
+  PERFORMANCE_RECORD_NOT_FOUND: 16001,
+  INVALID_PERFORMANCE_DATA: 16002,
+
+  // --- 17000 - 17999: Support Module ---
+  FAQ_NOT_FOUND: 17001,
+  INQUIRY_NOT_FOUND: 17002,
+
+  // --- 18000 - 18999: Dashboard Module ---
+  DASHBOARD_DATA_UNAVAILABLE: 18001,
+
+  // --- 19000 - 19999: Admin Module ---
+  ADMIN_NOT_FOUND: 19001,
+  ADMIN_ALREADY_EXISTS: 19002,
 };
 
 // Error code to i18n key mapping
 export const ERROR_CODE_I18N_MAP = {
-  [ERROR_CODES.PROJECT_ALREADY_APPLIED]: 'projects.alreadyApplied'
+  // Authentication
+  [ERROR_CODES.INVALID_CREDENTIALS]: 'errors.invalidCredentials',
+  [ERROR_CODES.INVALID_ADMIN_CREDENTIALS]: 'errors.invalidAdminCredentials',
+  [ERROR_CODES.TOKEN_EXPIRED]: 'errors.tokenExpired',
+  [ERROR_CODES.INVALID_TOKEN]: 'errors.invalidToken',
+  
+  // Account Status
+  [ERROR_CODES.ACCOUNT_PENDING_APPROVAL]: 'errors.accountPendingApproval',
+  [ERROR_CODES.ACCOUNT_SUSPENDED]: 'errors.accountSuspended',
+  [ERROR_CODES.ACCOUNT_DELETED]: 'errors.accountDeleted',
+  
+  // Authorization
+  [ERROR_CODES.ADMIN_REQUIRED]: 'errors.adminRequired',
+  [ERROR_CODES.MEMBER_REQUIRED]: 'errors.memberRequired',
+  [ERROR_CODES.PERMISSION_DENIED]: 'errors.permissionDenied',
+  
+  // Project Module
+  [ERROR_CODES.PROJECT_NOT_FOUND]: 'projects.notFound',
+  [ERROR_CODES.PROJECT_ALREADY_APPLIED]: 'projects.alreadyApplied',
+  [ERROR_CODES.APPLICATION_NOT_FOUND]: 'projects.applicationNotFound',
+  [ERROR_CODES.PROJECT_CLOSED]: 'projects.closed',
+  [ERROR_CODES.PROJECT_DEADLINE_PASSED]: 'projects.deadlinePassed',
+  
+  // Upload Module
+  [ERROR_CODES.FILE_SIZE_EXCEEDED]: 'errors.fileSizeExceeded',
+  [ERROR_CODES.FILE_EXTENSION_NOT_ALLOWED]: 'errors.fileExtensionNotAllowed',
+  [ERROR_CODES.FILE_UPLOAD_FAILED]: 'errors.fileUploadFailed',
 };
 
 // Regex Patterns
@@ -222,7 +328,7 @@ export const ROUTES = {
   MEMBER_SUPPORT: '/member/support',
   MEMBER_NOTICES: '/member/notices',
   MEMBER_NEWS: '/member/news',
-  MEMBER_PRESS: '/member/press',
+  MEMBER_PROJECT: '/member/project',
   
   // Admin
   ADMIN_HOME: '/admin',

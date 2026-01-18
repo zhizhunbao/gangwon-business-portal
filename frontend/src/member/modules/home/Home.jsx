@@ -14,7 +14,7 @@ import { Banner } from '@shared/components';
 import { BANNER_TYPES } from '@shared/utils/constants';
 import { PageContainer } from '@member/layouts';
 import NoticesPreview from './NoticesPreview';
-import PressPreview from './PressPreview';
+import ProjectPreview from './ProjectPreview';
 
 export default function Home() {
   const { t } = useTranslation();
@@ -32,14 +32,14 @@ export default function Home() {
       {/* 三列布局：公告事项、新闻稿、主横幅(2) */}
       <PageContainer className="pb-8" fullWidth={false}>
         <div className="grid grid-cols-1 md:grid-cols-[repeat(3,minmax(0,425px))] justify-center gap-6 lg:gap-8 auto-rows-[475px]">
+          {/* 项目公告 */}
+          <div className="flex h-full">
+            <ProjectPreview />
+          </div>
+          
           {/* 公告事项 */}
           <div className="flex h-full">
             <NoticesPreview />
-          </div>
-          
-          {/* 新闻稿 */}
-          <div className="flex h-full">
-            <PressPreview />
           </div>
           
           {/* 主横幅(2) - 小尺寸，不全宽 */}

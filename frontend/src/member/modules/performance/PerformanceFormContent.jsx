@@ -870,10 +870,10 @@ export default function PerformanceFormContent() {
                   <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-2">
                       <DocumentIcon className="w-5 h-5 text-gray-400" />
-                      <span className="text-sm text-gray-700">{file.original_name || file.name}</span>
-                      {file.file_size && (
+                      <span className="text-sm text-gray-700">{file.originalName || file.name}</span>
+                      {file.fileSize && (
                         <span className="text-xs text-gray-400">
-                          ({(file.file_size / 1024).toFixed(1)} KB)
+                          ({(file.fileSize / 1024).toFixed(1)} KB)
                         </span>
                       )}
                     </div>

@@ -1,6 +1,6 @@
 /**
  * Content Management Component - Admin Portal
- * 内容管理（横幅、弹窗、公告、新闻资料）
+ * 内容管理（横幅、弹窗、公告）
  */
 
 import { useMemo, useState } from 'react';
@@ -8,7 +8,6 @@ import { useTranslation } from 'react-i18next';
 import { Card, Tabs } from '@shared/components';
 import BannerManagement from './BannerManagement';
 import NoticeManagement from './NoticeManagement';
-import NewsManagement from './NewsManagement';
 import FAQManagement from './FAQManagement';
 import SystemInfoManagement from './SystemInfoManagement';
 import LegalContentManagement from './LegalContentManagement';
@@ -21,10 +20,9 @@ export default function ContentManagement() {
   const tabs = useMemo(() => [
     { key: 'banners', label: t('admin.content.tabs.banners') },
     { key: 'notices', label: t('admin.content.tabs.notices') },
-    { key: 'news', label: t('admin.content.tabs.news') },
     { key: 'faq', label: t('admin.content.tabs.faq') },
     { key: 'systemInfo', label: t('admin.content.tabs.systemInfo') },
-    { key: 'legal', label: t('admin.content.tabs.legal', '이용약관/개인정보') }
+    { key: 'legal', label: t('admin.content.tabs.legal', '약관관리') }
   ], [t]);
 
 
@@ -45,7 +43,6 @@ export default function ContentManagement() {
         <div className="mt-6 p-6">
           {activeTab === 'banners' && <BannerManagement />}
           {activeTab === 'notices' && <NoticeManagement />}
-          {activeTab === 'news' && <NewsManagement />}
           {activeTab === 'faq' && <FAQManagement />}
           {activeTab === 'systemInfo' && <SystemInfoManagement />}
           {activeTab === 'legal' && <LegalContentManagement />}

@@ -6,20 +6,17 @@
 
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Badge, Button, Input, Card, Pagination, Modal } from '@shared/components';
+import { Badge, Button, Card, Modal, SearchInput, FileUploadButton } from '@shared/components';
 import { formatDate } from '@shared/utils';
-import { SearchIcon, CloseIcon } from '@shared/components/Icons';
+import { CloseIcon } from '@shared/components/Icons';
 import { projectService } from '@shared/services';
+import { PageContainer } from '@member/layouts';
 
 export default function ApplicationRecords() {
   const { t } = useTranslation();
-  const [applications, setApplications] = useState([]);
+  const [allApplications, setAllApplications] = useState([]);
+  const [filteredApplications, setFilteredApplications] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [total, setTotal] = useState(0);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
@@ -27,54 +24,39 @@ export default function ApplicationRecords() {
   const [cancelLoading, setCancelLoading] = useState(false);
   const [supplementFiles, setSupplementFiles] = useState([]);
   const [supplementLoading, setSupplementLoading] = useState(false);
-  const fileInputRef = useRef(null);
+
+  // 使用 useCallback 包装 setFilteredApplications 避免无限循环
+  const handleFilterChange = useCallback((filtered) => {
+    setFilteredApplications(filtered);
+  }, []);
 
   const loadApplications = useCallback(async () => {
     setLoading(true);
-    const params = {
-      page: currentPage,
-      pageSize: pageSize,
-      search: searchKeyword || undefined,
-    };
-    const response = await projectService.getMyApplications(params);
-    if (response && response.records) {
-      setApplications(response.records);
-      setTotalPages(response.pagination?.totalPages || 0);
-      setTotal(response.pagination?.total || 0);
+    try {
+      const params = {
+        page: 1,
+        pageSize: 100,
+      };
+      const response = await projectService.getMyApplications(params);
+      if (response && response.items) {
+        setAllApplications(response.items);
+        setFilteredApplications(response.items);
+      } else {
+        setAllApplications([]);
+        setFilteredApplications([]);
+      }
+    } catch (error) {
+      console.error('Failed to load applications:', error);
+      setAllApplications([]);
+      setFilteredApplications([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [currentPage, pageSize, searchKeyword]);
+  }, []);
 
   useEffect(() => {
     loadApplications();
   }, [loadApplications]);
-
-  const handleSearch = useCallback((e) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    loadApplications();
-  }, [loadApplications]);
-
-  const handleKeyDown = useCallback((e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      setCurrentPage(1);
-      loadApplications();
-    }
-  }, [loadApplications]);
-
-  const handleSearchChange = useCallback((e) => {
-    const value = e.target.value;
-    setSearchKeyword(value);
-    if (value === '') {
-      setCurrentPage(1);
-    }
-  }, []);
-
-  const handlePageChange = useCallback((page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
 
   const getStatusInfo = useCallback((status) => {
     const statusMap = {
@@ -118,8 +100,7 @@ export default function ApplicationRecords() {
     setShowSupplementModal(true);
   }, []);
 
-  const handleFileSelect = useCallback((e) => {
-    const files = Array.from(e.target.files || []);
+  const handleFileSelect = useCallback((files) => {
     const validFiles = files.filter(file => {
       const maxSize = 10 * 1024 * 1024; // 10MB
       if (file.size > maxSize) {
@@ -129,33 +110,10 @@ export default function ApplicationRecords() {
       return true;
     });
     setSupplementFiles(prev => [...prev, ...validFiles]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   }, [t]);
 
   const handleRemoveFile = useCallback((index) => {
     setSupplementFiles(prev => prev.filter((_, i) => i !== index));
-  }, []);
-
-  const handleDropZoneClick = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }, []);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const files = Array.from(e.dataTransfer.files || []);
-    const validFiles = files.filter(file => {
-      const maxSize = 10 * 1024 * 1024;
-      return file.size <= maxSize;
-    });
-    setSupplementFiles(prev => [...prev, ...validFiles]);
   }, []);
 
   const handleSubmitSupplement = useCallback(async () => {
@@ -173,6 +131,52 @@ export default function ApplicationRecords() {
     }, 500);
   }, [supplementFiles, t]);
 
+  const columns = [
+    {
+      key: 'projectTitle',
+      label: t('projects.applicationRecords.projectName', '사업명'),
+      render: (value) => value || '-'
+    },
+    {
+      key: 'submittedAt',
+      label: t('projects.applicationRecords.applicationDate', '신청일'),
+      render: (value) => value ? formatDate(value) : '-'
+    },
+    {
+      key: 'status',
+      label: t('projects.applicationRecords.progressStatus', '진행 상태'),
+      render: (value) => {
+        const statusInfo = getStatusInfo(value);
+        return statusInfo.label;
+      }
+    },
+    {
+      key: 'reviewedAt',
+      label: t('projects.applicationRecords.processedDate', '처리일'),
+      render: (value) => value ? formatDate(value) : '-'
+    },
+    {
+      key: 'actions',
+      label: t('common.actions', '操作'),
+      render: (_, row) => {
+        const statusInfo = getStatusInfo(row.status);
+        const actions = [];
+        
+        if (statusInfo.canCancel) {
+          actions.push(t('projects.applicationRecords.cancelApplication', '신청 취소'));
+        }
+        if (statusInfo.showRejectionReason) {
+          actions.push(t('projects.applicationRecords.viewReason', '사유 확인'));
+        }
+        if (statusInfo.needsSupplement) {
+          actions.push(t('projects.applicationRecords.submitMaterials', '자료 제출'));
+        }
+        
+        return actions.join(' ');
+      }
+    }
+  ];
+
   const renderActionButtons = useCallback((application, isMobile = false) => {
     const statusInfo = getStatusInfo(application.status);
     const buttonClass = isMobile ? 'w-full' : '';
@@ -180,43 +184,37 @@ export default function ApplicationRecords() {
 
     if (statusInfo.canCancel) {
       buttons.push(
-        <Button
+        <button
           key="cancel"
-          variant="danger"
-          size="sm"
-          className={buttonClass}
+          className="text-red-600 hover:text-red-900 font-medium text-sm"
           onClick={() => handleCancelClick(application)}
         >
           {t('projects.applicationRecords.cancelApplication', '신청 취소')}
-        </Button>
+        </button>
       );
     }
 
     if (statusInfo.showRejectionReason) {
       buttons.push(
-        <Button
+        <button
           key="rejection"
-          variant="secondary"
-          size="sm"
-          className={buttonClass}
+          className="text-primary-600 hover:text-primary-900 font-medium text-sm"
           onClick={() => handleViewRejectionReason(application)}
         >
           {t('projects.applicationRecords.viewReason', '사유 확인')}
-        </Button>
+        </button>
       );
     }
 
     if (statusInfo.needsSupplement) {
       buttons.push(
-        <Button
+        <button
           key="supplement"
-          variant="outline"
-          size="sm"
-          className={buttonClass}
+          className="text-primary-600 hover:text-primary-900 font-medium text-sm"
           onClick={() => handleSupplement(application)}
         >
           {t('projects.applicationRecords.submitMaterials', '자료 제출')}
-        </Button>
+        </button>
       );
     }
 
@@ -225,15 +223,20 @@ export default function ApplicationRecords() {
     }
 
     return (
-      <div className={`flex ${isMobile ? 'flex-col' : 'flex-row justify-center'} gap-2`}>
-        {buttons}
+      <div className="flex flex-row justify-center gap-2">
+        {buttons.map((button, index) => (
+          <span key={index} className="flex items-center gap-2">
+            {button}
+            {index < buttons.length - 1 && <span className="text-gray-300">|</span>}
+          </span>
+        ))}
       </div>
     );
   }, [getStatusInfo, handleCancelClick, handleViewRejectionReason, handleSupplement, t]);
 
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-300px)]">
+    <PageContainer className="flex flex-col min-h-[calc(100vh-70px)] max-md:min-h-[calc(100vh-60px)]">
       <div className="mb-6 sm:mb-8 lg:mb-10 min-h-[48px] flex items-center">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0">
           {t('projects.applicationRecords.title', '신청 기록')}
@@ -241,21 +244,18 @@ export default function ApplicationRecords() {
       </div>
 
       <Card className="p-4 sm:p-5 lg:p-6 mb-4">
-        <form onSubmit={handleSearch} className="flex gap-3 items-center max-w-[600px]">
-          <Input
-            type="text"
-            value={searchKeyword}
-            onChange={handleSearchChange}
-            onKeyDown={handleKeyDown}
+        <div className="flex justify-between items-center gap-4 flex-wrap">
+          <SearchInput
+            data={allApplications}
+            columns={columns}
+            onFilter={handleFilterChange}
             placeholder={t('projects.applicationRecords.searchPlaceholder', '사업명으로 검색')}
-            inline={true}
-            className="w-full flex-1"
+            className="flex-1 min-w-[200px] max-w-md"
           />
-          <Button type="submit" variant="primary">
-            <SearchIcon className="w-5 h-5" />
-            {t('projects.applicationRecords.search', '검색')}
-          </Button>
-        </form>
+          <div className="text-sm text-gray-600">
+            {t('common.resultsCount', '共{{count}}条记录', { count: filteredApplications.length })}
+          </div>
+        </div>
       </Card>
 
       {loading ? (
@@ -264,11 +264,13 @@ export default function ApplicationRecords() {
             <p className="text-base text-gray-500 m-0">{t('projects.applicationRecords.loading', '로딩중...')}</p>
           </div>
         </Card>
-      ) : applications.length === 0 ? (
+      ) : filteredApplications.length === 0 ? (
         <Card>
           <div className="text-center py-12 px-4">
             <p className="text-base text-gray-500 m-0">
-              {t('projects.applicationRecords.noRecords', '신청 기록이 없습니다.')}
+              {allApplications.length === 0 
+                ? t('projects.applicationRecords.noRecords', '신청 기록이 없습니다.')
+                : t('common.noSearchResults', '没有找到匹配的结果')}
             </p>
           </div>
         </Card>
@@ -297,7 +299,7 @@ export default function ApplicationRecords() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {applications.map((application) => {
+                  {filteredApplications.map((application) => {
                     const statusInfo = getStatusInfo(application.status);
                     return (
                       <tr key={application.id} className="hover:bg-gray-50 transition-colors">
@@ -331,20 +333,20 @@ export default function ApplicationRecords() {
           </Card>
 
           <div className="md:hidden flex flex-col gap-4">
-            {applications.map((application) => {
+            {filteredApplications.map((application) => {
               const statusInfo = getStatusInfo(application.status);
               return (
                 <Card key={application.id} className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <h3 className="text-base font-semibold text-gray-900 flex-1 pr-2">
-                      {application.projectTitle || application.projectName || '-'}
+                      {application.projectTitle || '-'}
                     </h3>
                     <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                   </div>
                   <div className="space-y-2 text-sm text-gray-600 mb-4">
                     <div className="flex justify-between">
                       <span>{t('projects.applicationRecords.applicationDate', '신청일')}:</span>
-                      <span>{application.applicationDate ? formatDate(application.applicationDate) : '-'}</span>
+                      <span>{application.submittedAt ? formatDate(application.submittedAt) : '-'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>{t('projects.applicationRecords.processedDate', '처리일')}:</span>
@@ -356,17 +358,6 @@ export default function ApplicationRecords() {
               );
             })}
           </div>
-
-          {totalPages > 1 && (
-            <div className="sticky bottom-0 mt-auto py-3">
-              <div className="flex justify-between items-center px-1 sm:px-0">
-                <div className="text-xs text-gray-500 whitespace-nowrap">
-                  {t('projects.applicationRecords.total', '총')}: {total}
-                </div>
-                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
-              </div>
-            </div>
-          )}
         </>
       )}
 
@@ -442,25 +433,17 @@ export default function ApplicationRecords() {
             </p>
           </div>
           
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept=".pdf,.doc,.docx,.xls,.xlsx"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-          
-          <div 
-            className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center mb-4 cursor-pointer hover:border-primary-400 hover:bg-gray-50 transition-colors"
-            onClick={handleDropZoneClick}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-          >
-            <p className="text-gray-500 text-sm">
-              {t('projects.applicationRecords.uploadArea', '파일을 여기에 드래그하거나 클릭하여 업로드')}
-            </p>
-            <p className="text-gray-400 text-xs mt-1">
+          <div className="mb-4">
+            <FileUploadButton
+              onFilesSelected={handleFileSelect}
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx"
+              label={t('projects.applicationRecords.selectFiles', '파일 선택')}
+              variant="outline"
+              size="medium"
+              className="w-full"
+            />
+            <p className="text-gray-400 text-xs mt-2 text-center">
               {t('projects.applicationRecords.uploadHint', 'PDF, DOC, XLS 형식 지원, 최대 10MB')}
             </p>
           </div>
@@ -508,7 +491,7 @@ export default function ApplicationRecords() {
           </div>
         </div>
       </Modal>
-    </div>
+    </PageContainer>
   );
 
 }

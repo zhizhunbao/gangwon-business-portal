@@ -6,6 +6,7 @@ Business logic for file upload and management.
 from typing import Optional
 from fastapi import UploadFile
 from uuid import UUID, uuid4
+from datetime import datetime
 
 from ...common.modules.supabase.service import supabase_service
 from ...common.modules.storage import storage_service
@@ -180,11 +181,11 @@ class UploadService:
         Args:
             file: UploadFile object
             user: Current user dict
-            resource_type: Optional resource type
-            resource_id: Optional resource ID
+            resource_type: Optional resource type (for organizing files)
+            resource_id: Optional resource ID (for organizing files)
 
         Returns:
-            Attachment dict
+            File metadata dict (to be stored in JSONB)
         """
         # Validate file size first (before reading content)
         self._validate_file(file, check_size_first=True)
@@ -217,28 +218,16 @@ class UploadService:
             make_public=True,
         )
 
-        # Create attachment record - use helper method
-        attachment_id = str(uuid4())
-        attachment_data = {
-            "id": attachment_id,
-            "resource_type": resource_type or "public",
-            "resource_id": str(resource_id) if resource_id else user["id"],
-            "file_type": self._determine_file_type(upload_result["mime_type"]),
+        # Return file metadata (to be stored in JSONB by caller)
+        return {
+            "file_id": str(uuid4()),
+            "file_name": upload_result["original_name"],
             "file_url": upload_result["url"],
-            "original_name": upload_result["original_name"],
-            "stored_name": upload_result["stored_name"],
             "file_size": file_size,
+            "file_type": self._determine_file_type(upload_result["mime_type"]),
             "mime_type": upload_result["mime_type"],
-            # Note: uploaded_at is automatically set by database default
+            "uploaded_at": datetime.utcnow().isoformat(),
         }
-
-        attachment = await supabase_service.create_record('attachments', attachment_data)
-        if not attachment:
-            raise ValidationError(
-                CMessageTemplate.VALIDATION_OPERATION_FAILED.format(operation="create attachment record")
-            )
-
-        return attachment
 
     async def upload_private_file(
         self,
@@ -253,11 +242,11 @@ class UploadService:
         Args:
             file: UploadFile object
             user: Current user dict
-            resource_type: Optional resource type
-            resource_id: Optional resource ID
+            resource_type: Optional resource type (for organizing files)
+            resource_id: Optional resource ID (for organizing files)
 
         Returns:
-            Attachment dict
+            File metadata dict (to be stored in JSONB)
         """
         # Validate file size first (before reading content)
         self._validate_file(file, check_size_first=True)
@@ -290,213 +279,97 @@ class UploadService:
             make_public=False,
         )
 
-        # For private files, we need to generate a signed URL
-        # For now, store the path and generate signed URL on demand
-        # Note: Supabase signed URLs are temporary, so we store the path
+        # For private files, store the path (signed URL generated on demand)
         file_url = f"private-files/{upload_result['path']}"
 
-        # Create attachment record - use helper method
-        attachment_id = str(uuid4())
-        attachment_data = {
-            "id": attachment_id,
-            "resource_type": resource_type or "private",
-            "resource_id": str(resource_id) if resource_id else user["id"],
-            "file_type": self._determine_file_type(upload_result["mime_type"]),
-            "file_url": file_url,  # Store path for private files
-            "original_name": upload_result["original_name"],
-            "stored_name": upload_result["stored_name"],
+        # Return file metadata (to be stored in JSONB by caller)
+        return {
+            "file_id": str(uuid4()),
+            "file_name": upload_result["original_name"],
+            "file_url": file_url,
             "file_size": file_size,
+            "file_type": self._determine_file_type(upload_result["mime_type"]),
             "mime_type": upload_result["mime_type"],
-            # Note: uploaded_at is automatically set by database default
+            "uploaded_at": datetime.utcnow().isoformat(),
         }
 
-        attachment = await supabase_service.create_record('attachments', attachment_data)
-        if not attachment:
-            raise ValidationError(
-                CMessageTemplate.VALIDATION_OPERATION_FAILED.format(operation="create attachment record")
-            )
-
-        return attachment
-
-    async def get_file(
+    async def get_file_url(
         self,
-        file_id: UUID,
+        file_url: str,
         user: dict,
-    ) -> dict:
+    ) -> str:
         """
-        Get file metadata and generate download URL.
+        Generate download URL for a file (mainly for private files).
 
         Args:
-            file_id: Attachment ID
+            file_url: File URL or path
             user: Current user dict
 
         Returns:
-            Attachment dict with download URL
+            Download URL (signed URL for private files)
 
         Raises:
             NotFoundError: If file not found
-            AuthenticationError: If user doesn't have permission
         """
-        # Get attachment - use helper method
-        attachment = await supabase_service.get_by_id('attachments', str(file_id))
+        # If already a public URL, return as-is
+        if file_url.startswith("http"):
+            return file_url
 
-        if not attachment:
-            raise NotFoundError(CMessageTemplate.UPLOAD_FILE_NOT_FOUND)
-
-        # Check permissions
-        # For public files, anyone can access
-        # For private files, check if user owns the resource or is admin
-        from ...modules.user.service import AuthService
-        auth_service = AuthService()
-        is_admin = await auth_service.is_admin(user["id"])
-
-        if attachment.get("resource_type") == "public":
-            # Public files are accessible to everyone
-            pass
-        elif is_admin:
-            # Admin can access all files
-            pass
+        # Private file: generate signed URL
+        if file_url.startswith("private-files/"):
+            bucket = "private-files"
+            path = file_url.replace("private-files/", "")
         else:
-            # Private files: check ownership based on resource_type
-            resource_type = attachment.get("resource_type")
-            resource_id = attachment.get("resource_id")
-            has_permission = False
+            bucket = "private-files"
+            path = file_url
 
-            if resource_type == "performance":
-                # Check if user owns the performance record
-                perf_result = supabase_service.client.table('performance_records').select('member_id').eq('id', resource_id).execute()
-                if perf_result.data and perf_result.data[0].get('member_id') == user["id"]:
-                    has_permission = True
-            elif resource_id == user["id"]:
-                # Direct ownership (e.g., profile files)
-                has_permission = True
-
-            if not has_permission:
-                raise AuthorizationError(
-                    CMessageTemplate.AUTHZ_NO_PERMISSION.format(action="access this file")
+        # Generate signed URL (valid for 1 hour)
+        try:
+            signed_url = storage_service.create_signed_url(bucket, path, expires_in=3600)
+            return signed_url
+        except ValueError as e:
+            error_msg = str(e)
+            if "Object not found" in error_msg or "404" in error_msg:
+                raise NotFoundError(
+                    CMessageTemplate.UPLOAD_FILE_DELETED.format(filename=path)
                 )
+            raise
 
-        # Generate download URL
-        if attachment.get("resource_type") == "public" or attachment.get("file_url", "").startswith("http"):
-            # Public file or already has URL
-            download_url = attachment.get("file_url")
-        else:
-            # Private file: generate signed URL
-            # Extract bucket and path from stored URL
-            file_url = attachment.get("file_url", "")
-            if file_url.startswith("private-files/"):
-                bucket = "private-files"
-                path = file_url.replace("private-files/", "")
-            else:
-                bucket = "private-files"
-                path = file_url
-
-            # Generate signed URL (valid for 1 hour)
-            try:
-                signed_url = storage_service.create_signed_url(bucket, path, expires_in=3600)
-                download_url = signed_url
-            except ValueError as e:
-                error_msg = str(e)
-                if "Object not found" in error_msg or "404" in error_msg:
-                    raise NotFoundError(
-                        CMessageTemplate.UPLOAD_FILE_DELETED.format(
-                            filename=attachment.get('original_name', path)
-                        )
-                    )
-                raise
-
-        # Return attachment with modified file_url
-        attachment["file_url"] = download_url
-        return attachment
-
-    async def delete_file(
+    async def delete_file_from_storage(
         self,
-        file_id: UUID,
-        user: dict,
+        file_url: str,
     ) -> bool:
         """
-        Delete a file.
+        Delete a file from storage.
 
         Args:
-            file_id: Attachment ID
-            user: Current user dict
+            file_url: File URL or path
 
         Returns:
             True if successful
-
-        Raises:
-            NotFoundError: If file not found
-            AuthenticationError: If user doesn't have permission
         """
-        # Get attachment - use helper method
-        attachment = await supabase_service.get_by_id('attachments', str(file_id))
+        # Extract bucket and path
+        if file_url.startswith("http"):
+            # Parse URL to get path
+            # For now, skip deletion of public URLs
+            return True
 
-        if not attachment:
-            raise NotFoundError(CMessageTemplate.UPLOAD_FILE_NOT_FOUND)
-
-        # Check permissions
-        from ...modules.user.service import AuthService
-        auth_service = AuthService()
-        is_admin = await auth_service.is_admin(user["id"])
-
-        if not is_admin and attachment.get("resource_id") != user["id"]:
-            raise AuthorizationError(
-                CMessageTemplate.AUTHZ_NO_PERMISSION.format(action="delete this file")
-            )
-
-        # Determine bucket and path
-        project_prefix = "gangwon-portal"
-        resource_type = attachment.get("resource_type")
-        file_category = resource_type if resource_type not in ["public", "private"] else "files"
-        
-        file_url = attachment.get("file_url", "")
-        if resource_type == "public" or not file_url.startswith("private-files/"):
-            bucket = "public-files"
-            # For public files, reconstruct path with project prefix and category
-            if file_url.startswith("http"):
-                # Public URL - reconstruct path with project prefix and category
-                user_business_number = user.get('business_number')
-                if user_business_number:
-                    path = f"{project_prefix}/{user_business_number}/{file_category}/{attachment.get('stored_name')}"
-                else:
-                    path = f"{project_prefix}/{file_category}/{attachment.get('stored_name')}"
-            else:
-                # Already a path - use as is if it has project prefix, otherwise reconstruct
-                if file_url.startswith(project_prefix):
-                    path = file_url
-                else:
-                    # Reconstruct with project prefix and category
-                    user_business_number = user.get('business_number')
-                    if user_business_number:
-                        path = f"{project_prefix}/{user_business_number}/{file_category}/{attachment.get('stored_name')}"
-                    else:
-                        path = f"{project_prefix}/{file_category}/{attachment.get('stored_name')}"
-        else:
+        if file_url.startswith("private-files/"):
             bucket = "private-files"
-            # Remove "private-files/" prefix
-            path = file_url.replace("private-files/", "").lstrip("/")
-            # Ensure path has project prefix and category
-            if not path.startswith(project_prefix):
-                user_business_number = user.get('business_number')
-                if user_business_number:
-                    path = f"{project_prefix}/{user_business_number}/{file_category}/{attachment.get('stored_name')}"
-                else:
-                    path = f"{project_prefix}/{file_category}/{attachment.get('stored_name')}"
+            path = file_url.replace("private-files/", "")
+        elif file_url.startswith("public-files/"):
+            bucket = "public-files"
+            path = file_url.replace("public-files/", "")
+        else:
+            # Assume private
+            bucket = "private-files"
+            path = file_url
 
         # Delete from storage
-        # Try to delete, but don't fail if file doesn't exist in storage
         try:
             await storage_service.delete_file(bucket, path)
+            return True
         except Exception:
-            # Continue with database deletion even if storage deletion fails
-            pass
-
-        # Delete from database - use helper method
-        success = await supabase_service.delete_record('attachments', str(file_id))
-        if not success:
-            raise ValidationError(
-                CMessageTemplate.VALIDATION_OPERATION_FAILED.format(operation="delete attachment record")
-            )
-
-        return True
+            # Continue even if storage deletion fails
+            return False
 

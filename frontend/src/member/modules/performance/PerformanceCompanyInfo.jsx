@@ -28,7 +28,7 @@ import {
   EditIcon,
   CheckCircleIcon
 } from '@shared/components/Icons';
-import { formatNumber, parseFormattedNumber, validateImageFile } from '@shared/utils';
+import { formatNumber, parseFormattedNumber, validateImageFile, formatPhoneNumber } from '@shared/utils';
 import { 
   STARTUP_TYPE_KEYS, 
   KSIC_MAJOR_CATEGORY_KEYS, 
@@ -51,11 +51,11 @@ export default function PerformanceCompanyInfo() {
   const [messageVariant, setMessageVariant] = useState('success');
   const [companyData, setCompanyData] = useState({
     companyName: '', businessNumber: '', corporationNumber: '', establishedDate: '',
-    representative: '', representativeBirthDate: '', representativeGender: '', phone: '', address: '', region: '', category: '', industry: '',
+    representative: '', representativeBirthDate: '', representativeGender: '', representativePhone: '', phone: '', address: '', region: '', category: '', industry: '',
     description: '', website: '', logo: null, logoPreview: null, businessField: '', sales: '', employeeCount: '',
     mainBusiness: '', cooperationFields: [], approvalStatus: null,
     // Contact person fields
-    contactPersonName: '', contactPersonDepartment: '', contactPersonPosition: '',
+    contactPersonName: '', contactPersonDepartment: '', contactPersonPosition: '', contactPersonPhone: '',
     // New business info fields (Task 5)
     startupType: '', ksicMajor: '', ksicSub: '',
     // New fields for Task 6
@@ -88,6 +88,7 @@ export default function PerformanceCompanyInfo() {
       representative: profile.representative || '',
       representativeBirthDate: profile.representativeBirthDate || '',
       representativeGender: profile.representativeGender || '',
+      representativePhone: profile.representativePhone || '',
       phone: profile.phone || '',
       address: profile.address || '', 
       region: profile.region || '', 
@@ -107,6 +108,7 @@ export default function PerformanceCompanyInfo() {
       contactPersonName: profile.contactPersonName || '',
       contactPersonDepartment: profile.contactPersonDepartment || '',
       contactPersonPosition: profile.contactPersonPosition || '',
+      contactPersonPhone: profile.contactPersonPhone || '',
       // New business info fields (Task 5)
       startupType: profile.startupType || '',
       ksicMajor: profile.ksicMajor || '',
@@ -151,6 +153,14 @@ export default function PerformanceCompanyInfo() {
       if (!isNaN(numValue) || value === '') {
         setCompanyData(prev => ({ ...prev, [field]: value === '' ? '' : formatNumber(numValue) }));
       }
+      return;
+    }
+    
+    // Handle phone number formatting for all three phone fields
+    if (field === 'phone' || field === 'representativePhone' || field === 'contactPersonPhone') {
+      const formatted = formatPhoneNumber(value);
+      setCompanyData(prev => ({ ...prev, [field]: formatted }));
+      validateField(field, formatted);
       return;
     }
     
@@ -250,12 +260,14 @@ export default function PerformanceCompanyInfo() {
       representative: companyData.representative,
       representativeBirthDate: companyData.representativeBirthDate,
       representativeGender: companyData.representativeGender,
+      representativePhone: companyData.representativePhone,
       phone: companyData.phone,
       logoUrl: companyData.logo,
       // Contact person fields
       contactPersonName: companyData.contactPersonName,
       contactPersonDepartment: companyData.contactPersonDepartment,
       contactPersonPosition: companyData.contactPersonPosition,
+      contactPersonPhone: companyData.contactPersonPhone,
       // Business info fields
       mainBusiness: companyData.mainBusiness,
       description: companyData.description,
@@ -300,7 +312,7 @@ export default function PerformanceCompanyInfo() {
     
     try {
       const uploadResponse = await uploadLogo(file);
-      setCompanyData(prev => ({ ...prev, logo: uploadResponse.file_url || uploadResponse.url }));
+      setCompanyData(prev => ({ ...prev, logo: uploadResponse.fileUrl || uploadResponse.url }));
       setMessageVariant('success');
       setMessage(t('performance.companyInfo.message.logoUploadSuccess', 'Logo上传成功'));
       setTimeout(() => setMessage(null), 3000);
@@ -610,6 +622,33 @@ export default function PerformanceCompanyInfo() {
           </div>
           <div className="flex flex-col">
             <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
+              {t('member.representativePhone', '대표자 전화번호')}
+            </label>
+            <Input 
+              type="tel" 
+              value={companyData.representativePhone} 
+              onChange={(e) => handleChange('representativePhone', e.target.value)} 
+              disabled={!isEditing}
+              error={fieldErrors.representativePhone}
+              maxLength={13}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
+              {t('member.phone', '기업 전화번호')} <span className="text-red-600">*</span>
+            </label>
+            <Input 
+              type="tel" 
+              value={companyData.phone} 
+              onChange={(e) => handleChange('phone', e.target.value)} 
+              disabled={!isEditing} 
+              required
+              error={fieldErrors.phone}
+              maxLength={13}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
               {t('member.contactPersonName', '담당자명')}
             </label>
             <Input 
@@ -640,15 +679,15 @@ export default function PerformanceCompanyInfo() {
           </div>
           <div className="flex flex-col">
             <label className="text-sm sm:text-base font-medium text-gray-700 mb-2">
-              {t('member.phone', 'Phone')} <span className="text-red-600">*</span>
+              {t('member.contactPersonPhone', '담당자 전화번호')}
             </label>
             <Input 
               type="tel" 
-              value={companyData.phone} 
-              onChange={(e) => handleChange('phone', e.target.value)} 
-              disabled={!isEditing} 
-              required
-              error={fieldErrors.phone}
+              value={companyData.contactPersonPhone} 
+              onChange={(e) => handleChange('contactPersonPhone', e.target.value)} 
+              disabled={!isEditing}
+              error={fieldErrors.contactPersonPhone}
+              maxLength={13}
             />
           </div>
           </div>

@@ -20,7 +20,6 @@ export default function PerformanceList() {
   const currentLanguage = i18n.language === 'zh' ? 'zh' : 'ko';
   
   const [loading, setLoading] = useState(false);
-  const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -28,71 +27,73 @@ export default function PerformanceList() {
   const [rejectComment, setRejectComment] = useState('');
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [approveComment, setApproveComment] = useState('');
-  const [allRecords, setAllRecords] = useState([]); // 存储所有数据
+  const [allRecords, setAllRecords] = useState([]);
+  const [filteredRecords, setFilteredRecords] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
   const [message, setMessage] = useState(null);
   const [messageVariant, setMessageVariant] = useState('success');
 
+  // 使用 useCallback 包装 setFilteredRecords 避免无限循环
+  const handleFilterChange = useCallback((filtered) => {
+    setFilteredRecords(filtered);
+    setCurrentPage(1); // 重置到第一页
+  }, []);
+
   // 一次性加载所有业绩记录数据
   const loadAllPerformanceRecords = useCallback(async () => {
     setLoading(true);
-    const params = {
-      memberId: memberId || undefined,
-      page: 1,
-      pageSize: 10000 // 加载所有数据
-    };
-    const response = await adminService.listPerformanceRecords(params);
-    if (response && response.records) {
-      setAllRecords(response.records);
-    } else {
+    try {
+      const params = {
+        memberId: memberId || undefined,
+        page: 1,
+        pageSize: 1000
+      };
+      const response = await adminService.listPerformanceRecords(params);
+      if (response && response.items) {
+        setAllRecords(response.items);
+      } else {
+        setAllRecords([]);
+      }
+    } catch (error) {
+      console.error('Failed to load performance records:', error);
       setAllRecords([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [memberId]);
 
   useEffect(() => {
     loadAllPerformanceRecords();
   }, [loadAllPerformanceRecords]);
 
-  // 前端模糊搜索和过滤 - 匹配所有列
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(record => {
-      // 搜索关键词过滤
-      if (searchKeyword) {
-        const keyword = searchKeyword.toLowerCase();
-        const searchKeywordNormalized = searchKeyword.replace(/-/g, '').toLowerCase();
-        
-        // 将所有字段值转换为可搜索的字符串
-        const searchableText = [
-          // 企业信息
-          record.memberCompanyName || '',
-          (record.memberBusinessNumber || '').replace(/-/g, ''),
-          // 年度和季度
-          record.year ? String(record.year) : '',
-          record.quarter ? `Q${record.quarter}` : t('performance.annual', '年度'),
-          // 类型（搜索原始值和翻译值）
-          record.type || '',
-          record.type ? t(`performance.types.${record.type}`, record.type) : '',
-          // 状态（搜索原始值和翻译值）
-          record.status || '',
-          record.status ? t(`performance.status.${record.status}`, record.status) : '',
-          // 提交时间
-          record.submittedAt ? formatDateTime(record.submittedAt, 'yyyy-MM-dd HH:mm', currentLanguage) : '',
-          // ID（用于精确搜索）
-          record.id || '',
-        ].join(' ').toLowerCase();
-        
-        // 同时检查原始关键词和去除连字符后的关键词
-        if (!searchableText.includes(keyword) && 
-            !searchableText.includes(searchKeywordNormalized)) {
-          return false;
-        }
-      }
-      return true;
-    });
-  }, [allRecords, searchKeyword, t, currentLanguage]);
+  // 状态映射配置
+  const getStatusConfig = useCallback((status) => {
+    const variantMap = {
+      approved: 'success',
+      submitted: 'info',
+      pending: 'warning',
+      revision_requested: 'warning',
+      revision_required: 'warning',
+      draft: 'secondary',
+      rejected: 'danger'
+    };
+    const statusKeyMap = {
+      approved: 'approved',
+      submitted: 'submitted',
+      pending: 'submitted',
+      revision_requested: 'revisionRequested',
+      revision_required: 'revisionRequested',
+      draft: 'draft',
+      rejected: 'rejected'
+    };
+    const statusKey = statusKeyMap[status] || status;
+    return {
+      variant: variantMap[status] || 'default',
+      label: t(`performance.status.${statusKey}`, status)
+    };
+  }, [t]);
 
   // 分页后的数据
   const records = useMemo(() => {
@@ -195,7 +196,56 @@ export default function PerformanceList() {
     }
   };
 
-  const columns = [
+  // 定义搜索列 - 与表格列保持一致
+  const searchColumns = useMemo(() => [
+    {
+      key: 'memberCompanyName',
+      label: t('admin.performance.table.memberName', '企业名称'),
+      render: (value, row) => {
+        if (value) return value;
+        if (row.memberBusinessNumber) return row.memberBusinessNumber;
+        return '-';
+      }
+    },
+    {
+      key: 'memberBusinessNumber',
+      label: t('admin.performance.table.businessNumber', '营业执照号'),
+      render: (value) => value ? formatBusinessLicense(value) : '-'
+    },
+    {
+      key: 'year',
+      label: t('admin.performance.table.year'),
+      render: (value) => value || ''
+    },
+    {
+      key: 'quarter',
+      label: t('admin.performance.table.quarter'),
+      render: (value) => value ? `Q${value}` : t('performance.annual', '年度')
+    },
+    {
+      key: 'type',
+      label: t('admin.performance.table.type', '类型'),
+      render: (value) => t(`performance.types.${value}`, value)
+    },
+    {
+      key: 'status',
+      label: t('admin.performance.table.status'),
+      render: (value) => {
+        const statusConfig = getStatusConfig(value);
+        return statusConfig.label;
+      }
+    },
+    {
+      key: 'submittedAt',
+      label: t('admin.performance.table.submittedAt', '提交时间'),
+      render: (value) => {
+        if (!value) return '-';
+        return formatDateTime(value, 'yyyy-MM-dd HH:mm', currentLanguage);
+      }
+    }
+  ], [t, currentLanguage, getStatusConfig]);
+
+  const tableColumns = [
     {
       key: 'memberCompanyName',
       label: t('admin.performance.table.memberName', '企业名称'),
@@ -228,29 +278,10 @@ export default function PerformanceList() {
       key: 'status',
       label: t('admin.performance.table.status'),
       render: (value) => {
-        const variantMap = {
-          approved: 'success',
-          submitted: 'info',
-          pending: 'warning',
-          revision_requested: 'warning',
-          revision_required: 'warning',
-          draft: 'secondary',
-          rejected: 'danger'
-        };
-        // 映射后端状态值到 i18n key
-        const statusKeyMap = {
-          approved: 'approved',
-          submitted: 'submitted',
-          pending: 'submitted',
-          revision_requested: 'revisionRequested',
-          revision_required: 'revisionRequested',
-          draft: 'draft',
-          rejected: 'rejected'
-        };
-        const statusKey = statusKeyMap[value] || value;
+        const statusConfig = getStatusConfig(value);
         return (
-          <Badge variant={variantMap[value] || 'default'}>
-            {t(`performance.status.${statusKey}`, value)}
+          <Badge variant={statusConfig.variant}>
+            {statusConfig.label}
           </Badge>
         );
       }
@@ -340,16 +371,13 @@ export default function PerformanceList() {
         <h1 className="text-2xl font-semibold text-gray-900 mb-4">{t('admin.performance.title')}</h1>
         
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <div className="flex-1 min-w-[200px] max-w-md">
-            <SearchInput
-              value={searchKeyword}
-              onChange={(value) => {
-                setSearchKeyword(value);
-                setCurrentPage(1);
-              }}
-              placeholder={t('admin.performance.searchPlaceholder', '搜索所有列：企业名称、营业执照号、年度、季度、类型、状态等')}
-            />
-          </div>
+          <SearchInput
+            data={allRecords}
+            columns={searchColumns}
+            onFilter={handleFilterChange}
+            placeholder={t('admin.performance.searchPlaceholder', '搜索所有列：企业名称、营业执照号、年度、季度、类型、状态等')}
+            className="flex-1 min-w-[200px] max-w-md"
+          />
           <div className="flex items-center space-x-2 md:ml-4 w-full md:w-auto">
             <Button 
               onClick={() => handleExport('excel')} 
@@ -390,7 +418,7 @@ export default function PerformanceList() {
             <>
               <div className="overflow-x-auto -mx-4 px-4">
                 <Table 
-                  columns={columns} 
+                  columns={tableColumns} 
                   data={records}
                 />
               </div>

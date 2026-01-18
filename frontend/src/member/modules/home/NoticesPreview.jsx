@@ -4,82 +4,88 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import Card from '@shared/components/Card';
+import { useState, useEffect } from 'react';
 import { formatDate } from '@shared/utils';
-import { Badge } from '@shared/components';
-import { contentService } from '@shared/services';
+import HomePreview from '@shared/components/HomePreview';
+import { homeService } from '@shared/services';
 import { ROUTES } from '@shared/utils/constants';
 
 function NoticesPreview() {
   const { t, i18n } = useTranslation();
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
-  const loadNotices = useCallback(async () => {
+  async function loadNotices() {
     setLoading(true);
-    // 使用 contentService 获取最新5条公告，然后取前4条
-    const noticesData = await contentService.getLatestNotices();
+    const noticesData = await homeService.getLatestNotices();
     
     if (Array.isArray(noticesData) && noticesData.length > 0) {
       const formattedNotices = noticesData.slice(0, 4).map(n => ({
         id: n.id,
         title: n.title,
         date: n.createdAt ? formatDate(n.createdAt) : '',
-        important: n.boardType === 'notice' // 可以根据需要调整判断逻辑
+        important: n.boardType === 'notice',
+        attachments: n.attachments || []
       }));
       setNotices(formattedNotices);
     } else {
       setNotices([]);
     }
     setLoading(false);
-  }, [i18n.language]);
+  }
 
   useEffect(() => {
     loadNotices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i18n.language]); // 直接依赖 i18n.language，避免 loadNotices 变化导致重复请求
+  }, []);
+
+  function getBadgeInfo(notice) {
+    return {
+      variant: notice.important ? 'danger' : 'gray',
+      text: notice.important ? t('home.notices.important', '重要') : t('home.notices.normal', '一般')
+    };
+  }
+
+  async function handleNoticeClick(noticeId) {
+    setDetailLoading(true);
+    const detail = await homeService.getNotice(noticeId);
+    if (detail) {
+      setSelectedNotice({
+        id: detail.id,
+        title: detail.title,
+        contentHtml: detail.contentHtml || '',
+        date: detail.createdAt,
+        badge: {
+          variant: detail.boardType === 'notice' ? 'danger' : 'gray',
+          text: detail.boardType === 'notice' 
+            ? t('home.notices.important', '重要') 
+            : t('home.notices.normal', '一般')
+        },
+        viewCount: detail.viewCount || detail.view_count || 0,
+        attachments: detail.attachments || []
+      });
+    }
+    setDetailLoading(false);
+  }
+
+  function handleCloseModal() {
+    setSelectedNotice(null);
+  }
 
   return (
-    <section className="notices-section w-full flex-1 flex flex-col bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-      <div className="flex items-center justify-between mb-6 flex-shrink-0 max-md:flex-col max-md:items-start max-md:gap-2">
-        <h2 className="text-2xl font-semibold text-gray-900 m-0">{t('home.notices.title', '最新公告')}</h2>
-        <Link to={ROUTES.MEMBER_NOTICES} className="text-blue-600 no-underline text-sm font-medium transition-colors hover:text-blue-500 hover:underline">
-          {t('common.viewAll', '查看全部')}
-        </Link>
-      </div>
-
-      {loading ? (
-        <div className="p-8 text-center text-gray-500">
-          <p>{t('common.loading', '加载中...')}</p>
-        </div>
-      ) : notices.length > 0 ? (
-        <div className="flex flex-col gap-3 flex-1 overflow-y-auto">
-          {notices.map((notice) => (
-            <Card key={notice.id} className="flex-shrink-0 transition-all duration-200">
-              <div className="flex flex-col p-4 cursor-default">
-                <div className="flex items-center justify-between mb-1 gap-2">
-                  {notice.important && (
-                    <Badge variant="danger">
-                      {t('home.notices.important', '重要')}
-                    </Badge>
-                  )}
-                  <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">{notice.date}</span>
-                </div>
-                <h3 className="text-sm font-medium text-gray-900 m-0 leading-snug line-clamp-2">{notice.title}</h3>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card className="p-8 text-center text-gray-500">
-          <p className="text-sm text-gray-500 m-0 text-center p-4">
-            {t('home.notices.empty', '暂无公告')}
-          </p>
-        </Card>
-      )}
-    </section>
+    <HomePreview
+      title={t('home.notices.title', '最新公告')}
+      viewAllLink={ROUTES.MEMBER_NOTICES}
+      items={notices}
+      loading={loading}
+      emptyMessage={t('home.notices.empty', '暂无公告')}
+      onItemClick={handleNoticeClick}
+      getBadgeInfo={getBadgeInfo}
+      showModal={true}
+      selectedItem={selectedNotice}
+      onCloseModal={handleCloseModal}
+    />
   );
 }
 

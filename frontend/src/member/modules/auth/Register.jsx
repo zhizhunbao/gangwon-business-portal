@@ -79,13 +79,6 @@ export default function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
   
-  const getRegionValue = (isGangwon) => {
-    const isKorean = i18n.language === 'ko';
-    return isGangwon 
-      ? (isKorean ? '강원특별자치도' : '江原特别自治道')
-      : (isKorean ? '강원 이외' : '江原以外');
-  };
-  
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 5;
   
@@ -93,7 +86,8 @@ export default function Register() {
     businessNumber: '', password: '', passwordConfirm: '', companyName: '', region: '', category: '',
     corporationNumber: '', address: '', addressDetail: '', representative: '', establishedDate: '',
     logo: null, businessLicenseFile: null,
-    email: '', phone: '', representativePhone: '', contactPersonName: '', contactPersonDepartment: '', contactPersonPosition: '',
+    email: '', phone: '', representativePhone: '', contactPersonPhone: '', contactPersonName: '', contactPersonDepartment: '', contactPersonPosition: '',
+    startupType: '', ksicMajor: '', ksicSub: '',
     businessField: '', sales: '', employeeCount: '', websiteUrl: '', mainBusiness: '', cooperationFields: [],
     agreeAll: false, termsOfService: false, privacyPolicy: false, thirdPartySharing: false, marketingConsent: false
   };
@@ -144,7 +138,11 @@ export default function Register() {
   
   const handleBusinessNumberChange = (e) => setFormData(prev => ({ ...prev, businessNumber: formatBusinessLicense(e.target.value) }));
   const handleCorporationNumberChange = (e) => setFormData(prev => ({ ...prev, corporationNumber: formatCorporationNumber(e.target.value) }));
-  const handlePhoneChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: formatPhoneNumber(e.target.value) }));
+  
+  const handlePhoneChange = (e) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setFormData(prev => ({ ...prev, [e.target.name]: formatted }));
+  };
   
   const handleFileChange = (e, fieldName, acceptImagesOnly = false) => {
     const file = e.target.files[0];
@@ -176,25 +174,31 @@ export default function Register() {
         if (!formData.password || formData.password.length < 8) return t('validation.passwordMinLength');
         if (formData.password !== formData.passwordConfirm) return t('validation.passwordMismatch');
         if (!formData.companyName) return t('validation.required', { field: t('member.companyName') });
-        if (!formData.region) return t('validation.required', { field: t('member.region') });
-        if (!formData.category) return t('validation.required', { field: t('member.category') });
+        if (!formData.region || formData.region === '') return t('validation.required', { field: t('member.region') });
+        if (!formData.category || formData.category === '') return t('validation.required', { field: t('member.category') });
         return null;
       },
       2: () => {
-        if (!formData.corporationNumber || formData.corporationNumber.replace(/\D/g, '').length !== 13) return t('validation.required', { field: t('member.corporationNumber') });
         if (!formData.address) return t('validation.required', { field: t('member.address') });
         if (!formData.representative) return t('validation.required', { field: t('member.representative') });
-        if (!formData.establishedDate) return t('validation.required', { field: t('member.establishedDate') });
         return null;
       },
       3: () => {
         if (!formData.email) return t('validation.required', { field: t('auth.email') });
         if (!formData.phone) return t('validation.required', { field: t('member.phone') });
-        if (!formData.contactPersonName) return t('validation.required', { field: t('member.contactPersonName') });
+        // 验证韩国电话号码格式
+        // 手机: 010-xxxx-xxxx, 011-xxx-xxxx, 016-xxx-xxxx, 017-xxx-xxxx, 018-xxx-xxxx, 019-xxx-xxxx
+        // 首尔: 02-xxx-xxxx, 02-xxxx-xxxx
+        // 其他地区: 0xx-xxx-xxxx, 0xx-xxxx-xxxx
+        const phoneRegex = /^(01[0-9]-\d{3,4}-\d{4}|02-\d{3,4}-\d{4}|0[3-9]\d-\d{3,4}-\d{4})$/;
+        if (!phoneRegex.test(formData.phone)) return t('validation.invalidPhoneFormat');
+        // 如果填写了代表电话，也要验证格式
+        if (formData.representativePhone && !phoneRegex.test(formData.representativePhone)) return t('validation.invalidPhoneFormat');
+        // 如果填写了负责人电话，也要验证格式
+        if (formData.contactPersonPhone && !phoneRegex.test(formData.contactPersonPhone)) return t('validation.invalidPhoneFormat');
         return null;
       },
       4: () => {
-        if (!formData.businessField) return t('validation.required', { field: t('member.businessField') });
         return null;
       },
       5: () => {
@@ -254,37 +258,52 @@ export default function Register() {
     
     setIsSubmitting(true);
     
+    // 定义不需要提交的字段
+    const excludeFields = ['passwordConfirm', 'agreeAll', 'termsOfService', 'privacyPolicy', 'thirdPartySharing', 'marketingConsent'];
+    
     const submitData = new FormData();
     Object.keys(formData).forEach(key => {
+      // 跳过排除的字段
+      if (excludeFields.includes(key)) return;
+      
       if (key === 'logo' || key === 'businessLicenseFile') {
         if (formData[key]) submitData.append(key, formData[key]);
       } else if (key === 'cooperationFields') {
         formData.cooperationFields.forEach(field => submitData.append('cooperationFields[]', field));
       } else if (key === 'sales' || key === 'employeeCount') {
         submitData.append(key, parseFormattedNumber(formData[key]) || 0);
-      } else if (!key.startsWith('agree') && key !== 'passwordConfirm') {
-        submitData.append(key, formData[key]);
+      } else {
+        // 只提交非空的字段
+        if (formData[key] !== '' && formData[key] !== null && formData[key] !== undefined) {
+          submitData.append(key, formData[key]);
+        }
       }
     });
     submitData.set('business_number', formData.businessNumber?.replace(/-/g, '') || '');
     
     try {
       await register(submitData);
-      clearSavedFormData(); // 注册成功后清除保存的草稿
+      clearSavedFormData();
       setIsSubmitting(false);
       setSuccess(true);
     } catch (err) {
       setIsSubmitting(false);
-      // 处理注册错误
+      
       let message = err?.message || t('auth.registerFailed');
+      
+      // 检查后端返回的错误信息
+      const backendError = err?.response?.data?.error?.message || err?.response?.data?.message;
+      if (backendError) {
+        message = backendError;
+      }
       
       // 转换英文错误消息为国际化消息
       if (message.includes('Business number already registered')) {
         message = t('auth.businessNumberAlreadyRegistered');
-        setCurrentStep(1); // 跳回第一步
+        setCurrentStep(1);
       } else if (message.includes('Email already registered')) {
         message = t('auth.emailAlreadyRegistered');
-        setCurrentStep(3); // 跳回第三步（联系信息）
+        setCurrentStep(3);
       }
       
       setError(message);
@@ -379,31 +398,50 @@ export default function Register() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('member.region')} <span className="text-red-500">*</span></label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="region" value={getRegionValue(true)} checked={formData.region === getRegionValue(true)} onChange={handleChange}
-                        className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm text-gray-700">{t('member.regionGangwon')}</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="region" value={getRegionValue(false)} checked={formData.region === getRegionValue(false)} onChange={handleChange}
-                        className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm text-gray-700">{t('member.regionOther')}</span>
-                    </label>
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.region')} <span className="text-red-500">*</span></label>
+                  <select 
+                    name="region" 
+                    value={formData.region} 
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  >
+                    <option value="">{t('member.selectRegion')}</option>
+                    <option value={t('profile.regions.chuncheon')}>{t('profile.regions.chuncheon')}</option>
+                    <option value={t('profile.regions.wonju')}>{t('profile.regions.wonju')}</option>
+                    <option value={t('profile.regions.gangneung')}>{t('profile.regions.gangneung')}</option>
+                    <option value={t('profile.regions.donghae')}>{t('profile.regions.donghae')}</option>
+                    <option value={t('profile.regions.taebaek')}>{t('profile.regions.taebaek')}</option>
+                    <option value={t('profile.regions.sokcho')}>{t('profile.regions.sokcho')}</option>
+                    <option value={t('profile.regions.samcheok')}>{t('profile.regions.samcheok')}</option>
+                    <option value={t('profile.regions.hongcheon')}>{t('profile.regions.hongcheon')}</option>
+                    <option value={t('profile.regions.hoengseong')}>{t('profile.regions.hoengseong')}</option>
+                    <option value={t('profile.regions.yeongwol')}>{t('profile.regions.yeongwol')}</option>
+                    <option value={t('profile.regions.pyeongchang')}>{t('profile.regions.pyeongchang')}</option>
+                    <option value={t('profile.regions.jeongseon')}>{t('profile.regions.jeongseon')}</option>
+                    <option value={t('profile.regions.cheorwon')}>{t('profile.regions.cheorwon')}</option>
+                    <option value={t('profile.regions.hwacheon')}>{t('profile.regions.hwacheon')}</option>
+                    <option value={t('profile.regions.yanggu')}>{t('profile.regions.yanggu')}</option>
+                    <option value={t('profile.regions.inje')}>{t('profile.regions.inje')}</option>
+                    <option value={t('profile.regions.goseong')}>{t('profile.regions.goseong')}</option>
+                    <option value={t('profile.regions.yangyang')}>{t('profile.regions.yangyang')}</option>
+                    <option value={t('profile.regions.other')}>{t('profile.regions.other')}</option>
+                  </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('member.category')} <span className="text-red-500">*</span></label>
                   <div className="flex gap-4">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="category" value="pre" checked={formData.category === 'pre'} onChange={handleChange} className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm text-gray-700">{t('member.categoryPre')}</span>
+                      <input type="radio" name="category" value="individual" checked={formData.category === 'individual'} onChange={handleChange} className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm text-gray-700">{t('member.categoryIndividual')}</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="category" value="startup" checked={formData.category === 'startup'} onChange={handleChange} className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm text-gray-700">{t('member.categoryStartup')}</span>
+                      <input type="radio" name="category" value="corporation" checked={formData.category === 'corporation'} onChange={handleChange} className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm text-gray-700">{t('member.categoryCorporation')}</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="category" value="nonprofit" checked={formData.category === 'nonprofit'} onChange={handleChange} className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm text-gray-700">{t('member.categoryNonProfit')}</span>
                     </label>
                   </div>
                 </div>
@@ -414,7 +452,7 @@ export default function Register() {
             {currentStep === 2 && (
               <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.corporationNumber')} <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.corporationNumber')}</label>
                   <input type="text" value={formData.corporationNumber} onChange={handleCorporationNumberChange} maxLength={14} placeholder="000000-0000000"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" />
                 </div>
@@ -437,9 +475,15 @@ export default function Register() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.establishedDate')} <span className="text-red-500">*</span></label>
-                  <input type="date" name="establishedDate" value={formData.establishedDate} onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.establishedDate')}</label>
+                  <input 
+                    type="date" 
+                    name="establishedDate" 
+                    value={formData.establishedDate} 
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" 
+                  />
+                  <p className="mt-1 text-xs text-gray-500">{t('member.establishedDateHelp')}</p>
                 </div>
 
                 <div>
@@ -511,19 +555,26 @@ export default function Register() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.phone')} <span className="text-red-500">*</span></label>
-                  <input type="tel" name="phone" value={formData.phone} onChange={handlePhoneChange} autoComplete="tel"
+                  <input type="tel" name="phone" value={formData.phone} onChange={handlePhoneChange} autoComplete="tel" placeholder="010-1234-5678"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" />
+                  <p className="mt-1 text-xs text-gray-500">{t('member.phoneHelp')}</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.representativePhone')}</label>
-                  <input type="tel" name="representativePhone" value={formData.representativePhone} onChange={handlePhoneChange} autoComplete="tel"
+                  <input type="tel" name="representativePhone" value={formData.representativePhone} onChange={handlePhoneChange} autoComplete="tel" placeholder="010-1234-5678"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.contactPersonName')} <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.contactPersonName')}</label>
                   <input type="text" name="contactPersonName" value={formData.contactPersonName} onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.contactPersonPhone')}</label>
+                  <input type="tel" name="contactPersonPhone" value={formData.contactPersonPhone} onChange={handlePhoneChange} autoComplete="tel" placeholder="010-1234-5678"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" />
                 </div>
 
@@ -545,9 +596,68 @@ export default function Register() {
             {currentStep === 4 && (
               <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.businessField')} <span className="text-red-500">*</span></label>
-                  <input type="text" name="businessField" value={formData.businessField} onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.startupType')}</label>
+                  <select 
+                    name="startupType" 
+                    value={formData.startupType} 
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  >
+                    <option value="">{t('member.selectStartupType')}</option>
+                    <option value="preliminary">{t('industryClassification.startupType.preliminary')}</option>
+                    <option value="startup_under_3years">{t('industryClassification.startupType.startup_under_3years')}</option>
+                    <option value="growth_over_7years">{t('industryClassification.startupType.growth_over_7years')}</option>
+                    <option value="restart">{t('industryClassification.startupType.restart')}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.ksicMajor')}</label>
+                  <select 
+                    name="ksicMajor" 
+                    value={formData.ksicMajor} 
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  >
+                    <option value="">{t('member.selectKsicMajor')}</option>
+                    {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U'].map(code => (
+                      <option key={code} value={code}>{t(`industryClassification.ksicMajor.${code}`)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.ksicSub')}</label>
+                  <select 
+                    name="ksicSub" 
+                    value={formData.ksicSub} 
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  >
+                    <option value="">{t('member.selectKsicSub')}</option>
+                    {['13', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31'].map(code => (
+                      <option key={code} value={code}>{t(`industryClassification.ksicSub.${code}`)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('member.businessField')}</label>
+                  <select 
+                    name="businessField" 
+                    value={formData.businessField} 
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  >
+                    <option value="">{t('member.selectBusinessField')}</option>
+                    <option value="software">{t('profile.industries.software')}</option>
+                    <option value="hardware">{t('profile.industries.hardware')}</option>
+                    <option value="biotechnology">{t('profile.industries.biotechnology')}</option>
+                    <option value="healthcare">{t('profile.industries.healthcare')}</option>
+                    <option value="education">{t('profile.industries.education')}</option>
+                    <option value="finance">{t('profile.industries.finance')}</option>
+                    <option value="other">{t('profile.industries.other')}</option>
+                  </select>
                 </div>
 
                 <div>

@@ -2,7 +2,7 @@
 
 import apiService from "./api.service";
 import { API_PREFIX } from "@shared/utils/constants";
-import { toCamelCase, createService } from "@shared/utils/helpers";
+import { createService } from "@shared/utils/helpers";
 
 const BASE_URL = `${API_PREFIX}/admin/messages`;
 const MEMBER_BASE_URL = `${API_PREFIX}/member/messages`;
@@ -21,11 +21,11 @@ class MessagesService {
 
     if (response && response.items) {
       return {
-        items: response.items.map(toCamelCase),
+        items: response.items, // API interceptor已经转换为camelCase
         total: response.total,
         page: response.page,
-        pageSize: response.page_size,
-        totalPages: response.total_pages,
+        pageSize: response.pageSize,
+        totalPages: response.totalPages,
       };
     }
 
@@ -45,11 +45,11 @@ class MessagesService {
 
     if (response && response.items) {
       return {
-        items: response.items.map(toCamelCase),
+        items: response.items, // API interceptor已经转换为camelCase
         total: response.total,
         page: response.page,
-        pageSize: response.page_size,
-        totalPages: response.total_pages,
+        pageSize: response.pageSize,
+        totalPages: response.totalPages,
       };
     }
 
@@ -71,25 +71,25 @@ class MessagesService {
   // 标记消息为已读（会员）
   async markAsRead(messageId) {
     const response = await apiService.put(`${MEMBER_BASE_URL}/${messageId}`, { is_read: true });
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 获取消息详情（管理员）
   async getMessage(messageId) {
     const response = await apiService.get(`${BASE_URL}/${messageId}`);
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 标记消息为已读（管理员）
   async markMessageAsRead(messageId) {
     const response = await apiService.put(`${BASE_URL}/${messageId}`, { is_read: true });
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 获取消息详情（会员）
   async getMemberMessage(messageId) {
     const response = await apiService.get(`${MEMBER_BASE_URL}/${messageId}`);
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
 
@@ -102,7 +102,7 @@ class MessagesService {
       is_important: data.isImportant,
     };
     const response = await apiService.post(BASE_URL, payload);
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 更新消息（管理员）
@@ -112,7 +112,7 @@ class MessagesService {
     if (data.isImportant !== undefined) payload.is_important = data.isImportant;
 
     const response = await apiService.put(`${BASE_URL}/${messageId}`, payload);
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 更新消息（会员）
@@ -122,7 +122,7 @@ class MessagesService {
     if (data.isImportant !== undefined) payload.is_important = data.isImportant;
 
     const response = await apiService.put(`${MEMBER_BASE_URL}/${messageId}`, payload);
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 删除消息（管理员）
@@ -147,11 +147,11 @@ class MessagesService {
 
     if (response && response.items) {
       return {
-        items: response.items.map(toCamelCase),
+        items: response.items, // API interceptor已经转换为camelCase
         total: response.total,
         page: response.page,
-        pageSize: response.page_size,
-        totalPages: response.total_pages,
+        pageSize: response.pageSize,
+        totalPages: response.totalPages,
       };
     }
 
@@ -171,11 +171,11 @@ class MessagesService {
 
     if (response && response.items) {
       return {
-        items: response.items.map(toCamelCase),
+        items: response.items, // API interceptor已经转换为camelCase
         total: response.total,
         page: response.page,
-        pageSize: response.page_size,
-        totalPages: response.total_pages,
+        pageSize: response.pageSize,
+        totalPages: response.totalPages,
       };
     }
 
@@ -191,26 +191,20 @@ class MessagesService {
       attachments: data.attachments,
     };
     const response = await apiService.post(`${MEMBER_BASE_URL}/threads`, payload);
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
 
   // 获取会话详情（管理员）
   async getThread(threadId) {
     const response = await apiService.get(`${BASE_URL}/threads/${threadId}`);
-    return {
-      thread: toCamelCase(response.thread),
-      messages: response.messages.map(toCamelCase),
-    };
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 获取会话详情（会员）
   async getMemberThread(threadId) {
     const response = await apiService.get(`${MEMBER_BASE_URL}/threads/${threadId}`);
-    return {
-      thread: toCamelCase(response.thread),
-      messages: response.messages.map(toCamelCase),
-    };
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 更新会话（管理员）
@@ -219,7 +213,7 @@ class MessagesService {
     if (data.status !== undefined) payload.status = data.status;
 
     const response = await apiService.put(`${BASE_URL}/threads/${threadId}`, payload);
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 在会话中创建消息（管理员）
@@ -230,7 +224,7 @@ class MessagesService {
       attachments: data.attachments,
     };
     const response = await apiService.post(`${BASE_URL}/threads/${threadId}/messages`, payload);
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 在会话中创建消息（会员）
@@ -241,7 +235,7 @@ class MessagesService {
       attachments: data.attachments,
     };
     const response = await apiService.post(`${MEMBER_BASE_URL}/threads/${threadId}/messages`, payload);
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 创建广播消息
@@ -256,7 +250,7 @@ class MessagesService {
       attachments: data.attachments,
     };
     const response = await apiService.post(`${BASE_URL}/broadcast`, payload);
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 
   // 获取消息分析数据
@@ -265,7 +259,7 @@ class MessagesService {
     if (params?.timeRange) queryParams.time_range = params.timeRange;
 
     const response = await apiService.get(`${BASE_URL}/analytics`, queryParams);
-    return toCamelCase(response);
+    return response; // API interceptor已经转换为camelCase
   }
 }
 

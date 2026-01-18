@@ -362,6 +362,7 @@ def format_board_type_display(board_type: str) -> str:
     """
     type_map = {
         "notice": "공지사항",
+        "general": "일반공지",
         "announcement": "안내사항", 
         "news": "뉴스",
     }

@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { Loading } from './Loading';
 import { Alert } from './Alert';
-import contentService from '@shared/services/content.service';
+import { homeService } from '@shared/services';
 import { cn } from '@shared/utils/helpers';
 
 /**
@@ -70,91 +70,25 @@ export function TermsModal({ isOpen, termType, onClose }) {
 
   /**
    * 加载条款内容
-   * 从后端 API 获取，如果没有则使用占位内容
+   * 从后端 API 获取
    */
   const loadTermsContent = async (type) => {
     setLoading(true);
     setError(null);
 
     try {
-      // 只有 terms_of_service 和 privacy_policy 从 API 获取
-      if (type === TERM_TYPES.TERMS_OF_SERVICE || type === TERM_TYPES.PRIVACY_POLICY) {
-        const response = await contentService.getLegalContent(type);
-        if (response && response.contentHtml) {
-          setContent(response.contentHtml);
-          return;
-        }
+      const response = await homeService.getLegalContent(type);
+      if (response && response.contentHtml) {
+        setContent(response.contentHtml);
+      } else {
+        setError(t('common.noData', '暂无数据'));
       }
-      
-      // 如果 API 没有返回内容，或者是其他类型，使用占位内容
-      const placeholderContent = getPlaceholderContent(type, language);
-      setContent(placeholderContent);
     } catch (err) {
       console.error('[TermsModal] Failed to load terms content:', err);
-      // 如果 API 失败，使用占位内容
-      const placeholderContent = getPlaceholderContent(type, language);
-      setContent(placeholderContent);
+      setError(t('error.generic.message', '加载失败，请稍后重试'));
     } finally {
       setLoading(false);
     }
-  };
-
-  /**
-   * 获取临时占位内容（待后端 API 实现后移除）
-   */
-  const getPlaceholderContent = (type, lang) => {
-    const placeholders = {
-      [TERM_TYPES.TERMS_OF_SERVICE]: {
-        ko: `
-          <h2>이용약관</h2>
-          <p>이용약관 내용이 여기에 표시됩니다.</p>
-          <p>이 내용은 관리자가 설정할 수 있으며, 실제 약관 내용으로 대체될 예정입니다.</p>
-        `,
-        zh: `
-          <h2>使用条款</h2>
-          <p>使用条款内容将显示在这里。</p>
-          <p>此内容可由管理员设置，将被实际条款内容替换。</p>
-        `
-      },
-      [TERM_TYPES.PRIVACY_POLICY]: {
-        ko: `
-          <h2>개인정보 처리방침</h2>
-          <p>개인정보 처리방침 내용이 여기에 표시됩니다.</p>
-          <p>이 내용은 관리자가 설정할 수 있으며, 실제 정책 내용으로 대체될 예정입니다.</p>
-        `,
-        zh: `
-          <h2>隐私政策</h2>
-          <p>隐私政策内容将显示在这里。</p>
-          <p>此内容可由管理员设置，将被实际政策内容替换。</p>
-        `
-      },
-      [TERM_TYPES.THIRD_PARTY_SHARING]: {
-        ko: `
-          <h2>제3자 정보 제공 동의</h2>
-          <p>제3자 정보 제공 동의 내용이 여기에 표시됩니다.</p>
-          <p>이 내용은 관리자가 설정할 수 있으며, 실제 동의 내용으로 대체될 예정입니다.</p>
-        `,
-        zh: `
-          <h2>第三方信息提供同意</h2>
-          <p>第三方信息提供同意内容将显示在这里。</p>
-          <p>此内容可由管理员设置，将被实际同意内容替换。</p>
-        `
-      },
-      [TERM_TYPES.MARKETING_CONSENT]: {
-        ko: `
-          <h2>마케팅 정보 수신 동의</h2>
-          <p>마케팅 정보 수신 동의 내용이 여기에 표시됩니다.</p>
-          <p>이 내용은 관리자가 설정할 수 있으며, 실제 동의 내용으로 대체될 예정입니다.</p>
-        `,
-        zh: `
-          <h2>营销信息接收同意</h2>
-          <p>营销信息接收同意内容将显示在这里。</p>
-          <p>此内容可由管理员设置，将被实际同意内容替换。</p>
-        `
-      }
-    };
-
-    return placeholders[type]?.[lang] || placeholders[type]?.ko || '';
   };
 
   return (

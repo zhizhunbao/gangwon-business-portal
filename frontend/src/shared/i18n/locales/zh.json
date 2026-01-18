@@ -19,6 +19,7 @@
     "backToList": "返回列表",
     "view": "查看",
     "viewAll": "查看全部",
+    "preview": "预览",
     "loading": "加载中...",
     "noData": "暂无数据",
     "error": "错误",
@@ -32,6 +33,8 @@
     "previous": "上一步",
     "download": "下载",
     "upload": "上传",
+    "uploading": "上传中...",
+    "sending": "发送中...",
     "add": "添加",
     "remove": "移除",
     "filter": "筛选",
@@ -50,11 +53,14 @@
     "year": "年",
     "quarter": "季度",
     "total": "共",
+    "resultsCount": "共{{count}}条记录",
     "approve": "批准",
     "reject": "拒绝",
     "notifications": "通知",
     "characters": "字",
-    "personUnit": "人"
+    "personUnit": "人",
+    "selectFile": "选择文件",
+    "commaSeparatedHint": "多个值请用逗号分隔"
   },
   "notifications": {
     "empty": "暂无通知",
@@ -70,7 +76,8 @@
     "representative": "代表人姓名",
     "representativeBirthDate": "代表人出生日期",
     "representativeGender": "代表人性别",
-    "phone": "电话号码",
+    "representativePhone": "代表人电话",
+    "phone": "企业电话",
     "address": "地址",
     "addressDetail": "详细地址",
     "region": "所在地区",
@@ -90,6 +97,7 @@
     "contactPersonName": "负责人姓名",
     "contactPersonDepartment": "负责人部门",
     "contactPersonPosition": "负责人职位",
+    "contactPersonPhone": "负责人电话",
     "mainBusiness": "主要业务",
     "businessField": "业务领域",
     "cooperationFields": "产业合作期望领域",
@@ -101,7 +109,26 @@
     "ksicSub": "地区主力产业代码[中分类]",
     "selectMajorFirst": "请先选择大分类",
     "male": "男",
-    "female": "女"
+    "female": "女",
+    "regionGangwon": "江原特别自治道",
+    "regionOther": "江原以外",
+    "categoryPre": "预备创业",
+    "categoryStartup": "初创企业",
+    "categoryIndividual": "个体工商户",
+    "categoryCorporation": "法人企业",
+    "categoryNonProfit": "非营利组织",
+    "logoUpload": "Logo上传",
+    "businessLicenseFile": "营业执照文件",
+    "representativePhone": "代表人电话",
+    "websiteUrl": "网站地址",
+    "selectRegion": "请选择所在地区",
+    "selectCategory": "请选择企业类型",
+    "selectBusinessField": "请选择业务领域",
+    "selectStartupType": "请选择创业类型",
+    "selectKsicMajor": "请选择大分类",
+    "selectKsicSub": "请选择中分类",
+    "establishedDateHelp": "请输入格式：yyyy-mm-dd（例：2020-01-15）",
+    "phoneHelp": "请输入格式：010-1234-5678 或 02-1234-5678"
   },
   "industryClassification": {
     "startupType": {
@@ -341,7 +368,7 @@
         "news": "新闻资料",
         "faq": "FAQ",
         "systemInfo": "系统介绍",
-        "legal": "使用条款/隐私政策"
+        "legal": "条款管理"
       },
       "banners": {
         "title": "横幅管理",
@@ -449,7 +476,11 @@
           "fields": {
             "title": "标题",
             "contentHtml": "内容",
-            "contentHtmlPlaceholder": "请输入公告内容..."
+            "contentHtmlPlaceholder": "请输入公告内容...",
+            "attachments": "附件",
+            "boardType": "公告类型",
+            "boardTypeImportant": "重要",
+            "boardTypeGeneral": "一般"
           }
         },
         "actions": {
@@ -552,10 +583,12 @@
         }
       },
       "legal": {
-        "title": "使用条款/隐私政策管理",
+        "title": "条款管理",
         "description": "管理使用条款和隐私政策内容。",
         "termsOfService": "使用条款",
         "privacyPolicy": "隐私政策",
+        "thirdPartySharing": "第三方信息提供同意",
+        "marketingConsent": "营销信息接收同意",
         "contentPlaceholder": "请输入内容...",
         "helpTitle": "说明",
         "helpText": "此处输入的内容将在会员注册时的使用条款和隐私政策弹窗中显示。",
@@ -1402,7 +1435,7 @@
     },
     "status": {
       "approved": "已批准",
-      "submitted": "已提交",
+      "submitted": "审核中",
       "revisionRequested": "需修改",
       "draft": "草稿",
       "rejected": "已驳回",
@@ -1650,8 +1683,8 @@
     "toggleMenu": "切换菜单",
     "notifications": "通知",
     "noNotifications": "暂无通知",
-    "profile": "个人资料",
-    "support": "客户支持",
+    "profile": "企业信息",
+    "support": "咨询记录",
     "logout": "退出登录",
     "login": "登录"
   },
@@ -1810,11 +1843,35 @@
       "weak": "弱",
       "medium": "中",
       "strong": "强"
-    }
+    },
+    "registerStep1": "账号信息",
+    "registerStep2": "企业信息",
+    "registerStep3": "联系信息",
+    "registerStep4": "业务信息",
+    "registerStep5": "条款同意",
+    "removeFile": "删除文件",
+    "termsRequired": "请同意必需条款",
+    "termsRequiredLabel": "必需",
+    "termsOptionalLabel": "选填",
+    "agreeAll": "全部同意",
+    "viewTerms": "查看详情",
+    "nextStep": "下一步",
+    "previousStep": "上一步",
+    "registerPendingApproval": "您的注册申请已提交，请等待管理员审核。审核通过后您将收到通知邮件。",
+    "businessNumberAlreadyRegistered": "该营业执照号已被注册",
+    "emailAlreadyRegistered": "该邮箱已被注册",
+    "termsOfService": "使用条款",
+    "privacyPolicy": "隐私政策",
+    "thirdPartySharing": "第三方信息提供同意",
+    "marketingConsent": "营销信息接收同意"
   },
   "validation": {
     "required": "请输入{{field}}",
     "passwordMismatch": "密码不匹配",
+    "passwordMinLength": "密码至少需要8个字符",
+    "invalidDateFormat": "日期格式不正确，请使用 yyyy-mm-dd 格式",
+    "invalidPhoneFormat": "电话号码格式不正确，请使用 010-1234-5678 或 02-1234-5678 格式",
+    "phoneMinLength": "电话号码至少需要10个字符",
     "minLength": "至少需要{{min}}个字符",
     "maxLength": "最多允许{{max}}个字符",
     "invalidFormat": "格式不正确"
@@ -1837,14 +1894,15 @@
       "supportDesc": "1:1咨询及查看FAQ"
     },
     "notices": {
-      "title": "事业公告",
+      "title": "公告事项",
       "description": "查看最新公告和重要通知",
       "important": "重要",
+      "normal": "一般",
       "empty": "暂无公告",
       "noContent": "暂无内容"
     },
     "news": {
-      "title": "新公告",
+      "title": "项目公告",
       "description": "查看最新新闻资料和资讯",
       "empty": "暂无新闻资料",
       "noContent": "暂无内容"
@@ -1944,10 +2002,17 @@
         "teamMembers": "参与人员",
         "teamMembersPlaceholder": "请输入姓名、职责、经历等",
         "reason": "申请理由",
-        "reasonPlaceholder": "请详细说明申请此项目的原因（至少10个字符）"
+        "reasonPlaceholder": "请详细说明申请此项目的原因（至少10个字符）",
+        "applicantName": "负责人姓名",
+        "applicantNamePlaceholder": "请输入负责人姓名",
+        "applicantPhone": "负责人电话",
+        "applicantPhonePlaceholder": "请输入电话号码",
+        "attachments": "附件"
       },
       "validationError": "请检查表单必填项并修正后再试。",
       "reasonMinLength": "申请理由至少需要10个字符",
+      "applicantNameRequired": "请输入负责人姓名",
+      "applicantPhoneRequired": "请输入负责人电话",
       "attachments": {
         "title": "附件文件",
         "description": "请上传营业执照、项目计划书等必要文件。",
@@ -2011,13 +2076,35 @@
       "noFilesSelected": "请选择文件。",
       "fileTooLarge": "文件大小超过限制。(最大 10MB)",
       "featureComingSoon": "功能开发中"
-    }
+    },
+    "alreadyApplied": "您已经申请过此项目",
+    "notFound": "项目不存在",
+    "applicationNotFound": "申请记录不存在",
+    "closed": "项目已关闭，无法申请",
+    "deadlinePassed": "申请截止日期已过",
+    "reapply": "重新申请",
+    "resubmit": "重新提交",
+    "canReapplyHint": "您可以重新提交申请",
+    "applicationStatus": "申请状态",
+    "submittedAt": "提交时间",
+    "applicationDetail": "申请详情"
   },
   "support": {
     "title": "一站式支持",
     "subtitle": "咨询、FAQ",
     "inquiry": "1:1咨询",
     "faq": "常见问题",
+    "faqCategory": {
+      "registration": "会员注册",
+      "general": "一般",
+      "performance": "业绩管理",
+      "project": "项目",
+      "profile": "企业资料",
+      "support": "咨询/支持",
+      "other": "其他"
+    },
+    "faqSearchPlaceholder": "搜索问题或答案...",
+    "noFaqResults": "没有找到匹配的问题",
     "newInquiry": "新建咨询",
     "inquiryHistory": "咨询历史",
     "noInquiries": "暂无咨询记录",
@@ -2068,6 +2155,7 @@
       "closed": "已关闭"
     },
     "createdDate": "创建时间",
+    "lastReply": "最近回复",
     "answeredDate": "回复时间",
     "views": "浏览量",
     "viewsLabel": "次浏览",
@@ -2101,5 +2189,34 @@
     "like": "点赞",
     "attachFile": "附加文件",
     "replyToThread": "回复此咨询"
+  },
+  "editor": {
+    "addLink": "添加链接",
+    "linkText": "链接文字",
+    "linkUrl": "链接地址",
+    "bold": "粗体",
+    "italic": "斜体",
+    "underline": "下划线",
+    "heading1": "标题 1",
+    "heading2": "标题 2",
+    "heading3": "标题 3",
+    "bulletList": "无序列表",
+    "orderedList": "有序列表",
+    "link": "链接",
+    "image": "图片",
+    "table": "表格",
+    "deleteTable": "删除表格",
+    "undo": "撤销",
+    "redo": "重做",
+    "uploading": "上传中..."
+  },
+  "fileAttachments": {
+    "addFiles": "添加附件",
+    "uploading": "上传中...",
+    "remaining": "还可上传 {{count}}/{{max}} 个文件",
+    "hint": "单个文件最大 {{max}}",
+    "fileTooLarge": "文件 {{name}} 超过最大限制 {{max}}",
+    "attachments": "附件",
+    "viewAll": "{{count}} 个附件"
   }
 }

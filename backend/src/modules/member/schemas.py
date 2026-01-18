@@ -36,14 +36,16 @@ class MemberProfileResponse(BaseModel):
     representative: Optional[str] = None
     representative_birth_date: Optional[date] = None
     representative_gender: Optional[str] = None
+    representative_phone: Optional[str] = None
     legal_number: Optional[str] = None
     phone: Optional[str] = None
     website: Optional[str] = None
     logo_url: Optional[str] = None
-    # Contact person fields (担当者信息)
+    # Contact person fields (担当者信息 - 登录系统的经办人员)
     contact_person_name: Optional[str] = None
     contact_person_department: Optional[str] = None
     contact_person_position: Optional[str] = None
+    contact_person_phone: Optional[str] = None
     # Business info fields
     main_business: Optional[str] = None
     description: Optional[str] = None
@@ -77,14 +79,16 @@ class MemberProfileUpdate(BaseModel):
     representative: Optional[str] = Field(None, max_length=100)
     representative_birth_date: Optional[date] = Field(None, description="YYYY-MM-DD format")
     representative_gender: Optional[str] = Field(None, max_length=10)
+    representative_phone: Optional[str] = Field(None, max_length=50)
     corporation_number: Optional[str] = Field(None, max_length=50)
     phone: Optional[str] = Field(None, max_length=50)
     website: Optional[str] = Field(None, max_length=255)
     logo_url: Optional[str] = Field(None, max_length=500)
-    # Contact person fields (担当者信息)
+    # Contact person fields (担当者信息 - 登录系统的经办人员)
     contact_person_name: Optional[str] = Field(None, max_length=100)
     contact_person_department: Optional[str] = Field(None, max_length=100)
     contact_person_position: Optional[str] = Field(None, max_length=100)
+    contact_person_phone: Optional[str] = Field(None, max_length=50)
     # Business info fields
     main_business: Optional[str] = None
     description: Optional[str] = None
@@ -121,8 +125,8 @@ class MemberListItem(BaseModel):
     status_display: str
     created_at_display: str
     updated_at_display: str
-    industry_display: str
-    region_display: str
+    industry_display: Optional[str] = ""
+    region_display: Optional[str] = ""
 
     class Config:
         from_attributes = True
@@ -224,6 +228,8 @@ class MemberListQuery(BaseModel):
     region: Optional[str] = Field(None, description="Filter by region")
     approval_status: Optional[str] = Field(None, description="Filter by approval status")
     status: Optional[str] = Field(None, description="Filter by status")
+    page: int = Field(1, ge=1, description="Page number")
+    page_size: int = Field(20, ge=1, le=1000, description="Items per page")
 
 
 class MemberListResponsePaginated(BaseModel):

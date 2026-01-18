@@ -122,7 +122,7 @@ function Header() {
         location.pathname === "/member/home" ||
         location.pathname === "/member" ||
         location.pathname.startsWith("/member/notices") ||
-        location.pathname.startsWith("/member/press") ||
+        location.pathname.startsWith("/member/project") ||
         location.pathname.startsWith("/member/news")
       );
     }
@@ -156,21 +156,22 @@ function Header() {
   };
 
   return (
-    <header className="member-header fixed top-0 left-0 right-0 flex items-center justify-between px-8 z-[1000] h-[70px] max-md:h-[60px] max-md:px-4 border-b-[3px] border-[#001a33] shadow-md"
-      style={{ backgroundColor: '#002244' }}>
+    <header className="member-header fixed top-0 left-0 right-0 flex items-center justify-between px-8 z-[1000] h-[70px] max-md:h-[60px] max-md:px-4 border-t border-b border-[#002244] shadow-md bg-white">
       <div className="flex items-center gap-4 flex-shrink-0">
         <button
-          className={`hidden max-md:flex bg-transparent border-none cursor-pointer py-2 px-3 text-white transition-all duration-200 rounded items-center justify-center mr-2 ${HOVER_STYLES.dark}`}
+          className="hidden max-md:flex bg-transparent border-none cursor-pointer py-2 px-3 text-[#002244] transition-all duration-200 rounded items-center justify-center mr-2 hover:text-blue-600"
           onClick={() => setShowMobileMenu(!showMobileMenu)}
           aria-label={t("header.toggleMenu")}
         >
           {showMobileMenu ? <XIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
         </button>
 
-        <Link to="/member/home" className={`flex items-center gap-3 no-underline text-white font-bold text-xl tracking-tight ${HOVER_STYLES.dark}`}>
-          <span className="whitespace-nowrap font-['Noto_Sans_KR',-apple-system,BlinkMacSystemFont,sans-serif]" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
-            {t("header.title")}
-          </span>
+        <Link to="/member/home" className="flex items-center gap-3 no-underline hover:opacity-80 transition-opacity">
+          <img 
+            src="https://k-talk.kr/static/images/user/logo.png" 
+            alt={t("header.title")}
+            className="h-7 w-auto object-contain"
+          />
         </Link>
       </div>
 
@@ -186,10 +187,9 @@ function Header() {
                   <NavLink
                     to={item.path}
                     end={item.exact}
-                    className={`flex items-center gap-2 px-5 py-2.5 text-white no-underline text-[0.9375rem] font-semibold whitespace-nowrap transition-all duration-200 relative border-b-[3px] max-lg:px-3.5 max-lg:py-2 ${
-                      active ? HOVER_STYLES.navItemActive : `${HOVER_STYLES.navItemInactive} ${HOVER_STYLES.darkBorder}`
+                    className={`flex items-center gap-2 px-5 py-2.5 text-[#002244] no-underline text-[0.9375rem] font-semibold whitespace-nowrap transition-all duration-200 relative border-b-[3px] max-lg:px-3.5 max-lg:py-2 ${
+                      active ? 'border-[#002244] font-bold' : 'border-transparent hover:text-blue-600'
                     }`}
-                    style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
                     onClick={(e) => handleMenuClick(e, item)}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />
@@ -248,31 +248,30 @@ function Header() {
 
       <div className="flex items-center gap-3 flex-shrink-0 justify-end">
         {/* 语言切换 */}
-        <div className="[&>button]:text-white [&>button]:bg-transparent [&>button]:border-none [&>button:hover]:bg-transparent [&>button:hover]:opacity-80 [&_svg]:text-white">
+        <div className="[&>button]:text-[#002244] [&>button]:bg-transparent [&>button]:border-none [&>button:hover]:bg-transparent [&>button:hover]:opacity-80 [&_svg]:text-[#002244]">
           <LanguageSwitcher variant="light" />
         </div>
 
         {/* 通知 - 下拉列表形式 */}
         {isAuthenticated && (
-          <NotificationBell userType="member" variant="dark" />
+          <NotificationBell userType="member" variant="light" />
         )}
 
         {/* 用户菜单或登录按钮 */}
         {isAuthenticated ? (
           <div className="relative" ref={userMenuRef}>
             <button
-              className={`flex items-center gap-2.5 bg-transparent border-none cursor-pointer py-2 px-3.5 transition-all duration-200 rounded ${HOVER_STYLES.dark} active:scale-[0.98]`}
+              className="flex items-center gap-2.5 bg-transparent border-none cursor-pointer py-2 px-3.5 transition-all duration-200 rounded hover:text-blue-600 active:scale-[0.98]"
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
-              <div className="w-9 h-9 rounded-full text-white flex items-center justify-center font-bold text-[0.9375rem] border-2 border-white/30 shadow-[0_2px_4px_-1px_rgba(0,76,151,0.3)]"
+              <div className="w-9 h-9 rounded-full text-white flex items-center justify-center font-bold text-[0.9375rem] border-2 border-[#002244]/30 shadow-[0_2px_4px_-1px_rgba(0,76,151,0.3)]"
                 style={{ background: 'linear-gradient(135deg, #0066cc 0%, #004c97 100%)' }}>
                 {user?.companyName?.charAt(0) || user?.name?.charAt(0) || "U"}
               </div>
-              <span className="text-[0.9375rem] font-semibold text-white max-w-[150px] overflow-hidden truncate whitespace-nowrap max-md:hidden"
-                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+              <span className="text-[0.9375rem] font-semibold text-[#002244] max-w-[150px] overflow-hidden truncate whitespace-nowrap max-md:hidden">
                 {user?.companyName || user?.name || t("common.appName")}
               </span>
-              <ChevronDownIcon className={`w-4 h-4 text-white transition-all duration-200 flex-shrink-0 ${showUserMenu ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon className={`w-4 h-4 text-[#002244] transition-all duration-200 flex-shrink-0 ${showUserMenu ? 'rotate-180' : ''}`} />
             </button>
 
             {showUserMenu && (
@@ -327,8 +326,8 @@ function Header() {
         ) : (
           <div className="flex items-center gap-2">
             <button
-              className="px-4 py-2 rounded-md cursor-pointer transition-all duration-200 font-medium text-sm text-white border border-white/20 hover:text-yellow-100 hover:border-yellow-400 active:bg-white/30"
-              style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+              className="px-4 py-2 rounded-md cursor-pointer transition-all duration-200 font-medium text-sm text-white border border-[#002244] hover:text-white hover:border-blue-600 active:bg-[#001a33]"
+              style={{ backgroundColor: '#002244' }}
               onClick={() => setShowLoginModal(true)}
             >
               {t("header.login")}

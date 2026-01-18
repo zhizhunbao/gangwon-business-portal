@@ -79,6 +79,7 @@ class ProjectService {
   async applyToProject(projectId, data) {
     const requestData = {
       application_reason: data.applicationReason ?? data.application_reason,
+      attachments: data.attachments ?? null,
     };
 
     const response = await apiService.post(`${API_PREFIX}/projects/${projectId}/apply`, requestData);
@@ -96,6 +97,7 @@ class ProjectService {
         } : null,
         status: response.status,
         applicationReason: response.application_reason,
+        attachments: response.attachments,
         submittedAt: response.submitted_at,
         reviewedAt: response.reviewed_at,
       };
@@ -125,6 +127,8 @@ class ProjectService {
           projectId: item.project_id,
           projectTitle: item.project_title,
           status: item.status,
+          applicationReason: item.application_reason,
+          attachments: item.attachments,
           submittedAt: item.submitted_at,
           reviewedAt: item.reviewed_at,
         })),
@@ -142,6 +146,26 @@ class ProjectService {
     }
 
     throw new Error("Invalid response format");
+  }
+
+  // 取消项目申请
+  async cancelApplication(applicationId) {
+    const response = await apiService.post(`${API_PREFIX}/member/applications/${applicationId}/cancel`);
+
+    if (response) {
+      return {
+        id: response.id,
+        memberId: response.member_id,
+        projectId: response.project_id,
+        status: response.status,
+        applicationReason: response.application_reason,
+        attachments: response.attachments,
+        submittedAt: response.submitted_at,
+        reviewedAt: response.reviewed_at,
+      };
+    }
+
+    return null;
   }
 }
 

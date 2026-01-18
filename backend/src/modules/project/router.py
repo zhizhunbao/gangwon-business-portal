@@ -45,23 +45,44 @@ service = ProjectService()
     summary="List all projects",
 )
 async def list_projects(
-    query: Annotated[ProjectListQuery, Depends()],
-    request: Request,
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=1000)] = 20,
+    status: Optional[str] = Query(None, description="Filter by status"),
+    request: Request = None,
 ):
     """
-    List all projects with pagination and filtering (public access).
+    List all projects with pagination (public access).
     Data formatting is handled by schemas.
     """
-    projects, total = await service.list_projects(query)
+    # Use service method that supports pagination
+    projects, total = await service.list_projects_paginated(page, page_size, status)
 
-    # Use schema to format data - no manual conversion needed
+    # Use schema to format data
     return ProjectListResponsePaginated(
         items=[ProjectListItem.from_db_dict(p, include_admin_fields=False) for p in projects],
         total=total,
-        page=1,
-        page_size=total if total > 0 else 1,
-        total_pages=1,
+        page=page,
+        page_size=page_size,
+        total_pages=ceil(total / page_size) if total > 0 else 0,
     )
+
+
+@router.get(
+    "/api/projects/latest1",
+    response_model=Optional[ProjectResponse],
+    tags=["projects"],
+    summary="Get latest project",
+)
+async def get_latest_project(
+    request: Request = None,
+):
+    """Get latest project for homepage."""
+    project = await service.get_latest_project()
+    
+    if not project:
+        return None
+    
+    return ProjectResponse.model_validate(project)
 
 
 @router.get(
@@ -72,12 +93,13 @@ async def list_projects(
 )
 async def get_project(
     project_id: UUID,
-    request: Request,
+    request: Request = None,
 ):
     """
     Get detailed information about a specific project (public access).
     """
     project = await service.get_project_by_id(project_id)
+    return ProjectResponse.model_validate(project)
     return ProjectResponse.model_validate(project)
 
 

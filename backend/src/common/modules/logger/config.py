@@ -9,8 +9,7 @@ from typing import Dict, List, Optional
 from ..config import settings
 from .filters import SensitiveDataFilter, ContextFilter
 from .formatter import JSONFormatter
-from .handlers import create_file_handler, DatabaseSystemLogHandler
-# from .handlers import create_console_handler  # Uncomment if console logging is needed
+from .handlers import create_file_handler, DatabaseSystemLogHandler, create_console_handler
 
 
 # =============================================================================
@@ -372,7 +371,11 @@ def setup_logging() -> None:
     )
     context_filter = ContextFilter()
 
-    # 不输出到控制台，只写入文件和数据库
+    # Add console handler for development
+    console_handler = create_console_handler(formatter, system_level)
+    console_handler.addFilter(sensitive_filter)
+    console_handler.addFilter(context_filter)
+    root_logger.addHandler(console_handler)
 
     # File handler for system logs (Python standard logging)
     # Note: 

@@ -20,6 +20,12 @@ from .schemas import (
 )
 from .service import AuthService
 from .dependencies import get_current_active_user, get_current_user_optional
+from ...common.modules.exception import (
+    AuthenticationError,
+    AuthorizationError,
+    CMessageTemplate,
+    format_auth_user_inactive,
+)
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
@@ -49,13 +55,15 @@ async def login(
     """Member login."""
     member = await auth_service.authenticate(data.business_number, data.password)
 
-    access_token = auth_service.create_access_token(
-        data={"sub": str(member["id"]), "role": "member"}
-    )
+    token_data = {"sub": str(member["id"]), "role": "member"}
+    access_token = auth_service.create_access_token(data=token_data)
+    refresh_token = auth_service.create_refresh_token(data=token_data)
 
     return TokenResponse(
         access_token=access_token,
+        refresh_token=refresh_token,
         token_type="bearer",
+        expires_in=3600,  # 1 hour
         user={
             "id": str(member["id"]),
             "business_number": member["business_number"],
@@ -77,13 +85,15 @@ async def admin_login(
     """Admin login."""
     admin = await auth_service.authenticate_admin(data.email, data.password)
 
-    access_token = auth_service.create_access_token(
-        data={"sub": str(admin["id"]), "role": "admin"}
-    )
+    token_data = {"sub": str(admin["id"]), "role": "admin"}
+    access_token = auth_service.create_access_token(data=token_data)
+    refresh_token = auth_service.create_refresh_token(data=token_data)
 
     return TokenResponse(
         access_token=access_token,
+        refresh_token=refresh_token,
         token_type="bearer",
+        expires_in=3600,  # 1 hour
         user={
             "id": str(admin["id"]),
             "username": admin["username"],
@@ -187,25 +197,79 @@ async def logout(
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
     request: Request,
-    current_user = Depends(get_current_active_user),
 ):
-    """Refresh access token."""
-    access_token = auth_service.create_access_token(
-        data={"sub": str(current_user["id"]), "role": "member"}
-    )
-
-    return TokenResponse(
-        access_token=access_token,
-        token_type="bearer",
-        user={
-            "id": str(current_user["id"]),
-            "business_number": current_user["business_number"],
-            "company_name": current_user["company_name"],
-            "email": current_user["email"],
-            "status": current_user["status"],
-            "approval_status": current_user["approval_status"],
-        },
-    )
+    """Refresh access token using refresh token."""
+    try:
+        # 从请求体获取refresh token
+        body = await request.json()
+        refresh_token = body.get("refresh_token")
+        
+        if not refresh_token:
+            raise AuthenticationError(CMessageTemplate.AUTH_NOT_AUTHENTICATED)
+        
+        # 解码refresh token
+        payload = auth_service.decode_token(refresh_token)
+        
+        # 验证token类型
+        if payload.get("type") != "refresh":
+            raise AuthenticationError(CMessageTemplate.AUTH_INVALID_TOKEN)
+        
+        user_id = payload.get("sub")
+        role = payload.get("role", "member")
+        
+        if not user_id:
+            raise AuthenticationError(CMessageTemplate.AUTH_INVALID_PAYLOAD)
+        
+        # 根据角色获取用户信息
+        if role == "admin":
+            from ...common.modules.supabase.service import supabase_service
+            user = await supabase_service.get_by_id('admins', user_id)
+            if not user or user.get("is_active") != "true":
+                raise AuthenticationError(format_auth_user_inactive("Admin"))
+        else:
+            from ...common.modules.supabase.service import supabase_service
+            user = await supabase_service.get_by_id('members', user_id)
+            if not user or user.get("status") != "active":
+                raise AuthenticationError(format_auth_user_inactive("Member"))
+        
+        # 创建新的token对
+        token_data = {"sub": user_id, "role": role}
+        new_access_token = auth_service.create_access_token(data=token_data)
+        new_refresh_token = auth_service.create_refresh_token(data=token_data)
+        
+        # 根据角色返回用户信息
+        if role == "admin":
+            user_info = {
+                "id": str(user["id"]),
+                "username": user["username"],
+                "email": user["email"],
+                "full_name": user["full_name"],
+                "is_active": user["is_active"],
+                "role": "admin",
+            }
+        else:
+            user_info = {
+                "id": str(user["id"]),
+                "business_number": user["business_number"],
+                "company_name": user["company_name"],
+                "email": user["email"],
+                "status": user["status"],
+                "approval_status": user["approval_status"],
+                "role": "member",
+            }
+        
+        return TokenResponse(
+            access_token=new_access_token,
+            refresh_token=new_refresh_token,
+            token_type="bearer",
+            expires_in=3600,
+            user=user_info,
+        )
+        
+    except Exception as e:
+        if isinstance(e, (AuthenticationError, AuthorizationError)):
+            raise
+        raise AuthenticationError(CMessageTemplate.AUTH_CREDENTIAL_VALIDATION_FAILED.format(error=str(e)))
 
 
 @router.put("/profile", response_model=UserInfo)

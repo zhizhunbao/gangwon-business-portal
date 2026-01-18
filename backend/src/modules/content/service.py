@@ -12,8 +12,8 @@ from ...common.modules.supabase.service import supabase_service
 from .schemas import (
     NoticeCreate,
     NoticeUpdate,
-    PressReleaseCreate,
-    PressReleaseUpdate,
+    ContentProjectCreate,
+    ContentProjectUpdate,
     BannerCreate,
     BannerUpdate,
     SystemInfoUpdate,
@@ -99,7 +99,6 @@ class ContentService:
         Returns:
             List of latest 5 notices
         """
-        # Simple query - use direct client
         result = supabase_service.client.table('notices')\
             .select('*')\
             .is_('deleted_at', 'null')\
@@ -155,6 +154,9 @@ class ContentService:
             'view_count': 0,
         }
         
+        if data.attachments is not None:
+            notice_data['attachments'] = data.attachments
+        
         # Use helper method
         return await supabase_service.create_record('notices', notice_data)
 
@@ -185,6 +187,8 @@ class ContentService:
             update_data['content_html'] = data.content_html
         if data.board_type is not None:
             update_data['board_type'] = data.board_type
+        if data.attachments is not None:
+            update_data['attachments'] = data.attachments
 
         if not update_data:
             return existing_notice
@@ -214,135 +218,70 @@ class ContentService:
     # Press Release Management - Using Helper Methods + Direct Client
     # ============================================================================
 
-    async def get_press_releases(
+    async def get_projects(
         self, page: int = 1, page_size: int = 20
     ) -> Tuple[List[Dict[str, Any]], int]:
         """
-        Get paginated list of press releases.
+        Get paginated list of projects (from projects table).
 
         Args:
             page: Page number (1-indexed)
             page_size: Items per page
 
         Returns:
-            Tuple of (press releases list, total count)
+            Tuple of (projects list, total count)
         """
-        # Simple pagination - use helper method
+        # Get projects from projects table with status filter
         return await supabase_service.list_with_pagination(
-            table='press_releases',
+            table='projects',
             page=page,
             page_size=page_size,
             order_by='created_at',
             order_desc=True,
-            exclude_deleted=True
+            exclude_deleted=True,
+            filters={'status': 'active'}
         )
 
-    async def get_press_latest1(self) -> Optional[Dict[str, Any]]:
+    async def get_project_latest1(self) -> Optional[Dict[str, Any]]:
         """
-        Get latest press release for homepage.
+        Get latest active project for homepage.
 
         Returns:
-            Latest press release or None
+            Latest project or None
         """
-        # Simple query - use direct client
-        result = supabase_service.client.table('press_releases')\
+        # Query from projects table with status filter
+        result = supabase_service.client.table('projects')\
             .select('*')\
             .is_('deleted_at', 'null')\
+            .eq('status', 'active')\
             .order('created_at', desc=True)\
             .limit(1)\
             .execute()
         
         return result.data[0] if result.data else None
 
-    async def get_press_by_id(self, press_id: UUID) -> Dict[str, Any]:
+    async def get_project_by_id(self, project_id: UUID) -> Dict[str, Any]:
         """
-        Get press release by ID.
+        Get project by ID.
 
         Args:
-            press_id: Press release UUID
+            project_id: Project UUID
 
         Returns:
-            Press release dictionary
+            Project dictionary
 
         Raises:
-            NotFoundError: If press release not found
+            NotFoundError: If project not found
         """
-        # Use helper method
-        press = await supabase_service.get_by_id('press_releases', str(press_id))
-        if not press:
-            raise NotFoundError(resource_type="Press Release")
-        return press
-
-    async def create_press_release(self, data: PressReleaseCreate) -> Dict[str, Any]:
-        """
-        Create a new press release.
-
-        Args:
-            data: Press release creation data
-
-        Returns:
-            Created press release dictionary
-        """
-        press_data = {
-            'id': str(uuid4()),
-            'title': data.title,
-            'image_url': data.image_url,
-        }
+        # Use helper method to get from projects table
+        project = await supabase_service.get_by_id('projects', str(project_id))
+        if not project:
+            raise NotFoundError(resource_type="Project")
         
-        # Use helper method
-        return await supabase_service.create_record('press_releases', press_data)
-
-    async def update_press_release(self, press_id: UUID, data: PressReleaseUpdate) -> Dict[str, Any]:
-        """
-        Update a press release.
-
-        Args:
-            press_id: Press release UUID
-            data: Press release update data
-
-        Returns:
-            Updated press release dictionary
-
-        Raises:
-            NotFoundError: If press release not found
-        """
-        # Check if press release exists
-        existing_press = await supabase_service.get_by_id('press_releases', str(press_id))
-        if not existing_press:
-            raise NotFoundError(resource_type="Press Release")
-
-        # Build update data
-        update_data = {}
-        if data.title is not None:
-            update_data['title'] = data.title
-        if data.content_html is not None:
-            update_data['content_html'] = data.content_html
-        if data.image_url is not None:
-            update_data['image_url'] = data.image_url
-
-        if not update_data:
-            return existing_press
-
-        # Use helper method
-        return await supabase_service.update_record('press_releases', str(press_id), update_data)
-
-    async def delete_press_release(self, press_id: UUID) -> None:
-        """
-        Delete a press release (soft delete).
-
-        Args:
-            press_id: Press release UUID
-
-        Raises:
-            NotFoundError: If press release not found
-        """
-        # Check if press release exists
-        existing_press = await supabase_service.get_by_id('press_releases', str(press_id))
-        if not existing_press:
-            raise NotFoundError(resource_type="Press Release")
-
-        # Use helper method for soft delete
-        await supabase_service.delete_record('press_releases', str(press_id))
+        print(f"[DEBUG] Content Service - Project detail: {project}")
+        print(f"[DEBUG] Content Service - Attachments: {project.get('attachments')}")
+        
+        return project
 
     # ============================================================================
     # Banner Management - Using Helper Methods + Direct Client

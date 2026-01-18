@@ -3,7 +3,7 @@ Content management schemas.
 
 Pydantic models for request/response validation.
 """
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
@@ -26,6 +26,7 @@ class NoticeCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=255, description="Notice title")
     content_html: str = Field(..., description="HTML content (WYSIWYG editor)")
     board_type: Optional[str] = Field(default="notice", max_length=50, description="Board type")
+    attachments: Optional[List[dict]] = Field(default=None, description="File attachments")
 
 
 class NoticeUpdate(BaseModel):
@@ -34,6 +35,7 @@ class NoticeUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255, description="Notice title")
     content_html: Optional[str] = Field(None, description="HTML content")
     board_type: Optional[str] = Field(None, max_length=50, description="Board type")
+    attachments: Optional[List[dict]] = Field(None, description="File attachments")
 
 
 class NoticeResponse(BaseModel):
@@ -46,6 +48,7 @@ class NoticeResponse(BaseModel):
     author_id: Optional[UUID]
     author_name: Optional[str] = Field(None, description="Author company name")
     view_count: int
+    attachments: Optional[List[dict]] = Field(None, description="File attachments")
     created_at: datetime
     updated_at: datetime
     
@@ -62,14 +65,30 @@ class NoticeListItem(BaseModel):
     content_html: Optional[str] = None
     view_count: int
     created_at: datetime
+    attachments: Optional[List[dict]] = Field(default=None, description="File attachments")
     
     # Formatted display fields
     board_type_display: str
     created_at_display: str
     view_count_display: str
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "example": {
+                "id": "uuid",
+                "title": "Notice title",
+                "board_type": "notice",
+                "content_html": "<p>Content</p>",
+                "view_count": 0,
+                "created_at": "2024-01-01T00:00:00Z",
+                "attachments": [],
+                "board_type_display": "公告",
+                "created_at_display": "2024.01.01",
+                "view_count_display": "0回"
+            }
+        }
+    )
         
     @classmethod
     def from_db_dict(cls, data: dict, include_admin_fields: bool = False):
@@ -91,6 +110,7 @@ class NoticeListItem(BaseModel):
             "content_html": data.get("content_html"),
             "view_count": data["view_count"],
             "created_at": cls._parse_datetime(data["created_at"]),
+            "attachments": data.get("attachments"),
             
             # Formatted display fields
             "board_type_display": cls._format_board_type_display(data["board_type"]),
@@ -126,43 +146,44 @@ class NoticeListResponse(BaseModel):
     total_pages: int
 
 
-# Press Release Schemas
+# Content Project Schemas (for display purposes)
 
-class PressReleaseCreate(BaseModel):
-    """Press release creation schema."""
+class ContentProjectCreate(BaseModel):
+    """Content project creation schema."""
     
-    title: str = Field(..., min_length=1, max_length=255, description="Press release title")
-    image_url: str = Field(..., max_length=500, description="Press release image URL")
+    title: str = Field(..., min_length=1, max_length=255, description="Project title")
+    image_url: str = Field(..., max_length=500, description="Project image URL")
 
 
-class PressReleaseUpdate(BaseModel):
-    """Press release update schema."""
+class ContentProjectUpdate(BaseModel):
+    """Content project update schema."""
     
-    title: Optional[str] = Field(None, min_length=1, max_length=255, description="Press release title")
-    image_url: Optional[str] = Field(None, max_length=500, description="Press release image URL")
+    title: Optional[str] = Field(None, min_length=1, max_length=255, description="Project title")
+    image_url: Optional[str] = Field(None, max_length=500, description="Project image URL")
 
 
-class PressReleaseResponse(BaseModel):
-    """Press release response schema."""
+class ContentProjectResponse(BaseModel):
+    """Content project response schema."""
     
     id: UUID
     title: str
-    image_url: str
-    author_id: Optional[UUID]
-    author_name: Optional[str] = Field(None, description="Author company name")
+    image_url: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
     created_at: datetime
     
     class Config:
         from_attributes = True
 
 
-class PressListItem(BaseModel):
-    """Press release list item schema with formatting logic."""
+class ContentProjectListItem(BaseModel):
+    """Content project list item schema with formatting logic."""
     
     id: UUID
     title: str
-    image_url: str
+    image_url: Optional[str] = None
     created_at: datetime
+    attachments: Optional[List[dict]] = None
     
     # Formatted display fields
     created_at_display: str
@@ -173,21 +194,22 @@ class PressListItem(BaseModel):
     @classmethod
     def from_db_dict(cls, data: dict, include_admin_fields: bool = False):
         """
-        Create PressListItem from database dictionary with all formatting applied.
+        Create ContentProjectListItem from database dictionary with all formatting applied.
         
         Args:
             data: Raw database dictionary
             include_admin_fields: Whether to include admin-specific formatted fields
             
         Returns:
-            Formatted PressListItem instance
+            Formatted ContentProjectListItem instance
         """
         # Basic fields - let it fail if required fields are missing
         item_data = {
             "id": data["id"],
             "title": data["title"],
-            "image_url": data["image_url"],
+            "image_url": data.get("image_url"),
             "created_at": cls._parse_datetime(data["created_at"]),
+            "attachments": data.get("attachments"),
             
             # Formatted display fields
             "created_at_display": cls._format_datetime_display(data["created_at"]),
@@ -206,10 +228,10 @@ class PressListItem(BaseModel):
         return format_date_display(dt)
 
 
-class PressListResponse(BaseModel):
-    """Press release list response schema."""
+class ContentProjectListResponse(BaseModel):
+    """Content project list response schema."""
     
-    items: List[PressListItem]
+    items: List[ContentProjectListItem]
     total: int
     page: int
     page_size: int

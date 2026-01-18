@@ -50,9 +50,46 @@ export function formatCorporationNumber(value) {
 export function formatPhoneNumber(value) {
   if (!value) return '';
   const cleaned = value.replace(/\D/g, '');
-  if (cleaned.length <= 3) return cleaned;
-  if (cleaned.length <= 7) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 7)}-${cleaned.slice(7, 11)}`;
+  
+  if (cleaned.length === 0) return '';
+  
+  // 韩国电话号码必须以0开头，如果不是则返回空（阻止输入）
+  if (!cleaned.startsWith('0')) {
+    return '';
+  }
+  
+  // 限制最大长度为11位数字（最长的韩国电话号码）
+  const maxLength = 11;
+  const truncated = cleaned.slice(0, maxLength);
+  
+  // 02 (首尔): 02-xxx-xxxx 或 02-xxxx-xxxx (最多10位)
+  if (truncated.startsWith('02')) {
+    if (truncated.length <= 2) return truncated;
+    if (truncated.length <= 5) return `${truncated.slice(0, 2)}-${truncated.slice(2)}`;
+    if (truncated.length <= 6) return `${truncated.slice(0, 2)}-${truncated.slice(2, 5)}-${truncated.slice(5)}`;
+    if (truncated.length <= 9) return `${truncated.slice(0, 2)}-${truncated.slice(2, 5)}-${truncated.slice(5, 9)}`;
+    return `${truncated.slice(0, 2)}-${truncated.slice(2, 6)}-${truncated.slice(6, 10)}`;
+  }
+  
+  // 010, 011, 016-019 (手机): 0xx-xxx-xxxx 或 0xx-xxxx-xxxx (最多11位)
+  if (truncated.startsWith('01')) {
+    if (truncated.length <= 3) return truncated;
+    if (truncated.length <= 6) return `${truncated.slice(0, 3)}-${truncated.slice(3)}`;
+    if (truncated.length <= 7) return `${truncated.slice(0, 3)}-${truncated.slice(3, 6)}-${truncated.slice(6)}`;
+    if (truncated.length <= 10) return `${truncated.slice(0, 3)}-${truncated.slice(3, 6)}-${truncated.slice(6, 10)}`;
+    return `${truncated.slice(0, 3)}-${truncated.slice(3, 7)}-${truncated.slice(7, 11)}`;
+  }
+  
+  // 其他地区 (031-055): 0xx-xxx-xxxx 或 0xx-xxxx-xxxx (最多11位)
+  if (truncated.startsWith('0')) {
+    if (truncated.length <= 3) return truncated;
+    if (truncated.length <= 6) return `${truncated.slice(0, 3)}-${truncated.slice(3)}`;
+    if (truncated.length <= 7) return `${truncated.slice(0, 3)}-${truncated.slice(3, 6)}-${truncated.slice(6)}`;
+    if (truncated.length <= 10) return `${truncated.slice(0, 3)}-${truncated.slice(3, 6)}-${truncated.slice(6, 10)}`;
+    return `${truncated.slice(0, 3)}-${truncated.slice(3, 7)}-${truncated.slice(7, 11)}`;
+  }
+  
+  return '';
 }
 
 // 格式化货币

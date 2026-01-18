@@ -39,7 +39,8 @@ export function LoginModal({ isOpen, onClose, onSuccess, onSwitchToRegister }) {
       onClose();
     } catch (err) {
       // 根据错误码显示对应消息
-      const errorCode = err.code || err.response?.data?.error?.code;
+      // err.code 可能是数组 [code, message] 或者单个值
+      const errorCode = Array.isArray(err.code) ? err.code[0] : err.code;
       let errorMessage = t("auth.loginFailed");
 
       if (errorCode >= 2000 && errorCode < 3000) {

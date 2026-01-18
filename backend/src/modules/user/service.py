@@ -73,6 +73,28 @@ class AuthService:
         return encoded_jwt
 
     @staticmethod
+    def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+        """
+        Create a JWT refresh token.
+
+        Args:
+            data: Data to encode in the token
+            expires_delta: Optional expiration time delta
+
+        Returns:
+            Encoded JWT refresh token string
+        """
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
+        else:
+            # Refresh token expires in 7 days by default
+            expire = datetime.utcnow() + timedelta(days=7)
+        to_encode.update({"exp": expire, "type": "refresh"})
+        encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        return encoded_jwt
+
+    @staticmethod
     def decode_token(token: str) -> dict:
         """
         Decode and verify a JWT token.

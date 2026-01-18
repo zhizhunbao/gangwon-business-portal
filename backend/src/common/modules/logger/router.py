@@ -50,7 +50,7 @@ def get_member_type():
 @router.get("/api/v1/logging/logs", response_model=LogListResponse)
 async def list_logs(
     page: int = Query(default=1, ge=1, description="Page number"),
-    page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
+    page_size: int = Query(default=20, ge=1, le=1000, description="Items per page"),
     source: Optional[str] = Query(default=None, description="Filter by source (backend/frontend)"),
     level: Optional[str] = Query(default=None, description="Filter by level (DEBUG/INFO/WARNING/ERROR/CRITICAL)"),
     layer: Optional[str] = Query(default=None, description="Filter by layer (Router/Service/Database/Auth/Performance/System)"),
@@ -85,7 +85,7 @@ async def list_logs(
 @router.get("/api/v1/logging/errors", response_model=LogListResponse)
 async def list_error_logs(
     page: int = Query(default=1, ge=1, description="Page number"),
-    page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
+    page_size: int = Query(default=20, ge=1, le=1000, description="Items per page"),
     level: Optional[str] = Query(default=None, description="Filter by level (ERROR/CRITICAL)"),
     trace_id: Optional[str] = Query(default=None, description="Filter by trace ID"),
     user_id: Optional[UUID] = Query(default=None, description="Filter by user ID"),
@@ -115,7 +115,7 @@ async def list_error_logs(
 @router.get("/api/v1/logging/performance", response_model=LogListResponse)
 async def list_performance_logs(
     page: int = Query(default=1, ge=1, description="Page number"),
-    page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
+    page_size: int = Query(default=20, ge=1, le=1000, description="Items per page"),
     source: Optional[str] = Query(default=None, description="Filter by source (backend/frontend)"),
     trace_id: Optional[str] = Query(default=None, description="Filter by trace ID"),
     user_id: Optional[UUID] = Query(default=None, description="Filter by user ID"),
@@ -219,7 +219,7 @@ async def delete_system_log(
 @router.get("/api/v1/logging/backend/logs", response_model=LogListResponse)
 async def list_backend_logs(
     page: int = Query(default=1, ge=1, description="Page number"),
-    page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
+    page_size: int = Query(default=20, ge=1, le=1000, description="Items per page"),
     level: Optional[str] = Query(default=None, description="Filter by level (DEBUG/INFO/WARNING/ERROR/CRITICAL)"),
     trace_id: Optional[str] = Query(default=None, description="Filter by trace ID"),
     user_id: Optional[UUID] = Query(default=None, description="Filter by user ID"),
@@ -250,7 +250,7 @@ async def list_backend_logs(
 @router.get("/api/v1/logging/frontend/logs", response_model=LogListResponse)
 async def list_frontend_logs(
     page: int = Query(default=1, ge=1, description="Page number"),
-    page_size: int = Query(default=20, ge=1, le=100, description="Items per page"),
+    page_size: int = Query(default=20, ge=1, le=1000, description="Items per page"),
     level: Optional[str] = Query(default=None, description="Filter by level (DEBUG/INFO/WARNING/ERROR/CRITICAL)"),
     trace_id: Optional[str] = Query(default=None, description="Filter by trace ID"),
     user_id: Optional[UUID] = Query(default=None, description="Filter by user ID"),

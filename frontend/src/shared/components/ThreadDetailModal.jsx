@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal } from '@shared/components';
+import { Modal, FileUploadButton } from '@shared/components';
 import Button from '@shared/components/Button';
 import { messagesService } from '@shared/services';
 import { formatDateTime } from '@shared/utils';
@@ -24,7 +24,6 @@ export default function ThreadDetailModal({
   const [replyAttachments, setReplyAttachments] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const messagesEndRef = useRef(null);
-  const fileInputRef = useRef(null);
 
   // 使用统一的上传 hook
   const { uploading, uploadAttachments } = useUpload();
@@ -41,6 +40,7 @@ export default function ThreadDetailModal({
     setReplyAttachments([]);
     try {
       const response = await messagesService.getMemberThread(threadId);
+      
       if (response) {
         setThreadData(response);
         setTimeout(() => {
@@ -48,7 +48,7 @@ export default function ThreadDetailModal({
         }, 100);
       }
     } catch (err) {
-      // AOP 系统会自动记录错误
+      console.error('Failed to load thread detail:', err);
     } finally {
       setLoading(false);
     }
@@ -61,8 +61,7 @@ export default function ThreadDetailModal({
     onClose();
   };
 
-  const handleFileSelect = async (e) => {
-    const files = Array.from(e.target.files || []);
+  const handleFileSelect = async (files) => {
     if (files.length === 0) return;
     
     const remainingSlots = 3 - replyAttachments.length;
@@ -76,8 +75,6 @@ export default function ThreadDetailModal({
       }
     } catch (err) {
       // 上传失败
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -90,12 +87,12 @@ export default function ThreadDetailModal({
 
     setSubmitting(true);
     try {
-      // 转换附件格式
+      // 转换附件格式 - 使用驼峰命名
       const attachments = replyAttachments.map(att => ({
-        fileName: att.original_name || att.name,
-        filePath: att.file_url || att.url,
-        fileSize: att.file_size || att.size || 0,
-        mimeType: att.mime_type || att.mimeType || 'application/octet-stream'
+        fileName: att.fileName || att.name || '',
+        fileUrl: att.fileUrl || att.url || '',
+        fileSize: att.fileSize || att.size || 0,
+        mimeType: att.mimeType || att.type || 'application/octet-stream'
       }));
 
       const newMessage = await messagesService.createMemberThreadMessage(threadId, {
@@ -166,22 +163,45 @@ export default function ThreadDetailModal({
                         {msg.attachments?.length > 0 && (
                           <div className={`mt-2 pt-2 border-t ${isMember ? 'border-primary-400/50' : 'border-gray-200'} space-y-2`}>
                             {msg.attachments.map((att, idx) => {
+                              // 处理文件 URL
+                              const getFileUrl = (fileUrl) => {
+                                if (!fileUrl) return '';
+                                if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+                                  return fileUrl;
+                                }
+                                if (fileUrl.startsWith('private-files/')) {
+                                  return '';
+                                }
+                                if (fileUrl.startsWith('public-files/')) {
+                                  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+                                  return `${supabaseUrl}/storage/v1/object/public/${fileUrl}`;
+                                }
+                                return fileUrl;
+                              };
+                              
+                              const fileUrl = getFileUrl(att.fileUrl);
+                              const fileName = att.fileName || '';
                               const isImage = att.mimeType?.startsWith('image/') || 
-                                /\.(jpg|jpeg|png|gif|webp)$/i.test(att.fileName || '');
+                                /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
                               
                               if (isImage) {
                                 return (
                                   <a 
                                     key={idx} 
-                                    href={att.fileUrl} 
+                                    href={fileUrl || '#'} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     className="block"
+                                    onClick={(e) => {
+                                      if (!fileUrl) {
+                                        e.preventDefault();
+                                      }
+                                    }}
                                   >
                                     <img 
-                                      src={att.fileUrl} 
-                                      alt={att.fileName}
-                                      className="max-w-[200px] max-h-[150px] rounded border border-gray-200 object-cover hover:opacity-90 transition-opacity"
+                                      src={fileUrl} 
+                                      alt={fileName}
+                                      className="max-w-[200px] max-h-[150px] rounded border border-gray-200 object-cover hover:opacity-90 transition-opacity cursor-pointer"
                                     />
                                   </a>
                                 );
@@ -190,16 +210,21 @@ export default function ThreadDetailModal({
                               return (
                                 <a 
                                   key={idx} 
-                                  href={att.fileUrl} 
+                                  href={fileUrl || '#'} 
                                   target="_blank" 
                                   rel="noopener noreferrer"
-                                  download={att.fileName}
+                                  download={fileName}
                                   className={`flex items-center gap-1 text-xs hover:underline ${
                                     isMember ? 'text-primary-100 hover:text-white' : 'text-blue-600 hover:text-blue-800'
                                   }`}
+                                  onClick={(e) => {
+                                    if (!fileUrl) {
+                                      e.preventDefault();
+                                    }
+                                  }}
                                 >
                                   <span>📎</span>
-                                  <span className="truncate max-w-[180px]">{att.fileName}</span>
+                                  <span className="truncate max-w-[180px]">{fileName}</span>
                                   {att.fileSize && <span className="text-[10px] opacity-70">({(att.fileSize / 1024).toFixed(0)}KB)</span>}
                                 </a>
                               );
@@ -231,7 +256,7 @@ export default function ThreadDetailModal({
                 <div className="flex flex-wrap gap-2 mt-2">
                   {replyAttachments.map((att, idx) => (
                     <div key={idx} className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded text-xs">
-                      <span className="truncate max-w-[120px]">{att.original_name || att.name}</span>
+                      <span className="truncate max-w-[120px]">{att.originalName || att.name}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveAttachment(idx)}
@@ -246,22 +271,15 @@ export default function ThreadDetailModal({
               
               <div className="flex justify-between items-center mt-2">
                 <div className="flex items-center gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
+                  <FileUploadButton
+                    onFilesSelected={handleFileSelect}
                     multiple
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-                    onChange={handleFileSelect}
-                    className="hidden"
+                    accept=".jpg,.jpeg,.png,.gif,.webp,image/*"
+                    disabled={replyAttachments.length >= 3}
+                    loading={uploading}
+                    variant="text"
+                    size="small"
                   />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading || replyAttachments.length >= 3}
-                    className="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-1 disabled:opacity-50"
-                  >
-                    📎 {uploading ? t('common.uploading') : t('support.addAttachment')}
-                  </button>
                   <span className="text-xs text-gray-400">({replyAttachments.length}/3)</span>
                 </div>
                 <Button

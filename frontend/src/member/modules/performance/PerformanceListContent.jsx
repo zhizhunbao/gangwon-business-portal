@@ -50,7 +50,7 @@ export default function PerformanceListContent() {
       if (filters.status) params.status = filters.status;
 
       const response = await performanceService.listRecords(params);
-      setPerformances(response.records || []);
+      setPerformances(response.items || []);
       setPagination(prev => ({
         ...prev,
         page: response.page || page,
@@ -91,7 +91,7 @@ export default function PerformanceListContent() {
   const getLatestReviewComments = (record) => {
     if (!record.reviews || record.reviews.length === 0) return null;
     const sortedReviews = [...record.reviews].sort(
-      (a, b) => new Date(b.reviewed_at) - new Date(a.reviewed_at)
+      (a, b) => new Date(b.reviewedAt) - new Date(a.reviewedAt)
     );
     return sortedReviews.filter(r => r.comments);
   };
@@ -126,8 +126,8 @@ export default function PerformanceListContent() {
       for (const file of uploadFiles) {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('resource_type', 'performance');
-        formData.append('resource_id', uploadModal.recordId);
+        formData.append('resourceType', 'performance');
+        formData.append('resourceId', uploadModal.recordId);
         await uploadService.uploadFile(formData);
       }
       
@@ -432,7 +432,7 @@ export default function PerformanceListContent() {
                 <div key={idx} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <p className="text-gray-700 whitespace-pre-wrap">{review.comments}</p>
                   <p className="text-xs text-gray-400 mt-2">
-                    {formatDateTime(review.reviewed_at)}
+                    {formatDateTime(review.reviewedAt)}
                   </p>
                 </div>
               ))}
@@ -466,7 +466,7 @@ export default function PerformanceListContent() {
           {attachmentModal.attachments.length > 0 ? (
             <div className="space-y-2">
               {attachmentModal.attachments.map((att, idx) => {
-                const fileName = att.original_name || att.name || t('performance.download', '下载');
+                const fileName = att.originalName || att.name || t('performance.download', '下载');
                 return (
                   <div 
                     key={idx} 

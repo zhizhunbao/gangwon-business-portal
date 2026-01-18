@@ -23,8 +23,8 @@ export default function About() {
       // Use correct API endpoint: /api/system-info instead of /api/content/about
       const data = await apiService.get(`${API_PREFIX}/system-info`);
       
-      if (data && data.content_html) {
-        setHtmlContent(data.content_html);
+      if (data && data.contentHtml) {
+        setHtmlContent(data.contentHtml);
       } else {
         setHtmlContent('');
       }

@@ -17,13 +17,19 @@ export default function ProjectList() {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [allProjects, setAllProjects] = useState([]); // 存储所有数据
+  const [filteredProjects, setFilteredProjects] = useState([]); // 过滤后的数据
   const [message, setMessage] = useState(null);
   const [messageVariant, setMessageVariant] = useState('success');
 
-  const [searchKeyword, setSearchKeyword] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
+
+  // 使用 useCallback 包装 setFilteredProjects 避免无限循环
+  const handleFilterChange = useCallback((filtered) => {
+    setFilteredProjects(filtered);
+    setCurrentPage(1);
+  }, []);
 
   // 处理从其他页面传递过来的消息
   useEffect(() => {
@@ -40,48 +46,70 @@ export default function ProjectList() {
   // 一次性加载所有项目数据
   const loadAllProjects = useCallback(async () => {
     setLoading(true);
-    const params = {
-      page: 1,
-      page_size: 10000 // 加载所有数据
-    };
-    const response = await apiService.get(`${API_PREFIX}/admin/projects`, { params });
-    
-    if (response.items) {
-      setAllProjects(response.items);
-    } else {
+    try {
+      const params = {
+        page: 1,
+        pageSize: 1000
+      };
+      const response = await apiService.get(`${API_PREFIX}/admin/projects`, { params });
+      
+      if (response && response.items) {
+        setAllProjects(response.items);
+        setFilteredProjects(response.items);
+      } else {
+        setAllProjects([]);
+        setFilteredProjects([]);
+      }
+    } catch (error) {
+      console.error('Failed to load projects:', error);
       setAllProjects([]);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
     loadAllProjects();
   }, [loadAllProjects]);
 
-  // 前端模糊搜索和过滤
-  const filteredProjects = useMemo(() => {
-    return allProjects.filter(project => {
-      // 搜索关键词过滤
-      if (searchKeyword) {
-        const keyword = searchKeyword.toLowerCase();
-        const searchKeywordNormalized = searchKeyword.replace(/-/g, '').toLowerCase();
-        
-        // 搜索项目名称
-        const title = (project.title || '').toLowerCase();
-        // 搜索目标企业名称
-        const targetCompanyName = (project.target_company_name || '').toLowerCase();
-        // 搜索营业执照号
-        const targetBusinessNumber = (project.target_business_number || '').replace(/-/g, '').toLowerCase();
-        
-        if (!title.includes(keyword) && 
-            !targetCompanyName.includes(keyword) && 
-            !targetBusinessNumber.includes(searchKeywordNormalized)) {
-          return false;
+  // 定义搜索列 - 与表格列保持一致
+  const searchColumns = useMemo(() => [
+    {
+      key: 'title',
+      label: t('admin.projects.table.title'),
+      render: (value) => value || ''
+    },
+    {
+      key: 'targetCompanyName',
+      label: t('admin.projects.table.targetCompanyName', '목표 기업명'),
+      render: (value, row) => {
+        if (!value && !row.targetBusinessNumber) {
+          return t('admin.projects.table.publicRecruitment', '公开招募');
         }
+        return value || '';
       }
-      return true;
-    });
-  }, [allProjects, searchKeyword]);
+    },
+    {
+      key: 'targetBusinessNumber',
+      label: t('admin.projects.table.targetBusinessNumber', '사업자등록번호'),
+      render: (value) => value ? formatBusinessLicense(value) : ''
+    },
+    {
+      key: 'startDate',
+      label: t('admin.projects.table.startDate'),
+      render: (value) => value || ''
+    },
+    {
+      key: 'endDate',
+      label: t('admin.projects.table.endDate'),
+      render: (value) => value || ''
+    },
+    {
+      key: 'status',
+      label: t('admin.projects.table.status'),
+      render: (value) => t(`admin.projects.status.${value}`, value)
+    }
+  ], [t]);
 
   // 分页后的数据
   const projects = useMemo(() => {
@@ -131,34 +159,34 @@ export default function ProjectList() {
     }
   };
 
-  const columns = [
+  const tableColumns = [
     {
       key: 'title',
       label: t('admin.projects.table.title')
     },
     {
-      key: 'target_company_name',
+      key: 'targetCompanyName',
       label: t('admin.projects.table.targetCompanyName', '목표 기업명'),
       render: (value, row) => {
-        if (!value && !row.target_business_number) {
+        if (!value && !row.targetBusinessNumber) {
           return <span className="text-gray-400">{t('admin.projects.table.publicRecruitment', '公开招募')}</span>;
         }
         return value || '-';
       }
     },
     {
-      key: 'target_business_number',
+      key: 'targetBusinessNumber',
       label: t('admin.projects.table.targetBusinessNumber', '사업자등록번호'),
       render: (value) => {
         return value ? formatBusinessLicense(value) : '-';
       }
     },
     {
-      key: 'start_date',
+      key: 'startDate',
       label: t('admin.projects.table.startDate')
     },
     {
-      key: 'end_date',
+      key: 'endDate',
       label: t('admin.projects.table.endDate')
     },
     {
@@ -238,16 +266,13 @@ export default function ProjectList() {
         </h1>
         
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <div className="flex-1 min-w-[200px] max-w-md">
-            <SearchInput
-              value={searchKeyword}
-              onChange={(value) => {
-                setSearchKeyword(value);
-                setCurrentPage(1);
-              }}
-              placeholder={t('admin.projects.searchPlaceholder', '请输入项目名称、目标企业名称、营业执照号等关键词')}
-            />
-          </div>
+          <SearchInput
+            data={allProjects}
+            columns={searchColumns}
+            onFilter={handleFilterChange}
+            placeholder={t('admin.projects.searchPlaceholder', '搜索所有列：项目名称、目标企业、营业执照号、状态等')}
+            className="flex-1 min-w-[200px] max-w-md"
+          />
           <div className="flex items-center space-x-2 md:ml-4 w-full md:w-auto">
             <Button 
               onClick={() => handleExport('excel')} 
@@ -285,7 +310,7 @@ export default function ProjectList() {
         ) : (
           <>
             <Table 
-              columns={columns} 
+              columns={tableColumns} 
               data={projects}
             />
             {totalCount > pageSize && (

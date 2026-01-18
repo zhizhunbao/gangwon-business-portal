@@ -383,51 +383,11 @@ class MessageService:
             "content": data.content,
             "category": thread.get('category', 'general'),
             "is_important": getattr(data, 'is_important', False),
+            "attachments": getattr(data, 'attachments', []),  # Store attachments in JSONB
             "created_at": now.isoformat(),
         }
 
         message = await self.db.insert_message(message_data)
-        
-        # 保存附件到 attachments 表
-        attachments = getattr(data, 'attachments', [])
-        saved_attachments = []
-        if attachments and message:
-            for att in attachments:
-                # 附件数据来自前端上传后返回的信息
-                original_name = att.get('fileName') or att.get('original_name') or att.get('name')
-                file_url = att.get('filePath') or att.get('file_url') or att.get('url')
-                # stored_name 如果没有，则从 file_url 提取或使用 original_name
-                stored_name = att.get('storedName') or att.get('stored_name')
-                if not stored_name and file_url:
-                    # 从 URL 中提取文件名作为 stored_name
-                    stored_name = file_url.split('/')[-1].split('?')[0]
-                if not stored_name:
-                    stored_name = original_name
-                
-                attachment_data = {
-                    "id": str(uuid4()),
-                    "resource_type": "thread",
-                    "resource_id": message_id,
-                    "file_type": att.get('fileType') or att.get('file_type') or 'document',
-                    "file_url": file_url,
-                    "original_name": original_name,
-                    "stored_name": stored_name,
-                    "file_size": att.get('fileSize') or att.get('file_size') or att.get('size'),
-                    "mime_type": att.get('mimeType') or att.get('mime_type'),
-                }
-                saved_att = await supabase_service.create_record('attachments', attachment_data)
-                if saved_att:
-                    saved_attachments.append({
-                        'id': saved_att['id'],
-                        'file_url': saved_att['file_url'],
-                        'file_name': saved_att['original_name'],
-                        'file_size': saved_att['file_size'],
-                        'mime_type': saved_att['mime_type']
-                    })
-        
-        # 将附件信息添加到返回的消息中
-        if message:
-            message['attachments'] = saved_attachments
         
         # 更新 thread 的 updated_at（用于计算 last_message_at）
         await self.db.update_thread_status(str(thread_id), {

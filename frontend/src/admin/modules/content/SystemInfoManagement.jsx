@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { 
   Button, 
   Card, 
-  RichTextEditor,
+  TiptapEditor,
   Modal,
   Alert
 } from '@shared/components';
@@ -56,8 +56,8 @@ export default function SystemInfoManagement() {
     
     try {
       const response = await upload(file);
-      if (response && response.file_url) {
-        setImageUrl(response.file_url);
+      if (response && response.fileUrl) {
+        setImageUrl(response.fileUrl);
         setMessageVariant('success');
         setMessage(t('admin.content.systemInfo.messages.imageUploaded', '图片上传成功'));
         setTimeout(() => setMessage(null), 3000);
@@ -143,7 +143,7 @@ export default function SystemInfoManagement() {
         <div className="lg:col-span-2">
           <Card>
             <div className="p-6">
-              <RichTextEditor
+              <TiptapEditor
                 value={formData.content}
                 onChange={handleFieldChange('content')}
                 placeholder={t('admin.content.systemInfo.contentPlaceholder', '请输入系统介绍的详细内容...')}

@@ -49,7 +49,7 @@ export default function ProjectDetail() {
     setApplicationsLoading(true);
     const params = {
       page: applicationsPage,
-      page_size: applicationsPageSize,
+      pageSize: applicationsPageSize,
     };
     const response = await adminService.getProjectApplications(id, params);
     if (response && response.items) {
@@ -103,12 +103,12 @@ export default function ProjectDetail() {
       project.attachments.forEach(att => {
         attachments.push({
           id: att.id,
-          url: att.file_url,
-          name: att.original_name || att.stored_name || '附件',
+          url: att.fileUrl,
+          name: att.originalName || att.storedName || att.fileName || '附件',
           type: 'attachment',
-          fileSize: att.file_size,
-          mimeType: att.mime_type,
-          uploadedAt: att.uploaded_at
+          fileSize: att.fileSize,
+          mimeType: att.mimeType,
+          uploadedAt: att.uploadedAt
         });
       });
     }
@@ -137,13 +137,13 @@ export default function ProjectDetail() {
   // Applications table columns
   const applicationColumns = [
     {
-      key: 'company_name',
+      key: 'companyName',
       label: t('admin.applications.table.company', '企业名称'),
       width: '150px',
-      render: (value, row) => value || row.companyName || '-'
+      render: (value) => value || '-'
     },
     {
-      key: 'application_reason',
+      key: 'applicationReason',
       label: t('admin.applications.table.applicationReason', '申请理由'),
       width: '250px',
       render: (value) => (
@@ -153,13 +153,13 @@ export default function ProjectDetail() {
       )
     },
     {
-      key: 'submitted_at',
+      key: 'submittedAt',
       label: t('admin.applications.table.submittedAt', '申请时间'),
       width: '150px',
       render: (value) => value ? formatDate(value, 'yyyy-MM-dd HH:mm', currentLanguage) : '-'
     },
     {
-      key: 'reviewed_at',
+      key: 'reviewedAt',
       label: t('admin.applications.table.reviewedAt', '审核时间'),
       width: '150px',
       render: (value) => value ? formatDate(value, 'yyyy-MM-dd HH:mm', currentLanguage) : '-'
@@ -200,13 +200,13 @@ export default function ProjectDetail() {
             >
               {t('common.view', '查看')}
             </button>
-            {row.member_id && (
+            {row.memberId && (
               <>
                 <span className="text-gray-300">|</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleViewMember(row.member_id);
+                    handleViewMember(row.memberId);
                   }}
                   className="text-primary-600 hover:text-primary-900 font-medium text-sm"
                 >
@@ -313,19 +313,19 @@ export default function ProjectDetail() {
               <label className="text-sm text-gray-600 font-medium">
                 {t('admin.projects.detail.createdAt', '创建时间')}
               </label>
-              <span className="text-base text-gray-900">{formatDate(project.created_at || project.createdAt, 'yyyy-MM-dd', currentLanguage)}</span>
+              <span className="text-base text-gray-900">{formatDate(project.createdAt, 'yyyy-MM-dd', currentLanguage)}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
                 {t('admin.projects.detail.startDate', '开始日期')}
               </label>
-              <span className="text-base text-gray-900">{formatDate(project.start_date || project.startDate, 'yyyy-MM-dd', currentLanguage)}</span>
+              <span className="text-base text-gray-900">{formatDate(project.startDate, 'yyyy-MM-dd', currentLanguage)}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
                 {t('admin.projects.detail.endDate', '结束日期')}
               </label>
-              <span className="text-base text-gray-900">{formatDate(project.end_date || project.endDate, 'yyyy-MM-dd', currentLanguage)}</span>
+              <span className="text-base text-gray-900">{formatDate(project.endDate, 'yyyy-MM-dd', currentLanguage)}</span>
             </div>
           </div>
         </Card>
@@ -338,9 +338,9 @@ export default function ProjectDetail() {
             </h2>
           </div>
           <div className="flex justify-center items-center h-48">
-            {(project.image_url || project.image) ? (
+            {(project.imageUrl || project.image) ? (
               <img 
-                src={project.image_url || project.image} 
+                src={project.imageUrl || project.image} 
                 alt={project.title}
                 className="max-w-full max-h-48 object-contain rounded-lg border border-gray-200"
               />
@@ -526,7 +526,7 @@ export default function ProjectDetail() {
                   {t('admin.applications.table.company', '企业名称')}
                 </label>
                 <p className="mt-1 text-sm text-gray-900">
-                  {selectedApplication.company_name || '-'}
+                  {selectedApplication.companyName || '-'}
                 </p>
               </div>
               <div>
@@ -552,8 +552,8 @@ export default function ProjectDetail() {
                   {t('admin.applications.table.submittedAt', '申请时间')}
                 </label>
                 <p className="mt-1 text-sm text-gray-900">
-                  {selectedApplication.submitted_at 
-                    ? formatDate(selectedApplication.submitted_at, 'yyyy-MM-dd HH:mm', currentLanguage)
+                  {selectedApplication.submittedAt 
+                    ? formatDate(selectedApplication.submittedAt, 'yyyy-MM-dd HH:mm', currentLanguage)
                     : '-'}
                 </p>
               </div>
@@ -562,8 +562,8 @@ export default function ProjectDetail() {
                   {t('admin.applications.table.reviewedAt', '审核时间')}
                 </label>
                 <p className="mt-1 text-sm text-gray-900">
-                  {selectedApplication.reviewed_at 
-                    ? formatDate(selectedApplication.reviewed_at, 'yyyy-MM-dd HH:mm', currentLanguage)
+                  {selectedApplication.reviewedAt 
+                    ? formatDate(selectedApplication.reviewedAt, 'yyyy-MM-dd HH:mm', currentLanguage)
                     : '-'}
                 </p>
               </div>
@@ -574,15 +574,15 @@ export default function ProjectDetail() {
               </label>
               <div className="mt-1 p-3 bg-gray-50 rounded-md">
                 <p className="text-sm text-gray-900 whitespace-pre-wrap">
-                  {selectedApplication.application_reason || '-'}
+                  {selectedApplication.applicationReason || '-'}
                 </p>
               </div>
             </div>
-            {selectedApplication.member_id && (
+            {selectedApplication.memberId && (
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button
                   variant="outline"
-                  onClick={() => handleViewMember(selectedApplication.member_id)}
+                  onClick={() => handleViewMember(selectedApplication.memberId)}
                 >
                   {t('admin.applications.viewMemberDetail', '查看企业详情')}
                 </Button>
