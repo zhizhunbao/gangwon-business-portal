@@ -103,7 +103,7 @@ export default function PerformanceCompanyInfo() {
       sales: profile.sales || profile.revenue ? formatNumber(profile.sales || profile.revenue) : '',
       employeeCount: profile.employeeCount ? formatNumber(profile.employeeCount) : '',
       mainBusiness: profile.mainBusiness || '', 
-      cooperationFields: profile.cooperationFields || [],
+      cooperationFields: Array.isArray(profile.cooperationFields) ? profile.cooperationFields : [],
       approvalStatus: profile.approvalStatus || null,
       // Contact person fields
       contactPersonName: profile.contactPersonName || '',
@@ -115,7 +115,7 @@ export default function PerformanceCompanyInfo() {
       ksicMajor: profile.ksicMajor || '',
       ksicSub: profile.ksicSub || '',
       // New fields for Task 6
-      participationPrograms: profile.participationPrograms || [],
+      participationPrograms: Array.isArray(profile.participationPrograms) ? profile.participationPrograms : [],
       investmentStatus: profile.investmentStatus || { hasInvestment: false, amount: '', institution: '' }
     });
     setLoading(false);
@@ -836,7 +836,7 @@ export default function PerformanceCompanyInfo() {
               </div>
             ) : (
               <div className="flex flex-wrap gap-2 mt-2">
-                {companyData.cooperationFields?.length > 0 ? (
+                {Array.isArray(companyData.cooperationFields) && companyData.cooperationFields.length > 0 ? (
                   companyData.cooperationFields.map((field, index) => {
                     const fieldOption = cooperationFieldOptions.find(opt => opt.value === field);
                     return (

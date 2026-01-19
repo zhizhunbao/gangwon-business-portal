@@ -222,11 +222,6 @@ export default function ProjectList() {
                               {statusInfo.label}
                             </Badge>
                           )}
-                          {project.applicationsCount > 0 && (
-                            <Badge variant="info" className="text-xs sm:text-sm">
-                              {t('projects.applicationsCount', '申请数')}: {project.applicationsCount}
-                            </Badge>
-                          )}
                         </div>
                       </div>
                       <span className="text-sm text-gray-500 whitespace-nowrap flex-shrink-0">
@@ -256,17 +251,6 @@ export default function ProjectList() {
                           <p className="text-[0.9375rem] text-gray-700 leading-relaxed m-0 whitespace-pre-line">
                             {project.description || ''}
                           </p>
-                          {(project.targetCompanyName || project.targetBusinessNumber) && (
-                            <p className="text-[0.9375rem] text-gray-700 leading-relaxed mt-2">
-                              <strong>{t('projects.targetCompany', '목표 기업')}:</strong> 
-                              {project.targetCompanyName && (
-                                <span className="ml-1">{project.targetCompanyName}</span>
-                              )}
-                              {project.targetBusinessNumber && (
-                                <span className="ml-1 text-gray-600">({project.targetBusinessNumber})</span>
-                              )}
-                            </p>
-                          )}
                         </div>
                       </div>
                     </div>
