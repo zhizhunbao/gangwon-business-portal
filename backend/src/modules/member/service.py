@@ -62,37 +62,42 @@ class MemberService:
             email=member["email"],
             status=member["status"],
             approval_status=member["approval_status"],
-            industry=profile.get("industry") if profile else None,
-            revenue=profile.get("revenue") if profile else None,
-            employee_count=profile.get("employee_count") if profile else None,
-            founding_date=profile.get("founding_date") if profile and profile.get("founding_date") else None,
-            region=profile.get("region") if profile else None,
-            address=profile.get("address") if profile else None,
-            representative=profile.get("representative") if profile else None,
-            representative_birth_date=profile.get("representative_birth_date") if profile and profile.get("representative_birth_date") else None,
-            representative_gender=profile.get("representative_gender") if profile else None,
-            legal_number=profile.get("legal_number") if profile else None,
-            phone=profile.get("phone") if profile else None,
-            website=profile.get("website") if profile else None,
-            logo_url=profile.get("logo_url") if profile else None,
+            industry=member.get("industry"),
+            revenue=member.get("revenue"),
+            employee_count=member.get("employee_count"),
+            founding_date=member.get("founding_date"),
+            region=member.get("region"),
+            address=member.get("address"),
+            representative=member.get("representative"),
+            representative_birth_date=member.get("representative_birth_date"),
+            representative_gender=member.get("representative_gender"),
+            representative_phone=member.get("representative_phone"),
+            legal_number=member.get("legal_number"),
+            phone=member.get("phone"),
+            website=member.get("website"),
+            logo_url=member.get("logo_url"),
             # Contact person fields
-            contact_person_name=profile.get("contact_person_name") if profile else None,
-            contact_person_department=profile.get("contact_person_department") if profile else None,
-            contact_person_position=profile.get("contact_person_position") if profile else None,
+            contact_person_name=member.get("contact_person_name"),
+            contact_person_department=member.get("contact_person_department"),
+            contact_person_position=member.get("contact_person_position"),
+            contact_person_phone=member.get("contact_person_phone"),
             # Business info fields
-            main_business=profile.get("main_business") if profile else None,
-            description=profile.get("description") if profile else None,
-            cooperation_fields=profile.get("cooperation_fields") if profile else None,
+            main_business=member.get("main_business"),
+            description=member.get("description"),
+            cooperation_fields=member.get("cooperation_fields"),
             # New business info fields (Task 5)
-            startup_type=profile.get("startup_type") if profile else None,
-            ksic_major=profile.get("ksic_major") if profile else None,
-            ksic_sub=profile.get("ksic_sub") if profile else None,
-            category=profile.get("category") if profile else None,
+            startup_type=member.get("startup_type"),
+            ksic_major=member.get("ksic_major"),
+            ksic_sub=member.get("ksic_sub"),
+            category=member.get("category"),
+            business_field=member.get("business_field"),
+            main_industry_ksic_major=member.get("main_industry_ksic_major"),
+            main_industry_ksic_codes=member.get("main_industry_ksic_codes"),
             # New fields for Task 6
-            participation_programs=profile.get("participation_programs") if profile else None,
-            investment_status=profile.get("investment_status") if profile else None,
+            participation_programs=member.get("participation_programs"),
+            investment_status=member.get("investment_status"),
             created_at=member.get("created_at"),
-            updated_at=profile.get("updated_at") if profile and profile.get("updated_at") else member.get("updated_at"),
+            updated_at=member.get("updated_at"),
         )
 
     async def update_member_profile_response(
@@ -120,37 +125,42 @@ class MemberService:
             email=member["email"],
             status=member["status"],
             approval_status=member["approval_status"],
-            industry=profile.get("industry") if profile else None,
-            revenue=profile.get("revenue") if profile else None,
-            employee_count=profile.get("employee_count") if profile else None,
-            founding_date=profile.get("founding_date") if profile and profile.get("founding_date") else None,
-            region=profile.get("region") if profile else None,
-            address=profile.get("address") if profile else None,
-            representative=profile.get("representative") if profile else None,
-            representative_birth_date=profile.get("representative_birth_date") if profile and profile.get("representative_birth_date") else None,
-            representative_gender=profile.get("representative_gender") if profile else None,
-            legal_number=profile.get("legal_number") if profile else None,
-            phone=profile.get("phone") if profile else None,
-            website=profile.get("website") if profile else None,
-            logo_url=profile.get("logo_url") if profile else None,
+            industry=member.get("industry"),
+            revenue=member.get("revenue"),
+            employee_count=member.get("employee_count"),
+            founding_date=member.get("founding_date"),
+            region=member.get("region"),
+            address=member.get("address"),
+            representative=member.get("representative"),
+            representative_birth_date=member.get("representative_birth_date"),
+            representative_gender=member.get("representative_gender"),
+            representative_phone=member.get("representative_phone"),
+            legal_number=member.get("legal_number"),
+            phone=member.get("phone"),
+            website=member.get("website"),
+            logo_url=member.get("logo_url"),
             # Contact person fields
-            contact_person_name=profile.get("contact_person_name") if profile else None,
-            contact_person_department=profile.get("contact_person_department") if profile else None,
-            contact_person_position=profile.get("contact_person_position") if profile else None,
+            contact_person_name=member.get("contact_person_name"),
+            contact_person_department=member.get("contact_person_department"),
+            contact_person_position=member.get("contact_person_position"),
+            contact_person_phone=member.get("contact_person_phone"),
             # Business info fields
-            main_business=profile.get("main_business") if profile else None,
-            description=profile.get("description") if profile else None,
-            cooperation_fields=profile.get("cooperation_fields") if profile else None,
+            main_business=member.get("main_business"),
+            description=member.get("description"),
+            cooperation_fields=member.get("cooperation_fields"),
             # New business info fields (Task 5)
-            startup_type=profile.get("startup_type") if profile else None,
-            ksic_major=profile.get("ksic_major") if profile else None,
-            ksic_sub=profile.get("ksic_sub") if profile else None,
-            category=profile.get("category") if profile else None,
+            startup_type=member.get("startup_type"),
+            ksic_major=member.get("ksic_major"),
+            ksic_sub=member.get("ksic_sub"),
+            category=member.get("category"),
+            business_field=member.get("business_field"),
+            main_industry_ksic_major=member.get("main_industry_ksic_major"),
+            main_industry_ksic_codes=member.get("main_industry_ksic_codes"),
             # New fields for Task 6
-            participation_programs=profile.get("participation_programs") if profile else None,
-            investment_status=profile.get("investment_status") if profile else None,
+            participation_programs=member.get("participation_programs"),
+            investment_status=member.get("investment_status"),
             created_at=member.get("created_at"),
-            updated_at=profile.get("updated_at") if profile and profile.get("updated_at") else member.get("updated_at"),
+            updated_at=member.get("updated_at"),
         )
 
     async def update_member_profile(
@@ -177,15 +187,20 @@ class MemberService:
         if data.company_name is not None:
             member_update['company_name'] = data.company_name
         if data.email is not None:
-            # Check email uniqueness using existing method
             is_unique = await supabase_service.check_email_uniqueness(
                 data.email, exclude_member_id=str(member_id)
             )
             if not is_unique:
                 raise ValidationError(CMessageTemplate.VALIDATION_EMAIL_IN_USE)
             member_update['email'] = data.email
+        if data.main_industry_ksic_major is not None:
+            member_update['main_industry_ksic_major'] = data.main_industry_ksic_major
+        if data.main_industry_ksic_codes is not None:
+            member_update['main_industry_ksic_codes'] = data.main_industry_ksic_codes
+        if data.corporation_number is not None:
+            member_update['legal_number'] = data.corporation_number
 
-        # Update member if needed - use helper method
+        # Update member if needed
         if member_update:
             updated_member = await supabase_service.update_record('members', str(member_id), member_update)
             if updated_member:
@@ -223,8 +238,8 @@ class MemberService:
                 profile_update['representative_birth_date'] = data.representative_birth_date
         if data.representative_gender is not None:
             profile_update['representative_gender'] = data.representative_gender
-        if data.corporation_number is not None:
-            profile_update['legal_number'] = data.corporation_number
+        if data.representative_phone is not None:
+            profile_update['representative_phone'] = data.representative_phone
         if data.phone is not None:
             profile_update['phone'] = data.phone
         if data.website is not None:
@@ -238,6 +253,8 @@ class MemberService:
             profile_update['contact_person_department'] = data.contact_person_department
         if data.contact_person_position is not None:
             profile_update['contact_person_position'] = data.contact_person_position
+        if data.contact_person_phone is not None:
+            profile_update['contact_person_phone'] = data.contact_person_phone
         # Business info fields
         if data.main_business is not None:
             profile_update['main_business'] = data.main_business
