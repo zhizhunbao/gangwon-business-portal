@@ -19,9 +19,8 @@
 │   ├── code-review.md       # /code-review 命令
 │   ├── build-fix.md         # /build-fix 命令
 │   └── e2e.md               # /e2e 命令
-├── skills/                   # 技能和最佳实践
-│   └── frontend-patterns/   # React 前端模式
-│       └── SKILL.md
+├── skills/                   # Skills 索引（实际内容在 ../.agent/skills/）
+│   └── README.md            # Skills 索引和分类目录
 ├── hooks.json               # 自动化钩子配置
 └── README.md                # 本文件
 ```
@@ -92,45 +91,34 @@ Hooks 在特定事件触发时自动运行。已配置的 hooks：
 
 ## 📚 Skills（技能）
 
-### Frontend Patterns
+### Skills 统一管理
 
-位置: `.claude/skills/frontend-patterns/SKILL.md`
+**位置**: 所有 skills 统一存储在 `../.agent/skills/` 目录下
 
-包含针对项目技术栈的最佳实践：
+**索引**: 查看 [.claude/skills/README.md](.claude/skills/README.md) 获取完整的 skills 列表和分类
 
-1. **React 组件模式**
-   - 命名导出 vs 默认导出
-   - Props 解构
-   - 组合模式
+### Skills 分类概览
 
-2. **i18n 模式**
-   - 翻译键使用
-   - 插值
-   - 命名空间组织
+- **全栈开发** (5个): 前端模式（React + Vite + Zustand）、API 设计、后端架构、测试数据
+- **安全** (2个): 安全审查、安全扫描
+- **测试** (2个): TDD 工作流、验证循环
+- **文档管理** (4个): 文档审查、Markdown 检查、格式转换
+- **需求管理** (2个): PRD、需求分析
+- **架构质量** (2个): 架构重构、代码质量检查
+- **Git 协作** (2个): Git 工作流、GitHub 审查
+- **国际化** (2个): 翻译管理、术语一致性
+- **PDF 处理** (2个): OCR、PDF 转换
+- **资源生成** (1个): 项目资源自动生成
 
-3. **Zustand 状态管理**
-   - 不可变更新
-   - Store 分割
-   - Selector 优化
+**总计**: 24 个 skills
 
-4. **自定义 Hooks**
-   - useFetch
-   - useDebounce
-   - useToggle
+### 常用 Skills 快速链接
 
-5. **性能优化**
-   - React.memo
-   - useCallback/useMemo
-   - 代码分割
-
-6. **表单处理**
-   - 受控组件
-   - 验证
-   - 错误处理
-
-7. **可访问性**
-   - ARIA 标签
-   - 键盘导航
+1. **[dev-frontend_patterns](../.agent/skills/dev-frontend_patterns)** - 江原企业门户前端开发专项（推荐）
+2. **[dev-api-design](../.agent/skills/dev-api-design)** - RESTful API 设计规范
+3. **[dev-security_review](../.agent/skills/dev-security_review)** - 安全审查专家
+4. **[dev-translation](../.agent/skills/dev-translation)** - 多语言翻译管理（韩语/中文）
+5. **[dev-tdd_workflow](../.agent/skills/dev-tdd_workflow)** - 测试驱动开发工作流
 
 ## 💡 使用示例
 
@@ -202,6 +190,26 @@ npx playwright test tests/e2e/auth/login.spec.js
 
 编辑 `.claude/rules/` 下的文件以适应团队需求。
 
+### 添加新 Skill
+
+所有 skills 统一管理在 `../.agent/skills/` 目录下：
+
+1. 在 `../.agent/skills/` 创建新目录（例如 `my-new-skill`）
+2. 创建 `SKILL.md` 文件，包含 frontmatter：
+
+```markdown
+---
+name: my-new-skill
+description: Skill 描述
+---
+
+# My New Skill
+
+Skill 内容和指令...
+```
+
+3. 更新 `.claude/skills/README.md` 索引文件，添加新 skill 的分类和链接
+
 ### 添加新 Agent
 
 在 `.claude/agents/` 创建新的 `.md` 文件：
@@ -266,9 +274,10 @@ model: opus
 
 ## 📝 注意事项
 
-- Hooks 中的 Node.js 命令需要项目安装了 Node.js
-- 某些 hooks 可能需要根据 CI/CD 环境调整
-- 定期查看 [everything-claude-code](https://github.com/affaan-m/everything-claude-code) 获取更新
+- **Skills 位置**: 所有 skills 统一存储在 `../.agent/skills/` 目录，`.claude/skills/` 只保留索引文件
+- **Hooks 依赖**: Hooks 中的 Node.js 命令需要项目安装了 Node.js
+- **环境适配**: 某些 hooks 可能需要根据 CI/CD 环境调整
+- **保持更新**: 定期查看 [everything-claude-code](https://github.com/affaan-m/everything-claude-code) 获取更新
 
 ## ❓ 常见问题
 
@@ -283,6 +292,17 @@ A: 确保 `.claude/commands/` 目录下有对应的 `.md` 文件，并且格式�
 ### Q: 如何查看所有可用命令？
 
 A: 在 Claude Code 中输入 `/help` 查看所有命令。
+
+### Q: Skills 为什么在 `.agent/skills` 而不是 `.claude/skills`？
+
+A: 为了统一管理，所有 skills 存储在 `../.agent/skills/` 目录下。`.claude/skills/README.md` 提供索引和快速链接。这样可以：
+- 避免重复维护
+- 集中管理所有技能
+- 两个配置系统（.claude 和 .agent）都能访问
+
+### Q: 如何查看所有可用 skills？
+
+A: 查看 [.claude/skills/README.md](.claude/skills/README.md) 获取完整的分类索引。
 
 ---
 

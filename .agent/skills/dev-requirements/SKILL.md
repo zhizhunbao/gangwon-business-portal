@@ -1,3 +1,8 @@
+---
+name: dev-requirements
+description: 需求编写专家。Use when (1) writing functional requirements, (2) documenting system requirements, (3) defining acceptance criteria, (4) specifying API contracts, (5) documenting business rules, (6) writing technical specifications.
+---
+
 # Requirements Writing Skill
 
 ## Objective

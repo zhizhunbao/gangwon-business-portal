@@ -54,7 +54,9 @@
     "year": "年",
     "quarter": "季度",
     "total": "共",
+    "count": "条",
     "resultsCount": "共{{count}}条记录",
+    "showing": "显示 {{start}}-{{end}} 共 {{total}} 条",
     "approve": "批准",
     "reject": "拒绝",
     "notifications": "通知",
@@ -103,6 +105,11 @@
     "mainBusiness": "主要业务",
     "businessField": "地区主力产业代码",
     "cooperationFields": "产业合作期望领域",
+    "cooperationFields_items": {
+      "tech": "技术合作",
+      "market": "市场拓展",
+      "talent": "人才培养"
+    },
     "participationPrograms": "参与支援事业",
     "investmentStatus": "投资引进",
     "notSet": "未设置",
@@ -310,6 +317,11 @@
       "28909": "28909 - 其他电气设备制造业",
       "58221": "58221 - 系统软件开发及供应业",
       "58222": "58222 - 应用软件开发及供应业"
+    },
+    "participationPrograms": {
+      "rise": "RISE 事业团",
+      "global": "全球 事业",
+      "university": "创业中心大学"
     }
   },
   "profile": {

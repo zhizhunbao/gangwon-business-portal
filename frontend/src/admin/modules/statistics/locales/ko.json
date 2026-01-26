@@ -1,0 +1,199 @@
+{
+  "statistics": {
+    "title": "통계 리포트",
+    "subtitle": "기업 데이터 조회 및 분석",
+    "groups": {
+      "general": "기본 및 행정 정보",
+      "industry": "산업 및 기술 분류",
+      "identity": "기업 성격 및 단계",
+      "performance": "경영 성과 지표 (양적)",
+      "network": "대표자 및 외부 참여"
+    },
+    "filters": {
+      "title": "필터",
+      "reset": "초기화",
+      "apply": "조회",
+      "export": "엑셀 내보내기",
+      "time": {
+        "title": "기간",
+        "year": "연도별",
+        "quarter": "분기별",
+        "month": "월별",
+        "selectYear": "연도 선택",
+        "selectQuarter": "분기 선택",
+        "selectMonth": "월 선택",
+        "yearUnit": "년",
+        "monthUnit": "월"
+      },
+      "industry": {
+        "title": "산업 분류",
+        "major": "표준산업 (대분류)",
+        "medium": "표준산업 (중분류)",
+        "gangwon": "강원 주도 산업",
+        "startupType": "창업유형",
+        "businessField": "지역주력산업코드"
+      },
+      "programs": {
+        "title": "정책 관련",
+        "startupUniversity": "창업중심대학",
+        "globalGlocal": "글로벌·글로컬 사업",
+        "rise": "RISE 사업단",
+        "selectPrograms": "정책 관련 태그 선택"
+      },
+      "investment": {
+        "title": "투자 현황",
+        "status": "투자 유치 여부",
+        "yes": "예",
+        "no": "아니오",
+        "all": "전체",
+        "amountRange": "투자금액 범위",
+        "range1000": "1천만원 이상",
+        "range5000": "5천만원 이상",
+        "range10000": "1억원 이상",
+        "custom": "사용자 정의",
+        "minAmount": "최소 금액",
+        "maxAmount": "최대 금액",
+        "amountUnit": "만원"
+      },
+      "patent": {
+        "title": "특허 보유",
+        "countRange": "특허 수량 범위",
+        "range1": "1개 이상",
+        "range3": "3개 이상",
+        "range5": "5개 이상",
+        "range10": "10개 이상",
+        "custom": "사용자 정의",
+        "minCount": "최소 수량",
+        "maxCount": "최대 수량"
+      },
+      "stage": {
+        "title": "창업 단계",
+        "preStartup": "예비창업",
+        "initial": "초기",
+        "growth": "성장",
+        "leap": "도약",
+        "reStartup": "재창업",
+        "selectStages": "창업 단계 선택"
+      },
+      "representative": {
+        "title": "대표자 정보",
+        "gender": "성별",
+        "male": "남",
+        "female": "여",
+        "other": "기타",
+        "ageRange": "연령대"
+      },
+      "workYears": {
+        "title": "업력",
+        "under3": "3년 이하",
+        "range37": "3-7년",
+        "over7": "7년 이상"
+      },
+      "location": {
+        "title": "소재지",
+        "selectLocation": "지역 선택",
+        "chuncheon": "춘천",
+        "wonju": "원주",
+        "gangneung": "강릉",
+        "hongcheon": "홍천",
+        "hoengseong": "횡성"
+      },
+      "quantitive": {
+        "title": "양적 지표 (매출/고용)",
+        "revenue": "연매출",
+        "employees": "직원 수"
+      },
+      "industry_extra": {
+        "startupType": "창업유형",
+        "businessField": "사업분야"
+      },
+      "cooperation": {
+        "title": "산업협력 희망 분야",
+        "tech": "기술협력",
+        "market": "시장확대",
+        "talent": "인재양성"
+      },
+      "participation": {
+        "rise": "RISE 사업단",
+        "global": "글로벌 사업",
+        "university": "창업중심대학",
+        "startup_university": "창업중심대학",
+        "global_glocal": "글로벌·글로컬 사업"
+      },
+      "all": "전체",
+      "keyword": {
+        "title": "키워드 검색",
+        "placeholder": "기업명, 사업자등록번호 등"
+      }
+    },
+    "table": {
+      "title": "통계 결과",
+      "businessRegNo": "사업자등록번호",
+      "enterpriseName": "기업명",
+      "industryType": "업종",
+      "startupStage": "창업단계",
+      "programs": "참여 프로젝트",
+      "investmentStatus": "투자유치",
+      "investmentAmount": "총 투자금액",
+      "patentCount": "특허 보유 수",
+      "revenue": "연매출",
+      "exportAmount": "수출액",
+      "noData": "조회된 데이터가 없습니다",
+      "loading": "데이터 로딩 중...",
+      "error": "데이터 조회 실패"
+    },
+    "sort": {
+      "title": "정렬",
+      "companyName": "기업명",
+      "startupStage": "창업단계",
+      "investment": "투자금액",
+      "patentCount": "특허 수",
+      "revenue": "매출",
+      "export": "수출액",
+      "asc": "오름차순",
+      "desc": "내림차순"
+    },
+    "pagination": {
+      "total": "전체",
+      "page": "페이지",
+      "items": "건",
+      "itemsPerPage": "페이지당 항목 수",
+      "prev": "이전",
+      "next": "다음",
+      "first": "처음",
+      "last": "마지막"
+    },
+    "export": {
+      "title": "엑셀 내보내기",
+      "confirm": "현재 필터 조건의 데이터를 엑셀로 내보내시겠습니까?",
+      "success": "엑셀 파일이 다운로드되었습니다",
+      "error": "엑셀 내보내기 실패",
+      "filename": "통계_리포트",
+      "allData": "전체 데이터 내보내기",
+      "filteredData": "필터링된 데이터 내보내기"
+    },
+    "validation": {
+      "invalidYear": "유효하지 않은 연도입니다",
+      "invalidQuarter": "유효하지 않은 분기입니다 (1-4)",
+      "invalidMonth": "유효하지 않은 월입니다 (1-12)",
+      "invalidInvestmentRange": "투자금액 범위가 올바르지 않습니다",
+      "invalidPatentRange": "특허 수량 범위가 올바르지 않습니다",
+      "minGreaterThanMax": "최소값은 최대값보다 작아야 합니다",
+      "negativeValue": "음수 값은 입력할 수 없습니다"
+    },
+    "messages": {
+      "querySuccess": "조회가 완료되었습니다",
+      "queryError": "조회 중 오류가 발생했습니다",
+      "noResults": "조회 결과가 없습니다",
+      "tooManyResults": "조회 결과가 너무 많습니다. 필터를 추가해주세요",
+      "exportSuccess": "엑셀 내보내기가 완료되었습니다",
+      "exportError": "엑셀 내보내기 중 오류가 발생했습니다"
+    },
+    "help": {
+      "filterHelp": "필터를 선택하여 기업 데이터를 조회할 수 있습니다",
+      "programsHelp": "참여 프로젝트는 OR 조건으로 필터링됩니다 (하나라도 해당되면 조회)",
+      "investmentHelp": "투자금액 단위는 만원입니다",
+      "patentHelp": "특허 수량은 기업이 보유한 전체 특허 개수입니다"
+    }
+  }
+}

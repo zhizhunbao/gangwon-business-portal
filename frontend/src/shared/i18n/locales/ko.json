@@ -54,7 +54,9 @@
     "year": "년",
     "quarter": "분기",
     "total": "총",
+    "count": "건",
     "resultsCount": "총 {{count}}건",
+    "showing": "{{start}}-{{end}} / 총 {{total}}건",
     "approve": "승인",
     "reject": "거절",
     "notifications": "알림",
@@ -103,6 +105,11 @@
     "mainBusiness": "주요 사업",
     "businessField": "지역주력산업코드",
     "cooperationFields": "산업협력 희망 분야",
+    "cooperationFields_items": {
+      "tech": "기술협력",
+      "market": "시장확대",
+      "talent": "인재양성"
+    },
     "participationPrograms": "참여 프로그램",
     "investmentStatus": "투자 유치",
     "notSet": "미설정",
@@ -310,6 +317,11 @@
       "28909": "28909 - 그 외 기타 전기장비 제조업",
       "58221": "58221 - 시스템 소프트웨어 개발 및 공급업",
       "58222": "58222 - 응용 소프트웨어 개발 및 공급업"
+    },
+    "participationPrograms": {
+      "rise": "RISE 사업단",
+      "global": "글로벌 사업",
+      "university": "창업중심대학"
     }
   },
   "profile": {
@@ -404,7 +416,7 @@
       "content": "콘텐츠 관리",
       "messages": "알림 센터",
       "settings": "시스템 설정",
-      "reports": "통계 리포트",
+      "reports": "통계 보고서",
       "auditLogs": "감사 로그",
       "systemLogs": "시스템 모니터링"
     },

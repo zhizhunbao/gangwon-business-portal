@@ -354,4 +354,80 @@ class DocumentStore:
 
 ---
 
+## 注释与文档规范
+
+为了保持代码的可读性与简洁性，后端开发遵循以下强制性注释约束：
+
+1.  **单行中文**: 所有的文档描述必须使用中文，且保持在单行内。
+2.  **函数内部 Docstring**: 禁止在函数体内部使用 `#` 添加注释。必须使用三引号 `"""` 作为函数的第一行，进行单行中文功能描述。代码逻辑应当实现“自解释”。
+3.  **禁止多行描述**: 无论是类还是函数，文档字符串 (Docstrings) 仅允许单行描述。
+
+### 正确示例
+
+```python
+# 处理企业统计数据的核心服务类
+class StatisticsService:
+    async def get_report(self, query: QuerySchema):
+        """获取并筛选企业统计报告"""
+        # ... 直接开始逻辑 ...
+        pass
+```
+
+### 错误示例
+
+```python
+def process_data(data):
+    # 第一步：清洗数据 (错误：禁止使用 # 注释描述逻辑)
+    cleaned = clean(data)
+    return cleaned
+```
+
+---
+
+## 自动化质量检查 (Automated Quality Checks)
+
+在提交后端代码前，必须参考以下四个代码检查 Skill 进行自检。
+
+### 1. 代码质量与复杂度 (基于 dev-code_quality_check)
+
+- **检查命令**:
+  ```powershell
+  # 检查单个文件
+  uv run python .agent/skills/dev-code_quality_check/scripts/check_code_format.py app/users/service.py
+  ```
+- **核心标准**:
+  - 函数: < 50 行
+  - 文件: < 800 行
+  - 嵌套: < 4 层
+
+### 2. 目录结构与命名 (基于 dev-code_standards)
+
+- **验证清单**:
+  - [ ] 目录按 **Features/Domain** (领域) 组织 (如 `users/`, `markets/`) 而非 Types (如 `services/`, `controllers/`)。
+  - [ ] Python 文件使用 `snake_case.py`。
+  - [ ] 类名使用 `PascalCase`。
+  - [ ] 严禁循环依赖。
+
+### 3. 代码风格与格式化 (基于 dev-code_style)
+
+- **检查命令**:
+  ```powershell
+  # 格式化与修复
+  uv run ruff format . && uv run ruff check --fix .
+  # 类型检查
+  uv run mypy app/
+  ```
+- **核心标准**:
+  - 行宽: 100 字符
+  - 类型检查: `strict = true`
+  - 导入排序: 自动排序
+
+### 4. 编码规范与原则 (基于 dev-coding_standards)
+
+- **异常处理**: 必须捕获特定异常并记录日志 (`logger.error`)，严禁裸 `try-except`。
+- **日志**: 严禁使用 `print()`，必须使用标准 `logging`。
+- **不可变性**: 在处理复杂数据流时，优先返回新对象而非原地修改。
+
+---
+
 **主要规则参见**：`.kiro/steering/code-quality.md`

@@ -1,0 +1,41 @@
+[project]
+name = "gangwon-business-portal"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiosmtplib==3.0.1",
+    "alembic==1.13.0",
+    "asyncpg==0.29.0",
+    "bcrypt==4.0.1",
+    "faker==24.0.0",
+    "fastapi==0.115.0",
+    "httpx>=0.26.0,<0.29.0",
+    "jinja2==3.1.2",
+    "openpyxl==3.1.2",
+    "passlib[bcrypt]==1.7.4",
+    "pillow>=12.1.0",
+    "playwright==1.40.0",
+    "psycopg2-binary==2.9.11",
+    "pydantic-settings==2.1.0",
+    "pydantic[email]>=2.11.7,<3.0.0",
+    "pymupdf>=1.26.7",
+    "pytest==7.4.3",
+    "pytest-asyncio==0.21.1",
+    "pytest-cov==4.1.0",
+    "pytest-html==4.1.1",
+    "pytest-mock==3.12.0",
+    "pytest-playwright==0.4.4",
+    "pytest-xdist==3.5.0",
+    "python-dateutil==2.8.2",
+    "python-jose[cryptography]==3.3.0",
+    "python-multipart==0.0.6",
+    "python-pptx>=1.0.2",
+    "pywin32>=311",
+    "requests==2.31.0",
+    "sqlalchemy==2.0.25",
+    "supabase==2.25.1",
+    "uvicorn[standard]==0.30.0",
+    "xlsxwriter>=3.2.9",
+]

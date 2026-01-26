@@ -22,7 +22,7 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "./src/shared"),
       "@member": path.resolve(__dirname, "./src/member"),
       "@admin": path.resolve(__dirname, "./src/admin"),
-      "@features": path.resolve(__dirname, "./src/features"),
+      "@features": path.resolve(__dirname, "./src/member/modules"),
       "@mocks": path.resolve(__dirname, "./src/mocks"),
     },
     extensions: [".jsx", ".js", ".json"],

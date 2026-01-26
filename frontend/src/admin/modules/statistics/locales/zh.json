@@ -1,0 +1,202 @@
+{
+  "statistics": {
+    "title": "统计报告",
+    "subtitle": "企业数据查询与分析",
+    "groups": {
+      "general": "基本与行政信息",
+      "industry": "产业与技术分类",
+      "identity": "企业属性与阶段",
+      "performance": "经营成果指标 (量化)",
+      "network": "代表者与外部参与"
+    },
+    "filters": {
+      "title": "筛选条件",
+      "reset": "重置",
+      "apply": "查询",
+      "export": "导出 Excel",
+      "time": {
+        "title": "时间范围",
+        "year": "年度",
+        "quarter": "季度",
+        "month": "月份",
+        "selectYear": "选择年度",
+        "selectQuarter": "选择季度",
+        "selectMonth": "选择月份",
+        "yearUnit": "年",
+        "monthUnit": "月"
+      },
+      "industry": {
+        "title": "产业分类",
+        "major": "标准产业 (大分类)",
+        "medium": "标准产业 (中分类)",
+        "gangwon": "江原道主导产业",
+        "startupType": "创业类型",
+        "businessField": "业务领域"
+      },
+      "programs": {
+        "title": "政策关联",
+        "startupUniversity": "创业中心大学",
+        "globalGlocal": "全球·成长事业",
+        "rise": "RISE 事业团",
+        "selectPrograms": "选择政策关联标签"
+      },
+
+      "investment": {
+        "title": "投资情况",
+        "status": "投资引进与否",
+        "yes": "是",
+        "no": "否",
+        "all": "全部",
+        "amountRange": "投资金额范围",
+        "range1000": "1000万以上",
+        "range5000": "5000万以上",
+        "range10000": "1亿以上",
+        "custom": "自定义区间",
+        "minAmount": "最小金额",
+        "maxAmount": "最大金额",
+        "amountUnit": "万元"
+      },
+      "patent": {
+        "title": "专利持有",
+        "countRange": "专利数量范围",
+        "range1": "1个以上",
+        "range3": "3个以上",
+        "range5": "5个以上",
+        "range10": "10个以上",
+        "custom": "自定义区间",
+        "minCount": "最小数量",
+        "maxCount": "最大数量"
+      },
+      "stage": {
+        "title": "创业阶段",
+        "preStartup": "预备创业",
+        "initial": "初创期",
+        "growth": "成长期",
+        "leap": "跳跃期",
+        "reStartup": "再创业",
+        "selectStages": "选择创业阶段"
+      },
+      "representative": {
+        "title": "代表者信息",
+        "gender": "性别",
+        "male": "男",
+        "female": "女",
+        "other": "其他",
+        "ageRange": "年龄段"
+      },
+      "workYears": {
+        "title": "企业工龄",
+        "under3": "3年以下",
+        "range37": "3-7年",
+        "over7": "7年以上"
+      },
+      "location": {
+        "title": "所在地",
+        "selectLocation": "选择地区",
+        "chuncheon": "春川",
+        "wonju": "原州",
+        "gangneung": "江陵",
+        "hongcheon": "洪川",
+        "hoengseong": "横城"
+      },
+      "quantitive": {
+        "title": "量化指标 (营收/雇佣)",
+        "revenue": "年营收",
+        "employees": "员工人数"
+      },
+      "industry_extra": {
+        "startupType": "创业类型",
+        "businessField": "业务领域"
+      },
+      "cooperation": {
+        "title": "产业合作意向领域",
+        "tech": "技术合作",
+        "market": "市场拓展",
+        "talent": "人才培养"
+      },
+      "participation": {
+        "rise": "RISE 事业团",
+        "global": "全球 事业",
+        "university": "创业中心大学",
+        "startup_university": "创业中心大学",
+        "global_glocal": "全球·成长事业"
+      },
+      "all": "全部",
+      "keyword": {
+        "title": "关键词搜索",
+        "placeholder": "企业名称、事业者注册号等"
+      }
+
+    },
+    "table": {
+      "title": "统计结果",
+      "businessRegNo": "事业者注册号",
+      "enterpriseName": "企业名称",
+      "industryType": "行业类型",
+      "startupStage": "创业阶段",
+      "programs": "参与项目",
+      "investmentStatus": "投资引进",
+      "investmentAmount": "总投资金额",
+      "patentCount": "专利持有数",
+      "revenue": "年营收",
+      "exportAmount": "出口额",
+
+      "noData": "暂无查询结果",
+      "loading": "数据加载中...",
+      "error": "数据查询失败"
+    },
+    "sort": {
+      "title": "排序",
+      "companyName": "企业名称",
+      "startupStage": "创业阶段",
+      "investment": "投资金额",
+      "patentCount": "专利数量",
+      "revenue": "营收",
+      "export": "出口额",
+      "asc": "升序",
+      "desc": "降序"
+    },
+    "pagination": {
+      "total": "共",
+      "page": "页",
+      "items": "条",
+      "itemsPerPage": "每页显示",
+      "prev": "上一页",
+      "next": "下一页",
+      "first": "首页",
+      "last": "尾页"
+    },
+    "export": {
+      "title": "导出 Excel",
+      "confirm": "确定要将当前筛选条件的数据导出为 Excel 吗?",
+      "success": "Excel 文件已下载",
+      "error": "Excel 导出失败",
+      "filename": "统计报告",
+      "allData": "导出全部数据",
+      "filteredData": "导出筛选结果"
+    },
+    "validation": {
+      "invalidYear": "无效的年度",
+      "invalidQuarter": "无效的季度 (1-4)",
+      "invalidMonth": "无效的月份 (1-12)",
+      "invalidInvestmentRange": "投资金额范围无效",
+      "invalidPatentRange": "专利数量范围无效",
+      "minGreaterThanMax": "最小值不能大于最大值",
+      "negativeValue": "不能输入负数"
+    },
+    "messages": {
+      "querySuccess": "查询成功",
+      "queryError": "查询过程中发生错误",
+      "noResults": "暂无查询结果",
+      "tooManyResults": "查询结果过多，请添加筛选条件",
+      "exportSuccess": "Excel 导出成功",
+      "exportError": "Excel 导出过程中发生错误"
+    },
+    "help": {
+      "filterHelp": "选择筛选条件查询企业数据",
+      "programsHelp": "参与项目使用 OR 逻辑筛选 (符合任一条件即可)",
+      "investmentHelp": "投资金额单位为万元",
+      "patentHelp": "专利数量为企业持有的全部专利总数"
+    }
+  }
+}

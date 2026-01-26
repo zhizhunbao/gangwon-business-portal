@@ -266,10 +266,12 @@ const MemberLayout = lazy(() =>
 
 // Lazy load auth modules
 const Register = lazy(() =>
-  import("@features/auth").then((m) => ({ default: m.RegisterView })),
+  import("@member/modules/auth").then((m) => ({ default: m.RegisterView })),
 );
 const ForgotPassword = lazy(() =>
-  import("@features/auth").then((m) => ({ default: m.ForgotPasswordView })),
+  import("@member/modules/auth").then((m) => ({
+    default: m.ForgotPasswordView,
+  })),
 );
 const AdminLogin = lazy(() =>
   import("@admin/modules/auth/Login").then((m) => ({ default: m.default })),
@@ -282,81 +284,88 @@ const AdminForgotPassword = lazy(() =>
 
 // Lazy load member modules
 const MemberHome = lazy(() =>
-  import("@features/home").then((m) => ({ default: m.HomeView })),
+  import("@member/modules/home").then((m) => ({ default: m.HomeView })),
 );
 const MemberProjects = lazy(() =>
-  import("@features/projects").then((m) => ({ default: m.ProjectListView })),
+  import("@member/modules/projects").then((m) => ({
+    default: m.ProjectListView,
+  })),
 );
 const MemberProjectList = lazy(() =>
-  import("@features/projects").then((m) => ({
+  import("@member/modules/projects").then((m) => ({
     default: m.ProjectListView,
   })),
 );
 const MemberApplicationRecords = lazy(() =>
-  import("@features/projects").then((m) => ({
+  import("@member/modules/projects").then((m) => ({
     default: m.ApplicationRecordsView,
   })),
 );
 const MemberAbout = lazy(() =>
-  import("@features/about").then((m) => ({ default: m.AboutView })),
+  import("@member/modules/about").then((m) => ({ default: m.AboutView })),
 );
 const MemberPerformance = lazy(() =>
-  import("@features/performance").then((m) => ({
+  import("@member/modules/performance").then((m) => ({
     default: m.PerformanceView,
   })),
 );
 const MemberPerformanceCompanyInfo = lazy(() =>
-  import("@features/performance").then((m) => ({
+  import("@member/modules/performance").then((m) => ({
     default: m.CompanyInfoView,
   })),
 );
 const MemberPerformanceList = lazy(() =>
-  import("@features/performance").then((m) => ({
+  import("@member/modules/performance").then((m) => ({
     default: m.PerformanceListView,
   })),
 );
 const MemberPerformanceEdit = lazy(() =>
-  import("@features/performance").then((m) => ({
+  import("@member/modules/performance").then((m) => ({
+    default: m.PerformanceEditView,
+  })),
+);
+const MemberPerformanceEditDetail = lazy(() =>
+  import("@member/modules/performance").then((m) => ({
     default: m.PerformanceEditView,
   })),
 );
 const MemberSupport = lazy(() =>
-  import("@features/support").then((m) => ({
+  import("@member/modules/support").then((m) => ({
     default: m.SupportView,
   })),
 );
 const MemberSupportFAQ = lazy(() =>
-  import("@features/support").then((m) => ({
+  import("@member/modules/support").then((m) => ({
     default: m.FAQView,
   })),
 );
 const MemberSupportInquiry = lazy(() =>
-  import("@features/support").then((m) => ({
+  import("@member/modules/support").then((m) => ({
     default: m.InquiryView,
   })),
 );
 const MemberSupportInquiryHistory = lazy(() =>
-  import("@features/support").then((m) => ({
+  import("@member/modules/support").then((m) => ({
     default: m.InquiryHistoryView,
   })),
 );
 const NoticesList = lazy(() =>
-  import("@features/support").then((m) => ({
+  import("@member/modules/support").then((m) => ({
     default: m.NoticesView,
   })),
 );
 const NoticeDetail = lazy(() =>
-  import("@features/support").then((m) => ({
+  import("@member/modules/support").then((m) => ({
     default: m.NoticeDetailView,
   })),
 );
 const ProjectList = lazy(() =>
-  import("@features/projects").then((m) => ({
+  import("@member/modules/projects").then((m) => ({
     default: m.ProjectListView,
   })),
 );
 const ProjectDetail = lazy(() =>
-  import("@features/projects").then((m) => ({
+  import("@member/modules/projects").then((m) => ({
     default: m.ProjectDetailView,
   })),
 );
@@ -413,6 +422,12 @@ const AdminMessages = lazy(() =>
 
 const AdminReports = lazy(() =>
   import("@admin/modules/reports").then((m) => ({ default: m.default })),
+);
+
+const AdminStatisticsReport = lazy(() =>
+  import("@admin/modules/statistics").then((m) => ({
+    default: m.StatisticsReport,
+  })),
 );
 
 const AdminSystemLogs = lazy(() =>
@@ -778,6 +793,14 @@ export const router = createBrowserRouter(
               element: (
                 <LazyRoute>
                   <AdminReports />
+                </LazyRoute>
+              ),
+            },
+            {
+              path: "statistics",
+              element: (
+                <LazyRoute>
+                  <AdminStatisticsReport />
                 </LazyRoute>
               ),
             },

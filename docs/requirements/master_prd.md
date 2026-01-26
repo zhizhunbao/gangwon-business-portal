@@ -23,14 +23,15 @@
 
 ## 2. 项目范围
 
-| 模块       | 描述               | PRD 文档                                                 |
-| ---------- | ------------------ | -------------------------------------------------------- |
-| 企业门户   | 企业端 Web 应用    | [prd_enterprise_portal.md](./prd_enterprise_portal.md)   |
-| 管理后台   | 管理员仪表盘       | [prd_admin_portal.md](./prd_admin_portal.md)             |
-| 认证系统   | 注册、登录、权限   | [prd_authentication.md](./prd_authentication.md)         |
-| 内容管理   | 公告、新闻、Banner | [prd_content_management.md](./prd_content_management.md) |
-| 站内信     | 消息通知系统       | [prd_messaging.md](./prd_messaging.md)                   |
-| 非功能需求 | 性能、安全、可用性 | [prd_non_functional.md](./prd_non_functional.md)         |
+| 模块       | 描述               | PRD 文档                                                        |
+| ---------- | ------------------ | --------------------------------------------------------------- |
+| 企业门户   | 企业端 Web 应用    | [prd_enterprise_portal.md](./prd_enterprise_portal.md)          |
+| 管理后台   | 管理员仪表盘       | [prd_admin_portal.md](./prd_admin_portal.md)                    |
+| 认证系统   | 注册、登录、权限   | [prd_authentication.md](./prd_authentication.md)                |
+| 内容管理   | 公告、新闻、Banner | [prd_content_management.md](./prd_content_management.md)        |
+| 站内信     | 消息通知系统       | [prd_messaging.md](./prd_messaging.md)                          |
+| 统计报告   | 业务统计与分析     | [prd_statistics_report.md](./features/prd_statistics_report.md) |
+| 非功能需求 | 性能、安全、可用性 | [prd_non_functional.md](./prd_non_functional.md)                |
 
 ---
 
@@ -135,6 +136,7 @@
 
 ### Phase 4: 数据分析 📋 计划中
 
+- [统计报告 (Admin)](./features/prd_statistics_report.md)
 - 高级报表和图表
 - 数据导出增强
 - 仪表盘优化
@@ -165,10 +167,10 @@
 
 ## 9. 相关文档
 
-- [系统架构](../architecture/system-architecture.md)
-- [数据库设计](../architecture/database-design.md)
-- [API 设计规范](../guides/api-design-standard.md)
-- [术语字典](../../.skills/dev-terminology/references/glossary.md)
+- [系统架构](../design/system-architecture.md)
+- [数据库设计](../design/database-design.md)
+- [API 设计规范](../design/api-design-standard.md)
+- [术语字典](./glossary.md)
 
 ---
 
@@ -180,6 +182,7 @@
 | 1.0.3 | 2025-12-16 | 更新站内信系统需求                                      |
 | 1.0.4 | 2026-01-24 | 按 skill 规范拆分为模块化 PRD                           |
 | 1.1.0 | 2026-01-25 | 企业门户：公告导航优化 (详情跳转、路由变更、新增子菜单) |
+| 1.1.1 | 2026-01-25 | 新增“统计报告”模块需求定义 (PRD-006)                    |
 
 ---
 

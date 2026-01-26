@@ -1,0 +1,68 @@
+{
+  "version": "1.0.0",
+  "project": "gangwon-business-portal",
+  "created": "2025-01-25",
+  "description": "Gangwon Business Portal - Windsurf Configuration",
+  
+  "skills": {
+    "enabled": true,
+    "auto_discovery": true,
+    "skill_directories": [
+      ".windsurf/skills"
+    ]
+  },
+  
+  "workflows": {
+    "enabled": true,
+    "auto_discovery": true,
+    "workflow_directories": [
+      ".windsurf/workflows"
+    ]
+  },
+  
+  "hooks": {
+    "enabled": true,
+    "pre_commit": [
+      "npm run lint",
+      "npm run test:unit"
+    ],
+    "pre_push": [
+      "npm run build",
+      "npm run test:e2e"
+    ]
+  },
+  
+  "quality_gates": {
+    "test_coverage_threshold": 80,
+    "performance_threshold": 90,
+    "security_scan_required": true
+  },
+  
+  "notifications": {
+    "slack_webhook": "${SLACK_WEBHOOK_URL}",
+    "email_enabled": true,
+    "github_comments": true
+  },
+  
+  "environment": {
+    "development": {
+      "auto_reload": true,
+      "debug_mode": true
+    },
+    "production": {
+      "minify_assets": true,
+      "enable_caching": true
+    }
+  },
+  
+  "integrations": {
+    "supabase": {
+      "enabled": true,
+      "auto_migrate": false
+    },
+    "github": {
+      "enabled": true,
+      "auto_pr_reviews": false
+    }
+  }
+}

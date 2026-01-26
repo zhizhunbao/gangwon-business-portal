@@ -1,0 +1,71 @@
+name: "code-review"
+description: "Automated code review workflow"
+version: "1.0.0"
+author: "Development Team"
+
+steps:
+  - name: "static-analysis"
+    description: "Run static code analysis"
+    commands:
+      - "eslint . --ext .js,.jsx,.ts,.tsx"
+      - "prettier --check ."
+      - "typescript --noEmit"
+    
+  - name: "security-check"
+    description: "Run security vulnerability checks"
+    commands:
+      - "npm audit --audit-level moderate"
+      - "snyk code"
+    
+  - name: "test-coverage"
+    description: "Run tests and check coverage"
+    commands:
+      - "npm run test:coverage"
+      - "npm run test:e2e"
+    
+  - name: "performance-check"
+    description: "Check performance metrics"
+    commands:
+      - "npm run build:analyze"
+      - "lighthouse --chrome-flags='--headless' --output=json --output-path=./lighthouse-report.json http://localhost:3000"
+    
+  - name: "dependency-check"
+    description: "Check for outdated dependencies"
+    commands:
+      - "npm outdated"
+      - "depcheck"
+
+quality_gates:
+  - name: "test-coverage-gate"
+    description: "Ensure test coverage is above 80%"
+    condition: "coverage >= 80"
+    failure_message: "Test coverage is below 80%"
+  
+  - name: "security-gate"
+    description: "No high severity vulnerabilities"
+    condition: "vulnerabilities.high == 0"
+    failure_message: "High severity vulnerabilities found"
+  
+  - name: "performance-gate"
+    description: "Lighthouse performance score above 90"
+    condition: "lighthouse.performance >= 90"
+    failure_message: "Performance score is below 90"
+
+notifications:
+  on_completion:
+    - type: "github-comment"
+      template: "code-review-summary.md"
+  
+  on_failure:
+    - type: "slack"
+      channel: "#code-review"
+      message: "🚨 Code review failed - quality gates not met"
+
+reports:
+  - name: "code-quality-report"
+    format: "markdown"
+    sections:
+      - "test-coverage"
+      - "security-scan"
+      - "performance-metrics"
+      - "dependency-analysis"

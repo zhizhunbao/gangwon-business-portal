@@ -14,28 +14,32 @@ import ko from "./locales/ko.json";
 import zh from "./locales/zh.json";
 
 // Feature locales - about
-import aboutKo from "../../features/about/locales/ko.json";
-import aboutZh from "../../features/about/locales/zh.json";
+import aboutKo from "../../member/modules/about/locales/ko.json";
+import aboutZh from "../../member/modules/about/locales/zh.json";
 
 // Feature locales - auth
-import authKo from "../../features/auth/locales/ko.json";
-import authZh from "../../features/auth/locales/zh.json";
+import authKo from "../../member/modules/auth/locales/ko.json";
+import authZh from "../../member/modules/auth/locales/zh.json";
 
 // Feature locales - home
-import homeKo from "../../features/home/locales/ko.json";
-import homeZh from "../../features/home/locales/zh.json";
+import homeKo from "../../member/modules/home/locales/ko.json";
+import homeZh from "../../member/modules/home/locales/zh.json";
 
 // Feature locales - performance
-import performanceKo from "../../features/performance/locales/ko.json";
-import performanceZh from "../../features/performance/locales/zh.json";
+import performanceKo from "../../member/modules/performance/locales/ko.json";
+import performanceZh from "../../member/modules/performance/locales/zh.json";
 
 // Feature locales - projects
-import projectsKo from "../../features/projects/locales/ko.json";
-import projectsZh from "../../features/projects/locales/zh.json";
+import projectsKo from "../../member/modules/projects/locales/ko.json";
+import projectsZh from "../../member/modules/projects/locales/zh.json";
 
 // Feature locales - support
-import supportKo from "../../features/support/locales/ko.json";
-import supportZh from "../../features/support/locales/zh.json";
+import supportKo from "../../member/modules/support/locales/ko.json";
+import supportZh from "../../member/modules/support/locales/zh.json";
+
+// Admin locales - statistics
+import statisticsKo from "../../admin/modules/statistics/locales/ko.json";
+import statisticsZh from "../../admin/modules/statistics/locales/zh.json";
 
 // Member Layouts locales
 import layoutKo from "../../member/layouts/locales/ko.json";
@@ -70,6 +74,7 @@ const resources = {
       performanceKo,
       projectsKo,
       supportKo,
+      statisticsKo,
       layoutKo,
     ),
   },
@@ -82,6 +87,7 @@ const resources = {
       performanceZh,
       projectsZh,
       supportZh,
+      statisticsZh,
       layoutZh,
     ),
   },

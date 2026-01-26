@@ -1,0 +1,93 @@
+{
+  "title": "{{FeatureTitle}}",
+  "description": "{{FeatureDescription}}",
+  
+  "actions": {
+    "create": "创建{{FeatureName}}",
+    "edit": "编辑{{FeatureName}}",
+    "delete": "删除{{FeatureName}}",
+    "view": "查看{{FeatureName}}",
+    "search": "搜索{{FeatureName}}",
+    "export": "导出{{FeatureName}}",
+    "import": "导入{{FeatureName}}",
+    "refresh": "刷新",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认"
+  },
+  
+  "fields": {
+    "name": "名称",
+    "description": "描述",
+    "status": "状态",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间",
+    "createdBy": "创建者",
+    "updatedBy": "更新者"
+  },
+  
+  "status": {
+    "active": "活跃",
+    "inactive": "非活跃",
+    "pending": "待处理",
+    "completed": "已完成",
+    "cancelled": "已取消"
+  },
+  
+  "messages": {
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "createSuccess": "{{FeatureName}}创建成功",
+    "updateSuccess": "{{FeatureName}}更新成功",
+    "deleteSuccess": "{{FeatureName}}删除成功",
+    "deleteConfirm": "确定要删除这个{{FeatureName}}吗？此操作不可撤销。",
+    "requiredField": "此字段为必填项",
+    "invalidFormat": "格式不正确",
+    "networkError": "网络错误，请稍后重试",
+    "serverError": "服务器错误，请联系管理员"
+  },
+  
+  "validation": {
+    "required": "此字段为必填项",
+    "minLength": "最少需要{min}个字符",
+    "maxLength": "最多{max}个字符",
+    "email": "请输入有效的邮箱地址",
+    "phone": "请输入有效的电话号码",
+    "url": "请输入有效的网址"
+  },
+  
+  "filters": {
+    "all": "全部",
+    "active": "活跃",
+    "inactive": "非活跃",
+    "searchPlaceholder": "搜索{{FeatureName}}...",
+    "sortBy": "排序方式",
+    "sortOrder": "排序顺序",
+    "dateRange": "日期范围",
+    "statusFilter": "状态筛选"
+  },
+  
+  "pagination": {
+    "previous": "上一页",
+    "next": "下一页",
+    "first": "首页",
+    "last": "末页",
+    "showing": "显示第 {start} 到 {end} 条，共 {total} 条记录",
+    "itemsPerPage": "每页显示"
+  },
+  
+  "modals": {
+    "createTitle": "创建{{FeatureName}}",
+    "editTitle": "编辑{{FeatureName}}",
+    "deleteTitle": "删除{{FeatureName}}",
+    "viewTitle": "查看{{FeatureName}}"
+  },
+  
+  "statistics": {
+    "total": "总计",
+    "active": "活跃数量",
+    "inactive": "非活跃数量",
+    "recent": "最近创建",
+    "trending": "趋势"
+  }
+}

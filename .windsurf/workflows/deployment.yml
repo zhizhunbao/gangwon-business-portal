@@ -1,0 +1,76 @@
+name: "deployment"
+description: "Deploy application to production"
+version: "1.0.0"
+author: "DevOps Team"
+
+steps:
+  - name: "pre-deployment-checks"
+    description: "Run pre-deployment quality checks"
+    commands:
+      - "npm run test"
+      - "npm run build"
+      - "npm run lint"
+    
+  - name: "security-scan"
+    description: "Run security vulnerability scan"
+    commands:
+      - "npm audit"
+      - "snyk test"
+    
+  - name: "backup-database"
+    description: "Create database backup before deployment"
+    commands:
+      - "supabase db dump --data-only > backup_$(date +%Y%m%d_%H%M%S).sql"
+    
+  - name: "deploy-frontend"
+    description: "Deploy frontend to production"
+    commands:
+      - "cd frontend && npm run build"
+      - "cd frontend && npm run deploy"
+    
+  - name: "deploy-backend"
+    description: "Deploy backend to production"
+    commands:
+      - "cd backend && npm run deploy"
+    
+  - name: "health-check"
+    description: "Verify deployment health"
+    commands:
+      - "curl -f https://your-domain.com/health"
+      - "curl -f https://api.your-domain.com/health"
+    
+  - name: "post-deployment-verification"
+    description: "Run post-deployment verification tests"
+    commands:
+      - "npm run e2e:test"
+      - "npm run smoke:test"
+
+rollback_steps:
+  - name: "rollback-frontend"
+    description: "Rollback frontend to previous version"
+    commands:
+      - "cd frontend && npm run rollback"
+  
+  - name: "rollback-backend"
+    description: "Rollback backend to previous version"
+    commands:
+      - "cd backend && npm run rollback"
+  
+  - name: "restore-database"
+    description: "Restore database from backup if needed"
+    commands:
+      - "supabase db restore backup_$(date +%Y%m%d_%H%M%S).sql"
+
+notifications:
+  on_success:
+    - type: "slack"
+      channel: "#deployments"
+      message: "✅ Deployment completed successfully"
+  
+  on_failure:
+    - type: "slack"
+      channel: "#deployments"
+      message: "❌ Deployment failed - initiating rollback"
+    - type: "email"
+      recipients: ["dev-team@company.com"]
+      subject: "Deployment Failed"
