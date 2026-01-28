@@ -93,6 +93,8 @@ class ExportService:
                         value = value.strftime("%Y-%m-%d %H:%M:%S")
                     elif value is None:
                         value = ""
+                    elif isinstance(value, (list, dict)):
+                        value = str(value)
                     
                     cell.value = value
                     cell.alignment = Alignment(vertical="top", wrap_text=True)

@@ -277,5 +277,13 @@
     "websiteUrl": "网站URL",
     "mainBusiness": "主要业务",
     "cooperationFields": "合作意向领域"
+  },
+  "notifications": {
+    "unread": "未读",
+    "viewAll": "查看全部",
+    "empty": "暂无通知",
+    "important": "重要",
+    "fromMember": "来自{{name}}",
+    "adminReplied": "管理员已回复"
   }
 }

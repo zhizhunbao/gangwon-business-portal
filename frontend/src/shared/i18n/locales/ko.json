@@ -275,7 +275,15 @@
     "sales": "매출액",
     "employeeCount": "직원 수",
     "websiteUrl": "홈페이지 URL",
-    "mainBusiness": "주요 사업",
+    "mainBusiness": "主要 사업",
     "cooperationFields": "협력 희망 분야"
+  },
+  "notifications": {
+    "unread": "읽지 않음",
+    "viewAll": "전체 보기",
+    "empty": "알림이 없습니다",
+    "important": "중요",
+    "fromMember": "{{name}}님으로부터",
+    "adminReplied": "관리자가 답변했습니다"
   }
 }

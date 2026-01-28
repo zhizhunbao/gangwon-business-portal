@@ -255,6 +255,49 @@ async def list_projects_admin(
 
 
 @router.get(
+    "/api/admin/projects/export",
+    tags=["admin-projects"],
+    summary="Export projects data (Admin)",
+)
+@audit_log(action="export", resource_type="project")
+async def export_projects(
+    query: Annotated[ProjectListQuery, Depends()],
+    request: Request,
+    current_admin: Annotated[Member, Depends(get_current_admin_user)],
+    format: str = Query("excel", regex="^(excel|csv)$", description="Export format: excel or csv"),
+):
+    """
+    Export projects data to Excel or CSV (admin only).
+    """
+    from ...common.modules.export import ExportService
+    
+    export_data = await service.export_projects_data(query)
+    
+    if format == "excel":
+        excel_bytes = ExportService.export_to_excel(
+            data=export_data,
+            sheet_name="Projects",
+            title=f"Projects Export - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        )
+        return Response(
+            content=excel_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f'attachment; filename="projects_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+            },
+        )
+    else:
+        csv_content = ExportService.export_to_csv(data=export_data)
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f'attachment; filename="projects_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+            },
+        )
+
+
+@router.get(
     "/api/admin/projects/{project_id}",
     response_model=ProjectResponse,
     tags=["admin-projects"],
@@ -404,49 +447,6 @@ async def update_application_status(
         application_id, data.status
     )
     return ProjectApplicationResponse.model_validate(application)
-
-
-@router.get(
-    "/api/admin/projects/export",
-    tags=["admin-projects"],
-    summary="Export projects data (Admin)",
-)
-@audit_log(action="export", resource_type="project")
-async def export_projects(
-    query: Annotated[ProjectListQuery, Depends()],
-    request: Request,
-    current_admin: Annotated[Member, Depends(get_current_admin_user)],
-    format: str = Query("excel", regex="^(excel|csv)$", description="Export format: excel or csv"),
-):
-    """
-    Export projects data to Excel or CSV (admin only).
-    """
-    from ...common.modules.export import ExportService
-    
-    export_data = await service.export_projects_data(query)
-    
-    if format == "excel":
-        excel_bytes = ExportService.export_to_excel(
-            data=export_data,
-            sheet_name="Projects",
-            title=f"Projects Export - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        )
-        return Response(
-            content=excel_bytes,
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={
-                "Content-Disposition": f'attachment; filename="projects_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
-            },
-        )
-    else:
-        csv_content = ExportService.export_to_csv(data=export_data)
-        return Response(
-            content=csv_content,
-            media_type="text/csv",
-            headers={
-                "Content-Disposition": f'attachment; filename="projects_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"'
-            },
-        )
 
 
 @router.get(
