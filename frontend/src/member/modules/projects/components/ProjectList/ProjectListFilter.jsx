@@ -22,12 +22,12 @@ export function ProjectListFilter({
           data={allProjects}
           columns={columns}
           onFilter={onFilterChange}
-          placeholder={t("projects.searchPlaceholder", "按标题/内容搜索")}
+          placeholder={t('projects.searchPlaceholder', '사업명 또는 키워드로 검색')}
           className="flex-1 min-w-[200px] max-w-md"
           debounceMs={300}
         />
         <div className="text-sm text-gray-600">
-          {t("common.resultsCount", "共{{count}}条记录", {
+          {t("common.resultsCount", "총 {{count}}건", {
             count: resultsCount,
           })}
         </div>

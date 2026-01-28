@@ -50,7 +50,7 @@ export const QuantitiveFilters = ({
             }
           />
           <span className="text-xs text-gray-400 ml-1">
-            {t("statistics.filters.investment.amountUnit") || "만원"}
+            {t("statistics.filters.investment.amountUnit", "만원")}
           </span>
         </div>
       </div>
@@ -90,7 +90,7 @@ export const QuantitiveFilters = ({
             }
           />
           <span className="text-xs text-gray-400 ml-1">
-            {t("common.personUnit") || "명"}
+            {t("common.people", "명")}
           </span>
         </div>
       </div>

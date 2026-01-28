@@ -37,17 +37,17 @@ export default function FAQManagement() {
 
   // FAQ分类选项（用于表单）
   const categoryOptions = [
-    { value: 'general', label: t('admin.content.faq.categories.general', '一般问题') },
-    { value: 'registration', label: t('admin.content.faq.categories.registration', '注册相关') },
-    { value: 'performance', label: t('admin.content.faq.categories.performance', '绩效管理') },
-    { value: 'project', label: t('admin.content.faq.categories.project', '项目申报') },
-    { value: 'technical', label: t('admin.content.faq.categories.technical', '技术支持') }
+    { value: 'general', label: t('admin.content.faq.categories.general', '일반 문의') },
+    { value: 'registration', label: t('admin.content.faq.categories.registration', '등록 관련') },
+    { value: 'performance', label: t('admin.content.faq.categories.performance', '성과 관리') },
+    { value: 'project', label: t('admin.content.faq.categories.project', '지원사업 신청') },
+    { value: 'technical', label: t('admin.content.faq.categories.technical', '기술 지원') }
   ];
 
   // 表格列定义
   const columns = [
     {
-      label: t('admin.content.faq.question', '问题'),
+      label: t('admin.content.faq.question', '질문'),
       key: 'question',
       render: (text) => (
         <div className="max-w-md truncate" title={text}>
@@ -56,7 +56,7 @@ export default function FAQManagement() {
       )
     },
     {
-      label: t('admin.content.faq.category', '分类'),
+      label: t('admin.content.faq.category', '카테고리'),
       key: 'category',
       render: (category) => {
         const option = categoryOptions.find(opt => opt.value === category);
@@ -64,19 +64,19 @@ export default function FAQManagement() {
       }
     },
     {
-      label: t('admin.content.faq.displayOrder', '显示顺序'),
+      label: t('admin.content.faq.displayOrder', '표시 순서'),
       key: 'displayOrder',
       width: 100,
       align: 'center'
     },
     {
-      label: t('admin.content.faq.createdAt', '创建时间'),
+      label: t('admin.content.faq.createdAt', '생성일'),
       key: 'createdAt',
       width: 150,
       render: (date) => date ? formatDate(date, 'yyyy-MM-dd', i18n.language) : '-'
     },
     {
-      label: t('common.actions', '操作'),
+      label: t('common.actions', '작업'),
       key: 'actions',
       width: 150,
       render: (_, record) => (
@@ -88,7 +88,7 @@ export default function FAQManagement() {
             }}
             className="text-primary-600 hover:text-primary-900 font-medium text-sm"
           >
-            {t('common.edit', '编辑')}
+            {t('common.edit', '수정')}
           </button>
           <span className="text-gray-300">|</span>
           <button
@@ -98,7 +98,7 @@ export default function FAQManagement() {
             }}
             className="text-red-600 hover:text-red-900 font-medium text-sm"
           >
-            {t('common.delete', '删除')}
+            {t('common.delete', '삭제')}
           </button>
         </div>
       )
@@ -180,10 +180,10 @@ export default function FAQManagement() {
     <div>
       <div className="mb-6 sm:mb-8 lg:mb-10 min-h-[48px] flex items-center justify-between">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0">
-          {t('admin.content.faq.title', 'FAQ管理')}
+          {t('admin.content.faq.title', 'FAQ 관리')}
         </h1>
         <Button onClick={handleAdd}>
-          {t('admin.content.faq.addFaq', '添加FAQ')}
+          {t('admin.content.faq.addFaq', 'FAQ 추가')}
         </Button>
       </div>
 
@@ -198,7 +198,7 @@ export default function FAQManagement() {
               <input
                 type="text"
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                placeholder={t('admin.content.faq.searchPlaceholder', '搜索问题、答案或分类...')}
+                placeholder={t('admin.content.faq.searchPlaceholder', '질문 또는 답변 검색...')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -209,14 +209,14 @@ export default function FAQManagement() {
 
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-gray-500">{t('common.loading', '加载中...')}</div>
+          <div className="p-12 text-center text-gray-500">{t('common.loading', '로딩 중...')}</div>
         ) : faqs.length === 0 ? (
           <div className="p-12 text-center text-gray-500">
-            <p className="text-lg mb-2">{t('admin.content.faq.noData', '暂无FAQ数据')}</p>
+            <p className="text-lg mb-2">{t('admin.content.faq.noData', 'FAQ 데이터가 없습니다')}</p>
             <p className="text-sm text-gray-400">
-              {total === 0 
-                ? t('admin.content.faq.noDataHint', '点击"添加FAQ"按钮创建第一个FAQ')
-                : t('admin.content.faq.noSearchResult', '当前搜索条件下没有匹配的FAQ')}
+              {total === 0
+                ? t('admin.content.faq.noDataHint', '"FAQ 추가" 버튼을 클릭하여 첫 번째 FAQ를 생성하세요')
+                : t('admin.content.faq.noSearchResult', '현재 검색 조건에 일치하는 FAQ가 없습니다')}
             </p>
           </div>
         ) : (
@@ -231,11 +231,11 @@ export default function FAQManagement() {
               <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center text-sm text-gray-700">
                   <span>
-                    {t('common.showing', { 
+                    {t('common.pagination.showing', { 
                       start: ((currentPage - 1) * pageSize) + 1, 
                       end: Math.min(currentPage * pageSize, total), 
                       total: total 
-                    }) || `显示 ${((currentPage - 1) * pageSize) + 1}-${Math.min(currentPage * pageSize, total)} 共 ${total} 条`}
+                    })}
                   </span>
                 </div>
                 <Pagination
@@ -260,8 +260,8 @@ export default function FAQManagement() {
       {/* FAQ编辑模态框 */}
       <Modal
         title={editingFaq 
-          ? t('admin.content.faq.editFaq', '编辑FAQ')
-          : t('admin.content.faq.addFaq', '添加FAQ')
+          ? t('admin.content.faq.editFaq', 'FAQ 수정')
+          : t('admin.content.faq.addFaq', 'FAQ 추가')
         }
         isOpen={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -279,20 +279,20 @@ export default function FAQManagement() {
       <Modal
         isOpen={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, faqId: null })}
-        title={t('admin.content.faq.deleteConfirm', '确定要删除这个FAQ吗？')}
+        title={t('admin.content.faq.deleteConfirm', '이 FAQ를 삭제하시겠습니까?')}
         size="sm"
       >
         <div className="py-4">
           <p className="text-gray-600">
-            {t('admin.content.faq.deleteConfirmMessage', '此操作不可撤销，确定要继续吗？')}
+            {t('admin.content.faq.deleteConfirmMessage', '이 작업은 취소할 수 없습니다. 계속하시겠습니까?')}
           </p>
         </div>
         <ModalFooter>
           <Button variant="outline" onClick={() => setDeleteConfirm({ open: false, faqId: null })}>
-            {t('common.cancel', '取消')}
+            {t('common.cancel', '취소')}
           </Button>
           <Button variant="primary" onClick={confirmDelete}>
-            {t('common.delete', '删除')}
+            {t('common.delete', '삭제')}
           </Button>
         </ModalFooter>
       </Modal>
@@ -338,44 +338,44 @@ function FAQForm({ initialValues, onSubmit, onCancel, categoryOptions }) {
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t('admin.content.faq.question', '问题')}
+          {t('admin.content.faq.question', '질문')}
         </label>
         <Input 
           value={formData.question}
           onChange={handleFieldChange('question')}
-          placeholder={t('admin.content.faq.questionPlaceholder', '请输入FAQ问题')} 
+          placeholder={t('admin.content.faq.questionPlaceholder', 'FAQ 질문을 입력하세요')} 
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t('admin.content.faq.answer', '答案')}
+          {t('admin.content.faq.answer', '답변')}
         </label>
         <textarea
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           rows={6}
           value={formData.answer}
           onChange={handleFieldChange('answer')}
-          placeholder={t('admin.content.faq.answerPlaceholder', '请输入FAQ答案')}
+          placeholder={t('admin.content.faq.answerPlaceholder', 'FAQ 답변을 입력하세요')}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('admin.content.faq.category', '分类')}
+            {t('admin.content.faq.category', '카테고리')}
           </label>
           <Select
             value={formData.category}
             onChange={handleFieldChange('category')}
             options={categoryOptions}
-            placeholder={t('admin.content.faq.selectCategory', '选择分类')}
+            placeholder={t('admin.content.faq.selectCategory', '카테고리 선택')}
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('admin.content.faq.displayOrder', '显示顺序')}
+            {t('admin.content.faq.displayOrder', '표시 순서')}
           </label>
           <Input
             type="number"
@@ -383,7 +383,7 @@ function FAQForm({ initialValues, onSubmit, onCancel, categoryOptions }) {
             max={999}
             value={formData.display_order}
             onChange={handleFieldChange('display_order')}
-            placeholder={t('admin.content.faq.displayOrderPlaceholder', '输入显示顺序')}
+            placeholder={t('admin.content.faq.displayOrderPlaceholder', '표시 순서를 입력하세요')}
           />
         </div>
       </div>
@@ -393,7 +393,7 @@ function FAQForm({ initialValues, onSubmit, onCancel, categoryOptions }) {
           {t('common.cancel', '取消')}
         </Button>
         <Button loading={loading} onClick={handleSubmit}>
-          {t('common.save', '保存')}
+          {t('common.save', '저장')}
         </Button>
       </div>
     </div>

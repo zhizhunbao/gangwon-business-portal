@@ -26,7 +26,7 @@ export const Select = forwardRef(function Select(
   const hasAllOption = options.length > 0 && options[0].value === "";
   const defaultPlaceholder =
     placeholder !== null
-      ? placeholder || (hasAllOption ? null : t("common.all", "全部"))
+      ? placeholder || (hasAllOption ? null : t('common.all', '전체'))
       : null;
   const selectElement = (
     <>

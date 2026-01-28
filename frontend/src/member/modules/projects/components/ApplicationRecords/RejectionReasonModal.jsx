@@ -8,7 +8,7 @@ export default function RejectionReasonModal({ isOpen, onClose, reason }) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={t("projects.applicationRecords.rejectionReason.title", "拒绝原因")}
+      title={t('projects.applicationRecords.rejectionReason.title', '거절 사유')}
     >
       <div className="p-4">
         <p className="text-gray-700 mb-4">
@@ -20,7 +20,7 @@ export default function RejectionReasonModal({ isOpen, onClose, reason }) {
         </p>
         <div className="flex justify-end">
           <Button variant="secondary" onClick={onClose}>
-            {t("projects.applicationRecords.rejectionReason.close", "关闭")}
+            {t('projects.applicationRecords.rejectionReason.close', '닫기')}
           </Button>
         </div>
       </div>

@@ -16,7 +16,7 @@ description: PRD 编写专家。专注于江原道企业门户项目需求定义
 > **⚠️ 开始编写前，必须先检查以下 skill：**
 >
 > 1. **`dev-terminology`** - 确保功能命名符合项目术语字典（如：`Enterprise` vs `Company`）
-> 2. **`dev-tdd_workflow`** - 确保验收标准（AC）可转化为测试用例
+> 2. **`dev-testing_standards`** - 确保验收标准（AC）可转化为测试用例
 
 ## 核心原则
 
@@ -111,7 +111,7 @@ PRD 必须定义符合 **`dev-frontend_patterns`** 的用户交互流程：
 ## 维护与更新
 
 - 所有的 PRD 变更必须通过 Git 进行版本控制。
-- 需求变更后，必须同步更新对应的 `dev-tdd_workflow` 下的测试用例。
+- 需求变更后，必须同步更新对应的 `dev-testing_standards` 下的测试用例。
 
 ---
 

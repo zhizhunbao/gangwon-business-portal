@@ -2,6 +2,7 @@
  * Pagination Component
  */
 
+import { useTranslation } from 'react-i18next';
 import { cn } from '@shared/utils/helpers';
 
 export function Pagination({ 
@@ -14,6 +15,7 @@ export function Pagination({
   onChange,
   className 
 }) {
+  const { t } = useTranslation();
   // Support both prop naming conventions
   const currentPage = currentPageProp ?? current ?? 1;
   const onPageChangeHandler = onPageChange ?? onChange;
@@ -100,7 +102,7 @@ export function Pagination({
           'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
         )}
       >
-        이전
+        {t('common.previous', '이전')}
       </button>
       
       {getPageNumbers().map((page, index) => {
@@ -156,7 +158,7 @@ export function Pagination({
           'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
         )}
       >
-        다음
+        {t('common.next', '다음')}
       </button>
     </nav>
   );

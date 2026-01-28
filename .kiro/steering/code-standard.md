@@ -8,6 +8,22 @@ This document defines critical coding standards for this codebase. Follow these 
 
 ## Core Principles
 
+### SOLID + DRY + KISS
+
+Apply these principles when writing code:
+
+| Principle | Requirement | Priority |
+|-----------|-------------|----------|
+| KISS | Keep it simple, avoid over-engineering | **Highest** |
+| SRP | One class, one responsibility | High |
+| DRY | No duplication, centralize definitions | High |
+| OCP | Extend via interfaces, don't modify existing code | Medium |
+| DIP | Depend on abstractions, use dependency injection | Medium |
+
+**Priority**: KISS > SRP > DRY > OCP/DIP > LSP/ISP
+
+When principles conflict, favor simplicity and single responsibility over abstraction.
+
 ### No Backward Compatibility Code
 The codebase maintains a single, consistent API contract. Do not add compatibility layers or fallback chains.
 

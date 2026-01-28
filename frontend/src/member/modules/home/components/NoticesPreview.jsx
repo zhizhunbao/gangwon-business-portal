@@ -18,11 +18,11 @@ export default function NoticesPreview() {
 
   return (
     <HomePreview
-      title={t("home.notices.title", "最新公告")}
+      title={t('home.notices.title', '공지사항')}
       viewAllLink={ROUTES.MEMBER_SUPPORT_NOTICES}
       items={notices}
       loading={loading}
-      emptyMessage={t("home.notices.empty", "暂无公告")}
+      emptyMessage={t('home.notices.empty', '공고가 없습니다')}
       onItemClick={handleNoticeClick}
       getBadgeInfo={getBadgeInfo}
       showModal={false}

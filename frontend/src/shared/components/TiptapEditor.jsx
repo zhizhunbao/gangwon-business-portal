@@ -23,7 +23,7 @@ import { Modal, Input, Button } from '@shared/components';
 export function TiptapEditor({
   value = '',
   onChange,
-  placeholder = '输入内容...',
+  placeholder,
   label,
   error,
   disabled = false,
@@ -31,6 +31,7 @@ export function TiptapEditor({
   className,
 }) {
   const { t } = useTranslation();
+  const finalPlaceholder = placeholder || t('editor.placeholder', '내용을 입력하세요...');
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkText, setLinkText] = useState('');
@@ -325,7 +326,7 @@ export function TiptapEditor({
               'w-8 h-8 flex items-center justify-center rounded text-gray-700 hover:bg-gray-100 transition-colors',
               editor.isActive('link') && 'bg-blue-100 text-blue-600'
             )}
-            title={t('editor.link', '链接')}
+            title={t('editor.link', '링크')}
           >
             <span className="text-base">🔗</span>
           </button>
@@ -334,7 +335,7 @@ export function TiptapEditor({
             type="button"
             onClick={handleImageUpload}
             className="w-8 h-8 flex items-center justify-center rounded text-gray-700 hover:bg-gray-100 transition-colors"
-            title={t('editor.image', '图片')}
+            title={t('editor.image', '이미지')}
           >
             <span className="text-base">🖼️</span>
           </button>
@@ -343,7 +344,7 @@ export function TiptapEditor({
             type="button"
             onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3 }).run()}
             className="w-8 h-8 flex items-center justify-center rounded text-gray-700 hover:bg-gray-100 transition-colors"
-            title={t('editor.table', '表格')}
+            title={t('editor.table', '표')}
           >
             <span className="text-base">📊</span>
           </button>
@@ -390,7 +391,7 @@ export function TiptapEditor({
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <div className="flex justify-between text-sm text-gray-600 mb-1">
-                  <span>{t('editor.uploading', '上传中...')}</span>
+                  <span>{t('editor.uploading', '업로드 중...')}</span>
                   <span>{uploadProgress}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
@@ -417,13 +418,13 @@ export function TiptapEditor({
           setLinkUrl('');
           setLinkText('');
         }}
-        title={t('editor.addLink', '添加链接')}
+        title={t('editor.addLink', '링크 추가')}
       >
         <div className="space-y-4">
           {linkText && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('editor.linkText', '链接文字')}
+                {t('editor.linkText', '링크 텍스트')}
               </label>
               <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
                 {linkText}
@@ -432,7 +433,7 @@ export function TiptapEditor({
           )}
           
           <Input
-            label={t('editor.linkUrl', '链接地址')}
+            label={t('editor.linkUrl', '링크 주소')}
             value={linkUrl}
             onChange={(e) => setLinkUrl(e.target.value)}
             placeholder="https://example.com"
@@ -448,12 +449,12 @@ export function TiptapEditor({
                 setLinkText('');
               }}
             >
-              {t('common.cancel', '取消')}
+              {t('common.cancel', '취소')}
             </Button>
             <Button
               onClick={handleConfirmLink}
             >
-              {t('common.confirm', '确定')}
+              {t('common.confirm', '확인')}
             </Button>
           </div>
         </div>

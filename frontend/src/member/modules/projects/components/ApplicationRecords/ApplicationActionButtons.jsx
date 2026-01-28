@@ -29,7 +29,7 @@ export default function ApplicationActionButtons({
           onCancel(application);
         }}
       >
-        {t("projects.applicationRecords.cancelApplication", "取消申请")}
+        {t('projects.applicationRecords.cancelApplication', '신청 취소')}
       </button>,
     );
   }
@@ -44,7 +44,7 @@ export default function ApplicationActionButtons({
           onViewReason(application);
         }}
       >
-        {t("projects.applicationRecords.viewReason", "查看原因")}
+        {t('projects.applicationRecords.viewReason', '사유 확인')}
       </button>,
     );
   }
@@ -59,7 +59,7 @@ export default function ApplicationActionButtons({
           onSupplement(application);
         }}
       >
-        {t("projects.applicationRecords.submitMaterials", "提交资料")}
+        {t('projects.applicationRecords.submitMaterials', '자료 제출')}
       </button>,
     );
   }

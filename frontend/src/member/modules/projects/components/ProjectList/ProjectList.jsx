@@ -23,7 +23,7 @@ export function ProjectList({
       <Card>
         <div className="text-center py-12 px-4">
           <p className="text-base text-gray-500 m-0">
-            {t("common.loading", "加载中...")}
+            {t('common.loading', '로딩 중...')}
           </p>
         </div>
       </Card>
@@ -36,8 +36,8 @@ export function ProjectList({
         <div className="text-center py-12 px-4">
           <p className="text-base text-gray-500 m-0">
             {!hasProjects
-              ? t("common.noData", "暂无数据")
-              : t("common.noSearchResults", "没有找到匹配的结果")}
+              ? t('common.noData', '데이터가 없습니다')
+              : t('common.noSearchResults', '일치하는 결과를 찾을 수 없습니다')}
           </p>
         </div>
       </Card>

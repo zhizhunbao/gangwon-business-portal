@@ -1,0 +1,262 @@
+{
+  "admin": {
+    "content": {
+      "title": "内容管理",
+      "tabs": {
+        "banners": "横幅",
+        "popups": "弹窗",
+        "notices": "公告",
+        "news": "新闻资料",
+        "faq": "FAQ",
+        "systemInfo": "系统介绍",
+        "legal": "条款管理"
+      },
+      "banners": {
+        "title": "横幅管理",
+        "placeholder": "横幅管理功能开发中",
+        "types": {
+          "mainBanner": "主页横幅",
+          "systemIntro": "系统介绍",
+          "projects": "支援事业",
+          "performance": "绩效",
+          "support": "支持"
+        },
+        "form": {
+          "fields": {
+            "image": "图片",
+            "desktopImage": "桌面端图片",
+            "desktopImageHint": "推荐: 1920 x 600 (16:5), 最小: 1440 x 450",
+            "mobileImage": "移动端图片",
+            "mobileImageHint": "推荐: 1080 x 1350 (4:5), 最小: 750 x 938",
+            "url": "链接URL",
+            "urlPlaceholder": "https://example.com"
+          }
+        },
+        "actions": {
+          "upload": "上传图片",
+          "uploadDesktop": "上传桌面端图片",
+          "uploadMobile": "上传移动端图片",
+          "save": "保存"
+        },
+        "messages": {
+          "saved": "保存成功"
+        }
+      },
+      "popups": {
+        "title": "弹窗管理",
+        "list": {
+          "title": "弹窗列表",
+          "description": "选择已创建的弹窗以进行修改或删除。",
+          "empty": "当前没有配置的弹窗。"
+        },
+        "status": {
+          "active": "启用",
+          "inactive": "禁用"
+        },
+        "labels": {
+          "noEndDate": "无限期"
+        },
+        "positions": {
+          "center": "居中",
+          "left": "左下角",
+          "right": "右下角"
+        },
+        "actions": {
+          "new": "新建弹窗",
+          "create": "创建弹窗",
+          "update": "保存修改",
+          "confirmDelete": "确定要删除该弹窗吗？",
+          "selectImage": "选择图片",
+          "changeImage": "更换图片"
+        },
+        "form": {
+          "newTitle": "创建新的弹窗",
+          "editTitle": "编辑弹窗",
+          "fields": {
+            "title": "标题",
+            "content": "内容",
+            "linkUrl": "点击跳转链接",
+            "startDate": "开始日期",
+            "endDate": "结束日期",
+            "width": "宽度 (px)",
+            "height": "高度 (px)",
+            "position": "显示位置",
+            "image": "弹窗图片",
+            "isActive": "启用弹窗"
+          }
+        },
+        "messages": {
+          "saved": "弹窗已保存。",
+          "saveFailed": "保存失败，请稍后重试。",
+          "deleted": "弹窗已删除。",
+          "deleteFailed": "删除失败，请稍后重试。",
+          "loadFailed": "加载弹窗列表失败。",
+          "validationError": "请检查必填字段后再试。",
+          "imageUploaded": "图片上传成功。",
+          "imageUploadFailed": "图片上传失败，请重试。",
+          "invalidImageType": "请选择图片文件。",
+          "imageTooLarge": "图片大小不能超过 5MB。"
+        },
+        "validation": {
+          "minWidth": "宽度不能小于 200 像素。",
+          "minHeight": "高度不能小于 200 像素。",
+          "endDateBeforeStart": "结束日期不能早于开始日期。"
+        }
+      },
+      "notices": {
+        "title": "公告管理",
+        "placeholder": "公告管理功能开发中",
+        "list": {
+          "title": "公告列表",
+          "description": "管理网站公告",
+          "empty": "暂无公告"
+        },
+        "form": {
+          "editTitle": "编辑公告",
+          "newTitle": "新建公告",
+          "fields": {
+            "title": "标题",
+            "contentHtml": "内容",
+            "contentHtmlPlaceholder": "请输入公告内容...",
+            "attachments": "附件",
+            "boardType": "公告类型",
+            "boardTypeImportant": "重要",
+            "boardTypeGeneral": "一般"
+          }
+        },
+        "actions": {
+          "new": "新建",
+          "create": "创建",
+          "update": "更新",
+          "confirmDelete": "确定要删除这个公告吗？",
+          "confirmDeleteMessage": "此操作不可撤销，确定要继续吗？"
+        },
+        "messages": {
+          "validationError": "请补全必填信息",
+          "saved": "保存成功",
+          "deleted": "删除成功",
+          "loadFailed": "加载公告详情失败"
+        },
+        "views": "浏览"
+      },
+      "news": {
+        "title": "新闻资料管理",
+        "placeholder": "新闻资料管理功能开发中",
+        "list": {
+          "title": "新闻列表",
+          "description": "管理新闻稿",
+          "empty": "暂无新闻"
+        },
+        "form": {
+          "editTitle": "编辑新闻",
+          "newTitle": "新建新闻",
+          "fields": {
+            "title": "标题",
+            "image": "上传图片",
+            "imageHint": "支持 JPG、PNG、GIF 格式，建议尺寸 800x600 像素",
+            "noImage": "暂无图片",
+            "imageUrl": "图片URL",
+            "imageUrlHelper": "或直接输入图片URL地址",
+            "imageUrlPlaceholder": "https://example.com/image.jpg"
+          }
+        },
+        "actions": {
+          "new": "新建",
+          "create": "创建",
+          "update": "更新",
+          "confirmDelete": "确定要删除这条新闻吗？",
+          "selectImage": "选择图片",
+          "changeImage": "更换图片"
+        },
+        "messages": {
+          "validationError": "请补全必填信息",
+          "saved": "保存成功",
+          "deleted": "删除成功",
+          "invalidImageType": "请选择图片文件",
+          "imageUploaded": "图片上传成功",
+          "imageTooLarge": "图片大小不能超过5MB"
+        }
+      },
+      "faq": {
+        "title": "FAQ管理",
+        "allCategories": "全部分类",
+        "categories": {
+          "general": "一般问题",
+          "registration": "注册相关",
+          "performance": "绩效管理",
+          "project": "支援事业申报",
+          "technical": "技术支持"
+        },
+        "question": "问题",
+        "category": "分类",
+        "displayOrder": "显示顺序",
+        "createdAt": "创建时间",
+        "addFaq": "添加FAQ",
+        "editFaq": "编辑FAQ",
+        "deleteConfirm": "确定要删除这个FAQ吗？",
+        "searchPlaceholder": "搜索问题或答案...",
+        "selectCategory": "选择分类",
+        "questionPlaceholder": "请输入FAQ问题",
+        "answer": "答案",
+        "answerPlaceholder": "请输入FAQ答案",
+        "displayOrderPlaceholder": "输入显示顺序",
+        "deleteConfirmMessage": "此操作不可撤销，确定要继续吗？",
+        "noSearchResult": "当前搜索条件下没有匹配的FAQ",
+        "noData": "暂无FAQ数据",
+        "noDataHint": "点击\"添加FAQ\"按钮创建第一个FAQ"
+      },
+      "systemInfo": {
+        "title": "系统介绍管理",
+        "description": "管理系统介绍页面的内容，包括标题、描述、详细内容和展示图片。",
+        "titleLabel": "页面标题",
+        "titlePlaceholder": "请输入系统介绍页面标题",
+        "descriptionLabel": "简短描述",
+        "descriptionPlaceholder": "请输入系统的简短描述（可选）",
+        "imageLabel": "展示图片",
+        "imageHint": "支持 JPG、PNG、GIF 格式，建议尺寸 800x600 像素，文件大小不超过 5MB",
+        "contentLabel": "详细内容",
+        "contentPlaceholder": "请输入系统介绍的详细内容...",
+        "previewTitle": "预览提示",
+        "previewDescription": "保存后的内容将在系统介绍页面中显示。建议在保存前预览内容格式和图片效果。",
+        "noImage": "暂无图片",
+        "noContent": "暂无内容可预览",
+        "messages": {
+          "saved": "保存成功",
+          "saveFailed": "保存失败，请重试",
+          "imageUploaded": "图片上传成功",
+          "imageUploadFailed": "图片上传失败，请重试",
+          "imageTooLarge": "图片大小不能超过5MB",
+          "contentRequired": "请输入详细内容"
+        }
+      },
+      "legal": {
+        "title": "条款管理",
+        "description": "管理使用条款和隐私政策内容。",
+        "termsOfService": "使用条款",
+        "privacyPolicy": "隐私政策",
+        "thirdPartySharing": "第三方信息提供同意",
+        "marketingConsent": "营销信息接收同意",
+        "contentPlaceholder": "请输入内容...",
+        "helpTitle": "说明",
+        "helpText": "此处输入的内容将在会员注册时的使用条款和隐私政策弹窗中显示。",
+        "noContent": "暂无内容可预览",
+        "messages": {
+          "saved": "保存成功",
+          "saveFailed": "保存失败",
+          "contentRequired": "请输入内容"
+        }
+      }
+    }
+  },
+  "validation": {
+    "required": "请输入{{field}}",
+    "passwordMismatch": "密码不匹配",
+    "passwordMinLength": "密码至少需要8个字符",
+    "invalidDateFormat": "日期格式不正确",
+    "invalidPhoneFormat": "电话号码格式不正确",
+    "phoneMinLength": "电话号码至少需要10个字符",
+    "minLength": "至少需要{{min}}个字符",
+    "maxLength": "最多允许{{max}}个字符",
+    "invalidFormat": "格式不正确"
+  }
+}

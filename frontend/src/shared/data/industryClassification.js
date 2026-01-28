@@ -1,7 +1,24 @@
-// 韩国标准产业分类 (KSIC) 第10次修订版
-// 参考: https://kssc.mods.go.kr:8443/ksscNew_web/kssc/common/ClassificationContent.do
+/**
+ * 韩国标准产业分类 (KSIC) 第10次修订版
+ * Korean Standard Industry Classification (KSIC) 10th Revision
+ * 
+ * 参考: https://kssc.mods.go.kr:8443/ksscNew_web/kssc/common/ClassificationContent.do
+ * 
+ * 数据管理规范:
+ * - 此文件是所有行业分类数据的唯一数据源 (Single Source of Truth)
+ * - 其他模块应从此文件导入，不应重复定义
+ * - 数据格式: { value: string, labelKey: string }
+ * - labelKey 指向 i18n 翻译键
+ */
 
-// 创业类型选项 (업종 -> 창업유형)
+// ==================== 创业类型 ====================
+
+/**
+ * 创业类型选项 (업종 -> 창업유형)
+ * Startup Type Options
+ * 
+ * 用于: 注册页面、会员信息、统计筛选
+ */
 export const STARTUP_TYPE_KEYS = [
   { value: 'student_startup', labelKey: 'industryClassification.startupType.student_startup' },
   { value: 'faculty_startup', labelKey: 'industryClassification.startupType.faculty_startup' },
@@ -17,7 +34,12 @@ export const STARTUP_TYPE_KEYS = [
   { value: 'other', labelKey: 'industryClassification.startupType.other' }
 ];
 
-// 旧的创业阶段选项 (保留用于其他用途)
+/**
+ * 创业阶段选项 (旧版，保留用于兼容)
+ * Startup Stage Options (Legacy)
+ * 
+ * 注意: 此分类已被 STARTUP_TYPE_KEYS 替代，保留用于数据迁移
+ */
 export const STARTUP_STAGE_KEYS = [
   { value: 'preliminary', labelKey: 'industryClassification.startupStage.preliminary' },
   { value: 'startup_under_3years', labelKey: 'industryClassification.startupStage.startup_under_3years' },
@@ -25,7 +47,14 @@ export const STARTUP_STAGE_KEYS = [
   { value: 'restart', labelKey: 'industryClassification.startupStage.restart' }
 ];
 
-// 사업분야 (Business Field) - Manufacturing focused options
+// ==================== 业务领域 ====================
+
+/**
+ * 사업분야 (Business Field) - 制造业重点分类
+ * Manufacturing-focused Industry Classification
+ * 
+ * 用于: 注册页面、会员信息、统计筛选
+ */
 export const BUSINESS_FIELD_KEYS = [
   { value: '13', labelKey: 'industryClassification.businessField.13' },
   { value: '20', labelKey: 'industryClassification.businessField.20' },
@@ -42,7 +71,14 @@ export const BUSINESS_FIELD_KEYS = [
   { value: '31', labelKey: 'industryClassification.businessField.31' }
 ];
 
-// 产业大分类 (A-U)
+// ==================== KSIC 标准产业分类 ====================
+
+/**
+ * 产业大分类 (A-U)
+ * KSIC Major Category (A-U)
+ * 
+ * 用于: 注册页面、会员信息、统计筛选
+ */
 export const KSIC_MAJOR_CATEGORY_KEYS = [
   { value: 'A', labelKey: 'industryClassification.ksicMajor.A' },
   { value: 'B', labelKey: 'industryClassification.ksicMajor.B' },
@@ -67,7 +103,13 @@ export const KSIC_MAJOR_CATEGORY_KEYS = [
   { value: 'U', labelKey: 'industryClassification.ksicMajor.U' }
 ];
 
-// 产业中分类 (按大分类分组)
+/**
+ * 产业中分类 (按大分类分组)
+ * KSIC Sub Category (Grouped by Major Category)
+ * 
+ * 结构: { [majorCode]: [{ value, labelKey }] }
+ * 用于: 级联选择器 (大分类 -> 中分类)
+ */
 export const KSIC_SUB_CATEGORY_KEYS = {
   A: [
     { value: '01', labelKey: 'industryClassification.ksicSub.01' },
@@ -190,19 +232,28 @@ export const KSIC_SUB_CATEGORY_KEYS = {
   ]
 };
 
-// 根据大分类获取中分类
-export function getSubCategoryKeysByMajor(majorCategory) {
-  return KSIC_SUB_CATEGORY_KEYS[majorCategory] || [];
-}
+// ==================== 主力产业 KSIC 代码 ====================
 
-// 主力产业 KSIC 代码 - 第1层级（大分类）
+/**
+ * 主力产业 KSIC 代码 - 第1层级（大分类）
+ * Main Industry KSIC Code - Level 1 (Major Category)
+ * 
+ * 江原道重点产业分类
+ * 用于: 注册页面、会员信息、统计筛选
+ */
 export const MAIN_INDUSTRY_KSIC_MAJOR_KEYS = [
   { value: 'natural_bio', labelKey: 'industryClassification.mainIndustryKsic.natural_bio' },
   { value: 'ceramic', labelKey: 'industryClassification.mainIndustryKsic.ceramic' },
   { value: 'digital_health', labelKey: 'industryClassification.mainIndustryKsic.digital_health' }
 ];
 
-// 主力产业 KSIC 代码 - 第2层级（具体代码）
+/**
+ * 主力产业 KSIC 代码 - 第2层级（具体代码）
+ * Main Industry KSIC Code - Level 2 (Detailed Codes)
+ * 
+ * 结构: { [majorCode]: [{ value, labelKey }] }
+ * 用于: 级联选择器 (主力产业大分类 -> 详细代码)
+ */
 export const MAIN_INDUSTRY_KSIC_CODES = {
   natural_bio: [
     { value: '10501', labelKey: 'industryClassification.mainIndustryKsicCodes.10501' },
@@ -247,15 +298,66 @@ export const MAIN_INDUSTRY_KSIC_CODES = {
   ]
 };
 
-// 根据主力产业大分类获取具体代码
+// ==================== 工具函数 ====================
+
+/**
+ * 根据大分类获取中分类
+ * Get sub-categories by major category
+ * 
+ * @param {string} majorCategory - 大分类代码 (A-U)
+ * @returns {Array} 中分类选项数组
+ */
+export function getSubCategoryKeysByMajor(majorCategory) {
+  return KSIC_SUB_CATEGORY_KEYS[majorCategory] || [];
+}
+
+/**
+ * 根据主力产业大分类获取具体代码
+ * Get detailed codes by main industry major category
+ * 
+ * @param {string} majorCategory - 主力产业大分类 (natural_bio, ceramic, digital_health)
+ * @returns {Array} 详细代码选项数组
+ */
 export function getMainIndustryKsicCodesByMajor(majorCategory) {
   return MAIN_INDUSTRY_KSIC_CODES[majorCategory] || [];
 }
 
-// 翻译选项（使用 i18n t 函数）
+/**
+ * 翻译选项（使用 i18n t 函数）
+ * Translate options using i18n t function
+ * 
+ * @param {Array} options - 选项数组 [{ value, labelKey }]
+ * @param {Function} t - i18n 翻译函数
+ * @returns {Array} 翻译后的选项数组 [{ value, label }]
+ */
 export function translateOptions(options, t) {
   return options.map(opt => ({
     value: opt.value,
     label: t(opt.labelKey, opt.labelKey.split('.').pop())
   }));
+}
+
+/**
+ * 根据 value 查找选项的 labelKey
+ * Find labelKey by value
+ * 
+ * @param {Array} options - 选项数组
+ * @param {string} value - 要查找的值
+ * @returns {string|null} labelKey 或 null
+ */
+export function getLabelKeyByValue(options, value) {
+  const option = options.find(opt => opt.value === value);
+  return option?.labelKey || null;
+}
+
+/**
+ * 验证值是否在选项中
+ * Validate if value exists in options
+ * 
+ * @param {Array} options - 选项数组
+ * @param {string} value - 要验证的值
+ * @returns {boolean}
+ */
+export function isValidOption(options, value) {
+  return options.some(opt => opt.value === value);
 }

@@ -12,7 +12,7 @@ export function ProjectListHeader() {
   return (
     <div className="mb-6 sm:mb-8 lg:mb-10 min-h-[48px] flex items-center">
       <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0">
-        {t("projects.title", "项目")}
+        {t('projects.title', '사업 관리')}
       </h1>
     </div>
   );

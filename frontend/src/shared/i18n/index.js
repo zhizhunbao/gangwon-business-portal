@@ -37,18 +37,33 @@ import projectsZh from "../../member/modules/projects/locales/zh.json";
 import supportKo from "../../member/modules/support/locales/ko.json";
 import supportZh from "../../member/modules/support/locales/zh.json";
 
-// Admin locales - statistics
-import statisticsKo from "../../admin/modules/statistics/locales/ko.json";
-import statisticsZh from "../../admin/modules/statistics/locales/zh.json";
-
 // Member Layouts locales
 import layoutKo from "../../member/layouts/locales/ko.json";
 import layoutZh from "../../member/layouts/locales/zh.json";
+
+// Admin locales
+import adminLayoutKo from "../../admin/layouts/locales/ko.json";
+import adminLayoutZh from "../../admin/layouts/locales/zh.json";
+import adminAuthKo from "../../admin/modules/auth/locales/ko.json";
+import adminAuthZh from "../../admin/modules/auth/locales/zh.json";
+import adminContentKo from "../../admin/modules/content/locales/ko.json";
+import adminContentZh from "../../admin/modules/content/locales/zh.json";
+import adminDashboardKo from "../../admin/modules/dashboard/locales/ko.json";
+import adminDashboardZh from "../../admin/modules/dashboard/locales/zh.json";
+import adminMembersKo from "../../admin/modules/members/locales/ko.json";
+import adminMembersZh from "../../admin/modules/members/locales/zh.json";
+import adminMessagesKo from "../../admin/modules/messages/locales/ko.json";
+import adminMessagesZh from "../../admin/modules/messages/locales/zh.json";
+import adminPerformanceKo from "../../admin/modules/performance/locales/ko.json";
+import adminPerformanceZh from "../../admin/modules/performance/locales/zh.json";
+import adminProjectsKo from "../../admin/modules/projects/locales/ko.json";
+import adminProjectsZh from "../../admin/modules/projects/locales/zh.json";
 
 // Helper to safely merge locales (shallow deep merge for top-level objects)
 const safeMerge = (...locales) => {
   const result = {};
   locales.forEach((locale) => {
+    if (!locale) return;
     Object.keys(locale).forEach((key) => {
       if (
         typeof locale[key] === "object" &&
@@ -74,8 +89,15 @@ const resources = {
       performanceKo,
       projectsKo,
       supportKo,
-      statisticsKo,
       layoutKo,
+      adminLayoutKo,
+      adminAuthKo,
+      adminContentKo,
+      adminDashboardKo,
+      adminMembersKo,
+      adminMessagesKo,
+      adminPerformanceKo,
+      adminProjectsKo
     ),
   },
   zh: {
@@ -87,8 +109,15 @@ const resources = {
       performanceZh,
       projectsZh,
       supportZh,
-      statisticsZh,
       layoutZh,
+      adminLayoutZh,
+      adminAuthZh,
+      adminContentZh,
+      adminDashboardZh,
+      adminMembersZh,
+      adminMessagesZh,
+      adminPerformanceZh,
+      adminProjectsZh
     ),
   },
 };

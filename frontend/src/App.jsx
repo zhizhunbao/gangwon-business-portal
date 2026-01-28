@@ -4,7 +4,7 @@
 
 import React, { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
-import { I18nextProvider } from "react-i18next";
+import { I18nextProvider, useTranslation } from "react-i18next";
 import i18n from "@shared/i18n";
 import { router } from "./router";
 import { useAuth } from "@shared/hooks";
@@ -13,6 +13,7 @@ import { useUIStore, useAuthStore } from "@shared/stores";
 import authService from "@features/auth/services/auth.service";
 
 export default function App() {
+  const { t } = useTranslation();
   const {
     isAuthenticated,
     getCurrentUser,
@@ -54,7 +55,7 @@ export default function App() {
   }, []);
 
   if (isInitializing) {
-    return <LoadingOverlay text="초기화 중..." />;
+    return <LoadingOverlay text={t('common.initializing', '초기화 중...')} />;
   }
 
   return (

@@ -19,27 +19,27 @@ export function PasswordStrength({ password, showStrength = true }) {
   const checkItems = [
     {
       key: 'minLength',
-      label: t('auth.passwordCheck.minLength') || '8자 이상',
+      label: t(('auth.passwordCheck.minLength'),'8자 이상'),
       passed: checks.minLength
     },
     {
       key: 'hasUpperCase',
-      label: t('auth.passwordCheck.hasUpperCase') || '대문자 포함',
+      label: t(('auth.passwordCheck.hasUpperCase'),'대문자 포함'),
       passed: checks.hasUpperCase
     },
     {
       key: 'hasLowerCase',
-      label: t('auth.passwordCheck.hasLowerCase') || '소문자 포함',
+      label: t(('auth.passwordCheck.hasLowerCase'),'소문자 포함'),
       passed: checks.hasLowerCase
     },
     {
       key: 'hasNumber',
-      label: t('auth.passwordCheck.hasNumber') || '숫자 포함',
+      label: t(('auth.passwordCheck.hasNumber'),'숫자 포함'),
       passed: checks.hasNumber
     },
     {
       key: 'hasSpecialChar',
-      label: t('auth.passwordCheck.hasSpecialChar') || '특수문자 포함',
+      label: t(('auth.passwordCheck.hasSpecialChar'),'특수문자 포함'),
       passed: checks.hasSpecialChar
     }
   ];
@@ -64,9 +64,9 @@ export function PasswordStrength({ password, showStrength = true }) {
             />
           </div>
           <span className="text-xs font-medium text-gray-600 dark:text-gray-400 min-w-[40px] text-right">
-            {strength === 'strong' && (t('auth.passwordStrength.strong') || '강함')}
-            {strength === 'medium' && (t('auth.passwordStrength.medium') || '보통')}
-            {strength === 'weak' && (t('auth.passwordStrength.weak') || '약함')}
+            {strength === 'strong' && (t('auth.passwordStrength.strong'),'강함')}
+            {strength === 'medium' && (t('auth.passwordStrength.medium'),'보통')}
+            {strength === 'weak' && (t('auth.passwordStrength.weak'),'약함')}
           </span>
         </div>
       )}

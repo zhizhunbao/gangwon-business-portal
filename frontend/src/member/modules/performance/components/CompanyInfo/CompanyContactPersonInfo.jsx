@@ -16,7 +16,7 @@ const CompanyContactPersonInfo = ({ data, isEditing, onChange, errors }) => {
     <Card className="shadow-sm p-0">
       <div className="flex items-center gap-3 border-b border-gray-100 p-6 sm:p-8">
         <h2 className="text-xl font-semibold text-gray-900 m-0">
-          {t("performance.companyInfo.sections.contactPerson", "负责人信息")}
+          {t('performance.companyInfo.sections.contactPerson', '담당자 정보')}
         </h2>
       </div>
       <div className="p-6 sm:p-8">

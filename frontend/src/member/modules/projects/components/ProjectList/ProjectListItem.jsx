@@ -76,8 +76,8 @@ export default function ProjectListItem({ project, onApply, onDetail }) {
           disabled={project.status !== ProjectStatus.ACTIVE}
         >
           {project.status === ProjectStatus.ACTIVE
-            ? t("projects.apply", "程序申请")
-            : t("projects.notAvailable", "不可申请")}
+            ? t('projects.apply', '프로그램 신청')
+            : t('projects.notAvailable', '신청 불가')}
         </Button>
       </div>
     </Card>

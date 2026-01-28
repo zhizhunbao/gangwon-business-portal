@@ -6,6 +6,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import '@shared/styles/index.css';
+import i18n from '@shared/i18n';
 
 // 禁用 React DevTools 提示和 react-quill 的 findDOMNode 警告
 if (typeof window !== 'undefined') {
@@ -30,10 +31,13 @@ function initializeApp() {
   } catch (error) {
     console.error('[App] Failed to initialize:', error);
 
+    const title = i18n.t('error.appInit.title', '응용 프로그램 초기화 실패');
+    const message = i18n.t('error.appInit.message', '페이지를 새로 고치고 다시 시도하십시오.');
+
     document.getElementById('root').innerHTML = `
       <div style="padding: 20px; text-align: center; color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin: 20px;">
-        <h2>应用初始化失败</h2>
-        <p>请刷新页面重试。</p>
+        <h2>${title}</h2>
+        <p>${message}</p>
         <p style="font-size: 12px; color: #666;">${error.message}</p>
       </div>
     `;

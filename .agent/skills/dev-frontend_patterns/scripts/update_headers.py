@@ -13,7 +13,7 @@ def process_file(file_path):
         return
 
     # Determine skill name
-    skill_name = "dev-tdd_workflow" if ".test." in file_path else "dev-frontend_patterns"
+    skill_name = "dev-testing_standards" if ".test." in file_path else "dev-frontend_patterns"
     
     # Determine basic description based on file path
     file_name = os.path.basename(file_path)

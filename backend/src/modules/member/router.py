@@ -430,13 +430,13 @@ async def search_nice_dnb(
     response = await nice_dnb_client.search_company(clean_business_number)
     
     if not response:
-        # API request failed (network error, authentication error, etc.)
-        raise ExternalServiceError(
-            message=CMessageTemplate.EXTERNAL_SERVICE_REQUEST_FAILED.format(
-                service_name="Nice D&B API"
-            ),
-            service_name="Nice D&B",
-        )
+        # API request failed - return graceful error instead of 502
+        return {
+            "success": False,
+            "message": "Nice D&B API 暂时不可用，请稍后重试或手动输入企业信息",
+            "error": "SERVICE_UNAVAILABLE",
+            "data": None
+        }
     
     # Prepare response data for frontend
     response_data = {

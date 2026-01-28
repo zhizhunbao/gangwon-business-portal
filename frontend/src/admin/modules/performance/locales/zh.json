@@ -1,0 +1,104 @@
+{
+    "admin": {
+        "performance": {
+            "title": "业绩管理",
+            "statusLabel": "状态",
+            "approve": "批准",
+            "approveSuccess": "批准成功",
+            "approveFailed": "批准失败",
+            "requestRevision": "请求修改",
+            "revisionSuccess": "修改请求已发送",
+            "revisionFailed": "发送修改请求失败",
+            "revisionCommentRequired": "请输入修改意见",
+            "reject": "拒绝",
+            "rejectSuccess": "拒绝成功",
+            "rejectFailed": "拒绝失败",
+            "rejectCommentRequired": "请输入拒绝原因",
+            "exportExcel": "导出 Excel",
+            "exportCsv": "导出 CSV",
+            "exportSuccess": "导出成功",
+            "exportFailed": "导出失败",
+            "status": {
+                "pending": "待审批",
+                "revision": "修改中",
+                "approved": "已批准"
+            },
+            "table": {
+                "documentType": "文档类型",
+                "fileName": "文件名",
+                "memberName": "企业名称",
+                "businessNumber": "营业执照号码",
+                "companyPhone": "企业电话",
+                "year": "年份",
+                "quarter": "季度",
+                "type": "类型",
+                "status": "状态",
+                "submittedAt": "提交时间",
+                "createdAt": "创建时间",
+                "updatedAt": "更新时间",
+                "actions": "操作"
+            },
+            "revisionModal": {
+                "title": "请求修改",
+                "description": "请输入需要修改的项目或理由。",
+                "placeholder": "请输入修改意见..."
+            },
+            "rejectModal": {
+                "title": "拒绝业绩记录",
+                "description": "请输入拒绝原因。",
+                "placeholder": "请输入拒绝原因..."
+            },
+            "approveModal": {
+                "title": "批准业绩记录",
+                "description": "请输入批准意见（可选）。",
+                "placeholder": "请输入批准意见..."
+            },
+            "filter": {
+                "yearPlaceholder": "选择年份"
+            },
+            "search": "关键词搜索",
+            "searchPlaceholder": "搜索企业名称、营业执照号、年度、类型、状态等",
+            "noRecords": "暂无业绩数据",
+            "detail": {
+                "basicInfo": "基本信息",
+                "performanceData": "业绩数据",
+                "revenue": "营业收入",
+                "employees": "员工人数",
+                "newContracts": "新签约数",
+                "supportAmount": "支持金额",
+                "programs": "支持项目数",
+                "beneficiaries": "受益人数",
+                "patents": "专利数",
+                "trademarks": "商标数",
+                "copyrights": "著作权数",
+                "viewRawData": "查看原始数据",
+                "attachments": "附件列表",
+                "attachmentCount": "个附件",
+                "downloadAll": "全部下载",
+                "reviewHistory": "审核历史",
+                "createdAt": "创建时间",
+                "updatedAt": "更新时间",
+                "loadFailed": "加载失败",
+                "fileNotFound": "找不到文件",
+                "noAttachments": "此记录没有附件",
+                "downloadFailed": "下载失败",
+                "notFound": "找不到业绩记录",
+                "draftHint": "（草稿状态，企业尚未提交）",
+                "submittedHint": "（等待审核）",
+                "revisionHint": "（需要修改，等待企业补全）",
+                "approvedHint": "（已批准）",
+                "rejectedHint": "（已拒绝）"
+            },
+            "download": {
+                "multipleFiles": "此记录包含 {count} 个附件。确定要全部下载吗？",
+                "allSuccess": "成功下载了 {count} 个附件",
+                "partialSuccess": "成功下载了 {success} 个附件，但有 {fail} 个下载失败。\n失败的文件: {files}"
+            },
+            "review": {
+                "approved": "已批准",
+                "revisionRequested": "需要修改",
+                "rejected": "已拒绝"
+            }
+        }
+    }
+}

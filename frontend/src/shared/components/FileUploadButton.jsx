@@ -57,8 +57,8 @@ export default function FileUploadButton({
   };
 
   const buttonLabel = loading 
-    ? (loadingLabel || t('common.uploading', '上传中...'))
-    : (label || t('common.upload', '上传'));
+    ? (loadingLabel || t('common.uploading', '업로드 중...'))
+    : (label || t('common.upload', '업로드'));
 
   return (
     <>

@@ -41,7 +41,7 @@ export default function BaseChart({
   const { t } = useTranslation();
 
   // 默认加载文本
-  const defaultLoadingText = loadingText || t('common.loading', '加载中...');
+  const defaultLoadingText = loadingText || t('common.loading', '로딩 중...');
 
   // 合并样式
   const chartStyle = {
@@ -62,7 +62,7 @@ export default function BaseChart({
         style={chartStyle}
       >
         <div className="text-center text-gray-500">
-          <p className="m-0 text-sm md:text-xs sm:text-[11px]">{t('admin.dashboard.charts.noData', '暂无数据')}</p>
+          <p className="m-0 text-sm md:text-xs sm:text-[11px]">{t('admin.dashboard.charts.noData', '데이터가 없습니다')}</p>
         </div>
       </div>
     );

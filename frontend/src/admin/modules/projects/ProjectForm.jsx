@@ -75,14 +75,14 @@ export default function ProjectForm() {
   const handleSubmit = async () => {
     if (!formData.title || !formData.startDate || !formData.endDate) {
       setMessageVariant('error');
-      setMessage(t('admin.projects.form.requiredFields', '请填写必填项：项目标题、开始日期、结束日期'));
+      setMessage(t('admin.projects.form.requiredFields', '필수 항목을 입력하세요: 지원사업, 시작일, 종료일'));
       setTimeout(() => setMessage(null), 5000);
       return;
     }
 
     if (new Date(formData.endDate) < new Date(formData.startDate)) {
       setMessageVariant('error');
-      setMessage(t('admin.projects.form.dateError', '结束日期不能早于开始日期'));
+      setMessage(t('admin.projects.form.dateError', '종료일은 시작일보다 이전일 수 없습니다'));
       setTimeout(() => setMessage(null), 5000);
       return;
     }
@@ -103,10 +103,10 @@ export default function ProjectForm() {
       let successMessage;
       if (isEditMode) {
         await adminService.updateProject(id, payload);
-        successMessage = t('admin.projects.form.updateSuccess', '项目更新成功');
+        successMessage = t('admin.projects.form.updateSuccess', '지원사업이 성공적으로 업데이트되었습니다');
       } else {
         await adminService.createProject(payload);
-        successMessage = t('admin.projects.form.createSuccess', '项目创建成功');
+        successMessage = t('admin.projects.form.createSuccess', '지원사업이 성공적으로 생성되었습니다');
       }
 
       navigate('/admin/projects', {
@@ -115,7 +115,7 @@ export default function ProjectForm() {
     } catch (err) {
       console.error('Submit failed:', err);
       setMessageVariant('error');
-      setMessage(t('admin.projects.form.submitError', '保存失败，请重试'));
+      setMessage(t('admin.projects.form.submitError', '저장 실패, 다시 시도해주세요'));
       setTimeout(() => setMessage(null), 5000);
     } finally {
       setSubmitting(false);
@@ -137,7 +137,7 @@ export default function ProjectForm() {
     } catch (err) {
       console.error('Upload failed:', err);
       setMessageVariant('error');
-      setMessage(t('admin.projects.form.uploadError', '图片上传失败，请重试'));
+      setMessage(t('admin.projects.form.uploadError', '이미지 업로드 실패, 다시 시도해주세요'));
       setTimeout(() => setMessage(null), 5000);
     } finally {
       e.target.value = '';
@@ -185,7 +185,7 @@ export default function ProjectForm() {
     } catch (err) {
       console.error('Attachment upload failed:', err);
       setMessageVariant('error');
-      setMessage(t('admin.projects.form.attachmentUploadError', '附件上传失败，请重试'));
+      setMessage(t('admin.projects.form.attachmentUploadError', '첨부파일 업로드 실패, 다시 시도해주세요'));
       setTimeout(() => setMessage(null), 5000);
     }
   };
@@ -204,17 +204,17 @@ export default function ProjectForm() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={() => navigate('/admin/projects')}>
-            {t('common.back', '返回')}
+            {t('common.back', '뒤로')}
           </Button>
           {!isEditMode && (
             <h3 className="text-lg font-semibold text-gray-900">
-              {t('admin.projects.form.createTitle', '新建项目')}
+              {t('admin.projects.form.createTitle', '지원사업 생성')}
             </h3>
           )}
         </div>
         <div className="flex gap-4">
           <Button onClick={handleSubmit} loading={submitting}>
-            {isEditMode ? t('common.save', '保存') : t('common.create', '创建')}
+            {isEditMode ? t('common.save', '저장') : t('common.create', '생성')}
           </Button>
         </div>
       </div>
@@ -227,18 +227,18 @@ export default function ProjectForm() {
             <div className="p-6">
               <div className="flex flex-col gap-4">
                 <Input
-                  label={t('admin.projects.form.title', '项目标题')}
+                  label={t('admin.projects.form.title', '지원사업')}
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
                   required
-                  placeholder={t('admin.projects.form.titlePlaceholder', '请输入项目标题')}
+                  placeholder={t('admin.projects.form.titlePlaceholder', '지원사업을 입력하세요')}
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-medium text-gray-700">
-                      {t('admin.projects.form.startDate', '开始日期')} <span className="text-red-500">*</span>
+                      {t('admin.projects.form.startDate', '시작일')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
@@ -252,7 +252,7 @@ export default function ProjectForm() {
 
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-medium text-gray-700">
-                      {t('admin.projects.form.endDate', '结束日期')} <span className="text-red-500">*</span>
+                      {t('admin.projects.form.endDate', '종료일')} <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
@@ -266,24 +266,24 @@ export default function ProjectForm() {
                 </div>
 
                 <Select
-                  label={t('admin.projects.form.status', '项目状态')}
+                  label={t('admin.projects.form.status', '지원사업 상태')}
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
                   options={[
-                    { value: 'active', label: t('admin.projects.status.active', '进行中') },
-                    { value: 'inactive', label: t('admin.projects.status.inactive', '已结束') },
-                    { value: 'archived', label: t('admin.projects.status.archived', '已归档') }
+                    { value: 'active', label: t('admin.projects.status.active', '진행중') },
+                    { value: 'inactive', label: t('admin.projects.status.inactive', '종료됨') },
+                    { value: 'archived', label: t('admin.projects.status.archived', '보관됨') }
                   ]}
                 />
 
                 <Textarea
-                  label={t('admin.projects.form.description', '项目详情')}
+                  label={t('admin.projects.form.description', '지원사업')}
                   name="content"
                   value={formData.content}
                   onChange={handleChange}
                   rows={8}
-                  placeholder={t('admin.projects.form.descriptionPlaceholder', '请输入项目详细说明...')}
+                  placeholder={t('admin.projects.form.descriptionPlaceholder', '지원사업 상세 설명을 입력하세요...')}
                 />
 
                 <FileAttachments
@@ -304,10 +304,10 @@ export default function ProjectForm() {
             <div className="p-6">
               <div className="mb-4">
                 <h3 className="text-base font-semibold text-gray-900 mb-1">
-                  {t('admin.projects.form.coverImage', '封面图片')}
+                  {t('admin.projects.form.coverImage', '지원사업 대표 이미지')}
                 </h3>
                 <p className="text-sm text-gray-500">
-                  {t('admin.projects.form.imageHint', '支持 JPG、PNG 格式，建议尺寸 800x400')}
+                  {t('admin.projects.form.imageHint', 'JPG, PNG 형식 지원, 권장 크기 800x400')}
                 </p>
               </div>
               
@@ -317,7 +317,7 @@ export default function ProjectForm() {
                     <div className="w-full overflow-hidden rounded-lg border-2 border-gray-200 bg-gray-50">
                       <img
                         src={formData.image}
-                        alt={t('admin.projects.form.coverImageAlt', '项目封面')}
+                        alt={t('admin.projects.form.coverImageAlt', '지원사업 대표 이미지')}
                         className="w-full h-auto object-cover"
                       />
                     </div>
@@ -326,12 +326,12 @@ export default function ProjectForm() {
                       onClick={() => setFormData(prev => ({ ...prev, image: null }))}
                       className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1.5 text-sm font-medium rounded-md shadow-lg hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
                     >
-                      {t('common.remove', '移除')}
+                      {t('common.remove', '제거')}
                     </button>
                   </div>
                 ) : (
                   <div className="w-full h-48 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">{t('admin.projects.form.noImage', '暂无图片')}</span>
+                    <span className="text-gray-400 text-sm">{t('admin.projects.form.noImage', '이미지가 없습니다')}</span>
                   </div>
                 )}
                 
@@ -345,7 +345,7 @@ export default function ProjectForm() {
                   />
                 </label>
                 {uploading && (
-                  <p className="text-sm text-blue-600">{t('common.uploading', '上传中...')}</p>
+                  <p className="text-sm text-blue-600">{t('common.uploading', '업로드 중...')}</p>
                 )}
               </div>
             </div>

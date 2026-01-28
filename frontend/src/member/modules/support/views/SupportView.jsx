@@ -12,12 +12,9 @@ export default function SupportView() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("[SupportView] Redirecting to:", ROUTES.MEMBER_NOTICES);
     // 默认重定向到公告事项页面
     if (ROUTES.MEMBER_NOTICES) {
       navigate(ROUTES.MEMBER_NOTICES, { replace: true });
-    } else {
-      console.error("[SupportView] ROUTES.MEMBER_NOTICES is undefined!");
     }
   }, [navigate]);
 

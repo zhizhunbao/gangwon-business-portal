@@ -72,18 +72,18 @@ export default function FAQPage(props) {
         <Card>
           <CardBody>
             <p className="text-sm text-gray-600 mb-4">
-              {t("common.resultsCount", "共{{count}}条记录", {
+              {t("common.resultsCount", "총 {{count}}건", {
                 count: filteredFaqs.length,
               })}
             </p>
 
             {loading ? (
               <div className="text-center py-12 text-gray-500">
-                {t("common.loading", "加载中...")}
+                {t('common.loading', '로딩 중...')}
               </div>
             ) : filteredFaqs.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
-                {t("support.noFaqResults", "没有找到匹配的问题")}
+                {t('support.noFaqResults', '일치하는 질문을 찾을 수 없습니다')}
               </div>
             ) : (
               <div className="flex flex-col gap-3">

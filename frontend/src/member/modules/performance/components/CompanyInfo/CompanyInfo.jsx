@@ -54,7 +54,7 @@ const CompanyInfo = () => {
       <div className="performance-company-info w-full max-w-full">
         <div className="mb-6 sm:mb-8 lg:mb-10 min-h-[48px] flex items-center">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0">
-            {t("performance.companyInfo.title", "企业信息")}
+            {t('performance.companyInfo.title', '기업 정보')}
           </h1>
         </div>
         <Card>
@@ -63,7 +63,7 @@ const CompanyInfo = () => {
               <UserIcon className="w-16 h-16 text-gray-400" />
             </div>
             <h2 className="text-2xl font-bold mb-4 text-gray-900">
-              {t("performance.companyInfo.profile.loginRequired", "需要登录")}
+              {t('performance.companyInfo.profile.loginRequired', '로그인 필요')}
             </h2>
             <p className="text-gray-500 mb-8">
               {t(
@@ -73,11 +73,11 @@ const CompanyInfo = () => {
             </p>
             <div className="flex gap-4 justify-center">
               <Button variant="primary" onClick={() => setShowLoginModal(true)}>
-                {t("common.login", "登录")}
+                {t('common.login', '로그인')}
               </Button>
               <Link to="/member/register">
                 <Button variant="secondary">
-                  {t("common.register", "注册")}
+                  {t('common.register', '회원가입')}
                 </Button>
               </Link>
             </div>

@@ -437,6 +437,20 @@ export function useDateFormatter() {
 }
 
 // =============================================================================
+// usePaginationText - 分页文本格式化
+// =============================================================================
+
+export function usePaginationText() {
+  const formatPaginationText = useCallback((currentPage, pageSize, total) => {
+    const start = (currentPage - 1) * pageSize + 1;
+    const end = Math.min(currentPage * pageSize, total);
+    return { start, end, total };
+  }, []);
+
+  return { formatPaginationText };
+}
+
+// =============================================================================
 // useMessage - 消息提示
 // =============================================================================
 

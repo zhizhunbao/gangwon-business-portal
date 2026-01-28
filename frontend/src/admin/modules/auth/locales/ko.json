@@ -1,0 +1,28 @@
+{
+    "admin": {
+        "auth": {
+            "login": "로그인",
+            "loginTitle": "관리자 로그인",
+            "loginSubtitle": "관리자 계정으로 로그인하세요",
+            "loginFailed": "로그인에 실패했습니다. 계정과 비밀번호를 확인해주세요",
+            "email": "이메일",
+            "emailPlaceholder": "admin@example.com",
+            "password": "비밀번호",
+            "passwordPlaceholder": "비밀번호를 입력하세요",
+            "rememberMe": "로그인 상태 유지",
+            "findId": "아이디 찾기",
+            "forgotPassword": "비밀번호를 잊으셨나요?",
+            "forgotPasswordTitle": "비밀번호 찾기",
+            "forgotPasswordSubtitle": "등록된 이메일 주소를 입력하시면 비밀번호 재설정 링크를 보내드립니다.",
+            "forgotPasswordError": "비밀번호 재설정 요청에 실패했습니다. 다시 시도해주세요.",
+            "forgotPasswordSentTitle": "이메일이 전송되었습니다",
+            "forgotPasswordSentMessage": "입력하신 이메일 주소로 비밀번호 재설정 링크를 보내드렸습니다. 이메일을 확인해주세요.",
+            "sendResetLink": "재설정 링크 보내기",
+            "backToLogin": "로그인으로 돌아가기",
+            "notAdmin": "관리자 계정이 아닙니다",
+            "notAdminUser": "관리자가 아니신가요?",
+            "goToMemberLogin": "회원 로그인으로 이동",
+            "needAdminAccount": "관리자 계정이 필요하신가요? 시스템 관리자에게 문의하세요."
+        }
+    }
+}

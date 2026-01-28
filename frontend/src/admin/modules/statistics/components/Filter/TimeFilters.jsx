@@ -11,7 +11,7 @@ export const TimeFilters = ({ year, quarter, month, onChange }) => {
   const years = Array.from({ length: 15 }, (_, i) => ({
     value: currentYear - i,
     label:
-      String(currentYear - i) + (t("statistics.filters.time.yearUnit") || "年"),
+      String(currentYear - i) + t("statistics.filters.time.yearUnit", "년"),
   }));
 
   const quarterOptions = QUARTER_OPTIONS.map((o) => ({
@@ -21,7 +21,7 @@ export const TimeFilters = ({ year, quarter, month, onChange }) => {
 
   const monthOptions = MONTH_OPTIONS.map((o) => ({
     value: o.value,
-    label: o.label + (t("statistics.filters.time.monthUnit") || "月"),
+    label: o.label + t("statistics.filters.time.monthUnit", "월"),
   }));
 
   return (

@@ -70,11 +70,11 @@ export const StatisticsReportView = () => {
             <FilterSummary summary={getFiltersSummary()} />
             {data.items.length > 0 && (
               <div className="text-[12px] text-gray-500 font-medium">
-                {t("common.total", "共")}{" "}
+                {t('common.total', '합계')}{" "}
                 <span className="text-blue-600 font-bold mx-0.5">
                   {totalItems}
                 </span>{" "}
-                {t("common.count", "条")}
+                {t('common.count', '건')}
               </div>
             )}
           </div>

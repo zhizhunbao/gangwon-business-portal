@@ -131,7 +131,7 @@ export default function ProjectList() {
   };
 
   const handleDelete = async (projectId) => {
-    if (!confirm(t('admin.projects.confirmDelete', '确定要删除这个项目吗？此操作不可撤销。'))) {
+    if (!confirm(t('admin.projects.confirmDelete', '이 지원사업을 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.'))) {
       return;
     }
     await apiService.delete(`${API_PREFIX}/admin/projects/${projectId}`);
@@ -142,11 +142,11 @@ export default function ProjectList() {
     setLoading(true);
     try {
       await adminService.exportProjects({ format });
-      setMessage(t('admin.projects.exportSuccess', '导出成功'));
+      setMessage(t('admin.projects.exportSuccess', '내보내기 성공'));
       setMessageVariant('success');
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
-      setMessage(t('admin.projects.exportFailed', '导出失败'));
+      setMessage(t('admin.projects.exportFailed', '내보내기 실패'));
       setMessageVariant('error');
       setTimeout(() => setMessage(null), 3000);
     } finally {
@@ -179,6 +179,10 @@ export default function ProjectList() {
               return 'warning';
             case 'archived':
               return 'secondary';
+            case 'cancelled':
+              return 'error';
+            case 'draft':
+              return 'default';
             default:
               return 'default';
           }
@@ -262,7 +266,7 @@ export default function ProjectList() {
             data={allProjects}
             columns={searchColumns}
             onFilter={handleFilterChange}
-            placeholder={t('admin.projects.searchPlaceholder', '搜索所有列：项目名称、目标企业、营业执照号、状态等')}
+            placeholder={t('admin.projects.searchPlaceholder', '공고명, 목표기업, 사업자등록번호 등 검색')}
             className="flex-1 min-w-[200px] max-w-md"
           />
           <div className="flex items-center space-x-2 md:ml-4 w-full md:w-auto">
@@ -271,14 +275,14 @@ export default function ProjectList() {
               variant="outline"
               disabled={loading}
             >
-              {t('admin.projects.exportExcel', '导出 Excel')}
+              {t('admin.projects.exportExcel', 'Excel 내보내기')}
             </Button>
             <Button 
               onClick={() => handleExport('csv')} 
               variant="outline"
               disabled={loading}
             >
-              {t('admin.projects.exportCsv', '导出 CSV')}
+              {t('admin.projects.exportCsv', 'CSV 내보내기')}
             </Button>
             <Button onClick={handleCreate}>
               {t('admin.projects.create')}
@@ -292,11 +296,11 @@ export default function ProjectList() {
           <div className="p-12 text-center text-gray-500">{t('common.loading')}</div>
         ) : projects.length === 0 ? (
           <div className="p-12 text-center text-gray-500">
-            <p className="text-lg mb-2">{t('admin.projects.noProjects', '暂无项目数据')}</p>
+            <p className="text-lg mb-2">{t('admin.projects.noProjects', '공고 데이터가 없습니다')}</p>
             <p className="text-sm text-gray-400">
               {totalCount === 0 
-                ? t('admin.projects.noProjectsHint', '请创建第一个项目，或尝试刷新页面')
-                : t('admin.projects.noMatchingProjects', '当前筛选条件下没有匹配的项目')}
+                ? t('admin.projects.noProjectsHint', '첫 번째 공고를 생성하거나 페이지를 새로고침하세요')
+                : t('admin.projects.noMatchingProjects', '현재 필터 조건에 맞는 공고가 없습니다')}
             </p>
           </div>
         ) : (
@@ -309,11 +313,11 @@ export default function ProjectList() {
               <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center text-sm text-gray-700">
                   <span>
-                    {t('common.showing', { 
+                    {t('common.pagination.showing', { 
                       start: ((currentPage - 1) * pageSize) + 1, 
                       end: Math.min(currentPage * pageSize, totalCount), 
                       total: totalCount 
-                    }) || `显示 ${((currentPage - 1) * pageSize) + 1}-${Math.min(currentPage * pageSize, totalCount)} 共 ${totalCount} 条`}
+                    })}
                   </span>
                 </div>
                 <Pagination

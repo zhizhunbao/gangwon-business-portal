@@ -60,11 +60,8 @@ export default function NoticeManagement() {
 
   // 处理附件上传
   const handleAttachmentsChange = async (files, action, index) => {
-    console.log('handleAttachmentsChange called:', { files, action, index });
-    
     if (action === 'remove') {
       // 删除附件
-      console.log('Removing attachment, new list:', files);
       setForm((prev) => ({
         ...prev,
         attachments: files
@@ -98,9 +95,8 @@ export default function NoticeManagement() {
       setErrors({});
       setMessage(null);
     } catch (error) {
-      console.error('Failed to load notice details:', error);
       setMessageVariant('error');
-      setMessage(t('admin.content.notices.messages.loadFailed', '加载公告详情失败'));
+      setMessage(t('admin.content.notices.messages.loadFailed', '공지사항 상세 정보를 불러오지 못했습니다'));
     }
   };
 
@@ -116,7 +112,7 @@ export default function NoticeManagement() {
     setErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) {
       setMessageVariant('error');
-      setMessage(t('admin.content.notices.messages.validationError', '请补全必填信息'));
+      setMessage(t('admin.content.notices.messages.validationError', '필수 항목을 입력해주세요'));
       return;
     }
     
@@ -131,7 +127,7 @@ export default function NoticeManagement() {
     await loadNotices(page);
     setForm(savedNotice);
     setMessageVariant('success');
-    setMessage(t('admin.content.notices.messages.saved', '保存成功'));
+    setMessage(t('admin.content.notices.messages.saved', '저장되었습니다'));
     setTimeout(() => setMessage(null), 3000);
     setSaving(false);
   };
@@ -151,7 +147,7 @@ export default function NoticeManagement() {
       setForm(createEmptyForm());
     }
     setMessageVariant('success');
-    setMessage(t('admin.content.notices.messages.deleted', '删除成功'));
+    setMessage(t('admin.content.notices.messages.deleted', '삭제되었습니다'));
     setTimeout(() => setMessage(null), 3000);
     setDeleteConfirm({ open: false, noticeId: null });
   };
@@ -169,19 +165,19 @@ export default function NoticeManagement() {
           <div className="p-6">
             <div className="flex justify-between items-center mb-4 gap-4">
               <div>
-                <h2 className="m-0 text-lg font-semibold text-gray-900">{t('admin.content.notices.list.title', '公告列表')}</h2>
-                <p className="m-0 text-gray-500 text-sm">{t('admin.content.notices.list.description', '管理网站公告')}</p>
+                <h2 className="m-0 text-lg font-semibold text-gray-900">{t('admin.content.notices.list.title', '공지사항 목록')}</h2>
+                <p className="m-0 text-gray-500 text-sm">{t('admin.content.notices.list.description', '웹사이트 공지사항 관리')}</p>
               </div>
               <Button type="button" variant="secondary" onClick={handleNew}>
-                {t('admin.content.notices.actions.new', '新建')}
+                {t('admin.content.notices.actions.new', '새로 만들기')}
               </Button>
             </div>
 
           {loading ? (
-            <div className="text-center text-gray-500">{t('common.loading', '加载中...')}</div>
+            <div className="text-center text-gray-500">{t('common.loading', '로딩 중...')}</div>
           ) : notices.length === 0 ? (
             <div className="text-center text-gray-500">
-              <p>{t('admin.content.notices.list.empty', '暂无公告')}</p>
+              <p>{t('admin.content.notices.list.empty', '공지사항이 없습니다')}</p>
             </div>
           ) : (
             <ul className="list-none p-0 m-0 flex flex-col gap-3">
@@ -200,7 +196,7 @@ export default function NoticeManagement() {
                       <span>{notice.title}</span>
                     </div>
                     <p className="m-0 text-gray-500 text-sm">
-                      {notice.createdAt ? formatDate(notice.createdAt, 'yyyy-MM-dd', i18n.language) : ''} | {t('admin.content.notices.views', '浏览')}: {notice.viewCount || 0}
+                      {notice.createdAt ? formatDate(notice.createdAt, 'yyyy-MM-dd', i18n.language) : ''} | {t('admin.content.notices.views', '조회')}: {notice.viewCount || 0}
                     </p>
                   </div>
                   <Button
@@ -212,7 +208,7 @@ export default function NoticeManagement() {
                       handleDelete(notice.id);
                     }}
                   >
-                    {t('common.delete', '删除')}
+                    {t('common.delete', '삭제')}
                   </Button>
                 </li>
               ))}
@@ -225,12 +221,12 @@ export default function NoticeManagement() {
           <div className="p-6">
             <h3 className="mt-0 mb-4 text-lg font-semibold text-gray-900">
             {form.id
-              ? t('admin.content.notices.form.editTitle', '编辑公告')
-              : t('admin.content.notices.form.newTitle', '新建公告')}
+              ? t('admin.content.notices.form.editTitle', '공지사항 수정')
+              : t('admin.content.notices.form.newTitle', '새 공지사항')}
           </h3>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <Input
-              label={t('admin.content.notices.form.fields.title', '标题')}
+              label={t('admin.content.notices.form.fields.title', '제목')}
               value={form.title}
               onChange={handleFieldChange('title')}
               required
@@ -251,21 +247,21 @@ export default function NoticeManagement() {
                   className="w-4 h-4 text-red-600 focus:ring-red-500 rounded"
                 />
                 <span className="text-sm font-medium text-gray-700">
-                  {t('admin.content.notices.form.fields.boardTypeImportant', '重要')}
+                  {t('admin.content.notices.form.fields.boardTypeImportant', '중요')}
                 </span>
               </label>
             </div>
             
             <TiptapEditor
-              label={t('admin.content.notices.form.fields.contentHtml', '内容')}
+              label={t('admin.content.notices.form.fields.contentHtml', '내용')}
               value={form.contentHtml}
               onChange={handleFieldChange('contentHtml')}
               required
               error={errors.contentHtml}
-              placeholder={t('admin.content.notices.form.fields.contentHtmlPlaceholder', '请输入公告内容...')}
+              placeholder={t('admin.content.notices.form.fields.contentHtmlPlaceholder', '공지사항 내용을 입력하세요...')}
             />
             <FileAttachments
-              label={t('admin.content.notices.form.fields.attachments', '附件')}
+              label={t('admin.content.notices.form.fields.attachments', '첨부파일')}
               attachments={form.attachments || []}
               onChange={handleAttachmentsChange}
               maxFiles={5}
@@ -279,8 +275,8 @@ export default function NoticeManagement() {
                 loading={saving}
               >
                 {form.id
-                  ? t('admin.content.notices.actions.update', '更新')
-                  : t('admin.content.notices.actions.create', '创建')}
+                  ? t('admin.content.notices.actions.update', '업데이트')
+                  : t('admin.content.notices.actions.create', '생성')}
               </Button>
             </div>
           </form>
@@ -292,20 +288,20 @@ export default function NoticeManagement() {
       <Modal
         isOpen={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, noticeId: null })}
-        title={t('admin.content.notices.actions.confirmDelete', '确定要删除这个公告吗？')}
+        title={t('admin.content.notices.actions.confirmDelete', '이 공지사항을 삭제하시겠습니까?')}
         size="sm"
       >
         <div className="py-4">
           <p className="text-gray-600">
-            {t('admin.content.notices.actions.confirmDeleteMessage', '此操作不可撤销，确定要继续吗？')}
+            {t('admin.content.notices.actions.confirmDeleteMessage', '이 작업은 취소할 수 없습니다. 계속하시겠습니까?')}
           </p>
         </div>
         <ModalFooter>
           <Button variant="outline" onClick={() => setDeleteConfirm({ open: false, noticeId: null })}>
-            {t('common.cancel', '取消')}
+            {t('common.cancel', '취소')}
           </Button>
           <Button variant="primary" onClick={confirmDelete}>
-            {t('common.delete', '删除')}
+            {t('common.delete', '삭제')}
           </Button>
         </ModalFooter>
       </Modal>

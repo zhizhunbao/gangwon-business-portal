@@ -200,12 +200,11 @@ export const StatisticsTable = ({
       {!loading && data.length > 0 && (
         <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4 bg-gray-50/30">
           <div className="flex items-center text-xs text-gray-500">
-            {t("common.showing", {
+            {t("common.pagination.showing", {
               start: (page - 1) * pageSize + 1,
               end: Math.min(page * pageSize, total),
               total: total,
-            }) ||
-              `显示 ${(page - 1) * pageSize + 1}-${Math.min(page * pageSize, total)} 共 ${total} 条`}
+            })}
           </div>
 
           <div className="flex items-center gap-4">

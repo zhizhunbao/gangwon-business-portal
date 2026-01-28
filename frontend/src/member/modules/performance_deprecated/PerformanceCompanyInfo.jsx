@@ -772,7 +772,7 @@ export default function PerformanceCompanyInfo() {
                     <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 border-2 border-blue-300 rounded-lg flex flex-col items-center justify-center bg-blue-50">
                       <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-2"></div>
                       <span className="text-xs text-blue-600">
-                        {t("common.uploading", "上传中...")}
+                        {t("common.uploading", "업로드 중...")}
                       </span>
                     </div>
                   ) : companyData.logoPreview || companyData.logo ? (

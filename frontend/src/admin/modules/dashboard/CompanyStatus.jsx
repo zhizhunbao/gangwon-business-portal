@@ -115,13 +115,13 @@ export default function CompanyStatus() {
   return (
     <div className="w-full">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-4">{t('admin.dashboard.companyStatus.title', '企业状态')}</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 mb-4">{t('admin.dashboard.companyStatus.title', '기업 현황')}</h1>
         
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                {t('admin.dashboard.filter.year', '年份')}:
+                {t('admin.dashboard.filter.year', '연도')}:
               </label>
               <Select
                 inline
@@ -134,7 +134,7 @@ export default function CompanyStatus() {
             </div>
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                {t('admin.dashboard.filter.quarter', '季度')}:
+                {t('admin.dashboard.filter.quarter', '분기')}:
               </label>
               <Select
                 inline
@@ -158,14 +158,14 @@ export default function CompanyStatus() {
               variant="outline"
               disabled={loading}
             >
-              {t('admin.dashboard.companyStatus.export', '导出 Excel')}
+              {t('admin.dashboard.companyStatus.export', 'Excel 내보내기')}
             </Button>
             <Button 
               onClick={() => handleExport('csv')} 
               variant="outline"
               disabled={loading}
             >
-              {t('admin.dashboard.exportCsv', '导出 CSV')}
+              {t('admin.dashboard.exportCsv', 'CSV 내보내기')}
             </Button>
           </div>
         </div>
@@ -195,7 +195,7 @@ export default function CompanyStatus() {
                 <h3 className="text-sm text-gray-500 m-0 mb-2 font-medium uppercase tracking-wide flex items-center flex-wrap gap-1 md:text-xs">
                   {t('admin.dashboard.stats.totalSales')} 
                   <span className="text-xs font-normal text-gray-400 normal-case tracking-normal not-italic">
-                    {' '}({currentLanguage === 'ko' ? '단위' : '单位'}: {currentLanguage === 'ko' ? '만원' : '万元'})
+                    {' '}({t('common.unit', '단위')}: {t('common.currencyUnit', '만원')})
                   </span>
                 </h3>
                 <p className="text-[30px] font-bold text-gray-900 m-0 leading-tight md:text-xl">

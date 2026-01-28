@@ -32,6 +32,7 @@ const IntellectualPropertyForm = ({
       registrationType: "",
       country: "",
       overseasType: "",
+      publicDisclosure: "",
       registrationDate: "",
       attachments: [],
     };
@@ -51,7 +52,7 @@ const IntellectualPropertyForm = ({
   const ipTypeOptions = [
     {
       value: "patent",
-      label: t("performance.intellectualPropertyFields.types.patent", "专利"),
+      label: t('performance.intellectualPropertyFields.types.patent', '특허'),
     },
     {
       value: "trademark",
@@ -69,11 +70,44 @@ const IntellectualPropertyForm = ({
     },
     {
       value: "design",
-      label: t("performance.intellectualPropertyFields.types.design", "设计"),
+      label: t('performance.intellectualPropertyFields.types.design', '디자인'),
     },
     {
       value: "other",
-      label: t("performance.intellectualPropertyFields.types.other", "其他"),
+      label: t('performance.intellectualPropertyFields.types.other', '기타'),
+    },
+  ];
+
+  const registrationTypeOptions = [
+    {
+      value: "application",
+      label: t("performance.intellectualPropertyFields.registrationTypes.application", "신청"),
+    },
+    {
+      value: "registered",
+      label: t("performance.intellectualPropertyFields.registrationTypes.registered", "등록"),
+    },
+  ];
+
+  const overseasTypeOptions = [
+    {
+      value: "domestic",
+      label: t("performance.intellectualPropertyFields.overseasTypes.domestic", "국내"),
+    },
+    {
+      value: "overseas",
+      label: t("performance.intellectualPropertyFields.overseasTypes.overseas", "해외"),
+    },
+  ];
+
+  const publicDisclosureOptions = [
+    {
+      value: "yes",
+      label: t("common.yes", "예"),
+    },
+    {
+      value: "no",
+      label: t("common.no", "아니오"),
     },
   ];
 
@@ -85,13 +119,13 @@ const IntellectualPropertyForm = ({
         </h3>
         <Button variant="secondary" size="small" onClick={handleAddField}>
           <PlusIcon className="w-4 h-4 mr-1" />
-          {t("common.add", "添加")}
+          {t('common.add', '추가')}
         </Button>
       </div>
 
       {data.length === 0 && (
         <div className="text-center py-12 text-gray-400 border border-dashed border-gray-200 rounded-lg">
-          {t("common.noData", "暂无数据")}
+          {t('common.noData', '데이터가 없습니다')}
         </div>
       )}
 
@@ -132,6 +166,30 @@ const IntellectualPropertyForm = ({
               value={item.type}
               onChange={(e) => handleItemChange(index, "type", e.target.value)}
               options={ipTypeOptions}
+            />
+            <Select
+              label={t("performance.intellectualPropertyFields.registrationType", "등록 구분")}
+              value={item.registrationType}
+              onChange={(e) => handleItemChange(index, "registrationType", e.target.value)}
+              options={registrationTypeOptions}
+            />
+            <Input
+              label={t("performance.intellectualPropertyFields.country", "국가")}
+              value={item.country}
+              onChange={(e) => handleItemChange(index, "country", e.target.value)}
+              placeholder={t("performance.intellectualPropertyFields.countryPlaceholder", "예: 대한민국")}
+            />
+            <Select
+              label={t("performance.intellectualPropertyFields.overseasType", "해외신청구분")}
+              value={item.overseasType}
+              onChange={(e) => handleItemChange(index, "overseasType", e.target.value)}
+              options={overseasTypeOptions}
+            />
+            <Select
+              label={t("performance.intellectualPropertyFields.publicDisclosure", "공개희망 여부")}
+              value={item.publicDisclosure}
+              onChange={(e) => handleItemChange(index, "publicDisclosure", e.target.value)}
+              options={publicDisclosureOptions}
             />
             <Input
               label={t(

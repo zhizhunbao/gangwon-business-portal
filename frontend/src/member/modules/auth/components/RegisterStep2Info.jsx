@@ -17,7 +17,7 @@ export const RegisterStep2Info = ({
     <div className="space-y-5">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.corporationNumber")}
+          {t("auth.corporationNumber")}
         </label>
         <input
           type="text"
@@ -31,7 +31,7 @@ export const RegisterStep2Info = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.address")} <span className="text-red-500">*</span>
+          {t("auth.address")} <span className="text-red-500">*</span>
         </label>
         <AddressSearch
           value={formData.address}
@@ -42,7 +42,7 @@ export const RegisterStep2Info = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.addressDetail")}
+          {t("auth.addressDetail")}
         </label>
         <input
           type="text"
@@ -55,7 +55,7 @@ export const RegisterStep2Info = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.representative")} <span className="text-red-500">*</span>
+          {t("auth.representative")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -69,7 +69,7 @@ export const RegisterStep2Info = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.establishedDate")}
+          {t("auth.establishedDate")}
         </label>
         <input
           type="date"
@@ -79,13 +79,13 @@ export const RegisterStep2Info = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
         />
         <p className="mt-1 text-xs text-gray-500">
-          {t("member.establishedDateHelp")}
+          {t("auth.establishedDateHelp")}
         </p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.logoUpload")}
+          {t("auth.logoUpload")}
         </label>
         <div className="flex items-center gap-3">
           <FileUploadButton
@@ -115,7 +115,7 @@ export const RegisterStep2Info = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.businessLicenseFile")}
+          {t("auth.businessLicenseFile")}
         </label>
         <div className="flex items-center gap-3">
           <FileUploadButton

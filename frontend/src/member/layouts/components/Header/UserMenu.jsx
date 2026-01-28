@@ -93,7 +93,7 @@ export function UserMenu({ user, onLogout }) {
             onClick={() => setIsOpen(false)}
           >
             <UserIcon className="w-[1.125rem] h-[1.125rem] flex-shrink-0" />
-            <span>{t("header.profile", "企业信息")}</span>
+            <span>{t('header.profile', '기업 정보')}</span>
           </Link>
 
           <Link
@@ -102,7 +102,7 @@ export function UserMenu({ user, onLogout }) {
             onClick={() => setIsOpen(false)}
           >
             <SupportIcon className="w-[1.125rem] h-[1.125rem] flex-shrink-0" />
-            <span>{t("header.support", "客户支持")}</span>
+            <span>{t('header.support', '고객 지원')}</span>
           </Link>
 
           <div className="h-px my-2 mx-5 bg-gray-100" />
@@ -113,7 +113,7 @@ export function UserMenu({ user, onLogout }) {
             onClick={handleLogoutClick}
           >
             <LogoutIcon className="w-[1.125rem] h-[1.125rem] flex-shrink-0" />
-            <span>{t("header.logout", "退出登录")}</span>
+            <span>{t('header.logout', '로그아웃')}</span>
           </button>
         </div>
       )}

@@ -215,7 +215,7 @@ export const useStatistics = (initialParams = {}) => {
     applyFilters,
     changePage: async (newPage) => {
       await changePage(newPage);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "auto" });
     },
     changePageSize,
     changeSort,

@@ -13,8 +13,8 @@ const CompanyInvestmentStatus = ({ data, isEditing, onChange }) => {
   const { t } = useTranslation();
 
   const investmentOptions = [
-    { value: true, label: t("common.yes", "是") },
-    { value: false, label: t("common.no", "否") },
+    { value: true, label: t('common.yes', '예') },
+    { value: false, label: t('common.no', '아니오') },
   ];
 
   const status = data.investmentStatus || {
@@ -27,7 +27,7 @@ const CompanyInvestmentStatus = ({ data, isEditing, onChange }) => {
     <Card className="shadow-sm p-0">
       <div className="flex items-center gap-3 border-b border-gray-100 p-6 sm:p-8">
         <h2 className="text-xl font-semibold text-gray-900 m-0">
-          {t("performance.companyInfo.sections.investmentStatus", "投资状态")}
+          {t('performance.companyInfo.sections.investmentStatus', '투자 정보')}
         </h2>
       </div>
       <div className="p-6 sm:p-8 space-y-6">

@@ -33,7 +33,7 @@ export default function MemberGrowthChart({
     return {
       categories: periods,
       series: [{
-        name: t('admin.dashboard.stats.totalMembers', '总企业会员数'),
+        name: t('admin.dashboard.stats.totalMembers', '총 기업 회원 수'),
         data: values,
         color: '#3b82f6'
       }]

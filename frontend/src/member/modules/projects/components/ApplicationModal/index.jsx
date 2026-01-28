@@ -52,7 +52,6 @@ export default function ApplicationModal({
           attachments: existingApplication.attachments || [],
         });
       } else {
-        // Reset or prepopulate for new application
         setFormData({
           applicantName:
             user?.contactPersonName ||
@@ -101,19 +100,19 @@ export default function ApplicationModal({
     } catch (error) {
       const errorMsg =
         error?.message ||
-        t("fileAttachments.uploadError", "文件上传失败，请重试");
+        t('fileAttachments.uploadError', '파일 업로드 실패, 다시 시도해주세요');
       setFormMessage(errorMsg);
     }
   };
 
   const handleSubmit = async () => {
     if (!user?.id) {
-      setFormMessage(t("common.loginRequired", "请先登录"));
+      setFormMessage(t('common.loginRequired', '먼저 로그인해주세요'));
       return;
     }
 
     if (!project?.id) {
-      setFormMessage(t("projects.projectNotFound", "项目不存在"));
+      setFormMessage(t('projects.projectNotFound', '사업을 찾을 수 없습니다'));
       return;
     }
 
@@ -123,10 +122,10 @@ export default function ApplicationModal({
     const trimmedName = applicantName.trim();
     if (!trimmedName) {
       setFormError(
-        t("projects.application.applicantNameRequired", "请输入申请人姓名"),
+        t('projects.application.applicantNameRequired', '담당자 이름을 입력해주세요'),
       );
       setFormMessage(
-        t("projects.application.validationError", "请补全必填信息后再试"),
+        t('projects.application.validationError', '필수 항목을 확인한 뒤 다시 시도해주세요.'),
       );
       return;
     }
@@ -134,10 +133,10 @@ export default function ApplicationModal({
     const trimmedPhone = applicantPhone.trim();
     if (!trimmedPhone) {
       setFormError(
-        t("projects.application.applicantPhoneRequired", "请输入申请人电话"),
+        t('projects.application.applicantPhoneRequired', '담당자 전화번호를 입력해주세요'),
       );
       setFormMessage(
-        t("projects.application.validationError", "请补全必填信息后再试"),
+        t('projects.application.validationError', '필수 항목을 확인한 뒤 다시 시도해주세요.'),
       );
       return;
     }
@@ -145,10 +144,10 @@ export default function ApplicationModal({
     const trimmedReason = applicationReason.trim();
     if (!trimmedReason || trimmedReason.length < 10) {
       setFormError(
-        t("projects.application.reasonMinLength", "申请理由至少需要10个字符"),
+        t('projects.application.reasonMinLength', '신청 사유는 최소 10자 이상 입력해주세요'),
       );
       setFormMessage(
-        t("projects.application.validationError", "请补全必填信息后再试"),
+        t('projects.application.validationError', '필수 항목을 확인한 뒤 다시 시도해주세요.'),
       );
       return;
     }
@@ -176,10 +175,10 @@ export default function ApplicationModal({
       onClose={onClose}
       title={
         actualViewMode
-          ? t("projects.applicationDetail", "申请详情")
+          ? t("projects.applicationDetail", "신청 상세")
           : canReapply
-            ? t("projects.reapply", "重新申请")
-            : t("projects.apply", "程序申请")
+            ? t("projects.reapply", "재신청")
+            : t("projects.apply", "프로그램 신청")
       }
       size="lg"
     >
@@ -206,8 +205,8 @@ export default function ApplicationModal({
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
           <Button onClick={onClose} variant="secondary">
             {actualViewMode
-              ? t("common.close", "关闭")
-              : t("common.cancel", "取消")}
+              ? t("common.close", "닫기")
+              : t("common.cancel", "취소")}
           </Button>
           {!actualViewMode && (
             <Button
@@ -221,10 +220,10 @@ export default function ApplicationModal({
               }
             >
               {submitting
-                ? t("common.submitting", "提交中...")
+                ? t("common.submitting", "제출 중...")
                 : canReapply
-                  ? t("projects.resubmit", "重新提交")
-                  : t("common.submit", "提交")}
+                  ? t("projects.resubmit", "재제출")
+                  : t("common.submit", "제출")}
             </Button>
           )}
         </div>

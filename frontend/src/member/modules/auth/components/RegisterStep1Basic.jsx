@@ -88,7 +88,7 @@ export const RegisterStep1Basic = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.companyName")} <span className="text-red-500">*</span>
+          {t("auth.companyName")} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -102,7 +102,7 @@ export const RegisterStep1Basic = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.region")} <span className="text-red-500">*</span>
+          {t("auth.region")} <span className="text-red-500">*</span>
         </label>
         <select
           name="region"
@@ -110,7 +110,7 @@ export const RegisterStep1Basic = ({
           onChange={handleChange}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
         >
-          <option value="">{t("member.selectRegion")}</option>
+          <option value="">{t("auth.selectRegion")}</option>
           <option value={t("profile.regions.chuncheon")}>
             {t("profile.regions.chuncheon")}
           </option>
@@ -173,7 +173,7 @@ export const RegisterStep1Basic = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          {t("member.category")} <span className="text-red-500">*</span>
+          {t("auth.category")} <span className="text-red-500">*</span>
         </label>
         <div className="flex gap-4">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -186,7 +186,7 @@ export const RegisterStep1Basic = ({
               className="w-4 h-4 text-blue-600"
             />
             <span className="text-sm text-gray-700">
-              {t("member.categoryIndividual")}
+              {t("auth.categoryIndividual")}
             </span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
@@ -199,7 +199,7 @@ export const RegisterStep1Basic = ({
               className="w-4 h-4 text-blue-600"
             />
             <span className="text-sm text-gray-700">
-              {t("member.categoryCorporation")}
+              {t("auth.categoryCorporation")}
             </span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
@@ -212,7 +212,7 @@ export const RegisterStep1Basic = ({
               className="w-4 h-4 text-blue-600"
             />
             <span className="text-sm text-gray-700">
-              {t("member.categoryNonProfit")}
+              {t("auth.categoryNonProfit")}
             </span>
           </label>
         </div>

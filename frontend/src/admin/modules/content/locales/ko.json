@@ -1,0 +1,262 @@
+{
+  "admin": {
+    "content": {
+      "title": "콘텐츠 관리",
+      "tabs": {
+        "banners": "배너",
+        "popups": "팝업",
+        "notices": "공지사항",
+        "news": "뉴스 자료",
+        "faq": "FAQ",
+        "systemInfo": "시스템 소개",
+        "legal": "약관관리"
+      },
+      "banners": {
+        "title": "배너 관리",
+        "placeholder": "배너 관리 기능 개발 예정",
+        "types": {
+          "mainBanner": "메인 배너",
+          "systemIntro": "시스템 소개",
+          "projects": "지원사업",
+          "performance": "성과",
+          "support": "지원"
+        },
+        "form": {
+          "fields": {
+            "image": "이미지",
+            "desktopImage": "데스크톱 이미지",
+            "desktopImageHint": "권장: 1920 x 600 (16:5), 최소: 1440 x 450",
+            "mobileImage": "모바일 이미지",
+            "mobileImageHint": "권장: 1080 x 1350 (4:5), 최소: 750 x 938",
+            "url": "링크 URL",
+            "urlPlaceholder": "https://example.com"
+          }
+        },
+        "actions": {
+          "upload": "이미지 업로드",
+          "uploadDesktop": "데스크톱 이미지 업로드",
+          "uploadMobile": "모바일 이미지 업로드",
+          "save": "저장"
+        },
+        "messages": {
+          "saved": "저장되었습니다"
+        }
+      },
+      "popups": {
+        "title": "팝업 관리",
+        "list": {
+          "title": "팝업 목록",
+          "description": "작성된 팝업을 선택해 수정하거나 삭제할 수 있습니다.",
+          "empty": "등록된 팝업이 없습니다."
+        },
+        "status": {
+          "active": "사용 중",
+          "inactive": "중지"
+        },
+        "labels": {
+          "noEndDate": "종료일 없음"
+        },
+        "positions": {
+          "center": "중앙",
+          "left": "좌측 하단",
+          "right": "우측 하단"
+        },
+        "actions": {
+          "new": "새 팝업 만들기",
+          "create": "팝업 생성",
+          "update": "변경사항 저장",
+          "confirmDelete": "해당 팝업을 삭제하시겠습니까?",
+          "selectImage": "이미지 선택",
+          "changeImage": "이미지 변경"
+        },
+        "form": {
+          "newTitle": "새로운 팝업 생성",
+          "editTitle": "팝업 수정",
+          "fields": {
+            "title": "제목",
+            "content": "내용",
+            "linkUrl": "클릭 시 이동 URL",
+            "startDate": "시작일",
+            "endDate": "종료일",
+            "width": "가로 크기 (px)",
+            "height": "세로 크기 (px)",
+            "position": "표시 위치",
+            "image": "팝업 이미지",
+            "isActive": "팝업 활성화"
+          }
+        },
+        "messages": {
+          "saved": "팝업이 저장되었습니다.",
+          "saveFailed": "팝업 저장에 실패했습니다.",
+          "deleted": "팝업이 삭제되었습니다.",
+          "deleteFailed": "팝업 삭제에 실패했습니다.",
+          "loadFailed": "팝업 목록을 불러오지 못했습니다.",
+          "validationError": "필수 항목을 확인한 후 다시 시도해주세요.",
+          "imageUploaded": "이미지가 업로드되었습니다.",
+          "imageUploadFailed": "이미지 업로드에 실패했습니다.",
+          "invalidImageType": "이미지 파일만 업로드할 수 있습니다.",
+          "imageTooLarge": "이미지 크기는 5MB를 초과할 수 없습니다."
+        },
+        "validation": {
+          "minWidth": "가로 크기는 최소 200px 이상이어야 합니다.",
+          "minHeight": "세로 크기는 최소 200px 이상이어야 합니다.",
+          "endDateBeforeStart": "종료일은 시작일보다 늦어야 합니다."
+        }
+      },
+      "notices": {
+        "title": "공지사항 관리",
+        "placeholder": "공지사항 관리 기능 개발 예정",
+        "list": {
+          "title": "공지사항 목록",
+          "description": "웹사이트 공지사항 관리",
+          "empty": "공지사항이 없습니다"
+        },
+        "form": {
+          "editTitle": "공지사항 수정",
+          "newTitle": "새 공지사항",
+          "fields": {
+            "title": "제목",
+            "contentHtml": "내容",
+            "contentHtmlPlaceholder": "공지사항 내용을 입력하세요...",
+            "attachments": "첨부파일",
+            "boardType": "공지 유형",
+            "boardTypeImportant": "중요",
+            "boardTypeGeneral": "일반"
+          }
+        },
+        "actions": {
+          "new": "새로 만들기",
+          "create": "생성",
+          "update": "업데이트",
+          "confirmDelete": "이 공지사항을 삭제하시겠습니까?",
+          "confirmDeleteMessage": "이 작업은 취소할 수 없습니다. 계속하시겠습니까?"
+        },
+        "messages": {
+          "validationError": "필수 항목을 입력해주세요",
+          "saved": "저장되었습니다",
+          "deleted": "삭제되었습니다",
+          "loadFailed": "공지사항 상세 정보를 불러오지 못했습니다"
+        },
+        "views": "조회"
+      },
+      "news": {
+        "title": "뉴스 자료 관리",
+        "placeholder": "뉴스 자료 관리 기능 개발 예정",
+        "list": {
+          "title": "뉴스 목록",
+          "description": "뉴스 기사 관리",
+          "empty": "뉴스가 없습니다"
+        },
+        "form": {
+          "editTitle": "뉴스 수정",
+          "newTitle": "새 뉴스",
+          "fields": {
+            "title": "제목",
+            "image": "이미지 업로드",
+            "imageHint": "JPG, PNG, GIF 형식을 지원하며, 권장 크기는 800x600 픽셀입니다",
+            "noImage": "이미지 없음",
+            "imageUrl": "이미지 URL",
+            "imageUrlHelper": "또는 이미지 URL 주소를 직접 입력하세요",
+            "imageUrlPlaceholder": "https://example.com/image.jpg"
+          }
+        },
+        "actions": {
+          "new": "새로 만들기",
+          "create": "생성",
+          "update": "업데이트",
+          "confirmDelete": "이 뉴스를 삭제하시겠습니까?",
+          "selectImage": "이미지 선택",
+          "changeImage": "이미지 변경"
+        },
+        "messages": {
+          "validationError": "필수 항목을 입력해주세요",
+          "saved": "저장되었습니다",
+          "deleted": "삭제되었습니다",
+          "invalidImageType": "이미지 파일을 선택해주세요",
+          "imageUploaded": "이미지가 업로드되었습니다",
+          "imageTooLarge": "이미지 크기는 5MB를 초과할 수 없습니다"
+        }
+      },
+      "faq": {
+        "title": "FAQ 관리",
+        "allCategories": "전체 카테고리",
+        "categories": {
+          "general": "일반 문의",
+          "registration": "등록 관련",
+          "performance": "성과 관리",
+          "project": "지원사업 신청",
+          "technical": "기술 지원"
+        },
+        "question": "질문",
+        "category": "카테고리",
+        "displayOrder": "표시 순서",
+        "createdAt": "생성일",
+        "addFaq": "FAQ 추가",
+        "editFaq": "FAQ 수정",
+        "deleteConfirm": "이 FAQ를 삭제하시겠습니까?",
+        "searchPlaceholder": "질문 또는 답변 검색...",
+        "selectCategory": "카테고리 선택",
+        "questionPlaceholder": "FAQ 질문을 입력하세요",
+        "answer": "답변",
+        "answerPlaceholder": "FAQ 답변을 입력하세요",
+        "displayOrderPlaceholder": "표시 순서를 입력하세요",
+        "deleteConfirmMessage": "이 작업은 취소할 수 없습니다. 계속하시겠습니까?",
+        "noSearchResult": "현재 검색 조건에 일치하는 FAQ가 없습니다",
+        "noData": "FAQ 데이터가 없습니다",
+        "noDataHint": "\"FAQ 추가\" 버튼을 클릭하여 첫 번째 FAQ를 생성하세요"
+      },
+      "systemInfo": {
+        "title": "시스템 소개 관리",
+        "description": "시스템 소개 페이지의 내용을 관리합니다. 제목, 설명, 상세 내용 및 표시 이미지를 포함합니다.",
+        "titleLabel": "페이지 제목",
+        "titlePlaceholder": "시스템 소개 페이지 제목을 입력하세요",
+        "descriptionLabel": "간단한 설명",
+        "descriptionPlaceholder": "시스템의 간단한 설명을 입력하세요 (선택사항)",
+        "imageLabel": "표시 이미지",
+        "imageHint": "JPG, PNG, GIF 형식을 지원하며, 권장 크기는 800x600 픽셀, 파일 크기는 5MB를 초과할 수 없습니다",
+        "contentLabel": "상세 내용",
+        "contentPlaceholder": "시스템 소개의 상세 내용을 입력하세요...",
+        "previewTitle": "미리보기 안내",
+        "previewDescription": "저장된 내용은 시스템 소개 페이지에 표시됩니다. 저장 전에 내용 형식과 이미지 효과를 미리보기하는 것을 권장합니다.",
+        "noImage": "이미지 없음",
+        "noContent": "미리볼 내용이 없습니다",
+        "messages": {
+          "saved": "저장되었습니다",
+          "saveFailed": "저장에 실패했습니다. 다시 시도해주세요",
+          "imageUploaded": "이미지가 업로드되었습니다",
+          "imageUploadFailed": "이미지 업로드에 실패했습니다. 다시 시도해주세요",
+          "imageTooLarge": "이미지 크기는 5MB를 초과할 수 없습니다",
+          "contentRequired": "상세 내용을 입력하세요"
+        }
+      },
+      "legal": {
+        "title": "약관관리",
+        "description": "이용약관과 개인정보처리방침 내용을 관리합니다.",
+        "termsOfService": "이용약관",
+        "privacyPolicy": "개인정보 처리방침",
+        "thirdPartySharing": "제3자 정보 제공 동의",
+        "marketingConsent": "마케팅 정보 수신 동의",
+        "contentPlaceholder": "내용을 입력하세요...",
+        "helpTitle": "안내",
+        "helpText": "여기서 입력한 내용은 회원가입 시 이용약관 및 개인정보처리방침 팝업에 표시됩니다.",
+        "noContent": "미리볼 내용이 없습니다",
+        "messages": {
+          "saved": "저장되었습니다",
+          "saveFailed": "저장에 실패했습니다",
+          "contentRequired": "내용을 입력해주세요"
+        }
+      }
+    }
+  },
+  "validation": {
+    "required": "{{field}}은(는) 필수 입력 항목입니다",
+    "passwordMismatch": "비밀번호가 일치하지 않습니다",
+    "passwordMinLength": "비밀번호는 최소 8자 이상이어야 합니다",
+    "invalidDateFormat": "날짜 형식이 올바르지 않습니다 (yyyy-mm-dd)",
+    "invalidPhoneFormat": "전화번호 형식이 올바르지 않습니다",
+    "phoneMinLength": "전화번호는 최소 10자 이상이어야 합니다",
+    "minLength": "최소 {{min}}자 이상 입력해주세요",
+    "maxLength": "최대 {{max}}자까지 입력 가능합니다",
+    "invalidFormat": "형식이 올바르지 않습니다"
+  }
+}

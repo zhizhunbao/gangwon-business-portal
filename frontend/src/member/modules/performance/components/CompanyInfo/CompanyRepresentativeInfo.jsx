@@ -13,15 +13,15 @@ const CompanyRepresentativeInfo = ({ data, isEditing, onChange, errors }) => {
   const { t } = useTranslation();
 
   const genderOptions = [
-    { value: "male", label: t("common.gender.male", "男") },
-    { value: "female", label: t("common.gender.female", "女") },
+    { value: "male", label: t("common.male", "남성") },
+    { value: "female", label: t("common.female", "여성") },
   ];
 
   return (
     <Card className="shadow-sm p-0">
       <div className="flex items-center gap-3 border-b border-gray-100 p-6 sm:p-8">
         <h2 className="text-xl font-semibold text-gray-900 m-0">
-          {t("performance.companyInfo.sections.representativeInfo", "法人信息")}
+          {t('performance.companyInfo.sections.representativeInfo', '대표자 정보')}
         </h2>
       </div>
       <div className="p-6 sm:p-8">

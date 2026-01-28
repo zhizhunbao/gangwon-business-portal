@@ -1,0 +1,104 @@
+{
+    "admin": {
+        "performance": {
+            "title": "실적 관리",
+            "statusLabel": "상태",
+            "approve": "승인",
+            "approveSuccess": "승인 성공",
+            "approveFailed": "승인 실패",
+            "requestRevision": "보완 요청",
+            "revisionSuccess": "수정 요청이 전송되었습니다",
+            "revisionFailed": "수정 요청 실패",
+            "revisionCommentRequired": "수정 의견을 입력하세요",
+            "reject": "거부",
+            "rejectSuccess": "거부 성공",
+            "rejectFailed": "거부 실패",
+            "rejectCommentRequired": "거부 사유를 입력하세요",
+            "exportExcel": "Excel 내보내기",
+            "exportCsv": "CSV 내보내기",
+            "exportSuccess": "내보내기 성공",
+            "exportFailed": "내보내기 실패",
+            "status": {
+                "pending": "대기중",
+                "revision": "보완",
+                "approved": "승인됨"
+            },
+            "table": {
+                "documentType": "문서 유형",
+                "fileName": "파일명",
+                "memberName": "기업명",
+                "businessNumber": "사업자등록번호",
+                "companyPhone": "기업 전화번호",
+                "year": "연도",
+                "quarter": "분기",
+                "type": "유형",
+                "status": "상태",
+                "submittedAt": "제출 시간",
+                "createdAt": "생성 시간",
+                "updatedAt": "업데이트 시간",
+                "actions": "작업"
+            },
+            "revisionModal": {
+                "title": "보완 요청",
+                "description": "보완이 필요한 항목을 입력하세요.",
+                "placeholder": "보완 요청 사유를 입력하세요..."
+            },
+            "rejectModal": {
+                "title": "실적 기록 거부",
+                "description": "거부 사유를 입력하세요.",
+                "placeholder": "거부 사유를 입력하세요..."
+            },
+            "approveModal": {
+                "title": "실적 기록 승인",
+                "description": "승인 의견을 입력하세요 (선택사항).",
+                "placeholder": "승인 의견을 입력하세요..."
+            },
+            "filter": {
+                "yearPlaceholder": "연도 선택"
+            },
+            "search": "검색 키워드",
+            "searchPlaceholder": "기업명, 사업자등록번호, 연도, 유형, 상태 등 검색",
+            "noRecords": "실적 데이터가 없습니다",
+            "detail": {
+                "basicInfo": "기본 정보",
+                "performanceData": "실적 데이터",
+                "revenue": "매출액",
+                "employees": "직원 수",
+                "newContracts": "신규 계약 수",
+                "supportAmount": "지원 금액",
+                "programs": "지원 프로그램 수",
+                "beneficiaries": "수혜자 수",
+                "patents": "특허 수",
+                "trademarks": "상표 수",
+                "copyrights": "저작권 수",
+                "viewRawData": "원본 데이터 보기",
+                "attachments": "첨부 파일 목록",
+                "attachmentCount": "개 첨부 파일",
+                "downloadAll": "모두 다운로드",
+                "reviewHistory": "검토 이력",
+                "createdAt": "생성 시간",
+                "updatedAt": "업데이트 시간",
+                "loadFailed": "로드 실패",
+                "fileNotFound": "파일을 찾을 수 없습니다",
+                "noAttachments": "이 기록에 첨부 파일이 없습니다",
+                "downloadFailed": "다운로드 실패",
+                "notFound": "실적 기록이 존재하지 않습니다",
+                "draftHint": "（초안 상태，기업이 아직 제출하지 않음）",
+                "submittedHint": "（검토 대기 중）",
+                "revisionHint": "（수정 필요，기업의 보완 대기 중）",
+                "approvedHint": "（승인됨）",
+                "rejectedHint": "（거부됨）"
+            },
+            "download": {
+                "multipleFiles": "이 기록에 {count}개의 첨부 파일이 있습니다. 모두 다운로드하시겠습니까?",
+                "allSuccess": "{count}개의 첨부 파일을 성공적으로 다운로드했습니다",
+                "partialSuccess": "{success}개의 첨부 파일을 성공적으로 다운로드했지만 {fail}개의 파일 다운로드에 실패했습니다.\n실패한 파일: {files}"
+            },
+            "review": {
+                "approved": "승인됨",
+                "revisionRequested": "수정 필요",
+                "rejected": "거부됨"
+            }
+        }
+    }
+}

@@ -46,40 +46,55 @@ export default function PerformanceDetail() {
   };
 
   const handleApprove = async () => {
-    await adminService.approvePerformance(id);
-    showSuccess(t('admin.performance.approveSuccess', '批准成功'));
-    loadPerformanceDetail();
+    try {
+      await adminService.approvePerformance(id);
+      showSuccess(t('admin.performance.approveSuccess', '승인 성공'));
+      loadPerformanceDetail();
+    } catch (error) {
+      console.error('Approve error:', error);
+      showError(t('admin.performance.approveFailed', '승인 실패'));
+    }
   };
 
   const handleRequestRevision = async () => {
     if (!reviewComment.trim()) {
-      showWarning(t('admin.performance.revisionCommentRequired', '请输入修改意见'));
+      showWarning(t('admin.performance.revisionCommentRequired', '수정 의견을 입력하세요'));
       return;
     }
 
-    await adminService.requestPerformanceRevision(id, reviewComment);
-    showSuccess(t('admin.performance.revisionSuccess', '修改请求已发送'));
-    setShowReviewModal(false);
-    setReviewComment('');
-    loadPerformanceDetail();
+    try {
+      await adminService.requestPerformanceRevision(id, reviewComment);
+      showSuccess(t('admin.performance.revisionSuccess', '수정 요청이 전송되었습니다'));
+      setShowReviewModal(false);
+      setReviewComment('');
+      loadPerformanceDetail();
+    } catch (error) {
+      console.error('Request revision error:', error);
+      showError(t('admin.performance.revisionFailed', '수정 요청 실패'));
+    }
   };
 
   const handleReject = async () => {
     if (!rejectComment.trim()) {
-      showWarning(t('admin.performance.rejectCommentRequired', '请输入驳回原因'));
+      showWarning(t('admin.performance.rejectCommentRequired', '거부 사유를 입력하세요'));
       return;
     }
 
-    await adminService.rejectPerformance(id, rejectComment);
-    showSuccess(t('admin.performance.rejectSuccess', '驳回成功'));
-    setShowRejectModal(false);
-    setRejectComment('');
-    loadPerformanceDetail();
+    try {
+      await adminService.rejectPerformance(id, rejectComment);
+      showSuccess(t('admin.performance.rejectSuccess', '거부 성공'));
+      setShowRejectModal(false);
+      setRejectComment('');
+      loadPerformanceDetail();
+    } catch (error) {
+      console.error('Reject error:', error);
+      showError(t('admin.performance.rejectFailed', '거부 실패'));
+    }
   };
 
   const handleDownload = async (fileId, filename = null) => {
     if (!fileId) {
-      showError(t('admin.performance.detail.fileNotFound', '文件不存在'));
+      showError(t('admin.performance.detail.fileNotFound', '파일을 찾을 수 없습니다'));
       return;
     }
 
@@ -88,7 +103,7 @@ export default function PerformanceDetail() {
 
   const handleDownloadByUrl = async (fileUrl, filename = null) => {
     if (!fileUrl) {
-      showError(t('admin.performance.detail.fileNotFound', '文件不存在'));
+      showError(t('admin.performance.detail.fileNotFound', '파일을 찾을 수 없습니다'));
       return;
     }
 
@@ -110,13 +125,13 @@ export default function PerformanceDetail() {
 
   const getStatusLabel = (status) => {
     const statusLabelMap = {
-      approved: t('performance.status.approved', '已批准'),
-      submitted: t('performance.status.submitted', '已提交'),
-      pending: t('performance.status.submitted', '已提交'),
-      revision_requested: t('performance.status.revisionRequested', '需修改'),
-      revision_required: t('performance.status.revisionRequested', '需修改'),
-      draft: t('performance.status.draft', '草稿'),
-      rejected: t('performance.status.rejected', '已驳回')
+      approved: t('performance.status.approved', '승인 완료'),
+      submitted: t('performance.status.submitted', '심사중'),
+      pending: t('performance.status.submitted', '심사중'),
+      revision_requested: t('performance.status.revisionRequested', '수정 필요'),
+      revision_required: t('performance.status.revisionRequested', '수정 필요'),
+      draft: t('performance.status.draft', '임시저장'),
+      rejected: t('performance.status.rejected', '거부됨')
     };
     return statusLabelMap[status] || status;
   };
@@ -128,7 +143,7 @@ export default function PerformanceDetail() {
     return [
       {
         key: 'salesEmployment',
-        label: t('performance.tabs.salesEmployment', '销售雇佣'),
+        label: t('performance.tabs.salesEmployment', '매출 고용'),
         content: (
           <SalesEmploymentTab
             record={record}
@@ -140,7 +155,7 @@ export default function PerformanceDetail() {
       },
       {
         key: 'governmentSupport',
-        label: t('performance.tabs.governmentSupport', '政府支持受惠历史'),
+        label: t('performance.tabs.governmentSupport', '정부지원 수혜 이력'),
         content: (
           <GovernmentSupportTab
             record={record}
@@ -152,7 +167,7 @@ export default function PerformanceDetail() {
       },
       {
         key: 'intellectualProperty',
-        label: t('performance.tabs.intellectualProperty', '知识产权'),
+        label: t('performance.tabs.intellectualProperty', '지식재산권'),
         content: (
           <IntellectualPropertyTab
             record={record}
@@ -171,7 +186,7 @@ export default function PerformanceDetail() {
   if (!record) {
     return (
       <div className="p-12 text-center text-red-600">
-        <p className="mb-6">{t('admin.performance.detail.notFound', '业绩记录不存在')}</p>
+        <p className="mb-6">{t('admin.performance.detail.notFound', '실적 기록이 존재하지 않습니다')}</p>
         <Button onClick={() => navigate('/admin/performance')}>
           {t('common.back')}
         </Button>
@@ -210,7 +225,7 @@ export default function PerformanceDetail() {
               onClick={() => setShowRejectModal(true)}
               className="border-red-600 text-red-600 hover:bg-red-50"
             >
-              {t('admin.performance.reject', '驳回')}
+              {t('admin.performance.reject', '거부')}
             </Button>
             <Button onClick={handleApprove}>
               {t('admin.performance.approve')}
@@ -223,7 +238,7 @@ export default function PerformanceDetail() {
       <Card className="mb-6 p-6">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900 m-0">
-            {t('admin.performance.detail.basicInfo', '基本信息')}
+            {t('admin.performance.detail.basicInfo', '기본 정보')}
           </h2>
         </div>
 
@@ -232,7 +247,7 @@ export default function PerformanceDetail() {
             <>
               <div className="flex flex-col gap-2">
                 <label className="text-sm text-gray-600 font-medium">
-                  {t('admin.performance.table.memberName', '企业名称')}
+                  {t('admin.performance.table.memberName', '기업명')}
                 </label>
                 <span className="text-base text-gray-900">
                   {member.companyName || member.businessNumber || '-'}
@@ -240,7 +255,7 @@ export default function PerformanceDetail() {
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-sm text-gray-600 font-medium">
-                  {t('admin.members.detail.businessNumber', '营业执照号')}
+                  {t('admin.members.detail.businessNumber', '사업자번호')}
                 </label>
                 <span className="text-base text-gray-900">
                   {member.businessNumber || '-'}
@@ -250,39 +265,39 @@ export default function PerformanceDetail() {
           )}
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('admin.performance.table.year', '年度')}
+              {t('admin.performance.table.year', '연도')}
             </label>
             <span className="text-base text-gray-900">{record.year || '-'}</span>
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('admin.performance.table.quarter', '季度')}
+              {t('admin.performance.table.quarter', '분기')}
             </label>
             <span className="text-base text-gray-900">
-              {record.quarter ? `Q${record.quarter}` : t('performance.annual', '年度')}
+              {record.quarter ? `Q${record.quarter}` : t('performance.annual', '연간')}
             </span>
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('admin.performance.table.companyPhone', '公司电话')}
+              {t('admin.performance.table.companyPhone', '기업 전화번호')}
             </label>
             <span className="text-base text-gray-900">{record.memberPhone || '-'}</span>
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('admin.performance.table.submittedAt', '提交时间')}
+              {t('admin.performance.table.submittedAt', '제출 시간')}
             </label>
             <span className="text-base text-gray-900">{formatDateTime(record.submittedAt)}</span>
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('admin.performance.detail.createdAt', '创建时间')}
+              {t('admin.performance.detail.createdAt', '생성 시간')}
             </label>
             <span className="text-base text-gray-900">{formatDateTime(record.createdAt)}</span>
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('admin.performance.detail.updatedAt', '更新时间')}
+              {t('admin.performance.detail.updatedAt', '업데이트 시간')}
             </label>
             <span className="text-base text-gray-900">{formatDateTime(record.updatedAt)}</span>
           </div>
@@ -353,14 +368,14 @@ export default function PerformanceDetail() {
           setShowRejectModal(false);
           setRejectComment('');
         }}
-        title={t('admin.performance.rejectModal.title', '驳回业绩记录')}
+        title={t('admin.performance.rejectModal.title', '실적 기록 거부')}
       >
         <div className="flex flex-col gap-3 md:gap-4">
-          <p>{t('admin.performance.rejectModal.description', '请输入驳回原因。')}</p>
+          <p>{t('admin.performance.rejectModal.description', '거부 사유를 입력하세요.')}</p>
           <Textarea
             value={rejectComment}
             onChange={(e) => setRejectComment(e.target.value)}
-            placeholder={t('admin.performance.rejectModal.placeholder', '请输入驳回原因...')}
+            placeholder={t('admin.performance.rejectModal.placeholder', '거부 사유를 입력하세요...')}
             rows={5}
           />
           <div className="flex flex-col-reverse md:flex-row justify-end gap-3 md:gap-4 mt-4">
@@ -379,7 +394,7 @@ export default function PerformanceDetail() {
               variant="outline"
               className="w-full md:w-auto border-red-600 text-red-600 hover:bg-red-50"
             >
-              {t('admin.performance.reject', '驳回')}
+              {t('admin.performance.reject', '거부')}
             </Button>
           </div>
         </div>

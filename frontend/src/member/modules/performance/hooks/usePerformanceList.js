@@ -83,11 +83,11 @@ export const usePerformanceList = () => {
   };
 
   const getLatestReviewComments = (record) => {
-    if (!record.reviews || record.reviews.length === 0) return [];
-    const sortedReviews = [...record.reviews].sort(
-      (a, b) => new Date(b.reviewedAt) - new Date(a.reviewedAt),
-    );
-    return sortedReviews.filter((r) => r.comments);
+    if (!record.reviewComments) return [];
+    return [{
+      comments: record.reviewComments,
+      reviewedAt: record.reviewedAt
+    }];
   };
 
   const showComments = (record) => {

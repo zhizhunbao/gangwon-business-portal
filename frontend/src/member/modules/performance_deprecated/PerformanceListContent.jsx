@@ -113,10 +113,10 @@ export default function PerformanceListContent() {
   };
 
   const yearOptions = [
-    { value: '', label: t('common.all', '全部') },
+    { value: '', label: t('common.all', '전체') },
     ...Array.from({ length: 5 }, (_, i) => {
       const year = new Date().getFullYear() - i;
-      return { value: year.toString(), label: `${year}${t('common.year', '年')}` };
+      return { value: year.toString(), label: `${year}${t('common.year', '년')}` };
     })
   ];
 
@@ -128,7 +128,7 @@ export default function PerformanceListContent() {
   };
 
   const quarterOptions = [
-    { value: '', label: t('common.all', '全部') },
+    { value: '', label: t('common.all', '전체') },
     { value: '1', label: quarterLabels[1] },
     { value: '2', label: quarterLabels[2] },
     { value: '3', label: quarterLabels[3] },
@@ -136,7 +136,7 @@ export default function PerformanceListContent() {
   ];
 
   const statusOptions = [
-    { value: '', label: t('common.all', '全部') },
+    { value: '', label: t('common.all', '전체') },
     { value: 'draft', label: t('performance.status.draft', '草稿') },
     { value: 'submitted', label: t('performance.status.submitted', '已提交') },
     { value: 'revision_requested', label: t('performance.status.revisionRequested', '需修改') },
@@ -198,9 +198,9 @@ export default function PerformanceListContent() {
           </p>
 
           {loading ? (
-            <div className="text-center py-12 text-gray-500">{t('common.loading', '加载中...')}</div>
+            <div className="text-center py-12 text-gray-500">{t('common.loading', '로딩 중...')}</div>
           ) : performances.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">{t('common.noData', '暂无数据')}</div>
+            <div className="text-center py-12 text-gray-500">{t('common.noData', '데이터가 없습니다')}</div>
           ) : (
             <>
               <Table>
@@ -210,7 +210,7 @@ export default function PerformanceListContent() {
                     <TableHeader>{t('performance.documentStatus', '状态')}</TableHeader>
                     <TableHeader>{t('performance.submittedAt', '提交时间')}</TableHeader>
                     <TableHeader>{t('performance.updatedAt', '更新时间')}</TableHeader>
-                    <TableHeader>{t('common.actions', '操作')}</TableHeader>
+                    <TableHeader>{t('common.actions', '작업')}</TableHeader>
                   </TableRow>
                 </TableHead>
                   <TableBody>
@@ -218,7 +218,7 @@ export default function PerformanceListContent() {
                       <TableRow key={perf.id}>
                         <TableCell>
                           <span className="font-medium">
-                            {perf.year}{t('common.year', '年')} {perf.quarter ? quarterLabels[perf.quarter] : t('performance.annual', '年度')}
+                            {perf.year}{t('common.year', '년')} {perf.quarter ? quarterLabels[perf.quarter] : t('performance.annual', '年度')}
                           </span>
                         </TableCell>
                         <TableCell>{getStatusBadge(perf.status)}</TableCell>
@@ -250,7 +250,7 @@ export default function PerformanceListContent() {
                                   onClick={() => navigate(`/member/performance/edit/${perf.id}`)}
                                   className="text-primary-600 hover:text-primary-900 font-medium text-sm"
                                 >
-                                  {t('common.edit', '编辑')}
+                                  {t('common.edit', '수정')}
                                 </button>
                                 <span className="text-gray-300">|</span>
                               </>
@@ -261,7 +261,7 @@ export default function PerformanceListContent() {
                                 onClick={() => setDeleteConfirm({ open: true, id: perf.id })}
                                 className="text-red-600 hover:text-red-900 font-medium text-sm"
                               >
-                                {t('common.delete', '删除')}
+                                {t('common.delete', '삭제')}
                               </button>
                             )}
                           </div>
@@ -276,7 +276,7 @@ export default function PerformanceListContent() {
                 <div className="sticky bottom-0 mt-auto py-3">
                   <div className="flex justify-between items-center px-1 sm:px-0">
                     <div className="text-xs text-gray-500 whitespace-nowrap">
-                      {t('common.itemsPerPage', '每页显示')}: {pagination.pageSize} · {t('common.total', '共')}: {pagination.total}
+                      {t('common.itemsPerPage', '每页显示')}: {pagination.pageSize} · {t('common.total', '합계')}: {pagination.total}
                     </div>
                     <Pagination
                       currentPage={pagination.page}
@@ -301,10 +301,10 @@ export default function PerformanceListContent() {
         <p className="py-4 text-gray-700">{t('common.confirmDelete', '确定要删除这条记录吗？')}</p>
         <ModalFooter>
           <Button variant="outline" onClick={() => setDeleteConfirm({ open: false, id: null })}>
-            {t('common.cancel', '取消')}
+            {t('common.cancel', '취소')}
           </Button>
           <Button variant="primary" onClick={confirmDelete}>
-            {t('common.delete', '删除')}
+            {t('common.delete', '삭제')}
           </Button>
         </ModalFooter>
       </Modal>
@@ -340,7 +340,7 @@ export default function PerformanceListContent() {
         </div>
         <ModalFooter>
           <Button variant="primary" onClick={() => setCommentModal({ open: false, comments: [], status: '' })}>
-            {t('common.close', '关闭')}
+            {t('common.close', '닫기')}
           </Button>
         </ModalFooter>
       </Modal>

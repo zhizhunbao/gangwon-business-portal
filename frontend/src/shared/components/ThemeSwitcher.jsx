@@ -28,7 +28,7 @@ export default function ThemeSwitcher({ variant = 'dark' }) {
           : 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500'
       )}
       onClick={toggleTheme}
-      title={isDark ? t('common.theme.switchToLight', '切换到浅色模式') : t('common.theme.switchToDark', '切换到深色模式')}
+      title={isDark ? t('common.theme.switchToLight', '라이트 모드로 전환') : t('common.theme.switchToDark', '다크 모드로 전환')}
     >
       {isDark ? (
         <SunIcon className="w-4 h-4" />
@@ -36,7 +36,7 @@ export default function ThemeSwitcher({ variant = 'dark' }) {
         <MoonIcon className="w-4 h-4" />
       )}
       <span className="hidden sm:inline">
-        {isDark ? t('common.theme.light', '浅色') : t('common.theme.dark', '深色')}
+        {isDark ? t('common.theme.light', '라이트') : t('common.theme.dark', '다크')}
       </span>
     </button>
   );

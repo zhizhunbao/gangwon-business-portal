@@ -107,12 +107,15 @@ export function formatCurrencyCompact(value, options = {}) {
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num) || num === 0) return '0';
   
-  const { language = 'ko', showCurrency = true, decimals = 1, showUnitLabel = true } = options;
+  const { language = 'ko', showCurrency = true, decimals = 1, showUnitLabel = true, t } = options;
   
   const getUnit = (unit) => {
+    if (t) {
+      return t(`common.currency.${unit}`);
+    }
     const units = {
-      ko: { currency: '원', man: '만', cheon: '천', unitLabel: '단위' },
-      zh: { currency: '元', man: '万', cheon: '千', unitLabel: '单位' }
+      ko: { currency: '원', man: '만', cheon: '천', unit: '단위' },
+      zh: { currency: '元', man: '万', cheon: '千', unit: '单位' }
     };
     return units[language]?.[unit] || units.ko[unit];
   };
@@ -125,22 +128,22 @@ export function formatCurrencyCompact(value, options = {}) {
     const man = absNum / 10000;
     const formatted = parseFloat(man.toFixed(decimals).replace(/\.?0+$/, '')).toLocaleString(locale);
     if (!showUnitLabel) return `${sign}${formatted}`;
-    const unit = showCurrency ? `${getUnit('man')}${getUnit('currency')}` : getUnit('man');
-    return `${sign}${formatted} (${getUnit('unitLabel')}: ${unit})`;
+    const unit = showCurrency ? `${getUnit('man')}${getUnit('krw')}` : getUnit('man');
+    return `${sign}${formatted} (${getUnit('unit')}: ${unit})`;
   }
   
   if (absNum >= 1000) {
     const cheon = absNum / 1000;
     const formatted = parseFloat(cheon.toFixed(decimals).replace(/\.?0+$/, '')).toLocaleString(locale);
     if (!showUnitLabel) return `${sign}${formatted}`;
-    const unit = showCurrency ? `${getUnit('cheon')}${getUnit('currency')}` : getUnit('cheon');
-    return `${sign}${formatted} (${getUnit('unitLabel')}: ${unit})`;
+    const unit = showCurrency ? `${getUnit('cheon')}${getUnit('krw')}` : getUnit('cheon');
+    return `${sign}${formatted} (${getUnit('unit')}: ${unit})`;
   }
   
   const formatted = absNum.toLocaleString(locale);
   if (!showUnitLabel) return `${sign}${formatted}`;
-  const unit = showCurrency ? getUnit('currency') : '';
-  return unit ? `${sign}${formatted} (${getUnit('unitLabel')}: ${unit})` : `${sign}${formatted}`;
+  const unit = showCurrency ? getUnit('krw') : '';
+  return unit ? `${sign}${formatted} (${getUnit('unit')}: ${unit})` : `${sign}${formatted}`;
 }
 
 // 格式化数字
@@ -988,7 +991,7 @@ export const MAX_DOCUMENT_SIZE = getEnvNumber('VITE_MAX_DOCUMENT_SIZE', 10 * 102
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const ALLOWED_IMAGE_EXTENSIONS = getEnvArray('VITE_ALLOWED_IMAGE_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-const ALLOWED_DOCUMENT_EXTENSIONS = getEnvArray('VITE_ALLOWED_DOCUMENT_EXTENSIONS', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt']);
+const ALLOWED_DOCUMENT_EXTENSIONS = getEnvArray('VITE_ALLOWED_DOCUMENT_EXTENSIONS', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'hwp']);
 
 const extensionToMimeType = {
   'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'png': 'image/png', 'gif': 'image/gif', 'webp': 'image/webp',
@@ -998,7 +1001,8 @@ const extensionToMimeType = {
   'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'ppt': 'application/vnd.ms-powerpoint',
   'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'txt': 'text/plain'
+  'txt': 'text/plain',
+  'hwp': 'application/x-hwp'
 };
 
 const imageMimeTypes = ALLOWED_IMAGE_EXTENSIONS.map(ext => extensionToMimeType[ext]).filter(Boolean);

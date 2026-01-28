@@ -100,6 +100,43 @@ Before finalizing a SKILL.md file, verify:
 - ❌ Use passive voice or vague instructions
 - ❌ Exceed 500 lines without moving content to references/
 
+## Project-Specific Rules
+
+### i18n Organization
+
+**Critical principle:** Only truly shared/common translations belong in `shared/i18n`. Module-specific translations MUST stay within their respective modules.
+
+**Structure:**
+```
+frontend/src/
+├── shared/
+│   └── i18n/
+│       └── locales/        ← Only common translations
+│           ├── zh.json
+│           └── ko.json
+└── [module]/
+    └── modules/
+        └── [feature]/
+            └── locales/    ← Feature-specific translations
+                ├── zh.json
+                └── ko.json
+```
+
+**What belongs in `shared/i18n`:**
+- ✅ Common UI labels (buttons, actions, status)
+- ✅ Shared validation messages
+- ✅ Common error messages
+- ✅ Global navigation terms
+- ✅ Reusable component labels
+
+**What stays in module locales:**
+- ✅ Feature-specific terminology
+- ✅ Module-specific forms and fields
+- ✅ Business domain terms
+- ✅ Module-specific workflows and instructions
+
+**Rationale:** Keeps modules self-contained and prevents shared i18n from becoming a dumping ground. Each module owns its translations and can be moved/refactored independently.
+
 ## Referencing External Documentation
 
 When pointing to detailed guides in `references/`:

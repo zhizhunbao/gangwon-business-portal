@@ -135,6 +135,7 @@ export function useHeader() {
       showLoginModal,
     },
     actions: {
+      navigate,
       setShowMobileMenu,
       setShowLoginModal,
       setPendingPath,

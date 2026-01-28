@@ -83,11 +83,11 @@ export default function MemberList() {
       };
       await adminService.exportMembers(params);
       setMessageVariant('success');
-      setMessage(t('admin.members.exportSuccess', '导出成功'));
+      setMessage(t('admin.members.exportSuccess', '내보내기 성공'));
       setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       setMessageVariant('error');
-      setMessage(t('admin.members.exportFailed', '导出失败'));
+      setMessage(t('admin.members.exportFailed', '내보내기 실패'));
       setTimeout(() => setMessage(null), 3000);
     } finally {
       setLoading(false);
@@ -97,17 +97,17 @@ export default function MemberList() {
   const handleApprove = useCallback(async (memberId) => {
     await adminService.approveMember(memberId);
     setMessageVariant('success');
-    setMessage(t('admin.members.approveSuccess', '批准成功'));
+    setMessage(t('admin.members.approveSuccess', '승인 성공'));
     setTimeout(() => setMessage(null), 3000);
     loadAllMembers();
   }, [loadAllMembers, t]);
 
   const handleReject = useCallback(async (memberId) => {
-    const reason = prompt(t('admin.members.rejectReason', '请输入拒绝原因（可选）') || '请输入拒绝原因（可选）');
+    const reason = prompt(t('admin.members.rejectReason', '거부 사유를 입력하세요 (선택사항)') || '请输入拒绝原因（可选）');
     if (reason === null) return; // 用户点击了取消
     await adminService.rejectMember(memberId, reason || null);
     setMessageVariant('success');
-    setMessage(t('admin.members.rejectSuccess', '拒绝成功'));
+    setMessage(t('admin.members.rejectSuccess', '거부 성공'));
     setTimeout(() => setMessage(null), 3000);
     loadAllMembers();
   }, [loadAllMembers, t]);
@@ -115,7 +115,7 @@ export default function MemberList() {
   const handleResetToPending = useCallback(async (memberId) => {
     await adminService.resetMemberToPending(memberId);
     setMessageVariant('success');
-    setMessage(t('admin.members.resetSuccess', '已重置为待审核'));
+    setMessage(t('admin.members.resetSuccess', '검토 대기로 재설정되었습니다'));
     setTimeout(() => setMessage(null), 3000);
     loadAllMembers();
   }, [loadAllMembers, t]);
@@ -155,7 +155,7 @@ export default function MemberList() {
     },
     {
       key: 'email',
-      label: t('admin.members.table.email', '邮箱'),
+      label: t('admin.members.table.email', '이메일'),
       render: (value) => value || ''
     },
     {
@@ -259,7 +259,7 @@ export default function MemberList() {
                   }}
                   className="text-red-600 hover:text-red-900 font-medium text-sm"
                 >
-                  {t('admin.members.reject', '拒绝')}
+                  {t('admin.members.reject', '거부')}
                 </button>
               </>
             )}
@@ -298,7 +298,7 @@ export default function MemberList() {
             data={allMembers}
             columns={searchColumns}
             onFilter={handleFilterChange}
-            placeholder={t('admin.members.search.placeholder', '搜索所有列：企业名称、代表、营业执照号、地址、行业、邮箱、状态等')}
+            placeholder={t('admin.members.search.placeholder', '기업명, 대표자, 사업자등록번호, 주소, 업종 등 검색')}
             className="flex-1 min-w-[200px] max-w-md"
           />
           <div className="flex items-center space-x-2 md:ml-4 w-full md:w-auto">
@@ -307,14 +307,14 @@ export default function MemberList() {
               variant="outline"
               disabled={loading}
             >
-              {t('admin.members.exportExcel', '导出 Excel')}
+              {t('admin.members.exportExcel', 'Excel 내보내기')}
             </Button>
             <Button 
               onClick={() => handleExport('csv')} 
               variant="outline"
               disabled={loading}
             >
-              {t('admin.members.exportCsv', '导出 CSV')}
+              {t('admin.members.exportCsv', 'CSV 내보내기')}
             </Button>
           </div>
         </div>
@@ -328,11 +328,11 @@ export default function MemberList() {
           if (members.length === 0) {
             return (
               <div className="p-12 text-center text-gray-500">
-                <p className="text-lg mb-2">{t('admin.members.noMembers', '暂无会员数据')}</p>
+                <p className="text-lg mb-2">{t('admin.members.noMembers', '회원 데이터가 없습니다')}</p>
                 <p className="text-sm text-gray-400">
                   {totalCount === 0 
-                    ? t('admin.members.noMembersHint', '请尝试刷新页面')
-                    : t('admin.members.noMatchingMembers', '当前筛选条件下没有匹配的会员')}
+                    ? t('admin.members.noMembersHint', '페이지를 새로고침하세요')
+                    : t('admin.members.noMatchingMembers', '현재 필터 조건에 맞는 회원이 없습니다')}
                 </p>
               </div>
             );
@@ -349,11 +349,11 @@ export default function MemberList() {
                 <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center text-sm text-gray-700">
                     <span>
-                      {t('common.showing', { 
+                      {t('common.pagination.showing', { 
                         start: ((currentPage - 1) * pageSize) + 1, 
                         end: Math.min(currentPage * pageSize, totalCount), 
                         total: totalCount 
-                      }) || `显示 ${((currentPage - 1) * pageSize) + 1}-${Math.min(currentPage * pageSize, totalCount)} 共 ${totalCount} 条`}
+                      })}
                     </span>
                   </div>
                   <Pagination

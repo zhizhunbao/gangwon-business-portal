@@ -49,13 +49,13 @@ const GovernmentSupportForm = ({
         </h3>
         <Button variant="secondary" size="small" onClick={handleAddField}>
           <PlusIcon className="w-4 h-4 mr-1" />
-          {t("performance.governmentSupportFields.add", "添加")}
+          {t('performance.governmentSupportFields.add', '추가')}
         </Button>
       </div>
 
       {data.length === 0 && (
         <div className="text-center py-12 text-gray-400 border border-dashed border-gray-200 rounded-lg">
-          {t("common.noData", "暂无数据")}
+          {t('common.noData', '데이터가 없습니다')}
         </div>
       )}
 

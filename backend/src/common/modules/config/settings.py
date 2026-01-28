@@ -76,9 +76,21 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE: int = 10485760  # 10MB (default for backward compatibility)
     MAX_IMAGE_SIZE: int = 5242880  # 5MB for images
     MAX_DOCUMENT_SIZE: int = 10485760  # 10MB for documents
-    ALLOWED_FILE_TYPES: str = "image/jpeg,image/png,image/gif,application/pdf"
+    # Extended MIME types: image, PDF, and common document formats
+    # - HWP: application/x-hwp, application/haansofthwp, application/vnd.hancom.hwp
+    # - TXT: text/plain
+    # - Office: doc, docx, xls, xlsx, ppt, pptx
+    ALLOWED_FILE_TYPES: str = (
+        "image/jpeg,image/png,image/gif,image/webp,"
+        "application/pdf,"
+        "text/plain,"
+        "application/x-hwp,application/haansofthwp,application/vnd.hancom.hwp,"
+        "application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,"
+        "application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,"
+        "application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    )
     ALLOWED_IMAGE_EXTENSIONS: str = "jpg,jpeg,png,gif,webp"
-    ALLOWED_DOCUMENT_EXTENSIONS: str = "pdf,doc,docx,xls,xlsx,ppt,pptx,txt"
+    ALLOWED_DOCUMENT_EXTENSIONS: str = "pdf,doc,docx,xls,xlsx,ppt,pptx,txt,hwp"
 
     # Logging Configuration
     LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)

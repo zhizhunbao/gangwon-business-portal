@@ -96,6 +96,8 @@ export const useRegister = () => {
     ksicMajor: "",
     ksicSub: "",
     businessField: "",
+    mainIndustryKsicMajor: "",
+    mainIndustryKsicCodes: "",
     sales: "",
     employeeCount: "",
     websiteUrl: "",
@@ -231,47 +233,47 @@ export const useRegister = () => {
           !formData.businessNumber ||
           formData.businessNumber.replace(/\D/g, "").length !== 10
         )
-          return t("validation.required", { field: t("auth.businessLicense") });
+          return t("auth.validation.required", { field: t("auth.businessLicense") });
         if (!formData.password || formData.password.length < 8)
-          return t("validation.passwordMinLength");
+          return t("auth.validation.passwordMinLength");
         if (formData.password !== formData.passwordConfirm)
-          return t("validation.passwordMismatch");
+          return t("auth.validation.passwordMismatch");
         if (!formData.companyName)
-          return t("validation.required", { field: t("member.companyName") });
+          return t("auth.validation.required", { field: t("auth.companyName") });
         if (!formData.region || formData.region === "")
-          return t("validation.required", { field: t("member.region") });
+          return t("auth.validation.required", { field: t("auth.region") });
         if (!formData.category || formData.category === "")
-          return t("validation.required", { field: t("member.category") });
+          return t("auth.validation.required", { field: t("auth.category") });
         return null;
       },
       2: () => {
         if (!formData.address)
-          return t("validation.required", { field: t("member.address") });
+          return t("auth.validation.required", { field: t("auth.address") });
         if (!formData.representative)
-          return t("validation.required", {
-            field: t("member.representative"),
+          return t("auth.validation.required", {
+            field: t("auth.representative"),
           });
         return null;
       },
       3: () => {
         if (!formData.email)
-          return t("validation.required", { field: t("auth.email") });
+          return t("auth.validation.required", { field: t("auth.email") });
         if (!formData.phone)
-          return t("validation.required", { field: t("member.phone") });
+          return t("auth.validation.required", { field: t("auth.phone") });
         const phoneRegex =
           /^(01[0-9]-\d{3,4}-\d{4}|02-\d{3,4}-\d{4}|0[3-9]\d-\d{3,4}-\d{4})$/;
         if (!phoneRegex.test(formData.phone))
-          return t("validation.invalidPhoneFormat");
+          return t("auth.validation.invalidPhoneFormat");
         if (
           formData.representativePhone &&
           !phoneRegex.test(formData.representativePhone)
         )
-          return t("validation.invalidPhoneFormat");
+          return t("auth.validation.invalidPhoneFormat");
         if (
           formData.contactPersonPhone &&
           !phoneRegex.test(formData.contactPersonPhone)
         )
-          return t("validation.invalidPhoneFormat");
+          return t("auth.validation.invalidPhoneFormat");
         return null;
       },
       4: () => null,

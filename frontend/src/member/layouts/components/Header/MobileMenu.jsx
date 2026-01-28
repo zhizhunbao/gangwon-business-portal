@@ -46,7 +46,7 @@ export function MobileMenu({
         className={`fixed top-[60px] left-0 right-0 bg-white shadow-lg z-[1000] transition-transform duration-300 ease-in-out md:hidden max-h-[calc(100vh-60px)] overflow-y-auto ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
-        aria-label={t("header.mobileMenuLabel", "移动端导航")}
+        aria-label={t('header.mobileMenuLabel', '모바일 내비게이션')}
       >
         <ul className="list-none m-0 p-0">
           {menuItems.map((item) => {

@@ -218,6 +218,8 @@ class ProjectListResponsePaginated(BaseModel):
 # Project Application Schemas
 class ProjectApplicationCreate(BaseModel):
     """Schema for creating a project application (member)."""
+    applicant_name: str = Field(..., min_length=1, max_length=100, description="Applicant name")
+    applicant_phone: str = Field(..., min_length=1, max_length=20, description="Applicant phone number")
     application_reason: str = Field(..., min_length=10, description="Reason for applying")
     attachments: Optional[list] = Field(None, description="File attachments")
 
@@ -229,6 +231,8 @@ class ProjectApplicationResponse(BaseModel):
     project_id: UUID
     project: Optional[ProjectResponse] = Field(None, description="Nested project details")
     status: str
+    applicant_name: Optional[str] = None
+    applicant_phone: Optional[str] = None
     application_reason: str
     attachments: Optional[list] = None
     submitted_at: datetime
@@ -243,15 +247,17 @@ class ProjectApplicationListItem(BaseModel):
     id: UUID
     member_id: UUID
     project_id: UUID
-    project_title: str  # 必填，数据库里没有就报错
-    company_name: str  # 必填，数据库里没有就报错
+    project_title: str
+    company_name: str
     status: str
-    application_reason: str  # 必填，数据库里没有就报错
+    applicant_name: Optional[str] = None
+    applicant_phone: Optional[str] = None
+    application_reason: str
     attachments: Optional[list] = None
     submitted_at: datetime
-    reviewed_at: Optional[datetime]  # 这个可以为空，因为可能还没审核
-    review_note: Optional[str] = None  # 审核备注/拒绝原因
-    material_request: Optional[str] = None  # 补充材料请求
+    reviewed_at: Optional[datetime]
+    review_note: Optional[str] = None
+    material_request: Optional[str] = None
 
     class Config:
         from_attributes = True

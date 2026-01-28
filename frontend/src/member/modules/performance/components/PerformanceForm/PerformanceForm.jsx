@@ -46,23 +46,23 @@ const PerformanceForm = () => {
   const tabs = [
     {
       key: "salesEmployment",
-      label: t("performance.tabs.salesEmployment", "销售额雇佣"),
+      label: t('performance.tabs.salesEmployment', '매출 고용'),
     },
     {
       key: "governmentSupport",
-      label: t("performance.tabs.governmentSupport", "政府支持受惠历史"),
+      label: t('performance.tabs.governmentSupport', '정부지원 수혜 이력'),
     },
     {
       key: "intellectualProperty",
-      label: t("performance.tabs.intellectualProperty", "知识产权"),
+      label: t('performance.tabs.intellectualProperty', '지식재산권'),
     },
   ];
 
   const quarterOptions = [
-    { value: "1", label: t("performance.quarter1", "第一季度") },
-    { value: "2", label: t("performance.quarter2", "第二季度") },
-    { value: "3", label: t("performance.quarter3", "第三季度") },
-    { value: "4", label: t("performance.quarter4", "第四季度") },
+    { value: "1", label: t('performance.quarter1', '1분기') },
+    { value: "2", label: t('performance.quarter2', '2분기') },
+    { value: "3", label: t('performance.quarter3', '3분기') },
+    { value: "4", label: t('performance.quarter4', '4분기') },
   ];
 
   return (
@@ -70,8 +70,8 @@ const PerformanceForm = () => {
       <div className="mb-6 sm:mb-8 lg:mb-10 flex justify-between items-center gap-4 min-h-[48px]">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 m-0">
           {id
-            ? t("performance.edit", "编辑成果")
-            : t("performance.createNew", "注册成果")}
+            ? t('performance.edit', '성과 수정')
+            : t('performance.createNew', '성과 등록')}
         </h1>
         <div className="flex gap-3 flex-shrink-0">
           <Button
@@ -79,7 +79,7 @@ const PerformanceForm = () => {
             variant="secondary"
             disabled={saving}
           >
-            {t("performance.saveDraft", "保存草稿")}
+            {t('performance.saveDraft', '임시저장')}
           </Button>
           <Button
             onClick={() => setSubmitConfirm({ open: true })}
@@ -156,13 +156,13 @@ const PerformanceForm = () => {
       <Modal
         isOpen={submitConfirm.open}
         onClose={() => setSubmitConfirm({ open: false })}
-        title={t("common.confirmSubmitTitle", "提交确认")}
+        title={t("common.confirmSubmitTitle", "제출 확인")}
         size="sm"
       >
         <p className="py-4 text-gray-700">
           {t(
             "performance.confirmSubmitMessage",
-            "提交后可能无法修改。是否继续？",
+            "제출 후에는 수정이 불가능할 수 있습니다. 계속하시겠습니까?",
           )}
         </p>
         <ModalFooter>

@@ -1,0 +1,32 @@
+{
+  "admin": {
+    "header": {
+      "title": "강원 창업톡 관리자",
+      "admin": "관리자",
+      "profile": "프로필",
+      "logout": "로그아웃",
+      "notifications": "알림",
+      "searchPlaceholder": "검색...",
+      "logs": "애플리케이션 로그",
+      "exceptions": "애플리케이션 예외",
+      "login": "로그인"
+    },
+    "menu": {
+      "dashboard": "대시보드",
+      "members": "기업 회원",
+      "performance": "실적 관리",
+      "projects": "지원사업관리",
+      "content": "콘텐츠 관리",
+      "messages": "알림 센터",
+      "settings": "시스템 설정",
+      "reports": "통계 보고서",
+      "auditLogs": "감사 로그",
+      "systemLogs": "시스템 모니터링",
+      "statistics": "통계 보고서"
+    },
+    "footer": {
+      "copyright": "강원 창업톡. All rights reserved.",
+      "version": "버전"
+    }
+  }
+}

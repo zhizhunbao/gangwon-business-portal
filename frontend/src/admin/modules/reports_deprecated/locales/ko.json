@@ -1,0 +1,116 @@
+{
+    "admin": {
+        "reports": {
+            "title": "통계 리포트",
+            "description": "커스텀 리포트 생성 및 데이터 내보내기. 실시간 통계는 대시보드를 확인하세요.",
+            "goToMembers": "회원 관리로 이동",
+            "quarter": {
+                "all": "전체",
+                "Q1": "1분기",
+                "Q2": "2분기",
+                "Q3": "3분기",
+                "Q4": "4분기"
+            },
+            "fields": {
+                "industry": "업종",
+                "region": "지역",
+                "year": "년도",
+                "quarter": "분기"
+            },
+            "filter": {
+                "title": "필터 조건",
+                "description": "필터 조건을 선택하여 통계 데이터를 확인합니다"
+            },
+            "messages": {
+                "loadFailed": "통계 데이터를 불러오는데 실패했습니다",
+                "comingSoon": "통계 리포트 기능 개발 중입니다. 기업 상세 정보를 보려면 회원 관리 모듈을 사용하세요."
+            },
+            "table": {
+                "count": "총 {{count}}건"
+            },
+            "status": {
+                "approved": "승인 완료",
+                "pending": "승인 대기",
+                "rejected": "반려"
+            },
+            "detail": {
+                "niceTitle": "Nice D&B 기업 분석",
+                "creditGrade": "신용등급",
+                "creditDate": "신용평가일자",
+                "revenue": "매출",
+                "profit": "이익",
+                "year": "년",
+                "financialHistory": "재무 이력",
+                "loadingDnb": "Nice D&B 데이터를 불러오는 중...",
+                "selectHint": "기업을 선택하면 Nice D&B 분석 데이터를 확인할 수 있습니다."
+            },
+            "placeholder": "필터 조건을 선택하여 통계 데이터를 확인하세요",
+            "noData": "통계 데이터가 없습니다",
+            "tip": "팁: 기업 상세 정보 및 Nice D&B 데이터를 보려면 회원 관리 모듈로 이동하세요.",
+            "statisticsPlaceholder": "통계 리포트 기능 개발 중입니다. 곧 제공될 예정입니다.",
+            "tabs": {
+                "custom": "커스텀 리포트",
+                "templates": "리포트 템플릿",
+                "export": "내보내기 센터"
+            },
+            "custom": {
+                "title": "커스텀 리포트",
+                "description": "리포트 유형과 필터 조건을 선택하여 커스텀 리포트를 생성합니다.",
+                "reportType": "리포트 유형",
+                "startDate": "시작 날짜",
+                "endDate": "종료 날짜",
+                "generate": "리포트 생성",
+                "comingSoon": "커스텀 리포트 기능 개발 중입니다. 곧 제공될 예정입니다.",
+                "generateFailed": "리포트 생성 실패",
+                "reportPreview": "리포트 미리보기",
+                "types": {
+                    "comprehensive": "종합 리포트",
+                    "enterprise": "기업 리포트",
+                    "performance": "성과 리포트"
+                }
+            },
+            "templates": {
+                "title": "리포트 템플릿",
+                "description": "미리 정의된 리포트 템플릿을 선택하여 일반적인 리포트를 빠르게 생성합니다.",
+                "generate": "리포트 생성",
+                "comingSoon": "리포트 템플릿 기능 개발 중입니다. 곧 제공될 예정입니다.",
+                "generateFailed": "리포트 생성 실패",
+                "monthlySummary": "월간 요약 리포트",
+                "monthlySummaryDesc": "기업 수, 매출, 고용 등 월간 요약 데이터 포함",
+                "quarterlyPerformance": "분기별 성과 리포트",
+                "quarterlyPerformanceDesc": "분기별 기업 성과 데이터 통계",
+                "annualReport": "연간 종합 리포트",
+                "annualReportDesc": "연간 기업 종합 데이터 통계 리포트",
+                "industryAnalysis": "업종 분석 리포트",
+                "industryAnalysisDesc": "업종별 기업 데이터 분석"
+            },
+            "export": {
+                "title": "내보내기 센터",
+                "description": "내보낼 모듈을 선택하여 요약 데이터 파일을 생성합니다.",
+                "selectModules": "내보낼 모듈 선택",
+                "format": "내보내기 형식",
+                "export": "데이터 내보내기",
+                "noSelection": "최소 하나의 모듈을 선택하세요",
+                "comingSoon": "요약 내보내기 기능 개발 중입니다. 곧 제공될 예정입니다.",
+                "exportFailed": "내보내기 실패",
+                "quickExport": "빠른 내보내기",
+                "quickExportDesc": "각 모듈의 개별 내보내기 기능:",
+                "exportMembers": "기업 목록 내보내기",
+                "exportPerformance": "성과 데이터 내보내기",
+                "exportProjects": "지원사업 정보 내보내기",
+                "modules": {
+                    "dashboard": "대시보드 통계",
+                    "dashboardDesc": "기업 요약 통계 데이터",
+                    "members": "기업 목록",
+                    "membersDesc": "기업 회원 정보",
+                    "performance": "성과 데이터",
+                    "performanceDesc": "기업 성과 기록",
+                    "projects": "지원사업 정보",
+                    "projectsDesc": "지원사업 목록 및 상세 정보",
+                    "applications": "신청 기록",
+                    "applicationsDesc": "지원사업 신청 기록"
+                }
+            }
+        }
+    }
+}

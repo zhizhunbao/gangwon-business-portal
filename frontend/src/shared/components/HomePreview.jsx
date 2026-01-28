@@ -32,14 +32,14 @@ function HomePreview({
             to={viewAllLink}
             className="text-blue-600 no-underline text-sm font-medium transition-colors hover:text-blue-500 hover:underline"
           >
-            {t("common.viewAll", "查看全部")}
+            {t('common.viewAll', '전체 보기')}
           </Link>
         )}
       </div>
 
       {loading ? (
         <div className="p-8 text-center text-gray-500">
-          <p>{t("common.loading", "加载中...")}</p>
+          <p>{t('common.loading', '로딩 중...')}</p>
         </div>
       ) : items.length > 0 ? (
         <div className="flex flex-col gap-3 flex-1 overflow-visible">
@@ -62,7 +62,7 @@ function HomePreview({
       ) : (
         <Card className="p-8 text-center text-gray-500">
           <p className="text-sm text-gray-500 m-0 text-center p-4">
-            {emptyMessage || t("common.noData", "暂无数据")}
+            {emptyMessage || t('common.noData', '데이터가 없습니다')}
           </p>
         </Card>
       )}
@@ -72,7 +72,7 @@ function HomePreview({
         <Modal
           isOpen={!!selectedItem}
           onClose={onCloseModal}
-          title={selectedItem?.title || t("common.loading", "加载中...")}
+          title={selectedItem?.title || t('common.loading', '로딩 중...')}
           size="lg"
         >
           {selectedItem ? (
@@ -108,7 +108,7 @@ function HomePreview({
                 )}
                 {selectedItem.viewCount !== undefined && (
                   <span>
-                    {t("admin.content.notices.views", "浏览")}:{" "}
+                    {t("admin.content.notices.views", "조회")}:{" "}
                     {selectedItem.viewCount}
                   </span>
                 )}
@@ -126,7 +126,7 @@ function HomePreview({
                 selectedItem.attachments.length > 0 && (
                   <div className="border-t pt-4 mt-4">
                     <h4 className="text-sm font-medium text-gray-700 mb-3">
-                      {t("fileAttachments.attachments", "附件")} (
+                      {t('fileAttachments.attachments', '첨부파일')} (
                       {selectedItem.attachments.length})
                     </h4>
                     <div className="space-y-2">
@@ -186,7 +186,7 @@ function HomePreview({
                                   {displayName}
                                 </span>
                                 <span className="text-xs text-gray-500 group-hover:text-blue-600">
-                                  {t("common.download", "下载")}
+                                  {t('common.download', '다운로드')}
                                 </span>
                               </button>
                             );

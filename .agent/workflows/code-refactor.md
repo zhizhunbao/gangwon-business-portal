@@ -10,7 +10,7 @@ description: 系统的代码重构流程 (Refactoring)
 
 在触碰代码之前：
 
-- [ ] **确认测试覆盖**: 运行相关模块的测试，必须全部通过 (Green)。如果没有测试，**必须**先使用 `dev-tdd_workflow` 补充测试。
+- [ ] **确认测试覆盖**: 运行相关模块的测试，必须全部通过 (Green)。如果没有测试，**必须**参考 `dev-testing_standards` 补充测试后再重构。
 - [ ] **代码理解**: 深入理解现有逻辑。如果是架构级重构，请加载 `dev-architecture_refactor` Skill 获取指导。
 - [ ] **快照**: 确保 Git 工作区是干净的，或者新建一个 `refactor/` 分支。
 

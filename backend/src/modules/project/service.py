@@ -182,11 +182,12 @@ class ProjectService:
                 context={"error_code": ErrorCode.PROJECT_ALREADY_APPLIED}
             )
 
-        # Create application - use helper method
         application_data = {
             "id": str(uuid4()),
             "member_id": str(member_id),
             "project_id": str(project_id),
+            "applicant_name": data.applicant_name,
+            "applicant_phone": data.applicant_phone,
             "application_reason": data.application_reason,
             "attachments": data.attachments,
             "status": "submitted",

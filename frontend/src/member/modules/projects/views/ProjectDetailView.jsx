@@ -18,8 +18,18 @@ import ProjectAttachments from "../components/ProjectDetail/ProjectAttachments";
 import ProjectDetailActions from "../components/ProjectDetail/ProjectDetailActions";
 
 export default function ProjectDetailView() {
-  const { project, loading, error, handleBack, handleApply } =
-    useProjectDetailView();
+  const {
+    project,
+    loading,
+    error,
+    handleBack,
+    handleApply,
+    showApplicationModal,
+    selectedProject,
+    handleApplicationSuccess,
+    handleCloseModal,
+    ApplicationModal,
+  } = useProjectDetailView();
 
   if (loading) {
     return (
@@ -55,6 +65,14 @@ export default function ProjectDetailView() {
           </ProjectCard>
         </div>
       </ProjectPageContainer>
+
+      {/* 申请模态框 */}
+      <ApplicationModal
+        isOpen={showApplicationModal}
+        onClose={handleCloseModal}
+        project={selectedProject}
+        onSuccess={handleApplicationSuccess}
+      />
     </div>
   );
 }

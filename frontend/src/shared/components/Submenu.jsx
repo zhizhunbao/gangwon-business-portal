@@ -137,16 +137,12 @@ export default function Submenu({
               let isActive = false;
               if (item.activePaths && Array.isArray(item.activePaths)) {
                 // 如果提供了 activePaths 数组，检查当前路径是否匹配其中任何一个
-                // activePaths 使用 startsWith 匹配，以支持动态路由（如 /consultation/:id）
                 isActive = item.activePaths.some(activePath => {
+                  if (item.exact) {
+                    return location.pathname === activePath;
+                  }
                   return location.pathname === activePath || location.pathname.startsWith(activePath + '/');
                 });
-                // 如果 activePaths 中没有匹配，再检查主 path
-                if (!isActive) {
-                  isActive = item.exact 
-                    ? location.pathname === item.path
-                    : location.pathname.startsWith(item.path);
-                }
               } else {
                 // 默认行为：使用 path 进行匹配
                 isActive = item.exact 

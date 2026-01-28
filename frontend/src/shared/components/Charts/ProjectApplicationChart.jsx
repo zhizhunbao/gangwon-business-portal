@@ -45,14 +45,14 @@ export default function ProjectApplicationChart({
         categories: periods,
         series: [
           {
-            name: t('admin.projects.applications', '申请数'),
+            name: t('admin.projects.applications', '신청 수'),
             type: 'bar',
             data: applications,
             color: '#3b82f6',
             yAxisIndex: 0
           },
           {
-            name: t('admin.projects.approvalRate', '批准率'),
+            name: t('admin.projects.approvalRate', '승인율'),
             type: 'line',
             data: approvalRates,
             color: '#10b981',
@@ -67,22 +67,22 @@ export default function ProjectApplicationChart({
         categories: periods,
         series: [
           {
-            name: t('admin.projects.applications', '申请数'),
+            name: t('admin.projects.applications', '신청 수'),
             data: applications,
             color: '#3b82f6'
           },
           {
-            name: t('admin.projects.approved', '已批准'),
+            name: t('admin.projects.approved', '승인됨'),
             data: approved,
             color: '#10b981'
           },
           {
-            name: t('admin.projects.rejected', '已拒绝'),
+            name: t('admin.projects.rejected', '거부됨'),
             data: rejected,
             color: '#ef4444'
           },
           {
-            name: t('admin.projects.pending', '待处理'),
+            name: t('admin.projects.pending', '대기 중'),
             data: pending,
             color: '#f59e0b'
           }
@@ -100,12 +100,12 @@ export default function ProjectApplicationChart({
         yAxis={[
           {
             type: 'value',
-            name: t('admin.projects.applications', '申请数'),
+            name: t('admin.projects.applications', '신청 수'),
             position: 'left'
           },
           {
             type: 'value',
-            name: t('admin.projects.approvalRate', '批准率 (%)'),
+            name: t('admin.projects.approvalRate', '승인율'),
             position: 'right',
             axisLabel: {
               formatter: '{value}%'

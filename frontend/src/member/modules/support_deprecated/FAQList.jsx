@@ -82,7 +82,7 @@ export default function FAQList() {
 
   // 分类选项
   const categoryOptions = useMemo(() => [
-    { value: '', label: t('common.all', '全部') },
+    { value: '', label: t('common.all', '전체') },
     ...categories.map(cat => ({ 
       value: cat, 
       label: categoryTranslations[cat] || cat 
@@ -153,12 +153,12 @@ export default function FAQList() {
 
           {loading ? (
             <div className="text-center py-12 text-gray-500">
-              {t('common.loading', '加载中...')}
+              {t('common.loading', '로딩 중...')}
             </div>
           ) : filteredFaqs.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
               {allFaqs.length === 0 
-                ? t('common.noData', '暂无数据')
+                ? t('common.noData', '데이터가 없습니다')
                 : t('support.noFaqResults', '没有找到匹配的问题')}
             </div>
           ) : (

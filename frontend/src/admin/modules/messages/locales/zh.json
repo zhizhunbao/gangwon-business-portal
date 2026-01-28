@@ -1,0 +1,85 @@
+{
+    "admin": {
+        "messages": {
+            "title": "通知中心",
+            "tabs": {
+                "threads": "1对1咨询",
+                "notifications": "系统通知",
+                "list": "消息列表",
+                "send": "发送消息",
+                "broadcast": "群发消息",
+                "analytics": "消息统计"
+            },
+            "avatar": {
+                "admin": "管",
+                "member": "会"
+            },
+            "systemNotifications": {
+                "title": "系统通知",
+                "empty": "暂无系统通知",
+                "detail": "通知详情"
+            },
+            "threads": {
+                "title": "1对1咨询列表",
+                "description": "查看和回复会员的1对1咨询请求。",
+                "empty": "暂无咨询请求"
+            },
+            "filters": {
+                "all": "全部",
+                "unread": "未读",
+                "read": "已读"
+            },
+            "unreadCount": "未读",
+            "selectMessage": "请选择一条消息查看详情",
+            "category": {
+                "general": "一般通知",
+                "announcement": "公告",
+                "system": "系统通知",
+                "support": "技术支持",
+                "performance": "业绩相关咨询"
+            },
+            "thread": {
+                "title": "消息对话",
+                "member": "会员",
+                "noMessages": "暂无消息内容",
+                "close": "关闭对话",
+                "reopen": "重新开启",
+                "closed": "对话已关闭",
+                "reopened": "对话已重新开启",
+                "confirmClose": "确定要关闭这个对话吗？",
+                "closeWarning": "对话关闭后将无法再回复。确定要继续吗？",
+                "status": {
+                    "open": "进行中",
+                    "resolved": "已解决",
+                    "closed": "已关闭"
+                }
+            },
+            "composer": {
+                "contentPlaceholder": "请输入内容..."
+            },
+            "analytics": {
+                "title": "消息统计",
+                "description": "查看消息统计数据和趋势分析。",
+                "last7Days": "最近7天",
+                "last30Days": "最近30天",
+                "last90Days": "最近90天",
+                "allTime": "全部时间",
+                "totalMessages": "总消息数",
+                "unreadMessages": "未读消息",
+                "avgResponseTime": "平均响应时间",
+                "responseRate": "响应率",
+                "messagesTrend": "消息趋势",
+                "messagesByCategory": "分类统计",
+                "responseTimeTrend": "响应时间趋势",
+                "messageCount": "消息数",
+                "responseTime": "响应时间",
+                "minutes": "分钟",
+                "hours": "小时",
+                "categoryGeneral": "一般",
+                "categorySupport": "支持",
+                "categoryPerformance": "绩效",
+                "categoryProject": "项目"
+            }
+        }
+    }
+}

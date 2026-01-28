@@ -1,0 +1,28 @@
+{
+    "admin": {
+        "auth": {
+            "login": "登录",
+            "loginTitle": "管理员登录",
+            "loginSubtitle": "请使用管理员账号登录系统",
+            "loginFailed": "登录失败，请检查您的账号和密码",
+            "email": "邮箱",
+            "emailPlaceholder": "admin@example.com",
+            "password": "密码",
+            "passwordPlaceholder": "请输入密码",
+            "rememberMe": "记住我",
+            "findId": "找回ID",
+            "forgotPassword": "忘记密码？",
+            "forgotPasswordTitle": "找回密码",
+            "forgotPasswordSubtitle": "请输入您注册时使用的邮箱地址，我们将发送密码重置链接。",
+            "forgotPasswordError": "密码重置请求失败，请重试。",
+            "forgotPasswordSentTitle": "邮件已发送",
+            "forgotPasswordSentMessage": "我们已向您输入的邮箱地址发送了密码重置链接，请查收邮件。",
+            "sendResetLink": "发送重置链接",
+            "backToLogin": "返回登录",
+            "notAdmin": "非管理员账号",
+            "notAdminUser": "不是管理员？",
+            "goToMemberLogin": "前往会员登录",
+            "needAdminAccount": "需要管理员账户？请联系系统管理员。"
+        }
+    }
+}

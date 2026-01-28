@@ -157,7 +157,7 @@ export default function ApplicationRecords() {
     },
     {
       key: 'actions',
-      label: t('common.actions', '操作'),
+      label: t('common.actions', '작업'),
       render: (_, row) => {
         const statusInfo = getStatusInfo(row.status);
         const actions = [];

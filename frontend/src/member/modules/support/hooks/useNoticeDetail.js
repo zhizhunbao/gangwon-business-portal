@@ -44,7 +44,7 @@ export function useNoticeDetail() {
         }
       } catch (err) {
         console.error("Failed to load notice:", err);
-        setError(t("common.error", "加载失败"));
+        setError(t('common.error', '오류'));
       } finally {
         setLoading(false);
       }

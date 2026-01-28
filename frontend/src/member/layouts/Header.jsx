@@ -29,6 +29,7 @@ function Header() {
     mainMenuItems,
     state: { showMobileMenu, showLoginModal },
     actions: {
+      navigate,
       setShowMobileMenu,
       setShowLoginModal,
       setPendingPath,
@@ -46,7 +47,7 @@ function Header() {
         <button
           className="hidden max-md:flex bg-transparent border-none cursor-pointer py-2 px-3 text-blue-950 transition-all duration-200 rounded items-center justify-center mr-2 hover:text-blue-600"
           onClick={() => setShowMobileMenu(!showMobileMenu)}
-          aria-label={t("header.toggleMenu", "切换菜单")}
+          aria-label={t('header.toggleMenu', '메뉴 전환')}
         >
           {showMobileMenu ? (
             <XIcon className="w-6 h-6" />
@@ -61,7 +62,7 @@ function Header() {
         >
           <img
             src={LAYOUT_CONFIG.LOGO_URL}
-            alt={t("header.title", "江原道商务门户")}
+            alt={t('header.title', '강원비즈니스포털')}
             className="h-7 w-auto object-contain"
           />
         </Link>
@@ -103,7 +104,7 @@ function Header() {
               className="px-4 py-2 rounded-md cursor-pointer transition-all duration-200 font-medium text-sm text-white border border-blue-950 bg-blue-950 hover:text-white hover:border-blue-800 active:bg-blue-900"
               onClick={() => setShowLoginModal(true)}
             >
-              {t("header.login", "登录")}
+              {t('header.login', '로그인')}
             </button>
           </div>
         )}

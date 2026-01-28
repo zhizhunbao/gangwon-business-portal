@@ -13,6 +13,7 @@
 ### 🚀 业务需求
 
 - [产品主文档 (Master PRD)](requirements/master_prd.md)
+- [Bug-Fix 分析与计划 (2026-01-26)](requirements/prd_bug_fix_20260126.md)
 - [业务术语表 (Glossary)](glossary.md)
 
 ### 🏗️ 技术设计

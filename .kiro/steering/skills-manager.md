@@ -13,7 +13,7 @@ Proactively load specialized skills when user queries match keywords below. Skil
 3. **Matching Strategy**: Support exact matches, partial matches, and related terms
 4. **Priority**: When multiple skills match, prefer the most specific one
 5. **Validation**: Before applying, verify SKILL.md has proper structure (objectives, use cases, instructions)
-6. **References**: Load additional context from `.skills/{skill-name}/references/` if available
+6. **References**: Load additional context from `.agents/skills/{skill-name}/references/` if available
 7. **Clarification**: If ambiguous, ask user which skill domain they need
 
 

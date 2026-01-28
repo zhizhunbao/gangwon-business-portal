@@ -40,9 +40,9 @@ export default function NoticeDetailPage({
       <PageContainer className="pb-8" fullWidth={false}>
         <Card className="p-8 text-center">
           <p className="text-red-500 mb-4">
-            {error || t("common.notFound", "未找到该公告")}
+            {error || t('common.notFound', '해당 공지사항을 찾을 수 없습니다')}
           </p>
-          <Button onClick={handleBack}>{t("common.back", "返回")}</Button>
+          <Button onClick={handleBack}>{t('common.back', '뒤로')}</Button>
         </Card>
       </PageContainer>
     );
@@ -51,8 +51,8 @@ export default function NoticeDetailPage({
   const badgeInfo = {
     variant: notice.important ? "danger" : "gray",
     text: notice.important
-      ? t("home.notices.important", "重要")
-      : t("home.notices.normal", "一般"),
+      ? t('home.notices.important', '중요')
+      : t('home.notices.normal', '일반'),
   };
 
   return (
@@ -62,7 +62,7 @@ export default function NoticeDetailPage({
         className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors mb-6 bg-transparent border-none cursor-pointer p-0"
       >
         <ArrowLeftIcon className="w-4 h-4" />
-        <span>{t("common.backToList", "返回列表")}</span>
+        <span>{t("common.backToList", "목록으로")}</span>
       </button>
 
       <Card className="p-6 md:p-8">
@@ -80,7 +80,7 @@ export default function NoticeDetailPage({
           {notice.viewCount !== undefined && (
             <span className="flex items-center gap-1">
               <EyeIcon className="w-4 h-4" />
-              {t("admin.content.notices.views", "浏览")}: {notice.viewCount}
+              {t("admin.content.notices.views", "조회")}: {notice.viewCount}
             </span>
           )}
         </div>

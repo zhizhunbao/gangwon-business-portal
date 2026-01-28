@@ -13,7 +13,7 @@ export default function CancelApplicationModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={t("projects.applicationRecords.cancelConfirm.title", "取消申请")}
+      title={t('projects.applicationRecords.cancelConfirm.title', '신청 취소')}
     >
       <div className="p-4">
         <p className="text-gray-700 mb-2">
@@ -30,11 +30,11 @@ export default function CancelApplicationModal({
         </p>
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onClose} disabled={loading}>
-            {t("projects.applicationRecords.cancelConfirm.cancel", "返回")}
+            {t('projects.applicationRecords.cancelConfirm.cancel', '돌아가기')}
           </Button>
           <Button variant="danger" onClick={onConfirm} disabled={loading}>
             {loading
-              ? t("projects.applicationRecords.loading", "加载中...")
+              ? t('projects.applicationRecords.loading', '로딩중...')
               : t(
                   "projects.applicationRecords.cancelConfirm.confirm",
                   "确认取消",

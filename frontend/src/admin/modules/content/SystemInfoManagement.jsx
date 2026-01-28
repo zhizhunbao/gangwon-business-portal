@@ -10,7 +10,8 @@ import {
   Card, 
   TiptapEditor,
   Modal,
-  Alert
+  Alert,
+  FileUploadButton
 } from '@shared/components';
 import { contentService } from '@shared/services';
 import { useUpload } from '@shared/hooks';
@@ -59,15 +60,15 @@ export default function SystemInfoManagement() {
       if (response && response.fileUrl) {
         setImageUrl(response.fileUrl);
         setMessageVariant('success');
-        setMessage(t('admin.content.systemInfo.messages.imageUploaded', '图片上传成功'));
+        setMessage(t('admin.content.systemInfo.messages.imageUploaded', '이미지가 업로드되었습니다'));
         setTimeout(() => setMessage(null), 3000);
       } else {
         setMessageVariant('error');
-        setMessage(t('admin.content.systemInfo.messages.imageUploadFailed', '图片上传失败，请重试'));
+        setMessage(t('admin.content.systemInfo.messages.imageUploadFailed', '이미지 업로드에 실패했습니다. 다시 시도해주세요'));
       }
     } catch (err) {
       setMessageVariant('error');
-      setMessage(t('admin.content.systemInfo.messages.imageUploadFailed', '图片上传失败，请重试'));
+      setMessage(t('admin.content.systemInfo.messages.imageUploadFailed', '이미지 업로드에 실패했습니다. 다시 시도해주세요'));
     }
   };
 
@@ -89,7 +90,7 @@ export default function SystemInfoManagement() {
   const handleSubmit = async () => {
     if (!formData.content.trim()) {
       setMessageVariant('error');
-      setMessage(t('admin.content.systemInfo.messages.contentRequired', '请输入详细内容'));
+      setMessage(t('admin.content.systemInfo.messages.contentRequired', '상세 내용을 입력하세요'));
       return;
     }
 
@@ -106,7 +107,7 @@ export default function SystemInfoManagement() {
     // 重新获取数据
     await fetchSystemInfo();
     setMessageVariant('success');
-    setMessage(t('admin.content.systemInfo.messages.saved', '保存成功'));
+    setMessage(t('admin.content.systemInfo.messages.saved', '저장되었습니다'));
     setTimeout(() => setMessage(null), 3000);
     setSaving(false);
   };
@@ -115,7 +116,7 @@ export default function SystemInfoManagement() {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="text-gray-500">
-          {t('common.loading', '加载中...')}
+          {t('common.loading', '로딩 중...')}
         </div>
       </div>
     );
@@ -131,10 +132,10 @@ export default function SystemInfoManagement() {
 
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900 m-0 mb-1">
-          {t('admin.content.systemInfo.title', '系统介绍管理')}
+          {t('admin.content.systemInfo.title', '시스템 소개 관리')}
         </h2>
         <p className="text-gray-600 text-sm m-0">
-          {t('admin.content.systemInfo.description', '管理系统介绍页面的详细内容和展示图片。')}
+          {t('admin.content.systemInfo.description', '시스템 소개 페이지의 내용을 관리합니다. 제목, 설명, 상세 내용 및 표시 이미지를 포함합니다.')}
         </p>
       </div>
 
@@ -146,10 +147,10 @@ export default function SystemInfoManagement() {
               <TiptapEditor
                 value={formData.content}
                 onChange={handleFieldChange('content')}
-                placeholder={t('admin.content.systemInfo.contentPlaceholder', '请输入系统介绍的详细内容...')}
+                placeholder={t('admin.content.systemInfo.contentPlaceholder', '시스템 소개의 상세 내용을 입력하세요...')}
                 height={500}
                 required
-                error={!formData.content.trim() ? '详细内容为必填项' : ''}
+                error={!formData.content.trim() ? t('error.validation.contentRequired', '상세 내용은 필수 입력 항목입니다') : ''}
               />
             </div>
           </Card>
@@ -162,10 +163,10 @@ export default function SystemInfoManagement() {
             <div className="p-6">
               <div className="mb-4">
                 <h3 className="text-base font-semibold text-gray-900 mb-1">
-                  {t('admin.content.systemInfo.imageLabel', '展示图片')}
+                  {t('admin.content.systemInfo.imageLabel', '표시 이미지')}
                 </h3>
                 <p className="text-sm text-gray-500">
-                  {t('admin.content.systemInfo.imageHint', '支持 JPG、PNG、GIF 格式，建议尺寸 800x600 像素')}
+                  {t('admin.content.systemInfo.imageHint', 'JPG, PNG, GIF 형식을 지원하며, 권장 크기는 800x600 픽셀, 파일 크기는 5MB를 초과할 수 없습니다')}
                 </p>
               </div>
               
@@ -183,7 +184,7 @@ export default function SystemInfoManagement() {
                       onClick={handleImageRemove}
                       className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1.5 text-sm font-medium rounded-md shadow-lg hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
                     >
-                      {t('common.remove', '移除')}
+                      {t('common.remove', '제거')}
                     </button>
                   </div>
                 ) : (
@@ -192,31 +193,35 @@ export default function SystemInfoManagement() {
                       <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     <p className="mt-2 text-sm text-gray-500">
-                      {t('admin.content.systemInfo.noImage', '暂无图片')}
+                      {t('admin.content.systemInfo.noImage', '이미지 없음')}
                     </p>
                   </div>
                 )}
                 
-                <label className="block">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        if (file.size > 5 * 1024 * 1024) {
-                          setMessageVariant('error');
-                          setMessage(t('admin.content.systemInfo.messages.imageTooLarge', '图片大小不能超过5MB'));
-                          setTimeout(() => setMessage(null), 3000);
-                          return;
-                        }
-                        handleImageUpload(file);
+                <FileUploadButton
+                  accept="image/*"
+                  onChange={(files) => {
+                    const file = files[0];
+                    if (file) {
+                      if (file.size > 5 * 1024 * 1024) {
+                        setMessageVariant('error');
+                        setMessage(t('admin.content.systemInfo.messages.imageTooLarge', '이미지 크기는 5MB를 초과할 수 없습니다'));
+                        setTimeout(() => setMessage(null), 3000);
+                        return;
                       }
-                    }}
-                    disabled={uploading}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                  />
-                </label>
+                      handleImageUpload(file);
+                    }
+                  }}
+                  disabled={uploading}
+                  className="w-full"
+                >
+                  {uploading 
+                    ? t('common.uploading', '업로드 중...') 
+                    : imageUrl 
+                      ? t('common.changeImage', '이미지 변경')
+                      : t('common.selectImage', '이미지 선택')
+                  }
+                </FileUploadButton>
               </div>
             </div>
           </Card>
@@ -225,7 +230,7 @@ export default function SystemInfoManagement() {
           <Card>
             <div className="p-6">
               <h3 className="text-base font-semibold text-gray-900 mb-4">
-                {t('common.actions', '操作')}
+                {t('common.actions', '작업')}
               </h3>
               <div className="space-y-3">
                 <Button 
@@ -233,7 +238,7 @@ export default function SystemInfoManagement() {
                   onClick={() => setShowPreview(true)}
                   className="w-full"
                 >
-                  {t('common.preview', '预览')}
+                  {t('common.preview', '미리보기')}
                 </Button>
                 <Button 
                   variant="primary"
@@ -242,7 +247,7 @@ export default function SystemInfoManagement() {
                   className="w-full"
                   disabled={!formData.content.trim()}
                 >
-                  {t('common.save', '保存')}
+                  {t('common.save', '저장')}
                 </Button>
               </div>
             </div>
@@ -254,7 +259,7 @@ export default function SystemInfoManagement() {
       <Modal
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
-        title={t('common.preview', '内容预览')}
+        title={t('common.preview', '미리보기')}
         size="lg"
       >
         <div className="space-y-6">
@@ -289,14 +294,14 @@ export default function SystemInfoManagement() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <p className="text-gray-500">
-                {t('admin.content.systemInfo.noContent', '暂无内容可预览')}
+                {t('admin.content.systemInfo.noContent', '미리볼 내용이 없습니다')}
               </p>
             </div>
           )}
 
           <div className="flex justify-end pt-4 border-t">
             <Button variant="primary" onClick={() => setShowPreview(false)}>
-              {t('common.close', '关闭')}
+              {t('common.close', '닫기')}
             </Button>
           </div>
         </div>

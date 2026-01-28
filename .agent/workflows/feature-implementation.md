@@ -15,26 +15,21 @@ description: 端到端的新功能开发流程 (From Idea to Code)
 - [ ] 协助用户完善 "User Stories" 和 "Acceptance Criteria"。
 - [ ] 确认需求已满足 `project-standards` 中的规范。
 
-## 2. 测试驱动 (TDD Setup)
+## 2. 功能实现 (Implementation)
 
-调用 `dev-tdd_workflow` Skill 准备测试环境。
+编写符合规范的代码并配套测试。
 
-- [ ] 基于验收标准编写失败的测试用例 (Red)。
-- [ ] 验证测试确实失败。
-
-## 3. 功能实现 (Implementation)
-
-编写符合规范的代码。
-
+- [ ] 调用 `dev-testing_standards` 了解测试规范。
 - [ ] 遵循 `project-standards` (服务层纯净、不可变性等)。
-- [ ] 实现代码以通过测试 (Green)。
+- [ ] 实现功能逻辑。
+- [ ] 编写并运行单元测试与集成测试，确保通过。
 - [ ] 使用 `dev-coding_standards` 检查代码质量。
 
-## 4. 验证与重构 (Verify & Refactor)
+## 3. 验证与重构 (Verify & Refactor)
 
 调用 `dev-verification_loop` Skill。
 
-- [ ] 运行所有测试确保无回归。
+- [ ] 运行全量测试确保无回归。
 - [ ] 检查代码是否可以重构 (Cleaner code)。
 - [ ] 确保文档（API 文档、注释）已更新。
 

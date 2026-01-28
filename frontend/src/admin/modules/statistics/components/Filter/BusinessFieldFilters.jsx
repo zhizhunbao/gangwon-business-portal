@@ -19,7 +19,7 @@ export const BusinessFieldFilters = ({ values = [], onChange }) => {
     <Select
       value={selectedValue}
       options={options}
-      placeholder={t("common.all", "全部")}
+      placeholder={t('common.all', '전체')}
       containerClassName="mb-0"
       className="w-full sm:w-80 h-9"
       onChange={(e) => {

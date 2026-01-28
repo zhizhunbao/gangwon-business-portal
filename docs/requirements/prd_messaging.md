@@ -265,7 +265,7 @@
 
 ### 依赖 Skill
 
-- `dev-tdd_workflow` - 测试驱动开发
+- `dev-testing_standards` - 测试驱动开发
 - `dev-frontend_patterns` - 前端规范
 - `dev-backend_patterns` - 后端规范
 

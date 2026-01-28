@@ -8,8 +8,8 @@ import CompanyStatus from './CompanyStatus';
 
 export default function Dashboard() {
   return (
-    <div className="w-full max-w-full animate-[fadeIn_0.3s_ease-in]">
-      <div className="w-full max-w-full animate-[fadeIn_0.4s_ease-in]">
+    <div className="w-full max-w-full">
+      <div className="w-full max-w-full">
         <CompanyStatus />
       </div>
     </div>

@@ -130,16 +130,16 @@ export function FileAttachments({
                     type="button"
                     onClick={() => handleDownload(attachment)}
                     className="text-blue-600 hover:text-blue-800 text-xs px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-                    title={t('common.download', '下载')}
+                    title={t('common.download', '다운로드')}
                   >
-                    {t('common.download', '下载')}
+                    {t('common.download', '다운로드')}
                   </button>
                   {!disabled && (
                     <button
                       type="button"
                       onClick={() => handleRemove(index)}
                       className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
-                      title={t('common.remove', '移除')}
+                      title={t('common.remove', '제거')}
                     >
                       <TrashIcon className="w-4 h-4" />
                     </button>
@@ -160,8 +160,8 @@ export function FileAttachments({
             accept={accept}
             disabled={disabled}
             loading={uploading}
-            label={t('fileAttachments.addFiles', '添加附件')}
-            loadingLabel={t('fileAttachments.uploading', '上传中...')}
+            label={t('fileAttachments.addFiles', '첨부파일 추가')}
+            loadingLabel={t('fileAttachments.uploading', '업로드 중...')}
             variant="outline"
             size="small"
           />

@@ -15,7 +15,7 @@ export function ProjectSubmenu() {
       key: "project-list",
       label: t("projects.tabs.projectList", "사업 목록"),
       path: "/member/programs",
-      activePaths: ["/member/programs", "/member/project"],
+      activePaths: ["/member/programs"],
       isTab: true,
       exact: true,
     },
@@ -25,6 +25,7 @@ export function ProjectSubmenu() {
       path: "/member/programs/applications",
       activePaths: ["/member/programs/applications"],
       isTab: true,
+      exact: true,
     },
   ];
 

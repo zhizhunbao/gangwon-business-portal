@@ -6,7 +6,6 @@
 
 import React from "react";
 import { Card, Badge } from "@shared/components";
-import { PaperclipIcon } from "@shared/components/Icons";
 
 export default function NoticeListItem({
   notice,
@@ -25,12 +24,6 @@ export default function NoticeListItem({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <Badge variant={badgeInfo.variant}>{badgeInfo.text}</Badge>
-            {notice.attachments && notice.attachments.length > 0 && (
-              <span className="flex items-center gap-1 text-xs text-gray-500">
-                <PaperclipIcon className="w-3 h-3" />
-                {notice.attachments.length}
-              </span>
-            )}
           </div>
           <h3 className="text-base font-medium text-gray-900 m-0 truncate">
             {notice.title}

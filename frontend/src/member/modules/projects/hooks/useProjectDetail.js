@@ -29,7 +29,7 @@ export function useProjectDetail(id) {
       }
     } catch (err) {
       console.error("Failed to load project:", err);
-      setError(t("common.error", "加载失败"));
+      setError(t('common.error', '오류'));
     } finally {
       setLoading(false);
     }

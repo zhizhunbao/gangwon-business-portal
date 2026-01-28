@@ -29,7 +29,7 @@ export function ApplicationRecordsFilter({
           className="flex-1 min-w-[200px] max-w-md"
         />
         <div className="text-sm text-gray-600">
-          {t("common.resultsCount", "共{{count}}条记录", {
+          {t("common.resultsCount", "총 {{count}}건", {
             count: resultsCount,
           })}
         </div>

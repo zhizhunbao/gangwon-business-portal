@@ -179,11 +179,11 @@ export default function Header({ onToggleSidebar, onToggleDesktopSidebar }) {
             )}
           </div>
         ) : (
-          <button 
+          <button
             className="py-2 px-4 rounded-md cursor-pointer transition-all duration-200 font-medium text-sm bg-blue-500 text-white border border-blue-600 hover:bg-blue-600 hover:border-blue-700 active:bg-blue-700"
             onClick={() => navigate('/admin/login')}
           >
-            {t('admin.header.login') || '로그인'}
+            {t('admin.header.login', '로그인')}
           </button>
         )}
       </div>

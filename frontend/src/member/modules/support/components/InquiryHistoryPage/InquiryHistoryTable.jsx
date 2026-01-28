@@ -42,8 +42,8 @@ export default function InquiryHistoryTable({
       <div className="text-center py-12 px-4">
         <p className="text-base text-gray-500 m-0 mb-4">
           {allThreads.length === 0
-            ? t("support.noInquiries", "暂无咨询记录")
-            : t("support.noMatchingInquiries", "没有找到匹配的咨询")}
+            ? t('support.noInquiries', '문의 내역이 없습니다')
+            : t('support.noMatchingInquiries', '일치하는 문의 기록이 없습니다')}
         </p>
         {allThreads.length === 0 && (
           <Button

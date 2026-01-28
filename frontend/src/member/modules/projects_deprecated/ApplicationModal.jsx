@@ -382,7 +382,7 @@ export default function ApplicationModal({
         {/* 操作按钮 */}
         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
           <Button onClick={handleClose} variant="secondary">
-            {actualViewMode ? t('common.close', '关闭') : t('common.cancel', '取消')}
+            {actualViewMode ? t('common.close', '닫기') : t('common.cancel', '취소')}
           </Button>
           {!actualViewMode && (
             <Button
@@ -390,7 +390,7 @@ export default function ApplicationModal({
               variant="primary"
               disabled={!applicantName.trim() || !applicantPhone.trim() || applicationReason.trim().length < 10 || submitting}
             >
-              {submitting ? t('common.submitting', '提交中...') : (canReapply ? t('projects.resubmit', '重新提交') : t('common.submit', '提交'))}
+              {submitting ? t('common.submitting', '提交中...') : (canReapply ? t('projects.resubmit', '重新提交') : t('common.submit', '제출'))}
             </Button>
           )}
         </div>

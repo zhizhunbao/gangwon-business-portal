@@ -86,7 +86,7 @@ const CompanyBusinessInfo = ({
       value: "startup_center_university",
       label: t(
         "performance.companyInfo.profile.participationPrograms.startupCenterUniversity",
-        "创业中心大学",
+        "창업중심대학",
       ),
     },
     {
@@ -116,14 +116,14 @@ const CompanyBusinessInfo = ({
     <Card className="shadow-sm p-0">
       <div className="flex items-center gap-3 border-b border-gray-100 p-6 sm:p-8">
         <h2 className="text-xl font-semibold text-gray-900 m-0">
-          {t("performance.companyInfo.sections.businessInfo", "经营信息")}
+          {t('performance.companyInfo.sections.businessInfo', '사업 정보')}
         </h2>
       </div>
       <div className="p-6 sm:p-8 space-y-8">
         {/* Industry Classification */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Select
-            label={t("performance.companyInfo.fields.startupType", "企业类型")}
+            label={t('performance.companyInfo.fields.startupType', '창업유형')}
             value={data.startupType}
             onChange={(e) => onChange("startupType", e.target.value)}
             options={startupTypeOptions}
@@ -140,14 +140,14 @@ const CompanyBusinessInfo = ({
             disabled={!isEditing}
           />
           <Select
-            label={t("performance.companyInfo.fields.ksicMajor", "KSIC 大类")}
+            label={t('performance.companyInfo.fields.ksicMajor', '한국표준산업분류코드[대분류]')}
             value={data.ksicMajor}
             onChange={(e) => onChange("ksicMajor", e.target.value)}
             options={ksicMajorOptions}
             disabled={!isEditing}
           />
           <Select
-            label={t("performance.companyInfo.fields.ksicSub", "KSIC 小类")}
+            label={t('performance.companyInfo.fields.ksicSub', '한국표준사업분류코드[중분류]')}
             value={data.ksicSub}
             onChange={(e) => onChange("ksicSub", e.target.value)}
             options={ksicSubOptions}
@@ -182,7 +182,7 @@ const CompanyBusinessInfo = ({
         {/* Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
-            label={t("performance.companyInfo.fields.revenue", "年销售额 (元)")}
+            label={t('performance.companyInfo.fields.revenue', '연간 매출액 (원)')}
             value={data.revenue}
             onChange={(e) => onChange("revenue", e.target.value)}
             disabled={!isEditing}
@@ -242,7 +242,7 @@ const CompanyBusinessInfo = ({
               })
             ) : (
               <span className="text-sm text-gray-400">
-                {t("common.notSet", "未设置")}
+                {t('common.notSet', '설정되지 않음')}
               </span>
             )}
           </div>
@@ -290,7 +290,7 @@ const CompanyBusinessInfo = ({
               })
             ) : (
               <span className="text-sm text-gray-400">
-                {t("common.notSet", "未设置")}
+                {t('common.notSet', '설정되지 않음')}
               </span>
             )}
           </div>

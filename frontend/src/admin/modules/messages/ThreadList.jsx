@@ -248,7 +248,7 @@ export default function ThreadList() {
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0 ${
                           thread.adminUnreadCount > 0 ? 'bg-blue-500' : 'bg-gray-400'
                         }`}>
-                          {(thread.memberName || '会')[0]}
+                          {(thread.memberName || t('common.member', '회원'))[0]}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
@@ -467,7 +467,7 @@ export default function ThreadList() {
                         <span className="text-xs text-gray-400">({replyAttachments.length}/3)</span>
                       </div>
                       <Button variant="primary" onClick={handleSendReply} disabled={!replyContent.trim() || sending} className="px-4 py-2 rounded-lg">
-                        {sending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : t('common.send', '发送')}
+                        {sending ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : t('common.send', '전송')}
                       </Button>
                     </div>
                   </div>

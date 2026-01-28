@@ -35,7 +35,7 @@ export default function PerformanceTrendChart({
       return {
         categories: periods,
         series: [{
-          name: t('admin.dashboard.stats.totalSales', '总销售额'),
+          name: t('admin.dashboard.stats.totalSales', '총 매출액'),
           data: data.map(item => item.sales || item.salesRevenue || 0),
           color: '#10b981'
         }]
@@ -44,7 +44,7 @@ export default function PerformanceTrendChart({
       return {
         categories: periods,
         series: [{
-          name: t('admin.dashboard.stats.totalEmployment', '总雇佣数'),
+          name: t('admin.dashboard.stats.totalEmployment', '총 고용 인원'),
           data: data.map(item => item.employment || item.employees || 0),
           color: '#f59e0b'
         }]
@@ -53,7 +53,7 @@ export default function PerformanceTrendChart({
       return {
         categories: periods,
         series: [{
-          name: t('admin.dashboard.stats.totalIP', '知识产权总数'),
+          name: t('admin.dashboard.stats.totalIP', '총 지식재산권'),
           data: data.map(item => item.ip || item.intellectualProperty || 0),
           color: '#8b5cf6'
         }]
@@ -64,17 +64,17 @@ export default function PerformanceTrendChart({
         categories: periods,
         series: [
           {
-            name: t('admin.dashboard.stats.totalSales', '总销售额'),
+            name: t('admin.dashboard.stats.totalSales', '총 매출액'),
             data: data.map(item => item.sales || item.salesRevenue || 0),
             color: '#10b981'
           },
           {
-            name: t('admin.dashboard.stats.totalEmployment', '总雇佣数'),
+            name: t('admin.dashboard.stats.totalEmployment', '총 고용 인원'),
             data: data.map(item => item.employment || item.employees || 0),
             color: '#f59e0b'
           },
           {
-            name: t('admin.dashboard.stats.totalIP', '知识产权总数'),
+            name: t('admin.dashboard.stats.totalIP', '총 지식재산권'),
             data: data.map(item => item.ip || item.intellectualProperty || 0),
             color: '#8b5cf6'
           }
@@ -89,7 +89,7 @@ export default function PerformanceTrendChart({
       return (params) => {
         let result = `${params[0].name}<br/>`;
         params.forEach(param => {
-          if (param.seriesName === t('admin.dashboard.stats.totalSales', '总销售额')) {
+          if (param.seriesName === t('admin.dashboard.stats.totalSales', '총 매출액')) {
             const formatted = formatCurrencyCompact(param.value, {
               language: currentLanguage,
               showCurrency: true

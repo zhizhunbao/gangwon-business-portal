@@ -81,16 +81,18 @@ export default function ProjectDetail() {
     const variantMap = {
       active: 'success',
       inactive: 'secondary',
-      draft: 'warning'
+      draft: 'warning',
+      cancelled: 'error'
     };
     return variantMap[status] || 'default';
   };
 
   const getStatusLabel = (status) => {
     const statusLabelMap = {
-      active: t('admin.projects.status.active', '进行中'),
-      inactive: t('admin.projects.status.inactive', '已结束'),
-      draft: t('admin.projects.status.draft', '草稿')
+      active: t('admin.projects.status.active', '진행중'),
+      inactive: t('admin.projects.status.inactive', '종료됨'),
+      draft: t('admin.projects.status.draft', '초안'),
+      cancelled: t('admin.projects.status.cancelled', '취소됨')
     };
     return statusLabelMap[status] || status;
   };
@@ -104,7 +106,7 @@ export default function ProjectDetail() {
         attachments.push({
           id: att.id,
           url: att.fileUrl,
-          name: att.originalName || att.storedName || att.fileName || '附件',
+          name: att.originalName || att.storedName || att.fileName || t('common.attachment', '첨부파일'),
           type: 'attachment',
           fileSize: att.fileSize,
           mimeType: att.mimeType,
@@ -117,12 +119,17 @@ export default function ProjectDetail() {
   };
 
   const handleStatusChange = async (applicationId, newStatus) => {
-    await apiService.patch(
-      `${API_PREFIX}/admin/applications/${applicationId}/status`,
-      { status: newStatus }
-    );
-    loadApplications();
-    setShowApplicationModal(false);
+    try {
+      await apiService.patch(
+        `${API_PREFIX}/admin/applications/${applicationId}/status`,
+        { status: newStatus }
+      );
+      loadApplications();
+      setShowApplicationModal(false);
+    } catch (error) {
+      console.error('Failed to update application status:', error);
+      alert(t('admin.applications.updateStatusFailed', '상태 업데이트 실패'));
+    }
   };
 
   const handleViewApplication = (application) => {
@@ -138,13 +145,13 @@ export default function ProjectDetail() {
   const applicationColumns = [
     {
       key: 'companyName',
-      label: t('admin.applications.table.company', '企业名称'),
+      label: t('admin.applications.table.company', '기업명'),
       width: '150px',
       render: (value) => value || '-'
     },
     {
       key: 'applicationReason',
-      label: t('admin.applications.table.applicationReason', '申请理由'),
+      label: t('admin.applications.table.applicationReason', '신청 사유'),
       width: '250px',
       render: (value) => (
         <div className="max-w-xs truncate" title={value}>
@@ -154,33 +161,39 @@ export default function ProjectDetail() {
     },
     {
       key: 'submittedAt',
-      label: t('admin.applications.table.submittedAt', '申请时间'),
+      label: t('admin.applications.table.submittedAt', '신청일'),
       width: '150px',
       render: (value) => value ? formatDate(value, 'yyyy-MM-dd HH:mm', currentLanguage) : '-'
     },
     {
       key: 'reviewedAt',
-      label: t('admin.applications.table.reviewedAt', '审核时间'),
+      label: t('admin.applications.table.reviewedAt', '심사일'),
       width: '150px',
       render: (value) => value ? formatDate(value, 'yyyy-MM-dd HH:mm', currentLanguage) : '-'
     },
     {
       key: 'status',
-      label: t('admin.applications.table.status', '状态'),
+      label: t('admin.applications.table.status', '상태'),
       width: '120px',
-      render: (value) => (
-        <Badge
-          variant={
-            value === 'approved'
-              ? 'success'
-              : value === 'rejected'
-              ? 'danger'
-              : 'warning'
-          }
-        >
-          {t(`admin.applications.status.${value}`, value)}
-        </Badge>
-      )
+      render: (value) => {
+        const getApplicationStatusVariant = (status) => {
+          const variantMap = {
+            approved: 'success',
+            rejected: 'danger',
+            cancelled: 'error',
+            submitted: 'warning',
+            under_review: 'warning',
+            pending: 'warning'
+          };
+          return variantMap[status] || 'warning';
+        };
+        
+        return (
+          <Badge variant={getApplicationStatusVariant(value)}>
+            {t(`admin.applications.status.${value}`, value)}
+          </Badge>
+        );
+      }
     },
     {
       key: 'actions',
@@ -198,7 +211,7 @@ export default function ProjectDetail() {
               }}
               className="text-blue-600 hover:text-blue-900 font-medium text-sm"
             >
-              {t('common.view', '查看')}
+              {t('common.view', '보기')}
             </button>
             {row.memberId && (
               <>
@@ -210,7 +223,7 @@ export default function ProjectDetail() {
                   }}
                   className="text-primary-600 hover:text-primary-900 font-medium text-sm"
                 >
-                  {t('admin.applications.viewMember', '企业')}
+                  {t('admin.applications.viewMember', '기업')}
                 </button>
               </>
             )}
@@ -251,7 +264,7 @@ export default function ProjectDetail() {
   if (!project) {
     return (
       <div className="p-12 text-center text-red-600">
-        <p className="mb-6">{t('admin.projects.detail.notFound', '项目不存在')}</p>
+        <p className="mb-6">{t('admin.projects.detail.notFound', '지원사업을 찾을 수 없습니다')}</p>
         <Button onClick={() => navigate('/admin/projects')}>
           {t('common.backToList', '목록으로')}
         </Button>
@@ -276,7 +289,7 @@ export default function ProjectDetail() {
             variant="outline" 
             onClick={() => navigate(`/admin/projects/${id}/edit`)}
           >
-            {t('common.edit', '编辑')}
+            {t('common.edit', '수정')}
           </Button>
         </div>
       </div>
@@ -287,21 +300,21 @@ export default function ProjectDetail() {
         <Card className="lg:col-span-2 p-6">
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900 m-0">
-              {t('admin.projects.detail.basicInfo', '基本信息')}
+              {t('admin.projects.detail.basicInfo', '기본 정보')}
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-2 md:col-span-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('admin.projects.detail.title', '项目标题')}
+                {t('admin.projects.detail.title', '지원사업')}
               </label>
               <span className="text-base text-gray-900">{project.title || '-'}</span>
             </div>
 
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('admin.projects.detail.status', '状态')}
+                {t('admin.projects.detail.status', '상태')}
               </label>
               <div>
                 <Badge variant={getStatusVariant(project.status)}>
@@ -311,19 +324,19 @@ export default function ProjectDetail() {
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('admin.projects.detail.createdAt', '创建时间')}
+                {t('admin.projects.detail.createdAt', '생성일')}
               </label>
               <span className="text-base text-gray-900">{formatDate(project.createdAt, 'yyyy-MM-dd', currentLanguage)}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('admin.projects.detail.startDate', '开始日期')}
+                {t('admin.projects.detail.startDate', '시작일')}
               </label>
               <span className="text-base text-gray-900">{formatDate(project.startDate, 'yyyy-MM-dd', currentLanguage)}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('admin.projects.detail.endDate', '结束日期')}
+                {t('admin.projects.detail.endDate', '종료일')}
               </label>
               <span className="text-base text-gray-900">{formatDate(project.endDate, 'yyyy-MM-dd', currentLanguage)}</span>
             </div>
@@ -334,7 +347,7 @@ export default function ProjectDetail() {
         <Card className="p-6">
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900 m-0">
-              {t('admin.projects.detail.image', '封面图片')}
+              {t('admin.projects.detail.image', '대표 이미지')}
             </h2>
           </div>
           <div className="flex justify-center items-center h-48">
@@ -349,7 +362,7 @@ export default function ProjectDetail() {
                 <svg className="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <p className="text-sm">{t('admin.projects.detail.noImage', '暂无封面图片')}</p>
+                <p className="text-sm">{t('admin.projects.detail.noImage', '표지 이미지가 없습니다')}</p>
               </div>
             )}
           </div>
@@ -361,7 +374,7 @@ export default function ProjectDetail() {
         <Card className="mb-6 p-6">
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900 m-0">
-              {t('admin.projects.detail.content', '项目详情')}
+              {t('admin.projects.detail.content', '지원사업')}
             </h2>
           </div>
           <div className="prose max-w-none">
@@ -375,9 +388,9 @@ export default function ProjectDetail() {
         <Card className="mb-6 p-6">
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900 m-0">
-              {t('admin.projects.detail.attachments', '附件列表')}
+              {t('admin.projects.detail.attachments', '첨부파일 목록')}
               <span className="ml-2 text-sm font-normal text-gray-500">
-                ({attachments.length} {t('admin.projects.detail.attachmentCount', '个附件')})
+                ({attachments.length} {t('admin.projects.detail.attachmentCount', '개 첨부파일')})
               </span>
             </h2>
           </div>
@@ -403,7 +416,7 @@ export default function ProjectDetail() {
                   </svg>
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-medium text-gray-900 block truncate">
-                      {attachment.name || `附件 ${index + 1}`}
+                      {attachment.name || `${t('common.attachment', '첨부파일')} ${index + 1}`}
                     </span>
                     {attachment.fileSize && (
                       <span className="text-xs text-gray-500">
@@ -427,7 +440,7 @@ export default function ProjectDetail() {
                     }
                   }}
                 >
-                  {t('common.download', '下载')}
+                  {t('common.download', '다운로드')}
                 </Button>
               </div>
             ))}
@@ -439,20 +452,20 @@ export default function ProjectDetail() {
       <Card className="mb-6 p-6">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900 m-0">
-            {t('admin.projects.detail.applications', '申请情况')}
+            {t('admin.projects.detail.applications', '신청 현황')}
             <span className="ml-2 text-sm font-normal text-gray-500">
-              ({applicationsTotal} {t('admin.projects.detail.applicationCount', '个申请')})
+              ({applicationsTotal} {t('admin.projects.detail.applicationCount', '개 신청')})
             </span>
           </h2>
         </div>
         
         {applicationsLoading ? (
           <div className="py-8 text-center text-gray-500">
-            <p>{t('common.loading', '加载中...')}</p>
+            <p>{t('common.loading', '로딩 중...')}</p>
           </div>
         ) : applications.length === 0 ? (
           <div className="py-8 text-center text-gray-500">
-            <p>{t('admin.projects.detail.noApplications', '暂无申请')}</p>
+            <p>{t('admin.projects.detail.noApplications', '신청이 없습니다')}</p>
           </div>
         ) : (
           <>
@@ -460,7 +473,7 @@ export default function ProjectDetail() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="p-4 bg-blue-50 rounded-lg">
                 <label className="text-sm text-gray-600 font-medium block mb-2">
-                  {t('admin.projects.detail.totalApplications', '总申请数')}
+                  {t('admin.projects.detail.totalApplications', '총 신청수')}
                 </label>
                 <span className="text-2xl font-bold text-blue-600">
                   {applicationsTotal}
@@ -476,7 +489,7 @@ export default function ProjectDetail() {
               </div>
               <div className="p-4 bg-yellow-50 rounded-lg">
                 <label className="text-sm text-gray-600 font-medium block mb-2">
-                  {t('admin.projects.detail.pendingApplications', '待审核')}
+                  {t('admin.projects.detail.pendingApplications', '대기중')}
                 </label>
                 <span className="text-2xl font-bold text-yellow-600">
                   {applications.filter(app => app.status === 'pending').length}
@@ -516,14 +529,14 @@ export default function ProjectDetail() {
             setShowApplicationModal(false);
             setSelectedApplication(null);
           }}
-          title={t('admin.applications.detail', '申请详情')}
+          title={t('admin.applications.detail', '신청 상세')}
           size="lg"
         >
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-gray-600">
-                  {t('admin.applications.table.company', '企业名称')}
+                  {t('admin.applications.table.company', '기업명')}
                 </label>
                 <p className="mt-1 text-sm text-gray-900">
                   {selectedApplication.companyName || '-'}
@@ -531,7 +544,7 @@ export default function ProjectDetail() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">
-                  {t('admin.applications.table.status', '状态')}
+                  {t('admin.applications.table.status', '상태')}
                 </label>
                 <div className="mt-1">
                   <Badge
@@ -549,7 +562,23 @@ export default function ProjectDetail() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">
-                  {t('admin.applications.table.submittedAt', '申请时间')}
+                  {t('admin.applications.contactPersonName', '담당자 이름')}
+                </label>
+                <p className="mt-1 text-sm text-gray-900">
+                  {selectedApplication.contactPersonName || '-'}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">
+                  {t('admin.applications.contactPhone', '전화번호')}
+                </label>
+                <p className="mt-1 text-sm text-gray-900">
+                  {selectedApplication.contactPhone || '-'}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">
+                  {t('admin.applications.table.submittedAt', '신청일')}
                 </label>
                 <p className="mt-1 text-sm text-gray-900">
                   {selectedApplication.submittedAt 
@@ -559,7 +588,7 @@ export default function ProjectDetail() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">
-                  {t('admin.applications.table.reviewedAt', '审核时间')}
+                  {t('admin.applications.table.reviewedAt', '심사일')}
                 </label>
                 <p className="mt-1 text-sm text-gray-900">
                   {selectedApplication.reviewedAt 
@@ -570,7 +599,7 @@ export default function ProjectDetail() {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600">
-                {t('admin.applications.table.applicationReason', '申请理由')}
+                {t('admin.applications.table.applicationReason', '신청 사유')}
               </label>
               <div className="mt-1 p-3 bg-gray-50 rounded-md">
                 <p className="text-sm text-gray-900 whitespace-pre-wrap">
@@ -578,13 +607,65 @@ export default function ProjectDetail() {
                 </p>
               </div>
             </div>
+            {selectedApplication.attachments && selectedApplication.attachments.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-gray-600">
+                  {t('admin.applications.attachments', '첨부파일')}
+                </label>
+                <div className="mt-2 space-y-2">
+                  {selectedApplication.attachments.map((attachment, index) => (
+                    <div 
+                      key={attachment.fileId || index}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <svg 
+                          className="w-4 h-4 text-gray-500 flex-shrink-0" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={2} 
+                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" 
+                          />
+                        </svg>
+                        <span className="text-sm text-gray-900 truncate">
+                          {attachment.fileName || `${t('common.attachment', '첨부파일')} ${index + 1}`}
+                        </span>
+                        {attachment.fileSize && (
+                          <span className="text-xs text-gray-500">
+                            ({(attachment.fileSize / 1024).toFixed(2)} KB)
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          if (attachment.fileUrl) {
+                            await handleDownloadByUrl(attachment.fileUrl, attachment.fileName);
+                          } else if (attachment.fileId) {
+                            await handleDownload(attachment.fileId, attachment.fileName);
+                          }
+                        }}
+                      >
+                        {t('common.download', '다운로드')}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {selectedApplication.memberId && (
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button
                   variant="outline"
                   onClick={() => handleViewMember(selectedApplication.memberId)}
                 >
-                  {t('admin.applications.viewMemberDetail', '查看企业详情')}
+                  {t('admin.applications.viewMemberDetail', '기업 상세 보기')}
                 </Button>
                 {(selectedApplication.status === 'submitted' || selectedApplication.status === 'under_review') && (
                   <>

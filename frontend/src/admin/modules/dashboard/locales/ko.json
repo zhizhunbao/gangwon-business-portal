@@ -1,0 +1,82 @@
+{
+    "admin": {
+        "dashboard": {
+            "title": "대시보드",
+            "tabs": {
+                "companyStatus": "기업 현황",
+                "bannerManagement": "배너 관리",
+                "popupManagement": "팝업 관리"
+            },
+            "quarter": {
+                "all": "전체",
+                "Q1": "1분기",
+                "Q2": "2분기",
+                "Q3": "3분기",
+                "Q4": "4분기"
+            },
+            "export": "내보내기",
+            "exportCsv": "CSV 내보내기",
+            "exportSuccess": "내보내기 성공",
+            "exportFailed": "내보내기 실패",
+            "filter": {
+                "title": "필터 조건",
+                "year": "연도",
+                "quarter": "분기"
+            },
+            "stats": {
+                "totalMembers": "총 기업 회원 수",
+                "totalSales": "총 매출액",
+                "totalEmployment": "총 고용 인원",
+                "totalIP": "총 지식재산권"
+            },
+            "charts": {
+                "members": "기업 회원 수 추이",
+                "salesEmployment": "매출 및 고용 추이",
+                "placeholder": "차트 영역 (ECharts 통합 예정)",
+                "noData": "데이터가 없습니다"
+            },
+            "companyStatus": {
+                "title": "기업 현황",
+                "export": "Excel 내보내기",
+                "performanceQuery": "실적 조회",
+                "businessLicense": "사업자등록번호",
+                "businessLicensePlaceholder": "000-00-00000 형식으로 입력",
+                "period": "기간",
+                "query": "조회"
+            },
+            "banner": {
+                "title": "배너 관리",
+                "mainBanner": "메인 배너",
+                "systemIntro": "시스템 소개 배너",
+                "projects": "지원사업 배너",
+                "performance": "실적 관리 배너",
+                "support": "원스톱 지원 배너",
+                "popup": "팝업",
+                "manage": "관리",
+                "image": "이미지",
+                "url": "URL",
+                "optional": "선택사항",
+                "enableUrl": "배너 클릭 시 링크 활성화",
+                "urlPlaceholder": "배너 클릭 시 이동할 URL을 입력하세요",
+                "upload": "업로드",
+                "save": "저장",
+                "saveError": "저장에 실패했습니다. 다시 시도해주세요."
+            },
+            "popup": {
+                "title": "팝업 관리",
+                "enabled": "팝업 활성화",
+                "startDate": "팝업 시작일",
+                "endDate": "팝업 종료일",
+                "image": "팝업 이미지",
+                "content": "팝업 내용",
+                "contentPlaceholder": "팝업에 표시할 내용을 입력하세요",
+                "contentNote": "에디터 창을 사용하여 텍스트를 입력할 수 있습니다",
+                "link": "클릭 링크",
+                "linkPlaceholder": "팝업 클릭 시 이동할 URL을 입력하세요",
+                "upload": "이미지 업로드",
+                "save": "저장",
+                "saveError": "저장에 실패했습니다. 다시 시도해주세요."
+            }
+        }
+    }
+}

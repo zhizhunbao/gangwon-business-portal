@@ -13,14 +13,14 @@ import { setStorage, cn } from "@shared/utils";
  * @param {'light'|'dark'} props.variant - Style variant: 'light' for dark backgrounds, 'dark' for light backgrounds
  */
 export default function LanguageSwitcher({ variant = "dark" }) {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   // Only show in development environment
   const isDevelopment = import.meta.env.DEV;
 
   const languages = [
-    { code: "ko", label: "한국어" },
-    { code: "zh", label: "中文" },
+    { code: "ko", label: t('common.language.korean', '한국어') },
+    { code: "zh", label: t('common.language.chinese', '중국어') },
   ];
 
   // Normalize current language: extract base language (e.g., 'ko-KR' -> 'ko')

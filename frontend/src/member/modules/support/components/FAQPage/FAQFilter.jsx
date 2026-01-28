@@ -26,7 +26,7 @@ export default function FAQFilter({
           data={categoryFilteredFaqs}
           columns={columns}
           onFilter={handleFilterChange}
-          placeholder={t("support.faqSearchPlaceholder", "搜索问题或答案...")}
+          placeholder={t('support.faqSearchPlaceholder', '질문 또는 답변 검색...')}
           className="flex-1 min-w-[200px] max-w-md"
         />
         {categories.length > 0 && (

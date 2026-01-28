@@ -14,7 +14,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
   if (!record?.dataJson?.salesEmployment) {
     return (
       <div className="text-center text-gray-500 py-8">
-        {t('performance.noData', '暂无数据')}
+        {t('performance.noData', '데이터가 없습니다')}
       </div>
     );
   }
@@ -26,7 +26,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
       {/* 销售额 */}
       <div>
         <h3 className="text-md font-semibold mb-4 pb-2 border-b border-gray-200">
-          {t('performance.salesEmploymentFields.sales', '销售额')}
+          {t('performance.salesEmploymentFields.sales', '매출액')}
           <span className="text-sm font-normal text-gray-500 ml-2">
             ({t('performance.salesEmploymentFields.unit.won', '원')})
           </span>
@@ -34,7 +34,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('performance.salesEmploymentFields.previousYear', '上年度')}
+              {t('performance.salesEmploymentFields.previousYear', '전년도')}
             </label>
             <span className="text-base text-gray-900">
               {formatNumber(salesEmployment.sales?.previousYear)}
@@ -42,7 +42,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {record.year}{t('performance.year', '年度')}
+              {record.year}{t('performance.year', '연도')}
             </label>
             <span className="text-base text-gray-900">
               {formatNumber(salesEmployment.sales?.currentYear)}
@@ -50,7 +50,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('performance.salesEmploymentFields.reportingDate', '报告日期')}
+              {t('performance.salesEmploymentFields.reportingDate', '작성 기준일')}
             </label>
             <span className="text-base text-gray-900">
               {formatDate(salesEmployment.sales?.reportingDate)}
@@ -62,7 +62,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
       {/* 出口额 */}
       <div>
         <h3 className="text-md font-semibold mb-4 pb-2 border-b border-gray-200">
-          {t('performance.salesEmploymentFields.export', '出口额')}
+          {t('performance.salesEmploymentFields.export', '수출액')}
           <span className="text-sm font-normal text-gray-500 ml-2">
             ({t('performance.salesEmploymentFields.unit.won', '원')})
           </span>
@@ -70,7 +70,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('performance.salesEmploymentFields.previousYear', '上年度')}
+              {t('performance.salesEmploymentFields.previousYear', '전년도')}
             </label>
             <span className="text-base text-gray-900">
               {formatNumber(salesEmployment.export?.previousYear)}
@@ -78,7 +78,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {record.year}{t('performance.year', '年度')}
+              {record.year}{t('performance.year', '연도')}
             </label>
             <span className="text-base text-gray-900">
               {formatNumber(salesEmployment.export?.currentYear)}
@@ -86,7 +86,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('performance.salesEmploymentFields.reportingDate', '报告日期')}
+              {t('performance.salesEmploymentFields.reportingDate', '작성 기준일')}
             </label>
             <span className="text-base text-gray-900">
               {formatDate(salesEmployment.export?.reportingDate)}
@@ -96,7 +96,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('performance.salesEmploymentFields.hskCode', 'HSK代码')}
+              {t('performance.salesEmploymentFields.hskCode', 'HSK 코드')}
             </label>
             <span className="text-base text-gray-900">
               {formatValue(salesEmployment.export?.hskCode)}
@@ -104,7 +104,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('performance.salesEmploymentFields.exportCountry1', '出口国家1')}
+              {t('performance.salesEmploymentFields.exportCountry1', '수출 국가 1')}
             </label>
             <span className="text-base text-gray-900">
               {formatValue(salesEmployment.export?.exportCountry1)}
@@ -112,7 +112,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t('performance.salesEmploymentFields.exportCountry2', '出口国家2')}
+              {t('performance.salesEmploymentFields.exportCountry2', '수출 국가 2')}
             </label>
             <span className="text-base text-gray-900">
               {formatValue(salesEmployment.export?.exportCountry2)}
@@ -124,7 +124,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
       {/* 雇佣创造 */}
       <div>
         <h3 className="text-md font-semibold mb-4 pb-2 border-b border-gray-200">
-          {t('performance.salesEmploymentFields.employment', '雇佣创造')}
+          {t('performance.salesEmploymentFields.employment', '고용 창출')}
           <span className="text-sm font-normal text-gray-500 ml-2">
             ({t('performance.salesEmploymentFields.unit.people', '명')})
           </span>
@@ -133,12 +133,12 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.salesEmploymentFields.currentEmployees', '现在职员工')}
+                {t('performance.salesEmploymentFields.currentEmployees', '현재 직원 수')}
               </label>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.salesEmploymentFields.previousYear', '上年度')}
+                {t('performance.salesEmploymentFields.previousYear', '전년도')}
               </label>
               <span className="text-base text-gray-900">
                 {formatNumber(salesEmployment.employment?.currentEmployees?.previousYear)}
@@ -146,7 +146,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {record.year}{t('performance.year', '年度')}
+                {record.year}{t('performance.year', '연도')}
               </label>
               <span className="text-base text-gray-900">
                 {formatNumber(salesEmployment.employment?.currentEmployees?.currentYear)}
@@ -156,12 +156,12 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.salesEmploymentFields.newEmployees', '新增雇佣人员')}
+                {t('performance.salesEmploymentFields.newEmployees', '신규 고용 인원')}
               </label>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.salesEmploymentFields.previousYear', '上年度')}
+                {t('performance.salesEmploymentFields.previousYear', '전년도')}
               </label>
               <span className="text-base text-gray-900">
                 {formatNumber(salesEmployment.employment?.newEmployees?.previousYear)}
@@ -169,7 +169,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {record.year}{t('performance.year', '年度')}
+                {record.year}{t('performance.year', '연도')}
               </label>
               <span className="text-base text-gray-900">
                 {formatNumber(salesEmployment.employment?.newEmployees?.currentYear)}
@@ -179,12 +179,12 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.salesEmploymentFields.totalEmployees', '总人员')}
+                {t('performance.salesEmploymentFields.totalEmployees', '총 인원')}
               </label>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.salesEmploymentFields.previousYear', '上年度')}
+                {t('performance.salesEmploymentFields.previousYear', '전년도')}
               </label>
               <span className="text-base text-gray-900">
                 {formatNumber(salesEmployment.employment?.totalEmployees?.previousYear)}
@@ -192,7 +192,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {record.year}{t('performance.year', '年度')}
+                {record.year}{t('performance.year', '연도')}
               </label>
               <span className="text-base text-gray-900">
                 {formatNumber(salesEmployment.employment?.totalEmployees?.currentYear)}
@@ -215,7 +215,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
                   <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
-                  <span className="text-sm text-gray-700">{attachment.fileName || '证明文件'}</span>
+                  <span className="text-sm text-gray-700">{attachment.fileName || t('common.document', '증명문서')}</span>
                   {attachment.fileSize && (
                     <span className="text-xs text-gray-500">
                       ({(attachment.fileSize / 1024).toFixed(1)} KB)
@@ -233,7 +233,7 @@ export default function SalesEmploymentTab({ record, currentLanguage, onDownload
                     }
                   }}
                 >
-                  {t('common.download', '下载')}
+                  {t('common.download', '다운로드')}
                 </Button>
               </div>
             ))}

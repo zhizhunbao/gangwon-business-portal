@@ -70,7 +70,7 @@ export function useFAQ() {
   // 分类选项
   const categoryOptions = useMemo(
     () => [
-      { value: "", label: t("common.all", "全部") },
+      { value: "", label: t('common.all', '전체') },
       ...categories.map((cat) => ({
         value: cat,
         label: categoryTranslations[cat] || cat,

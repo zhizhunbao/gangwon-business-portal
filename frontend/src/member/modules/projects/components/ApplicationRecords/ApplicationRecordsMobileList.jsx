@@ -30,7 +30,7 @@ export default function ApplicationRecordsMobileList({
             <div className="space-y-2 text-sm text-gray-600 mb-4">
               <div className="flex justify-between">
                 <span>
-                  {t("projects.applicationRecords.applicationDate", "申请日期")}
+                  {t('projects.applicationRecords.applicationDate', '신청일')}
                   :
                 </span>
                 <span>
@@ -41,7 +41,7 @@ export default function ApplicationRecordsMobileList({
               </div>
               <div className="flex justify-between">
                 <span>
-                  {t("projects.applicationRecords.processedDate", "处理日期")}:
+                  {t('projects.applicationRecords.processedDate', '처리일')}:
                 </span>
                 <span>
                   {application.reviewedAt

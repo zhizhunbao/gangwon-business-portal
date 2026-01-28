@@ -28,19 +28,12 @@ export default function NoticesPage({
 }) {
   const { t } = useTranslation();
 
-  console.log("[NoticesPage] Render props:", {
-    noticesCount: notices?.length,
-    loading,
-    error,
-    currentPage,
-  });
-
   const getBadgeInfo = (notice) => {
     return {
       variant: notice.important ? "danger" : "gray",
       text: notice.important
-        ? t("home.notices.important", "重要")
-        : t("home.notices.normal", "一般"),
+        ? t('home.notices.important', '중요')
+        : t('home.notices.normal', '일반'),
     };
   };
 
@@ -51,7 +44,7 @@ export default function NoticesPage({
           {t("home.notices.title")}
         </h1>
         <p className="text-gray-600 mt-2 text-sm">
-          {t("support.notices.description", "查看最新公告和重要通知")}
+          {t('support.notices.description', '최신 공지사항 및 중요 알림 확인')}
         </p>
       </div>
 
@@ -66,7 +59,7 @@ export default function NoticesPage({
             onClick={loadNotices}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
-            {t("common.retry", "重试")}
+            {t('common.retry', '다시 시도')}
           </button>
         </Card>
       ) : notices.length > 0 ? (
@@ -83,7 +76,7 @@ export default function NoticesPage({
       ) : (
         <Card className="p-8 text-center text-gray-500">
           <DocumentIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-          <p className="m-0">{t("home.notices.empty", "暂无公告")}</p>
+          <p className="m-0">{t('home.notices.empty', '공고가 없습니다')}</p>
         </Card>
       )}
 
@@ -99,7 +92,7 @@ export default function NoticesPage({
 
       {total > 0 && (
         <div className="mt-4 text-center text-sm text-gray-500">
-          {t("common.totalItems", "共 {{count}} 条", { count: total })}
+          {t("common.totalItems", "총 {{count}}개", { count: total })}
         </div>
       )}
     </PageContainer>

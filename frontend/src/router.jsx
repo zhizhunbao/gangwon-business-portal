@@ -10,6 +10,7 @@ import {
   Outlet,
 } from "react-router-dom";
 import { lazy, Suspense, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@shared/hooks";
 import { Button, Loading, LoginModal, ErrorBoundary } from "@shared/components";
 
@@ -133,20 +134,17 @@ function Unauthorized() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { t } = useTranslation();
 
-  // 从 URL 参数或 state 中获取来源路径
   const searchParams = new URLSearchParams(location.search);
   const fromParam = searchParams.get("from") || location.state?.from || "";
 
-  // 判断是否来自管理员路径
   const isFromAdmin = fromParam.startsWith("/admin");
   const isFromMember = fromParam.startsWith("/member");
 
   const getHomePath = () => {
-    // 优先根据用户角色决定跳转路径
     if (user?.role === "admin") return "/admin";
     if (user?.role === "member") return "/member";
-    // 未登录时根据来源路径决定
     if (isFromAdmin) return "/admin/login";
     return "/member";
   };
@@ -155,7 +153,6 @@ function Unauthorized() {
   const isAdminPath = user?.role === "admin";
 
   const handleNavigate = (path) => {
-    // 使用 window.location.href 确保跳转可靠
     window.location.href = path;
   };
 
@@ -163,9 +160,9 @@ function Unauthorized() {
     <div className="error-page">
       <div className="error-page-container">
         <div className="error-code">403</div>
-        <h1 className="error-title">접근 권한이 없습니다</h1>
+        <h1 className="error-title">{t('error.page403.title', '접근 권한이 없습니다')}</h1>
         <p className="error-message">
-          이 페이지에 접근할 수 있는 권한이 없습니다.
+          {t('error.page403.message', '이 페이지에 접근할 수 있는 권한이 없습니다.')}
         </p>
         <div
           style={{
@@ -176,31 +173,30 @@ function Unauthorized() {
           }}
         >
           {isAuthenticated ? (
-            // 已登录：返回对应首页
             <Button onClick={() => handleNavigate(homePath)}>
-              {isAdminPath ? "관리자 홈으로 돌아가기" : "홈으로 돌아가기"}
+              {isAdminPath 
+                ? t('error.page403.adminHomeButton', '관리자 홈으로 돌아가기')
+                : t('error.page403.homeButton', '홈으로 돌아가기')
+              }
             </Button>
           ) : isFromAdmin ? (
-            // 未登录 + 来自管理员路径：跳转管理员登录
             <Button onClick={() => handleNavigate("/admin/login")}>
-              관리자 로그인
+              {t('error.page403.adminLoginButton', '관리자 로그인')}
             </Button>
           ) : isFromMember ? (
-            // 未登录 + 来自会员路径：跳转会员首页（会弹出登录模态框）
             <Button onClick={() => handleNavigate("/member/home")}>
-              로그인
+              {t('common.login', '로그인')}
             </Button>
           ) : (
-            // 来源不明确：显示两个选项
             <>
               <Button onClick={() => handleNavigate("/member/home")}>
-                회원 로그인
+                {t('error.page403.memberLoginButton', '회원 로그인')}
               </Button>
               <Button
                 onClick={() => handleNavigate("/admin/login")}
                 style={{ backgroundColor: "#6b7280" }}
               >
-                관리자 로그인
+                {t('error.page403.adminLoginButton', '관리자 로그인')}
               </Button>
             </>
           )}
@@ -213,27 +209,23 @@ function Unauthorized() {
 function NotFound() {
   const location = useLocation();
   const { user } = useAuth();
+  const { t } = useTranslation();
 
-  // 현재 경로를 기반으로 적절한 홈 페이지 결정
   const getHomePath = () => {
     const currentPath = location.pathname;
 
-    // 首先检查用户角色
     if (user?.role === "admin") {
       return "/admin";
     }
 
-    // 관리자 경로인 경우 관리자 홈으로
     if (currentPath.startsWith("/admin")) {
       return "/admin";
     }
 
-    // 회원 경로인 경우 회원 홈으로
     if (currentPath.startsWith("/member")) {
       return "/member";
     }
 
-    // 기본적으로 회원 홈으로 (일반 사용자)
     return "/member";
   };
 
@@ -244,12 +236,15 @@ function NotFound() {
     <div className="error-page">
       <div className="error-page-container">
         <div className="error-code">404</div>
-        <h1 className="error-title">페이지를 찾을 수 없습니다</h1>
+        <h1 className="error-title">{t('error.page404.title', '페이지를 찾을 수 없습니다')}</h1>
         <p className="error-message">
-          요청하신 페이지가 존재하지 않거나 이동되었습니다.
+          {t('error.page404.message', '요청하신 페이지가 존재하지 않거나 이동되었습니다.')}
         </p>
         <Button onClick={() => (window.location.href = homePath)}>
-          {isAdminPath ? "관리자 홈으로 돌아가기" : "홈으로 돌아가기"}
+          {isAdminPath 
+            ? t('error.page404.adminHomeButton', '관리자 홈으로 돌아가기')
+            : t('error.page404.homeButton', '홈으로 돌아가기')
+          }
         </Button>
       </div>
     </div>
@@ -420,19 +415,9 @@ const AdminMessages = lazy(() =>
   })),
 );
 
-const AdminReports = lazy(() =>
-  import("@admin/modules/reports").then((m) => ({ default: m.default })),
-);
-
 const AdminStatisticsReport = lazy(() =>
   import("@admin/modules/statistics").then((m) => ({
     default: m.StatisticsReport,
-  })),
-);
-
-const AdminSystemLogs = lazy(() =>
-  import("@admin/modules/system-logs/SystemLogsDashboard").then((m) => ({
-    default: m.default,
   })),
 );
 
@@ -792,7 +777,7 @@ export const router = createBrowserRouter(
               path: "reports",
               element: (
                 <LazyRoute>
-                  <AdminReports />
+                  <AdminStatisticsReport />
                 </LazyRoute>
               ),
             },
@@ -801,14 +786,6 @@ export const router = createBrowserRouter(
               element: (
                 <LazyRoute>
                   <AdminStatisticsReport />
-                </LazyRoute>
-              ),
-            },
-            {
-              path: "system-logs",
-              element: (
-                <LazyRoute>
-                  <AdminSystemLogs />
                 </LazyRoute>
               ),
             },

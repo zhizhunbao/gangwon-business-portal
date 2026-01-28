@@ -192,14 +192,14 @@ export default function ProjectList() {
         {loading ? (
           <Card>
             <div className="text-center py-12 px-4">
-              <p className="text-base text-gray-500 m-0">{t('common.loading', '加载中...')}</p>
+              <p className="text-base text-gray-500 m-0">{t('common.loading', '로딩 중...')}</p>
             </div>
           </Card>
         ) : filteredProjects.length === 0 ? (
           <Card>
             <div className="text-center py-12 px-4">
               <p className="text-base text-gray-500 m-0">
-                {allProjects.length === 0 ? t('common.noData', '暂无数据') : t('common.noSearchResults', '没有找到匹配的结果')}
+                {allProjects.length === 0 ? t('common.noData', '데이터가 없습니다') : t('common.noSearchResults', '没有找到匹配的结果')}
               </p>
             </div>
           </Card>

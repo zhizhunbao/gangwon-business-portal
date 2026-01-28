@@ -26,20 +26,16 @@ const TERM_TYPES = {
  */
 const TERM_LABELS = {
   [TERM_TYPES.TERMS_OF_SERVICE]: {
-    ko: '이용약관',
-    zh: '使用条款'
+    key: 'terms.termsOfService'
   },
   [TERM_TYPES.PRIVACY_POLICY]: {
-    ko: '개인정보 처리방침',
-    zh: '隐私政策'
+    key: 'terms.privacyPolicy'
   },
   [TERM_TYPES.THIRD_PARTY_SHARING]: {
-    ko: '제3자 정보 제공 동의',
-    zh: '第三方信息提供同意'
+    key: 'terms.thirdPartySharing'
   },
   [TERM_TYPES.MARKETING_CONSENT]: {
-    ko: '마케팅 정보 수신 동의',
-    zh: '营销信息接收同意'
+    key: 'terms.marketingConsent'
   }
 };
 
@@ -56,8 +52,10 @@ export function TermsModal({ isOpen, termType, onClose }) {
   const [error, setError] = useState(null);
   const [content, setContent] = useState(null);
 
-  const language = i18n.language || 'ko';
-  const title = termType ? (TERM_LABELS[termType]?.[language] || TERM_LABELS[termType]?.ko || '') : '';
+  const termLabel = TERM_LABELS[termType];
+  const title = termType && termLabel 
+    ? t(termLabel.key)
+    : '';
 
   useEffect(() => {
     if (isOpen && termType) {
@@ -81,11 +79,11 @@ export function TermsModal({ isOpen, termType, onClose }) {
       if (response && response.contentHtml) {
         setContent(response.contentHtml);
       } else {
-        setError(t('common.noData', '暂无数据'));
+        setError(t('common.noData', '데이터가 없습니다'));
       }
     } catch (err) {
       console.error('[TermsModal] Failed to load terms content:', err);
-      setError(t('error.generic.message', '加载失败，请稍后重试'));
+      setError(t('error.generic.message', '작업 중 오류가 발생했습니다.'));
     } finally {
       setLoading(false);
     }

@@ -49,7 +49,7 @@ export default function MemberDetail() {
 
   const handleApprove = async () => {
     await adminService.approveMember(id);
-    showSuccess(t("admin.members.approveSuccess", "批准成功"));
+    showSuccess(t('admin.members.approveSuccess', '승인 성공'));
     const memberData = await adminService.getMemberDetail(id);
     if (memberData) {
       setMember(memberData);
@@ -58,11 +58,11 @@ export default function MemberDetail() {
 
   const handleReject = async () => {
     const reason = prompt(
-      t("admin.members.rejectReason", "请输入拒绝原因（可选）") ||
+      t('admin.members.rejectReason', '거부 사유를 입력하세요 (선택사항)') ||
         "请输入拒绝原因（可选）",
     );
     await adminService.rejectMember(id, reason || null);
-    showSuccess(t("admin.members.rejectSuccess", "拒绝成功"));
+    showSuccess(t('admin.members.rejectSuccess', '거부 성공'));
     const memberData = await adminService.getMemberDetail(id);
     if (memberData) {
       setMember(memberData);
@@ -71,7 +71,7 @@ export default function MemberDetail() {
 
   const handleSearchNiceDnb = async () => {
     if (!member || !member.businessNumber) {
-      setNiceDnbError("营业执照号码不可用");
+      setNiceDnbError(t('admin.members.detail.nicednbNoBusinessNumber', '사업자등록번호를 사용할 수 없습니다'));
       return;
     }
 
@@ -127,14 +127,14 @@ export default function MemberDetail() {
       <Card className="mb-6 p-6">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900 m-0">
-            {t("performance.companyInfo.sections.basicInfo", "基本信息")}
+            {t('performance.companyInfo.sections.basicInfo', '기본 정보')}
           </h2>
         </div>
 
         {/* Logo Display */}
         <div className="mb-6 pb-6 border-b border-gray-200">
           <label className="block text-sm text-gray-600 font-medium mb-3">
-            {t("performance.companyInfo.sections.logo", "企业Logo")}
+            {t('performance.companyInfo.sections.logo', '기업 로고')}
           </label>
           {member.logoUrl ? (
             <div className="w-24 h-24 sm:w-32 sm:h-32 border-2 border-gray-200 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50">
@@ -149,7 +149,7 @@ export default function MemberDetail() {
             </div>
           ) : (
             <div className="w-24 h-24 sm:w-32 sm:h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 text-gray-500 text-xs sm:text-sm">
-              {t("performance.companyInfo.profile.noLogo", "无Logo")}
+              {t('performance.companyInfo.profile.noLogo', '로고 없음')}
             </div>
           )}
         </div>
@@ -267,7 +267,7 @@ export default function MemberDetail() {
           </div>
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-600 font-medium">
-              {t("admin.members.table.status", "审批状态")}
+              {t('admin.members.table.status', '상태')}
             </label>
             <div>
               <Badge
@@ -298,7 +298,7 @@ export default function MemberDetail() {
       <Card className="mb-6 p-6">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900 m-0">
-            {t("performance.companyInfo.sections.addressInfo", "地址信息")}
+            {t('performance.companyInfo.sections.addressInfo', '주소 정보')}
           </h2>
         </div>
 
@@ -328,7 +328,7 @@ export default function MemberDetail() {
       <Card className="mb-6 p-6">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900 m-0">
-            {t("performance.companyInfo.sections.businessInfo", "业务信息")}
+            {t('performance.companyInfo.sections.businessInfo', '사업 정보')}
           </h2>
         </div>
 
@@ -429,7 +429,7 @@ export default function MemberDetail() {
               {t("member.sales", "매출액")}
             </label>
             <span className="text-base text-gray-900">
-              {member.revenue ? `${formatNumber(member.revenue)} 원` : "-"}
+              {member.revenue ? `${formatNumber(member.revenue)} ${t('common.currency.krw', '원')}` : "-"}
             </span>
           </div>
           <div className="flex flex-col gap-2">
@@ -438,7 +438,7 @@ export default function MemberDetail() {
             </label>
             <span className="text-base text-gray-900">
               {member.employeeCount
-                ? `${formatNumber(member.employeeCount)} 명`
+                ? `${formatNumber(member.employeeCount)} ${t('common.people', '명')}`
                 : "-"}
             </span>
           </div>
@@ -484,7 +484,7 @@ export default function MemberDetail() {
       <Card className="mb-6 p-6">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900 m-0">
-            {t("performance.companyInfo.sections.additionalInfo", "附加信息")}
+            {t('performance.companyInfo.sections.additionalInfo', '추가 정보')}
           </h2>
         </div>
 
@@ -596,12 +596,12 @@ export default function MemberDetail() {
             loading={niceDnbLoading}
             variant="outline"
           >
-            {t("admin.members.detail.searchNiceDnb") || "查询 Nice D&B"}
+            {t("admin.members.detail.searchNiceDnb", "Nice D&B 조회")}
           </Button>
         </div>
 
         {niceDnbLoading && (
-          <Loading text={t("common.loading") || "查询中..."} />
+          <Loading text={t("common.loading", "로딩 중...")} />
         )}
 
         {niceDnbError && (
@@ -626,11 +626,12 @@ export default function MemberDetail() {
               niceDnbData.data.businessNumber.replace(/-/g, "") !==
                 member.businessNumber.replace(/-/g, "") && (
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-                  <strong>提示：</strong>查询使用的营业执照号为{" "}
-                  <strong>{member.businessNumber}</strong>，但 Nice D&B API
-                  返回的营业执照号为{" "}
+                  <strong>{t('admin.members.detail.nicednbWarning', '알림:')}</strong>
+                  {t('admin.members.detail.nicednbMismatch', '조회에 사용된 사업자등록번호는')}{" "}
+                  <strong>{member.businessNumber}</strong>
+                  {t('admin.members.detail.nicednbButReturned', ', 하지만 Nice D&B API가 반환한 사업자등록번호는')}{" "}
                   <strong>{niceDnbData.data.businessNumber}</strong>
-                  ，两者不一致。
+                  {t('admin.members.detail.nicednbInconsistent', ', 둘이 일치하지 않습니다.')}
                 </div>
               )}
 
@@ -830,7 +831,7 @@ export default function MemberDetail() {
                 niceDnbData.data.assetAmount) && (
                 <div className="mb-6">
                   <h4 className="text-md font-medium text-gray-700 mb-4">
-                    当前财务指标（单位：千韩元）
+                    {t('admin.members.detail.currentFinancialIndicators', '현재 재무지표')} ({t('common.unit', '단위')}: {t('admin.members.detail.thousandKRW', '천원')})
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {niceDnbData.data.salesAmount && (

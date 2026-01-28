@@ -23,14 +23,14 @@ const CompanyBasicInfo = ({
     <Card className="shadow-sm p-0">
       <div className="flex items-center gap-3 border-b border-gray-100 p-6 sm:p-8">
         <h2 className="text-xl font-semibold text-gray-900 m-0">
-          {t("performance.companyInfo.sections.basicInfo", "基本信息")}
+          {t('performance.companyInfo.sections.basicInfo', '기본 정보')}
         </h2>
       </div>
       <div className="p-6 sm:p-8 space-y-6">
         {/* Logo */}
         <div className="mb-6 sm:mb-8 pb-6 sm:pb-8 border-b border-gray-200">
           <label className="block text-sm sm:text-base font-medium text-gray-700 mb-3 sm:mb-4">
-            {t("performance.companyInfo.sections.logo", "企业Logo")}
+            {t('performance.companyInfo.sections.logo', '기업 로고')}
           </label>
           <div className="flex flex-col items-start gap-4">
             {isEditing ? (
@@ -47,7 +47,7 @@ const CompanyBasicInfo = ({
                   <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 border-2 border-blue-300 rounded-lg flex flex-col items-center justify-center bg-blue-50">
                     <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-2"></div>
                     <span className="text-xs text-blue-600">
-                      {t("common.uploading", "上传中...")}
+                      {t('common.uploading', '업로드 중...')}
                     </span>
                   </div>
                 ) : data.logoPreview || data.logoUrl ? (
@@ -82,7 +82,7 @@ const CompanyBasicInfo = ({
                       "点击上传Logo",
                     )}
                   >
-                    {t("performance.companyInfo.profile.noLogo", "无Logo")}
+                    {t('performance.companyInfo.profile.noLogo', '로고 없음')}
                   </div>
                 )}
                 <small className="text-xs text-gray-500">
@@ -108,7 +108,7 @@ const CompanyBasicInfo = ({
                   </div>
                 ) : (
                   <div className="w-24 h-24 sm:w-32 sm:h-32 lg:w-40 lg:h-40 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 text-gray-500 text-xs sm:text-sm">
-                    {t("performance.companyInfo.profile.noLogo", "无Logo")}
+                    {t('performance.companyInfo.profile.noLogo', '로고 없음')}
                   </div>
                 )}
               </>
@@ -119,7 +119,7 @@ const CompanyBasicInfo = ({
         {/* Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Input
-            label={t("performance.companyInfo.fields.companyName", "企业名称")}
+            label={t('performance.companyInfo.fields.companyName', '기업명')}
             value={data.companyName}
             onChange={(e) => onChange("companyName", e.target.value)}
             disabled={!isEditing}
@@ -127,7 +127,7 @@ const CompanyBasicInfo = ({
             error={errors.companyName}
           />
           <Input
-            label={t("performance.companyInfo.fields.email", "电子邮箱")}
+            label={t('performance.companyInfo.fields.email', '이메일')}
             value={data.email}
             onChange={(e) => onChange("email", e.target.value)}
             disabled={!isEditing}
@@ -154,7 +154,7 @@ const CompanyBasicInfo = ({
             error={errors.legalNumber}
           />
           <Input
-            label={t("performance.companyInfo.fields.foundingDate", "成立日期")}
+            label={t('performance.companyInfo.fields.foundingDate', '설립일')}
             type="date"
             value={data.foundingDate}
             onChange={(e) => onChange("foundingDate", e.target.value)}
@@ -163,7 +163,7 @@ const CompanyBasicInfo = ({
             error={errors.foundingDate}
           />
           <Input
-            label={t("performance.companyInfo.fields.website", "公司网站")}
+            label={t('performance.companyInfo.fields.website', '홈페이지')}
             value={data.website}
             onChange={(e) => onChange("website", e.target.value)}
             disabled={!isEditing}
@@ -173,7 +173,7 @@ const CompanyBasicInfo = ({
         </div>
         <div className="grid grid-cols-1 gap-6">
           <Input
-            label={t("performance.companyInfo.fields.address", "公司地址")}
+            label={t('performance.companyInfo.fields.address', '주소')}
             value={data.address}
             onChange={(e) => onChange("address", e.target.value)}
             disabled={!isEditing}
@@ -181,7 +181,7 @@ const CompanyBasicInfo = ({
             error={errors.address}
           />
           <Textarea
-            label={t("performance.companyInfo.fields.description", "公司介绍")}
+            label={t('performance.companyInfo.fields.description', '기업소개')}
             value={data.description}
             onChange={(e) => onChange("description", e.target.value)}
             disabled={!isEditing}

@@ -47,10 +47,10 @@ export const TIME_DIMENSION = {
  * 季度选项 (1-4)
  */
 export const QUARTER_OPTIONS = [
-  { value: 1, label: "Q1" },
-  { value: 2, label: "Q2" },
-  { value: 3, label: "Q3" },
-  { value: 4, label: "Q4" },
+  { value: 1, label: "1분기" },
+  { value: 2, label: "2분기" },
+  { value: 3, label: "3분기" },
+  { value: 4, label: "4분기" },
 ];
 
 /**
@@ -120,6 +120,7 @@ export const POLICY_TAGS = {
 
 /**
  * 江原道重点产业
+ * Gangwon Province Key Industries
  */
 export const GANGWON_INDUSTRIES = {
   NATURAL_BIO: "natural_bio",
@@ -129,119 +130,31 @@ export const GANGWON_INDUSTRIES = {
 
 /**
  * 江原道重点产业选项
+ * 从统一数据源导入: MAIN_INDUSTRY_KSIC_MAJOR_KEYS
  */
-export const GANGWON_INDUSTRY_OPTIONS = [
-  {
-    value: "natural_bio",
-    labelKey: "industryClassification.mainIndustryKsic.natural_bio",
-  },
-  {
-    value: "ceramic",
-    labelKey: "industryClassification.mainIndustryKsic.ceramic",
-  },
-  {
-    value: "digital_health",
-    labelKey: "industryClassification.mainIndustryKsic.digital_health",
-  },
-];
+import { MAIN_INDUSTRY_KSIC_MAJOR_KEYS } from '@/shared/data/industryClassification';
+export const GANGWON_INDUSTRY_OPTIONS = MAIN_INDUSTRY_KSIC_MAJOR_KEYS;
 
 /**
  * 创业类型选项 (与会员模块同步)
+ * 从统一数据源导入: STARTUP_TYPE_KEYS
  */
-export const STARTUP_TYPE_OPTIONS = [
-  {
-    value: "student_startup",
-    labelKey: "industryClassification.startupType.student_startup",
-  },
-  {
-    value: "faculty_startup",
-    labelKey: "industryClassification.startupType.faculty_startup",
-  },
-  {
-    value: "women_enterprise",
-    labelKey: "industryClassification.startupType.women_enterprise",
-  },
-  {
-    value: "research_institute",
-    labelKey: "industryClassification.startupType.research_institute",
-  },
-  {
-    value: "venture_company",
-    labelKey: "industryClassification.startupType.venture_company",
-  },
-  {
-    value: "non_venture",
-    labelKey: "industryClassification.startupType.non_venture",
-  },
-  {
-    value: "preliminary_social_enterprise",
-    labelKey:
-      "industryClassification.startupType.preliminary_social_enterprise",
-  },
-  {
-    value: "social_enterprise",
-    labelKey: "industryClassification.startupType.social_enterprise",
-  },
-  {
-    value: "youth_enterprise",
-    labelKey: "industryClassification.startupType.youth_enterprise",
-  },
-  {
-    value: "cooperative",
-    labelKey: "industryClassification.startupType.cooperative",
-  },
-  {
-    value: "village_enterprise",
-    labelKey: "industryClassification.startupType.village_enterprise",
-  },
-  { value: "other", labelKey: "industryClassification.startupType.other" },
-];
+import { STARTUP_TYPE_KEYS } from '@/shared/data/industryClassification';
+export const STARTUP_TYPE_OPTIONS = STARTUP_TYPE_KEYS;
 
 /**
  * 业务领域选项 (Business Field)
+ * 从统一数据源导入: BUSINESS_FIELD_KEYS
  */
-export const BUSINESS_FIELD_OPTIONS = [
-  { value: "13", labelKey: "industryClassification.businessField.13" },
-  { value: "20", labelKey: "industryClassification.businessField.20" },
-  { value: "21", labelKey: "industryClassification.businessField.21" },
-  { value: "22", labelKey: "industryClassification.businessField.22" },
-  { value: "23", labelKey: "industryClassification.businessField.23" },
-  { value: "24", labelKey: "industryClassification.businessField.24" },
-  { value: "25", labelKey: "industryClassification.businessField.25" },
-  { value: "26", labelKey: "industryClassification.businessField.26" },
-  { value: "27", labelKey: "industryClassification.businessField.27" },
-  { value: "28", labelKey: "industryClassification.businessField.28" },
-  { value: "29", labelKey: "industryClassification.businessField.29" },
-  { value: "30", labelKey: "industryClassification.businessField.30" },
-  { value: "31", labelKey: "industryClassification.businessField.31" },
-];
+import { BUSINESS_FIELD_KEYS } from '@/shared/data/industryClassification';
+export const BUSINESS_FIELD_OPTIONS = BUSINESS_FIELD_KEYS;
 
 /**
- * 标准产业分类 (KSIC-大分类) - 已同步至全局数据 industryClassification.js
+ * 标准产业分类 (KSIC-大分类)
+ * 从统一数据源导入: KSIC_MAJOR_CATEGORY_KEYS
  */
-export const MAJOR_INDUSTRY_OPTIONS = [
-  { value: "A", labelKey: "industryClassification.ksicMajor.A" },
-  { value: "B", labelKey: "industryClassification.ksicMajor.B" },
-  { value: "C", labelKey: "industryClassification.ksicMajor.C" },
-  { value: "D", labelKey: "industryClassification.ksicMajor.D" },
-  { value: "E", labelKey: "industryClassification.ksicMajor.E" },
-  { value: "F", labelKey: "industryClassification.ksicMajor.F" },
-  { value: "G", labelKey: "industryClassification.ksicMajor.G" },
-  { value: "H", labelKey: "industryClassification.ksicMajor.H" },
-  { value: "I", labelKey: "industryClassification.ksicMajor.I" },
-  { value: "J", labelKey: "industryClassification.ksicMajor.J" },
-  { value: "K", labelKey: "industryClassification.ksicMajor.K" },
-  { value: "L", labelKey: "industryClassification.ksicMajor.L" },
-  { value: "M", labelKey: "industryClassification.ksicMajor.M" },
-  { value: "N", labelKey: "industryClassification.ksicMajor.N" },
-  { value: "O", labelKey: "industryClassification.ksicMajor.O" },
-  { value: "P", labelKey: "industryClassification.ksicMajor.P" },
-  { value: "Q", labelKey: "industryClassification.ksicMajor.Q" },
-  { value: "R", labelKey: "industryClassification.ksicMajor.R" },
-  { value: "S", labelKey: "industryClassification.ksicMajor.S" },
-  { value: "T", labelKey: "industryClassification.ksicMajor.T" },
-  { value: "U", labelKey: "industryClassification.ksicMajor.U" },
-];
+import { KSIC_MAJOR_CATEGORY_KEYS } from '@/shared/data/industryClassification';
+export const MAJOR_INDUSTRY_OPTIONS = KSIC_MAJOR_CATEGORY_KEYS;
 
 /**
  * 政策关联选项列表
@@ -787,10 +700,6 @@ export const buildQueryParams = (params) => {
     // 直接保留原始 key，api.service.js 会自动转换 camelCase -> snake_case
     cleanParams[key] = value;
   });
-
-  // DEBUG: 打印发送到后端的参数
-  console.log("[buildQueryParams] Input:", params);
-  console.log("[buildQueryParams] Output (sending to backend):", cleanParams);
 
   return cleanParams;
 };

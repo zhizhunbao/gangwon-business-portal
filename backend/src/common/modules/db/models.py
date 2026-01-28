@@ -218,21 +218,20 @@ class ProjectApplication(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     member_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="CASCADE"), nullable=False)
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    status = Column(String(50), default="submitted")  # submitted, under_review, approved, rejected, needs_supplement, cancelled
+    status = Column(String(50), default="submitted")
+    applicant_name = Column(String(100), nullable=True)
+    applicant_phone = Column(String(20), nullable=True)
     application_reason = Column(Text)
     submitted_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     reviewed_at = Column(TIMESTAMP(timezone=True))
     
-    # Review fields
-    review_note = Column(Text, nullable=True)  # 审核备注/拒绝原因
-    reviewed_by = Column(UUID(as_uuid=True), nullable=True)  # 审核人 (admin id)
-    material_request = Column(Text, nullable=True)  # 补充材料请求
-    material_response = Column(Text, nullable=True)  # 会员补充材料回复
+    review_note = Column(Text, nullable=True)
+    reviewed_by = Column(UUID(as_uuid=True), nullable=True)
+    material_request = Column(Text, nullable=True)
+    material_response = Column(Text, nullable=True)
     
-    # Attachments stored as JSONB
     attachments = Column(JSONB, nullable=True)
     
-    # Soft delete field
     deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)
     
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())

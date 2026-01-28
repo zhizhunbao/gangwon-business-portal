@@ -14,7 +14,7 @@ export default function BannerManagement() {
   
   // Quick banner management state (by key)
   const [quickBanners, setQuickBanners] = useState({
-    main_primary: { image: null, mobileImage: null, file: null, mobileFile: null, url: '' },
+    mainPrimary: { image: null, mobileImage: null, file: null, mobileFile: null, url: '' },
     about: { image: null, mobileImage: null, file: null, mobileFile: null, url: '' },
     projects: { image: null, mobileImage: null, file: null, mobileFile: null, url: '' },
     performance: { image: null, mobileImage: null, file: null, mobileFile: null, url: '' },
@@ -31,13 +31,13 @@ export default function BannerManagement() {
     setLoadingQuick(true);
     const response = await apiService.get(`${API_PREFIX}/admin/banners`);
     if (response && response.banners) {
-      const bannerKeys = ['main_primary', 'about', 'projects', 'performance', 'support'];
+      const bannerKeys = ['mainPrimary', 'about', 'projects', 'performance', 'support'];
       const normalizedBanners = {};
       bannerKeys.forEach(key => {
         const banner = response.banners[key] || {};
         normalizedBanners[key] = {
           image: banner.image || null,
-          mobileImage: banner.mobile_image || banner.mobileImage || null,
+          mobileImage: banner.mobileImage || null,
           file: null,
           mobileFile: null,
           url: banner.url || ''
@@ -46,7 +46,7 @@ export default function BannerManagement() {
       setQuickBanners(normalizedBanners);
     }
     setLoadingQuick(false);
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     loadQuickBanners();
@@ -94,8 +94,11 @@ export default function BannerManagement() {
     }
     formData.append('url', banner.url || '');
     
+    // Convert camelCase to snake_case for API endpoint
+    const apiKey = bannerKey === 'mainPrimary' ? 'main_primary' : bannerKey;
+    
     const response = await apiService.post(
-      `${API_PREFIX}/admin/banners/${bannerKey}`,
+      `${API_PREFIX}/admin/banners/${apiKey}`,
       formData
     );
     
@@ -107,8 +110,8 @@ export default function BannerManagement() {
           image: response.banner.image !== null && response.banner.image !== undefined 
             ? response.banner.image 
             : prev[bannerKey].image,
-          mobileImage: response.banner.mobile_image !== null && response.banner.mobile_image !== undefined
-            ? response.banner.mobile_image
+          mobileImage: response.banner.mobileImage !== null && response.banner.mobileImage !== undefined
+            ? response.banner.mobileImage
             : prev[bannerKey].mobileImage,
           file: null,
           mobileFile: null,
@@ -117,7 +120,7 @@ export default function BannerManagement() {
       }));
     }
     setMessageVariant('success');
-    setMessage(t('admin.content.banners.messages.saved', '保存成功'));
+    setMessage(t('admin.content.banners.messages.saved', '저장되었습니다'));
     setTimeout(() => setMessage(null), 3000);
     setLoadingQuick(false);
   };
@@ -131,15 +134,15 @@ export default function BannerManagement() {
       )}
       
       {loadingQuick ? (
-        <div className="p-6 text-center text-gray-500">{t('common.loading', '加载中...')}</div>
+        <div className="p-6 text-center text-gray-500">{t('common.loading', '로딩 중...')}</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { key: 'main_primary', label: t('admin.content.banners.types.mainBanner', '主页横幅') },
-              { key: 'about', label: t('admin.content.banners.types.systemIntro', '系统介绍') },
-              { key: 'projects', label: t('admin.content.banners.types.projects', '项目') },
-              { key: 'performance', label: t('admin.content.banners.types.performance', '绩效') },
-              { key: 'support', label: t('admin.content.banners.types.support', '支持') }
+              { key: 'mainPrimary', label: t('admin.content.banners.types.mainBanner', '메인 배너') },
+              { key: 'about', label: t('admin.content.banners.types.systemIntro', '시스템 소개') },
+              { key: 'projects', label: t('admin.content.banners.types.projects', '지원사업') },
+              { key: 'performance', label: t('admin.content.banners.types.performance', '성과') },
+              { key: 'support', label: t('admin.content.banners.types.support', '지원') }
             ].map(({ key, label }) => (
               <Card key={key} className="w-full min-w-0 flex flex-col p-6 md:p-4">
                 <h3 className="text-lg font-semibold text-gray-800 m-0 mb-6 md:text-base md:mb-4">{label}</h3>
@@ -148,10 +151,10 @@ export default function BannerManagement() {
                   {/* Desktop Image Upload */}
                   <div className="flex flex-col gap-3">
                     <label className="text-sm text-gray-600 font-medium">
-                      {t('admin.content.banners.form.fields.desktopImage', '桌面端图片')}
+                      {t('admin.content.banners.form.fields.desktopImage', '데스크톱 이미지')}
                     </label>
                     <p className="text-xs text-gray-400 m-0">
-                      {t('admin.content.banners.form.fields.desktopImageHint', '推荐: 1920 x 600 (16:5), 最小: 1440 x 450')}
+                      {t('admin.content.banners.form.fields.desktopImageHint', '권장: 1920 x 600 (16:5), 최소: 1440 x 450')}
                     </p>
                     <div className="flex flex-col gap-3">
                       {quickBanners[key].image && (
@@ -181,7 +184,7 @@ export default function BannerManagement() {
                           fileInputRefs.current[key]?.click();
                         }}
                       >
-                        {t('admin.content.banners.actions.uploadDesktop', '上传桌面端图片')}
+                        {t('admin.content.banners.actions.uploadDesktop', '데스크톱 이미지 업로드')}
                       </Button>
                     </div>
                   </div>
@@ -189,10 +192,10 @@ export default function BannerManagement() {
                   {/* Mobile Image Upload */}
                   <div className="flex flex-col gap-3 mt-2">
                     <label className="text-sm text-gray-600 font-medium">
-                      {t('admin.content.banners.form.fields.mobileImage', '移动端图片')}
+                      {t('admin.content.banners.form.fields.mobileImage', '모바일 이미지')}
                     </label>
                     <p className="text-xs text-gray-400 m-0">
-                      {t('admin.content.banners.form.fields.mobileImageHint', '推荐: 1080 x 1350 (4:5), 最小: 750 x 938')}
+                      {t('admin.content.banners.form.fields.mobileImageHint', '권장: 1080 x 1350 (4:5), 최소: 750 x 938')}
                     </p>
                     <div className="flex flex-col gap-3">
                       {quickBanners[key].mobileImage && (
@@ -222,13 +225,13 @@ export default function BannerManagement() {
                           mobileFileInputRefs.current[key]?.click();
                         }}
                       >
-                        {t('admin.content.banners.actions.uploadMobile', '上传移动端图片')}
+                        {t('admin.content.banners.actions.uploadMobile', '모바일 이미지 업로드')}
                       </Button>
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-3 mt-4">
-                    <label className="text-sm text-gray-600 font-medium">{t('admin.content.banners.form.fields.url', '链接URL')}</label>
+                    <label className="text-sm text-gray-600 font-medium">{t('admin.content.banners.form.fields.url', '링크 URL')}</label>
                     <Input
                       type="text"
                       value={quickBanners[key].url}
@@ -244,7 +247,7 @@ export default function BannerManagement() {
                       className="w-full text-sm py-2"
                       loading={loadingQuick}
                     >
-                      {t('admin.content.banners.actions.save', '保存')}
+                      {t('admin.content.banners.actions.save', '저장')}
                     </Button>
                   </div>
                 </div>

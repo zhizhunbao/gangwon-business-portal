@@ -29,13 +29,6 @@ export default function ApplicationForm({
     formData;
 
   const handlePhoneChange = (e) => {
-    // Logic for phone formatting must be handled by parent or here?
-    // Let's keep it simple here, assume parent handles formatting if needed,
-    // or we implement formatting here.
-    // Given the original code had formatPhoneNumber, let's re-implement or pass raw.
-    // It's better to format in the handler passed from parent or use a utility.
-    // For simplicity, we'll implement formatPhoneNumber here as a helper or use the one passed via onUpdateField.
-    // Let's implement it here to keep component self-contained for UI logic.
     const raw = e.target.value;
     const formatted = formatPhoneNumber(raw);
     onUpdateField("applicantPhone", formatted);
@@ -63,7 +56,7 @@ export default function ApplicationForm({
         <div className="p-3 rounded-lg border bg-blue-50 border-blue-200">
           <div className="flex items-center justify-between">
             <span className="text-sm text-blue-900">
-              {t("projects.applicationStatus", "申请状态")}:
+              {t('projects.applicationStatus', '신청 상태')}:
             </span>
             <span className="px-2 py-1 text-xs font-semibold rounded bg-blue-100 text-blue-800">
               {t(
@@ -74,7 +67,7 @@ export default function ApplicationForm({
           </div>
           {existingApplication.submittedAt && (
             <div className="mt-2 text-xs text-blue-700">
-              {t("projects.submittedAt", "提交时间")}:{" "}
+              {t('projects.submittedAt', '제출 시간')}:{" "}
               {new Date(existingApplication.submittedAt).toLocaleString()}
             </div>
           )}
@@ -86,7 +79,7 @@ export default function ApplicationForm({
         <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded-lg text-sm">
           <div>
             <span className="text-gray-500">
-              {t("projects.companyId", "企业ID")}:{" "}
+              {t('projects.companyId', '기업 ID')}:{" "}
             </span>
             <span className="font-medium">
               {user.businessNumber || user.id}
@@ -94,7 +87,7 @@ export default function ApplicationForm({
           </div>
           <div>
             <span className="text-gray-500">
-              {t("projects.companyName", "企业名")}:{" "}
+              {t('projects.companyName', '기업명')}:{" "}
             </span>
             <span className="font-medium">{user.companyName || "-"}</span>
           </div>
@@ -108,7 +101,7 @@ export default function ApplicationForm({
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("projects.application.form.applicantName", "申请人姓名")}
+            {t('projects.application.form.applicantName', '담당자 이름')}
             {!actualViewMode && <span className="text-red-500 ml-1">*</span>}
           </label>
           <input
@@ -126,7 +119,7 @@ export default function ApplicationForm({
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("projects.application.form.applicantPhone", "申请人电话")}
+            {t('projects.application.form.applicantPhone', '담당자 전화번호')}
             {!actualViewMode && <span className="text-red-500 ml-1">*</span>}
           </label>
           <input
@@ -147,7 +140,7 @@ export default function ApplicationForm({
 
       {/* Application Reason */}
       <Textarea
-        label={t("projects.application.form.reason", "申请理由")}
+        label={t('projects.application.form.reason', '신청 사유')}
         value={applicationReason}
         onChange={(e) => onUpdateField("applicationReason", e.target.value)}
         placeholder={t(
@@ -159,7 +152,7 @@ export default function ApplicationForm({
         error={errors.applicationReason}
         help={
           !actualViewMode
-            ? `${applicationReason.length}/10 ${t("common.characters", "字符")}`
+            ? `${applicationReason.length}/10 ${t('common.characters', '자')}`
             : ""
         }
         disabled={actualViewMode}
@@ -167,7 +160,7 @@ export default function ApplicationForm({
 
       {/* Attachments */}
       <FileAttachments
-        label={t("projects.application.form.attachments", "附件")}
+        label={t('projects.application.form.attachments', '첨부파일')}
         attachments={attachments}
         onChange={onAttachmentsChange}
         maxFiles={5}

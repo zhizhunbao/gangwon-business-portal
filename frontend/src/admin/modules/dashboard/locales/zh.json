@@ -1,0 +1,82 @@
+{
+    "admin": {
+        "dashboard": {
+            "title": "仪表盘",
+            "tabs": {
+                "companyStatus": "企业现状",
+                "bannerManagement": "横幅管理",
+                "popupManagement": "弹窗管理"
+            },
+            "quarter": {
+                "all": "全部",
+                "Q1": "第一季度",
+                "Q2": "第二季度",
+                "Q3": "第三季度",
+                "Q4": "第四季度"
+            },
+            "export": "导出",
+            "exportCsv": "导出CSV",
+            "exportSuccess": "导出成功",
+            "exportFailed": "导出失败",
+            "filter": {
+                "title": "筛选条件",
+                "year": "年份",
+                "quarter": "季度"
+            },
+            "stats": {
+                "totalMembers": "总企业会员数",
+                "totalSales": "总销售额",
+                "totalEmployment": "总雇佣人数",
+                "totalIP": "总知识产权"
+            },
+            "charts": {
+                "members": "企业会员数趋势",
+                "salesEmployment": "销售额及雇佣趋势",
+                "placeholder": "图表区域（待集成 ECharts）",
+                "noData": "暂无数据"
+            },
+            "companyStatus": {
+                "title": "企业现状",
+                "export": "导出Excel",
+                "performanceQuery": "业绩查询",
+                "businessLicense": "营业执照号码",
+                "businessLicensePlaceholder": "请输入000-00-00000格式",
+                "period": "期间",
+                "query": "查询"
+            },
+            "banner": {
+                "title": "横幅管理",
+                "mainBanner": "主横幅",
+                "systemIntro": "系统介绍横幅",
+                "projects": "支援事业横幅",
+                "performance": "业绩管理横幅",
+                "support": "一站式支持横幅",
+                "popup": "弹窗",
+                "manage": "管理",
+                "image": "图片",
+                "url": "URL",
+                "optional": "可选",
+                "enableUrl": "启用横幅点击链接",
+                "urlPlaceholder": "请输入横幅点击时跳转的URL",
+                "upload": "上传",
+                "save": "保存",
+                "saveError": "保存失败，请重试"
+            },
+            "popup": {
+                "title": "弹窗管理",
+                "enabled": "启用弹窗",
+                "startDate": "弹窗开始日期",
+                "endDate": "弹窗结束日期",
+                "image": "弹窗图片",
+                "content": "弹窗内容",
+                "contentPlaceholder": "请输入弹窗显示的内容",
+                "contentNote": "可使用编辑器窗口输入文本",
+                "link": "点击链接",
+                "linkPlaceholder": "请输入弹窗点击时跳转的URL",
+                "upload": "上传图片",
+                "save": "保存",
+                "saveError": "保存失败，请重试"
+            }
+        }
+    }
+}

@@ -14,7 +14,7 @@ export default function GovernmentSupportTab({ record, currentLanguage, onDownlo
   if (!record?.dataJson?.governmentSupport || record.dataJson.governmentSupport.length === 0) {
     return (
       <div className="text-center text-gray-500 py-8">
-        {t('common.noData', '没有数据')}
+        {t('common.noData', '데이터가 없습니다')}
       </div>
     );
   }
@@ -27,25 +27,25 @@ export default function GovernmentSupportTab({ record, currentLanguage, onDownlo
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.governmentSupportFields.projectName', '实行项目名')}
+                {t('performance.governmentSupportFields.projectName', '실행 지원사업명')}
               </label>
               <span className="text-base text-gray-900">{item.projectName || '-'}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.governmentSupportFields.startupProjectName', '创业项目名')}
+                {t('performance.governmentSupportFields.startupProjectName', '창업 지원사업명')}
               </label>
               <span className="text-base text-gray-900">{item.startupProjectName || '-'}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.governmentSupportFields.supportOrganization', '支持机关名')}
+                {t('performance.governmentSupportFields.supportOrganization', '지원 기관명')}
               </label>
               <span className="text-base text-gray-900">{item.supportOrganization || '-'}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.governmentSupportFields.supportAmount', '支持金额')}
+                {t('performance.governmentSupportFields.supportAmount', '지원 금액')}
               </label>
               <span className="text-base text-gray-900">
                 {formatNumber(item.supportAmount)}
@@ -53,13 +53,13 @@ export default function GovernmentSupportTab({ record, currentLanguage, onDownlo
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.governmentSupportFields.startDate', '开始日期')}
+                {t('performance.governmentSupportFields.startDate', '시작일')}
               </label>
               <span className="text-base text-gray-900">{formatDate(item.startDate)}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.governmentSupportFields.endDate', '结束日期')}
+                {t('performance.governmentSupportFields.endDate', '종료일')}
               </label>
               <span className="text-base text-gray-900">{formatDate(item.endDate)}</span>
             </div>
@@ -76,7 +76,7 @@ export default function GovernmentSupportTab({ record, currentLanguage, onDownlo
                       <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
-                      <span className="text-sm text-gray-700">{attachment.fileName || '证明文件'}</span>
+                      <span className="text-sm text-gray-700">{attachment.fileName || t('common.document', '증명문서')}</span>
                       {attachment.fileSize && (
                         <span className="text-xs text-gray-500">
                           ({(attachment.fileSize / 1024).toFixed(1)} KB)
@@ -94,7 +94,7 @@ export default function GovernmentSupportTab({ record, currentLanguage, onDownlo
                         }
                       }}
                     >
-                      {t('common.download', '下载')}
+                      {t('common.download', '다운로드')}
                     </Button>
                   </div>
                 ))}

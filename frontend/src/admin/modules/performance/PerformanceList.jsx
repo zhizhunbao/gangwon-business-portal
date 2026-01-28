@@ -107,7 +107,7 @@ export default function PerformanceList() {
 
   const handleApprove = async () => {
     await adminService.approvePerformance(selectedRecord.id, approveComment || null);
-    showSuccess(t('admin.performance.approveSuccess', '批准成功'));
+    showSuccess(t('admin.performance.approveSuccess', '승인 성공'));
     setShowApproveModal(false);
     setApproveComment('');
     setSelectedRecord(null);
@@ -116,12 +116,12 @@ export default function PerformanceList() {
 
   const handleRequestRevision = async () => {
     if (!reviewComment.trim()) {
-      showWarning(t('admin.performance.revisionCommentRequired', '请输入修改意见'));
+      showWarning(t('admin.performance.revisionCommentRequired', '수정 의견을 입력하세요'));
       return;
     }
 
     await adminService.requestPerformanceRevision(selectedRecord.id, reviewComment);
-    showSuccess(t('admin.performance.revisionSuccess', '修改请求已发送'));
+    showSuccess(t('admin.performance.revisionSuccess', '수정 요청이 전송되었습니다'));
     setShowReviewModal(false);
     setReviewComment('');
     setSelectedRecord(null);
@@ -130,12 +130,12 @@ export default function PerformanceList() {
 
   const handleReject = async () => {
     if (!rejectComment.trim()) {
-      showWarning(t('admin.performance.rejectCommentRequired', '请输入驳回原因'));
+      showWarning(t('admin.performance.rejectCommentRequired', '거부 사유를 입력하세요'));
       return;
     }
 
     await adminService.rejectPerformance(selectedRecord.id, rejectComment);
-    showSuccess(t('admin.performance.rejectSuccess', '驳回成功'));
+    showSuccess(t('admin.performance.rejectSuccess', '거부 성공'));
     setShowRejectModal(false);
     setRejectComment('');
     setSelectedRecord(null);
@@ -144,7 +144,7 @@ export default function PerformanceList() {
 
   const handleViewDetail = (recordId) => {
     if (!recordId) {
-      showError(t('admin.performance.detail.notFound', '记录ID不存在'));
+      showError(t('admin.performance.detail.notFound', '실적 기록이 존재하지 않습니다'));
       return;
     }
     const idString = typeof recordId === 'string' ? recordId : String(recordId);
@@ -170,9 +170,9 @@ export default function PerformanceList() {
         memberId: memberId || undefined
       };
       await adminService.exportPerformance(params);
-      showSuccess(t('admin.performance.exportSuccess', '导出成功'));
+      showSuccess(t('admin.performance.exportSuccess', '내보내기 성공'));
     } catch (error) {
-      showError(t('admin.performance.exportFailed', '导出失败'));
+      showError(t('admin.performance.exportFailed', '내보내기 실패'));
     } finally {
       setLoading(false);
     }
@@ -182,7 +182,7 @@ export default function PerformanceList() {
   const searchColumns = useMemo(() => [
     {
       key: 'memberCompanyName',
-      label: t('admin.performance.table.memberName', '企业名称'),
+      label: t('admin.performance.table.memberName', '기업명'),
       render: (value, row) => {
         if (value) return value;
         if (row.memberBusinessNumber) return row.memberBusinessNumber;
@@ -191,7 +191,7 @@ export default function PerformanceList() {
     },
     {
       key: 'memberBusinessNumber',
-      label: t('admin.performance.table.businessNumber', '营业执照号'),
+      label: t('admin.performance.table.businessNumber', '사업자등록번호'),
       render: (value) => value ? formatBusinessLicense(value) : '-'
     },
     {
@@ -202,7 +202,7 @@ export default function PerformanceList() {
     {
       key: 'quarter',
       label: t('admin.performance.table.quarter'),
-      render: (value) => value ? `Q${value}` : t('performance.annual', '年度')
+      render: (value) => value ? `Q${value}` : t('performance.annual', '연간')
     },
     {
       key: 'status',
@@ -214,7 +214,7 @@ export default function PerformanceList() {
     },
     {
       key: 'submittedAt',
-      label: t('admin.performance.table.submittedAt', '提交时间'),
+      label: t('admin.performance.table.submittedAt', '제출 시간'),
       render: (value) => formatDateTime(value)
     }
   ], [t, getStatusConfig]);
@@ -222,7 +222,7 @@ export default function PerformanceList() {
   const tableColumns = [
     {
       key: 'memberCompanyName',
-      label: t('admin.performance.table.memberName', '企业名称'),
+      label: t('admin.performance.table.memberName', '기업명'),
       render: (value, row) => {
         if (value) return value;
         if (row.memberBusinessNumber) return row.memberBusinessNumber;
@@ -231,7 +231,7 @@ export default function PerformanceList() {
     },
     {
       key: 'memberBusinessNumber',
-      label: t('admin.performance.table.businessNumber', '营业执照号'),
+      label: t('admin.performance.table.businessNumber', '사업자등록번호'),
       render: (value) => value ? formatBusinessLicense(value) : '-'
     },
     {
@@ -241,7 +241,7 @@ export default function PerformanceList() {
     {
       key: 'quarter',
       label: t('admin.performance.table.quarter'),
-      render: (value) => value ? `Q${value}` : t('performance.annual', '年度')
+      render: (value) => value ? `Q${value}` : t('performance.annual', '연간')
     },
     {
       key: 'status',
@@ -257,19 +257,19 @@ export default function PerformanceList() {
     },
     {
       key: 'submittedAt',
-      label: t('admin.performance.table.submittedAt', '提交时间'),
+      label: t('admin.performance.table.submittedAt', '제출 시간'),
       render: (value) => formatDateTime(value)
     },
     {
       key: 'actions',
-      label: t('admin.performance.table.actions', '操作'),
+      label: t('admin.performance.table.actions', '작업'),
       render: (_, row) => (
         <div className="flex items-center space-x-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
               if (!row.id) {
-                showError('记录ID不存在，无法查看详情');
+                showError(t('error.record.notFound'));
                 return;
               }
               handleViewDetail(row.id);
@@ -289,7 +289,7 @@ export default function PerformanceList() {
                   setShowReviewModal(true);
                 }}
                 className="text-yellow-600 hover:text-yellow-900 font-medium text-sm"
-                title={t('admin.performance.requestRevision', '请求补正')}
+                title={t('admin.performance.requestRevision', '보완 요청')}
               >
                 {t('admin.performance.requestRevision')}
               </button>
@@ -301,9 +301,9 @@ export default function PerformanceList() {
                   setShowRejectModal(true);
                 }}
                 className="text-red-600 hover:text-red-900 font-medium text-sm"
-                title={t('admin.performance.reject', '驳回')}
+                title={t('admin.performance.reject', '거부')}
               >
-                {t('admin.performance.reject', '驳回')}
+                {t('admin.performance.reject', '거부')}
               </button>
               <span className="text-gray-300">|</span>
               <button
@@ -313,7 +313,7 @@ export default function PerformanceList() {
                   setShowApproveModal(true);
                 }}
                 className="text-green-600 hover:text-green-900 font-medium text-sm"
-                title={t('admin.performance.approve', '批准')}
+                title={t('admin.performance.approve', '승인')}
               >
                 {t('admin.performance.approve')}
               </button>
@@ -339,7 +339,7 @@ export default function PerformanceList() {
             data={allRecords}
             columns={searchColumns}
             onFilter={handleFilterChange}
-            placeholder={t('admin.performance.searchPlaceholder', '搜索所有列：企业名称、营业执照号、年度、季度、类型、状态等')}
+            placeholder={t('admin.performance.searchPlaceholder', '기업명, 사업자등록번호, 연도, 유형, 상태 등 검색')}
             className="flex-1 min-w-[200px] max-w-md"
           />
           <div className="flex items-center space-x-2 md:ml-4 w-full md:w-auto">
@@ -348,14 +348,14 @@ export default function PerformanceList() {
               variant="outline"
               disabled={loading}
             >
-              {t('admin.performance.exportExcel', '导出 Excel')}
+              {t('admin.performance.exportExcel', 'Excel 내보내기')}
             </Button>
             <Button 
               onClick={() => handleExport('csv')} 
               variant="outline"
               disabled={loading}
             >
-              {t('admin.performance.exportCsv', '导出 CSV')}
+              {t('admin.performance.exportCsv', 'CSV 내보내기')}
             </Button>
           </div>
         </div>
@@ -369,11 +369,11 @@ export default function PerformanceList() {
           if (records.length === 0) {
             return (
               <div className="p-12 text-center text-gray-500">
-                <p className="text-lg mb-2">{t('admin.performance.noRecords', '暂无业绩数据') || '暂无业绩数据'}</p>
+                <p className="text-lg mb-2">{t('admin.performance.noRecords')}</p>
                 <p className="text-sm text-gray-400">
                   {totalCount === 0 
-                    ? '请检查数据库是否已生成测试数据，或尝试刷新页面'
-                    : '当前筛选条件下没有匹配的业绩记录'}
+                    ? t('error.record.noDataHint')
+                    : t('error.record.noMatchingRecords')}
                 </p>
               </div>
             );
@@ -390,11 +390,11 @@ export default function PerformanceList() {
                 <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-center text-sm text-gray-700">
                     <span>
-                      {t('common.showing', { 
+                      {t('common.pagination.showing', { 
                         start: ((currentPage - 1) * pageSize) + 1, 
                         end: Math.min(currentPage * pageSize, totalCount), 
                         total: totalCount 
-                      }) || `显示 ${((currentPage - 1) * pageSize) + 1}-${Math.min(currentPage * pageSize, totalCount)} 共 ${totalCount} 条`}
+                      })}
                     </span>
                   </div>
                   <Pagination
@@ -458,14 +458,14 @@ export default function PerformanceList() {
           setRejectComment('');
           setSelectedRecord(null);
         }}
-        title={t('admin.performance.rejectModal.title', '驳回业绩记录')}
+        title={t('admin.performance.rejectModal.title', '실적 기록 거부')}
       >
         <div className="flex flex-col gap-3 md:gap-4">
-          <p>{t('admin.performance.rejectModal.description', '请输入驳回原因。')}</p>
+          <p>{t('admin.performance.rejectModal.description', '거부 사유를 입력하세요.')}</p>
           <Textarea
             value={rejectComment}
             onChange={(e) => setRejectComment(e.target.value)}
-            placeholder={t('admin.performance.rejectModal.placeholder', '请输入驳回原因...')}
+            placeholder={t('admin.performance.rejectModal.placeholder', '거부 사유를 입력하세요...')}
             rows={5}
           />
           <div className="flex flex-col-reverse md:flex-row justify-end gap-3 md:gap-4 mt-4">
@@ -485,7 +485,7 @@ export default function PerformanceList() {
               variant="outline"
               className="w-full md:w-auto border-red-600 text-red-600 hover:bg-red-50"
             >
-              {t('admin.performance.reject', '驳回')}
+              {t('admin.performance.reject', '거부')}
             </Button>
           </div>
         </div>
@@ -499,14 +499,14 @@ export default function PerformanceList() {
           setApproveComment('');
           setSelectedRecord(null);
         }}
-        title={t('admin.performance.approveModal.title', '批准业绩记录')}
+        title={t('admin.performance.approveModal.title', '실적 기록 승인')}
       >
         <div className="flex flex-col gap-3 md:gap-4">
-          <p>{t('admin.performance.approveModal.description', '请输入批准备注（可选）。')}</p>
+          <p>{t('admin.performance.approveModal.description', '승인 의견을 입력하세요 (선택사항).')}</p>
           <Textarea
             value={approveComment}
             onChange={(e) => setApproveComment(e.target.value)}
-            placeholder={t('admin.performance.approveModal.placeholder', '请输入批准备注...')}
+            placeholder={t('admin.performance.approveModal.placeholder', '승인 의견을 입력하세요...')}
             rows={5}
           />
           <div className="flex flex-col-reverse md:flex-row justify-end gap-3 md:gap-4 mt-4">
@@ -525,7 +525,7 @@ export default function PerformanceList() {
               onClick={handleApprove}
               className="w-full md:w-auto"
             >
-              {t('admin.performance.approve', '批准')}
+              {t('admin.performance.approve', '승인')}
             </Button>
           </div>
         </div>

@@ -19,7 +19,7 @@ export default function ProjectDetailActions({ project, onApply }) {
   return (
     <div className="border-t border-gray-200 pt-6 mt-6">
       <Button onClick={() => onApply(project.id)} className="w-full md:w-auto">
-        {t("projects.apply", "申请该项目")}
+        {t('projects.apply', '프로그램 신청')}
       </Button>
     </div>
   );

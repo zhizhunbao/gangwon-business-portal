@@ -1,4 +1,14 @@
 import { useTranslation } from "react-i18next";
+import { useState, useEffect } from "react";
+import {
+  STARTUP_TYPE_KEYS,
+  KSIC_MAJOR_CATEGORY_KEYS,
+  BUSINESS_FIELD_KEYS,
+  MAIN_INDUSTRY_KSIC_MAJOR_KEYS,
+  getSubCategoryKeysByMajor,
+  getMainIndustryKsicCodesByMajor,
+  translateOptions,
+} from "@/shared/data/industryClassification";
 
 export const RegisterStep4Business = ({
   formData,
@@ -7,96 +17,57 @@ export const RegisterStep4Business = ({
 }) => {
   const { t } = useTranslation();
 
+  const [ksicSubOptions, setKsicSubOptions] = useState([]);
+  const [mainIndustrySubOptions, setMainIndustrySubOptions] = useState([]);
+
+  useEffect(() => {
+    if (formData.ksicMajor) {
+      const subOptions = getSubCategoryKeysByMajor(formData.ksicMajor);
+      setKsicSubOptions(translateOptions(subOptions, t));
+    } else {
+      setKsicSubOptions([]);
+      setFormData((prev) => ({ ...prev, ksicSub: "" }));
+    }
+  }, [formData.ksicMajor, t, setFormData]);
+
+  useEffect(() => {
+    if (formData.mainIndustryKsicMajor) {
+      const subOptions = getMainIndustryKsicCodesByMajor(
+        formData.mainIndustryKsicMajor
+      );
+      setMainIndustrySubOptions(translateOptions(subOptions, t));
+    } else {
+      setMainIndustrySubOptions([]);
+      setFormData((prev) => ({ ...prev, mainIndustryKsicCodes: "" }));
+    }
+  }, [formData.mainIndustryKsicMajor, t, setFormData]);
+
+  const startupTypeOptions = translateOptions(STARTUP_TYPE_KEYS, t);
+  const ksicMajorOptions = translateOptions(KSIC_MAJOR_CATEGORY_KEYS, t);
+  const businessFieldOptions = translateOptions(BUSINESS_FIELD_KEYS, t);
+  const mainIndustryMajorOptions = translateOptions(
+    MAIN_INDUSTRY_KSIC_MAJOR_KEYS,
+    t
+  );
+
   return (
     <div className="space-y-5">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.startupType")}
+          {t("auth.startupType", "창업유형")}
         </label>
         <select
           name="startupType"
-          value={formData.startupType}
+          value={formData.startupType || ""}
           onChange={handleChange}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
         >
-          <option value="">{t("member.selectStartupType")}</option>
-          <option value="student_startup">
-            {t("industryClassification.startupType.student_startup")}
+          <option value="">
+            {t("auth.selectStartupType", "창업유형을 선택하세요")}
           </option>
-          <option value="faculty_startup">
-            {t("industryClassification.startupType.faculty_startup")}
-          </option>
-          <option value="women_enterprise">
-            {t("industryClassification.startupType.women_enterprise")}
-          </option>
-          <option value="research_institute">
-            {t("industryClassification.startupType.research_institute")}
-          </option>
-          <option value="venture_company">
-            {t("industryClassification.startupType.venture_company")}
-          </option>
-          <option value="non_venture">
-            {t("industryClassification.startupType.non_venture")}
-          </option>
-          <option value="preliminary_social_enterprise">
-            {t(
-              "industryClassification.startupType.preliminary_social_enterprise",
-            )}
-          </option>
-          <option value="social_enterprise">
-            {t("industryClassification.startupType.social_enterprise")}
-          </option>
-          <option value="youth_enterprise">
-            {t("industryClassification.startupType.youth_enterprise")}
-          </option>
-          <option value="cooperative">
-            {t("industryClassification.startupType.cooperative")}
-          </option>
-          <option value="village_enterprise">
-            {t("industryClassification.startupType.village_enterprise")}
-          </option>
-          <option value="other">
-            {t("industryClassification.startupType.other")}
-          </option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.ksicMajor")}
-        </label>
-        <select
-          name="ksicMajor"
-          value={formData.ksicMajor}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-        >
-          <option value="">{t("member.selectKsicMajor")}</option>
-          {[
-            "A",
-            "B",
-            "C",
-            "D",
-            "E",
-            "F",
-            "G",
-            "H",
-            "I",
-            "J",
-            "K",
-            "L",
-            "M",
-            "N",
-            "O",
-            "P",
-            "Q",
-            "R",
-            "S",
-            "T",
-            "U",
-          ].map((code) => (
-            <option key={code} value={code}>
-              {t(`industryClassification.ksicMajor.${code}`)}
+          {startupTypeOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
             </option>
           ))}
         </select>
@@ -104,65 +75,131 @@ export const RegisterStep4Business = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.ksicSub")}
-        </label>
-        <select
-          name="ksicSub"
-          value={formData.ksicSub}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-        >
-          <option value="">{t("member.selectKsicSub")}</option>
-          {[
-            "13",
-            "20",
-            "21",
-            "22",
-            "23",
-            "24",
-            "25",
-            "26",
-            "27",
-            "28",
-            "29",
-            "30",
-            "31",
-          ].map((code) => (
-            <option key={code} value={code}>
-              {t(`industryClassification.ksicSub.${code}`)}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.businessField")}
+          {t("auth.businessField", "사업 분야")}
         </label>
         <select
           name="businessField"
-          value={formData.businessField}
+          value={formData.businessField || ""}
           onChange={handleChange}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
         >
-          <option value="">{t("member.selectBusinessField")}</option>
-          <option value="software">{t("profile.industries.software")}</option>
-          <option value="hardware">{t("profile.industries.hardware")}</option>
-          <option value="biotechnology">
-            {t("profile.industries.biotechnology")}
+          <option value="">
+            {t("auth.selectBusinessField", "사업 분야를 선택하세요")}
           </option>
-          <option value="healthcare">
-            {t("profile.industries.healthcare")}
-          </option>
-          <option value="education">{t("profile.industries.education")}</option>
-          <option value="finance">{t("profile.industries.finance")}</option>
-          <option value="other">{t("profile.industries.other")}</option>
+          {businessFieldOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("auth.ksicMajor", "한국표준산업분류코드[대분류]")}
+          </label>
+          <select
+            name="ksicMajor"
+            value={formData.ksicMajor || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+          >
+            <option value="">
+              {t("auth.selectKsicMajor", "대분류를 선택하세요")}
+            </option>
+            {ksicMajorOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("auth.ksicSub", "한국표준산업분류코드[중분류]")}
+          </label>
+          <select
+            name="ksicSub"
+            value={formData.ksicSub || ""}
+            onChange={handleChange}
+            disabled={!formData.ksicMajor}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed"
+          >
+            <option value="">
+              {formData.ksicMajor
+                ? t("auth.selectKsicSub", "중분류를 선택하세요")
+                : t("auth.selectKsicMajorFirst", "먼저 대분류를 선택하세요")}
+            </option>
+            {ksicSubOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("auth.mainIndustryKsicMajor", "주력산업 KSIC 코드")}
+          </label>
+          <select
+            name="mainIndustryKsicMajor"
+            value={formData.mainIndustryKsicMajor || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+          >
+            <option value="">
+              {t(
+                "auth.selectMainIndustryKsicMajor",
+                "주력산업을 선택하세요"
+              )}
+            </option>
+            {mainIndustryMajorOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("auth.mainIndustryKsicCodes", "주력산업 KSIC 세부 코드")}
+          </label>
+          <select
+            name="mainIndustryKsicCodes"
+            value={formData.mainIndustryKsicCodes || ""}
+            onChange={handleChange}
+            disabled={!formData.mainIndustryKsicMajor}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:bg-gray-100 disabled:cursor-not-allowed"
+          >
+            <option value="">
+              {formData.mainIndustryKsicMajor
+                ? t(
+                    "auth.selectMainIndustryKsicCodes",
+                    "세부 코드를 선택하세요"
+                  )
+                : t(
+                    "auth.selectMainIndustryKsicMajorFirst",
+                    "먼저 주력산업을 선택하세요"
+                  )}
+            </option>
+            {mainIndustrySubOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.sales")}
+          {t("auth.sales")}
         </label>
         <input
           type="text"
@@ -176,7 +213,7 @@ export const RegisterStep4Business = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.employeeCount")}
+          {t("auth.employeeCount")}
         </label>
         <input
           type="text"
@@ -190,7 +227,7 @@ export const RegisterStep4Business = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.websiteUrl")}
+          {t("auth.websiteUrl")}
         </label>
         <input
           type="url"
@@ -204,7 +241,7 @@ export const RegisterStep4Business = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.mainBusiness")}
+          {t("auth.mainBusiness")}
         </label>
         <textarea
           name="mainBusiness"
@@ -217,7 +254,7 @@ export const RegisterStep4Business = ({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          {t("member.cooperationFields")}
+          {t("auth.cooperationFields")}
         </label>
         <input
           type="text"
@@ -234,7 +271,7 @@ export const RegisterStep4Business = ({
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
         />
         <p className="mt-1 text-xs text-gray-500">
-          {t("common.commaSeparatedHint") || "多个值请用逗号分隔"}
+          {t("common.commaSeparatedHint", "여러 값은 쉼표로 구분해주세요")}
         </p>
       </div>
     </div>

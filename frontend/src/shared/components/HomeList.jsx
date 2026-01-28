@@ -51,7 +51,7 @@ function HomeList({
 
           {loading && items.length === 0 ? (
             <div className="text-center py-12 px-8">
-              <p className="text-base text-gray-500 m-0">{t('common.loading', '加载中...')}</p>
+              <p className="text-base text-gray-500 m-0">{t('common.loading', '로딩 중...')}</p>
             </div>
           ) : error ? (
             <Card className="text-center py-12 px-8 bg-red-50 border border-red-200 rounded-lg">
@@ -61,7 +61,7 @@ function HomeList({
                   className="px-6 py-2 bg-red-600 text-white border-none rounded-md text-sm font-medium cursor-pointer transition-colors hover:bg-red-700" 
                   onClick={onRetry}
                 >
-                  {t('common.retry', '重试')}
+                  {t('common.retry', '다시 시도')}
                 </button>
               )}
             </Card>
@@ -90,7 +90,7 @@ function HomeList({
           ) : (
             <Card className="text-center py-12 px-8">
               <p className="text-base text-gray-500 m-0">
-                {emptyMessage || t('common.noData', '暂无数据')}
+                {emptyMessage || t('common.noData', '데이터가 없습니다')}
               </p>
             </Card>
           )}
@@ -111,12 +111,12 @@ function HomeList({
             <Modal
               isOpen={!!selectedItem || detailLoading}
               onClose={onCloseDetail}
-              title={selectedItem?.title || t('common.loading', '加载中...')}
+              title={selectedItem?.title || t('common.loading', '로딩 중...')}
               size="lg"
             >
               {detailLoading ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">{t('common.loading', '加载中...')}</p>
+                  <p className="text-gray-500">{t('common.loading', '로딩 중...')}</p>
                 </div>
               ) : selectedItem ? (
                 <div className="space-y-4">
@@ -144,7 +144,7 @@ function HomeList({
                       <span>{formatDateTime(selectedItem.date, 'yyyy-MM-dd HH:mm', i18n.language)}</span>
                     )}
                     {selectedItem.viewCount !== undefined && (
-                      <span>{t('admin.content.notices.views', '浏览')}: {selectedItem.viewCount}</span>
+                      <span>{t('admin.content.notices.views', '조회')}: {selectedItem.viewCount}</span>
                     )}
                   </div>
                   
@@ -159,7 +159,7 @@ function HomeList({
                   {selectedItem.attachments && selectedItem.attachments.length > 0 && (
                     <div className="border-t pt-4 mt-4">
                       <h4 className="text-sm font-medium text-gray-700 mb-3">
-                        {t('fileAttachments.attachments', '附件')} ({selectedItem.attachments.length})
+                        {t('fileAttachments.attachments', '첨부파일')} ({selectedItem.attachments.length})
                       </h4>
                       <div className="space-y-2">
                         {(() => {
@@ -211,7 +211,7 @@ function HomeList({
                                   {displayName}
                                 </span>
                                 <span className="text-xs text-gray-500 group-hover:text-blue-600">
-                                  {t('common.download', '下载')}
+                                  {t('common.download', '다운로드')}
                                 </span>
                               </button>
                             );

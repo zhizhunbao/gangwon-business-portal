@@ -231,7 +231,7 @@ export default function PerformanceFormContent() {
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('common.loading', '加载中...')}</p>
+          <p className="text-gray-600">{t('common.loading', '로딩 중...')}</p>
         </div>
       </div>
     );
@@ -945,14 +945,14 @@ export default function PerformanceFormContent() {
             variant="outline"
             onClick={() => setSubmitConfirm({ open: false })}
           >
-            {t('common.cancel', '取消')}
+            {t('common.cancel', '취소')}
           </Button>
           <Button
             variant="primary"
             onClick={confirmSubmit}
             disabled={saving}
           >
-            {t('common.confirm', '确认')}
+            {t('common.confirm', '확인')}
           </Button>
         </ModalFooter>
       </Modal>

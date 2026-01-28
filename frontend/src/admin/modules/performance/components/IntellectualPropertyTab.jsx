@@ -14,7 +14,7 @@ export default function IntellectualPropertyTab({ record, onDownload, onDownload
   if (!record?.dataJson?.intellectualProperty || record.dataJson.intellectualProperty.length === 0) {
     return (
       <div className="text-center text-gray-500 py-8">
-        {t('common.noData', '没有数据')}
+        {t('common.noData', '데이터가 없습니다')}
       </div>
     );
   }
@@ -27,52 +27,52 @@ export default function IntellectualPropertyTab({ record, onDownload, onDownload
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.intellectualPropertyFields.name', '知识产权名')}
+                {t('performance.intellectualPropertyFields.name', '지식재산권명')}
               </label>
               <span className="text-base text-gray-900">{formatValue(item.name)}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.intellectualPropertyFields.number', '知识产权号')}
+                {t('performance.intellectualPropertyFields.number', '지식재산권번호')}
               </label>
               <span className="text-base text-gray-900">{formatValue(item.number)}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.intellectualPropertyFields.type', '知识产权区分')}
+                {t('performance.intellectualPropertyFields.type', '지식재산권 구분')}
               </label>
               <span className="text-base text-gray-900">{formatValue(item.type)}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.intellectualPropertyFields.registrationType', '知识产权登记区分')}
+                {t('performance.intellectualPropertyFields.registrationType', '지식재산권 등록 구분')}
               </label>
               <span className="text-base text-gray-900">{formatValue(item.registrationType)}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.intellectualPropertyFields.country', '登记国家')}
+                {t('performance.intellectualPropertyFields.country', '등록 국가')}
               </label>
               <span className="text-base text-gray-900">{item.country || '-'}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.intellectualPropertyFields.overseasType', '海外申请区分')}
+                {t('performance.intellectualPropertyFields.overseasType', '해외 신청 구분')}
               </label>
               <span className="text-base text-gray-900">{item.overseasType || '-'}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.intellectualPropertyFields.registrationDate', '登记日')}
+                {t('performance.intellectualPropertyFields.registrationDate', '등록일')}
               </label>
               <span className="text-base text-gray-900">{formatDate(item.registrationDate)}</span>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-600 font-medium">
-                {t('performance.intellectualPropertyFields.publicDisclosure', '公开希望与否')}
+                {t('performance.intellectualPropertyFields.publicDisclosure', '공개 희망 여부')}
               </label>
               <span className="text-base text-gray-900">
-                {item.publicDisclosure ? t('common.yes', '是') : t('common.no', '否')}
+                {item.publicDisclosure ? t('common.yes', '예')) : t('common.no', '아니오'))}
               </span>
             </div>
           </div>
@@ -88,7 +88,7 @@ export default function IntellectualPropertyTab({ record, onDownload, onDownload
                       <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
-                      <span className="text-sm text-gray-700">{attachment.fileName || '证明文件'}</span>
+                      <span className="text-sm text-gray-700">{attachment.fileName || t('common.document', '증명문서')}</span>
                       {attachment.fileSize && (
                         <span className="text-xs text-gray-500">
                           ({(attachment.fileSize / 1024).toFixed(1)} KB)
@@ -106,7 +106,7 @@ export default function IntellectualPropertyTab({ record, onDownload, onDownload
                         }
                       }}
                     >
-                      {t('common.download', '下载')}
+                      {t('common.download', '다운로드')}
                     </Button>
                   </div>
                 ))}

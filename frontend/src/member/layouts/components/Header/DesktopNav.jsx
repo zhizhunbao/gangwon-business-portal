@@ -19,7 +19,7 @@ export function DesktopNav({ menuItems, isMenuActive, onMenuClick }) {
   const { t } = useTranslation();
 
   return (
-    <nav className="w-full" aria-label={t("header.mainNav", "主导航")}>
+    <nav className="w-full" aria-label={t('header.mainNav', '주요 탐색')}>
       <ul className="flex items-center gap-1 list-none m-0 p-0 justify-center">
         {menuItems.map((item) => {
           const Icon = item.icon;

@@ -29,7 +29,7 @@ export const IndustryFilters = ({ codes = [], subCodes = [], onChange }) => {
       <Select
         value={majorValue}
         options={majorOptions}
-        placeholder={t("member.mainIndustryKsicMajor") || "主力产业 KSIC 代码"}
+        placeholder={t("member.mainIndustryKsicMajor", "주력산업 KSIC 코드")}
         containerClassName="mb-0"
         className="w-48 h-9"
         onChange={(e) => {
@@ -43,7 +43,7 @@ export const IndustryFilters = ({ codes = [], subCodes = [], onChange }) => {
         options={subOptions}
         disabled={!majorValue}
         placeholder={
-          t("member.mainIndustryKsicCodes") || "主力产业 KSIC 细分代码"
+          t("member.mainIndustryKsicCodes", "주력산업 KSIC 세부 코드")
         }
         containerClassName="mb-0"
         className="w-48 h-9"

@@ -1,0 +1,85 @@
+{
+    "admin": {
+        "messages": {
+            "title": "알림 센터",
+            "tabs": {
+                "threads": "1:1 상담",
+                "notifications": "시스템 알림",
+                "list": "쪽지 목록",
+                "send": "쪽지 보내기",
+                "broadcast": "일괄 발송",
+                "analytics": "쪽지 통계"
+            },
+            "avatar": {
+                "admin": "관",
+                "member": "회"
+            },
+            "systemNotifications": {
+                "title": "시스템 알림",
+                "empty": "시스템 알림이 없습니다",
+                "detail": "알림 상세"
+            },
+            "threads": {
+                "title": "1:1 상담 목록",
+                "description": "회원들의 1:1 상담 요청을 확인하고 답변합니다.",
+                "empty": "상담 요청이 없습니다"
+            },
+            "filters": {
+                "all": "전체",
+                "unread": "읽지 않음",
+                "read": "읽음"
+            },
+            "unreadCount": "읽지 않음",
+            "selectMessage": "쪽지를 선택하여 상세 내용을 확인하세요",
+            "category": {
+                "general": "일반 알림",
+                "announcement": "중요 공지",
+                "system": "시스템 알림",
+                "support": "기술 지원",
+                "performance": "성과 상담"
+            },
+            "thread": {
+                "title": "쪽지 스레드",
+                "member": "회원",
+                "noMessages": "쪽지가 없습니다",
+                "close": "스레드 닫기",
+                "reopen": "다시 열기",
+                "closed": "스레드가 닫혔습니다",
+                "reopened": "스레드가 다시 열렸습니다",
+                "confirmClose": "이 스레드를 닫으시겠습니까?",
+                "closeWarning": "닫힌 스레드에는 더 이상 답장할 수 없습니다. 계속하시겠습니까?",
+                "status": {
+                    "open": "진행 중",
+                    "resolved": "해결됨",
+                    "closed": "닫힘"
+                }
+            },
+            "composer": {
+                "contentPlaceholder": "쪽지 내용을 입력하세요..."
+            },
+            "analytics": {
+                "title": "쪽지 통계",
+                "description": "쪽지 관련 통계 데이터 및 트렌드 분석을 확인합니다.",
+                "last7Days": "최근 7일",
+                "last30Days": "최근 30일",
+                "last90Days": "최근 90일",
+                "allTime": "전체 기간",
+                "totalMessages": "총 쪽지 수",
+                "unreadMessages": "읽지 않은 쪽지",
+                "avgResponseTime": "평균 응답 시간",
+                "responseRate": "응답률",
+                "messagesTrend": "쪽지 추이",
+                "messagesByCategory": "카테고리별 쪽지 통계",
+                "responseTimeTrend": "응답 시간 추이",
+                "messageCount": "쪽지 수",
+                "responseTime": "응답 시간",
+                "minutes": "분",
+                "hours": "시간",
+                "categoryGeneral": "일반",
+                "categorySupport": "지원",
+                "categoryPerformance": "성과",
+                "categoryProject": "지원사업"
+            }
+        }
+    }
+}

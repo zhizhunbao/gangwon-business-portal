@@ -16,7 +16,7 @@ export function ProjectDetailBackButton({ onClick }) {
       className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors mb-6 bg-transparent border-none cursor-pointer p-0"
     >
       <ArrowLeftIcon className="w-4 h-4" />
-      <span>{t("common.backToList", "返回列表")}</span>
+      <span>{t("common.backToList", "목록으로")}</span>
     </button>
   );
 }

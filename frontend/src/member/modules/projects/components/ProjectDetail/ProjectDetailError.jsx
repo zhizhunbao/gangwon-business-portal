@@ -13,13 +13,13 @@ export function ProjectDetailError({ error, onBack }) {
   return (
     <Card className="p-8 text-center">
       <p className="text-red-500 mb-4">
-        {error || t("common.notFound", "未找到该项目")}
+        {error || t('common.notFound', '해당 공지사항을 찾을 수 없습니다')}
       </p>
       <button
         onClick={onBack}
         className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
       >
-        {t("common.back", "返回")}
+        {t('common.back', '뒤로')}
       </button>
     </Card>
   );

@@ -18,19 +18,19 @@ const PerformanceLayoutView = () => {
   const submenuItems = [
     {
       key: "company-info",
-      label: t("performance.companyInfo.title", "企业信息"),
+      label: t('performance.companyInfo.title', '기업 정보'),
       path: "/member/performance/company-info",
       isTab: true,
     },
     {
       key: "performance-input",
-      label: t("performance.input", "成果输入"),
+      label: t('performance.input', '성과 입력'),
       path: "/member/performance/edit",
       isTab: true,
     },
     {
       key: "performance-query",
-      label: t("performance.query", "成果查询"),
+      label: t('performance.query', '성과 조회'),
       path: "/member/performance/list",
       isTab: true,
     },
