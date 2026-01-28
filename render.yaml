@@ -22,9 +22,8 @@ services:
     name: gangwon-business-portal
     env: python
     runtime: python-3.12.0
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt && alembic upgrade head
-    startCommand: uvicorn src.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: uv sync && cd backend && uv run alembic upgrade head
+    startCommand: uv run uvicorn backend.src.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         sync: false  # 需要在 Dashboard 手动配置
