@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Performance Service
  *
  * 处理成果管理相关的 API 调用。
@@ -66,12 +66,33 @@ class PerformanceService {
     const exportCountry2 =
       formData.salesEmployment?.export?.exportCountry2?.trim();
 
+    // 자동 합산: totalEmployees = currentEmployees + newEmployees
+    const salesEmployment = { ...formData.salesEmployment };
+    if (salesEmployment.employment) {
+      const employment = { ...salesEmployment.employment };
+      const current = employment.currentEmployees || {};
+      const newEmp = employment.newEmployees || {};
+
+      const prevTotal =
+        (parseFloat(current.previousYear) || 0) +
+        (parseFloat(newEmp.previousYear) || 0);
+      const currTotal =
+        (parseFloat(current.currentYear) || 0) +
+        (parseFloat(newEmp.currentYear) || 0);
+
+      employment.totalEmployees = {
+        previousYear: prevTotal || "",
+        currentYear: currTotal || "",
+      };
+      salesEmployment.employment = employment;
+    }
+
     return {
       year: formData.year,
       quarter: formData.quarter ? parseInt(formData.quarter) : null,
       type,
       dataJson: {
-        salesEmployment: formData.salesEmployment,
+        salesEmployment,
         governmentSupport: formData.governmentSupport,
         intellectualProperty: formData.intellectualProperty,
         investmentInfo: formData.investmentInfo,

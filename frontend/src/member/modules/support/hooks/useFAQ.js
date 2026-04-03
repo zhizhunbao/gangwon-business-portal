@@ -1,4 +1,4 @@
-﻿/**
+/**
  * FAQ 业务逻辑 Hook
  *
  * 遵循 dev-frontend_patterns skill 规范。
@@ -47,9 +47,10 @@ export function useFAQ(pageSize = 10) {
     return Array.from(categorySet);
   }, [stableAllFaqs]);
 
-  // FAQ 分类翻译映射
+  // FAQ 分类翻译映射（支持韩文和英文两种 category key）
   const categoryTranslations = useMemo(
     () => ({
+      // 韩文 category key
       회원가입: t("member.support.faqCategory.registration", "회원가입"),
       general: t("member.support.faqCategory.general", "일반"),
       성과관리: t("member.support.faqCategory.performance", "성과관리"),
@@ -57,6 +58,13 @@ export function useFAQ(pageSize = 10) {
       기업프로필: t("member.support.faqCategory.profile", "기업프로필"),
       "문의/지원": t("member.support.faqCategory.support", "문의/지원"),
       기타: t("member.support.faqCategory.other", "기타"),
+      // 영문 category key (관리자 FAQ 등록 시 사용)
+      registration: t("member.support.faqCategory.registration", "회원가입"),
+      performance: t("member.support.faqCategory.performance", "성과관리"),
+      project: t("member.support.faqCategory.project", "지원사업"),
+      technical: t("member.support.faqCategory.technical", "기술지원"),
+      support: t("member.support.faqCategory.support", "문의/지원"),
+      other: t("member.support.faqCategory.other", "기타"),
     }),
     [t],
   );

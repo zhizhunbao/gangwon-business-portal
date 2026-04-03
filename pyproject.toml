@@ -18,6 +18,7 @@ dependencies = [
     "openpyxl==3.1.2",
     "passlib[bcrypt]==1.7.4",
     "pillow>=12.1.0",
+    "pix2text>=1.1.6",
     "playwright==1.40.0",
     "psycopg2-binary==2.9.11",
     "pydantic-settings==2.1.0",

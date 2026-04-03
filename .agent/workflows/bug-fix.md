@@ -21,10 +21,10 @@ description: Bug fix workflow - from PPTX bug report to implementation and verif
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │ Phase 1: 解析 (Parse)                                          │
-│   ↓ dev-pptx_to_md skill → PPTX 截图版 Markdown              │
+│   ↓ PPTX 解析 + Markdown 格式化 → 标准化截图版文档             │
 ├───────────────────────────────────────────────────────────────┤
 │ Phase 2: 分析 (Analyze)                                        │
-│   ↓ dev-translation skill → 需求翻译 + 代码定位              │
+│   ↓ 基于工作流执行翻译步骤 → 需求翻译 + 代码定位              │
 ├───────────────────────────────────────────────────────────────┤
 │ Phase 3: 计划 (Plan)                                           │
 │   ↓ 生成实施计划 → 优先级排序 + Phase 分组                    │
@@ -48,7 +48,7 @@ description: Bug fix workflow - from PPTX bug report to implementation and verif
 
 ### 目标
 
-将客户提交的 PPTX bug 报告转换为带截图的 Markdown 文档，以便分析和注释。
+将客户提交的 PPTX bug 报告转换为带截图的 Markdown 文档，并在解析完成后立即整理为统一格式，以便后续翻译、分析和注释。
 
 ### 步骤
 
@@ -90,11 +90,24 @@ for i, slide in enumerate(prs.slides, 1):
                 f.write(image.blob)
 ```
 
+4. **格式化截图版 Markdown**（解析完成后立即执行）
+   - 统一文档标题、页面分隔、图片区块、文本区块、Notes 区块
+   - 为每个页面补齐固定小节结构，便于后续逐条翻译和标注
+   - 清理 OCR 杂讯，保留原文，不在此阶段改写需求含义
+   - 若当前页已能识别出需求项，预先写入 `原文 / 翻译 / 实施 / 优先级` 占位字段
+
 ### 输出
 
 - `docs/requirements/active/<stem>_截图版.md` — 带截图的 Markdown
 - `docs/requirements/active/<stem>_截图版_pages/` — 页面截图目录
 - `docs/requirements/active/<stem>_images/` — PPTX 内嵌图片
+
+### 格式化检查
+
+- [ ] 页面标题和顺序完整
+- [ ] 每页都包含 `Page Image / Text Content / Notes`
+- [ ] Notes 区块结构一致，便于后续翻译步骤填写
+- [ ] OCR 原文已保留，未提前改写业务语义
 
 ### 输出格式
 
@@ -136,14 +149,15 @@ for i, slide in enumerate(prs.slides, 1):
 
 ### 目标
 
-翻译韩文需求，结合截图上下文理解每个 bug 的具体含义，定位受影响的代码文件。
+基于格式化后的截图版 Markdown，先执行翻译步骤，再结合截图上下文理解每个 bug 的具体含义，定位受影响的代码文件。
 
 ### 步骤
 
-1. **翻译韩文需求**
-   - 读取 Phase 1 输出的截图版 Markdown
-   - 逐条翻译韩文描述（原文 → 中文）
-   - 查看 PPTX 截图以理解标注和箭头含义（**截图中的标注比文本更重要**）
+1. **基于工作流执行翻译步骤**
+   - 读取 Phase 1 输出的格式化截图版 Markdown
+   - 按页面、按需求项逐条翻译韩文描述（原文 → 中文）
+   - 优先参考截图中的红框、箭头、手写标注理解需求（**截图中的标注比文本更重要**）
+   - 翻译结果直接回填到对应页面的 `Notes` 占位字段中
 
 2. **定位受影响代码**（每个 Bug 都必须做）
    - 使用 `grep_search` 和 `find_by_name` 搜索相关代码

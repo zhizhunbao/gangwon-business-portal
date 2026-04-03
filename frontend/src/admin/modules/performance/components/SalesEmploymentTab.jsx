@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Sales Employment Tab Component
  * 销售雇佣标签页内容
  */
@@ -226,7 +226,9 @@ export default function SalesEmploymentTab({
               </label>
               <span className="text-base text-gray-900">
                 {formatNumber(
-                  salesEmployment.employment?.totalEmployees?.previousYear,
+                  salesEmployment.employment?.totalEmployees?.previousYear ||
+                  ((parseFloat(salesEmployment.employment?.currentEmployees?.previousYear) || 0) +
+                   (parseFloat(salesEmployment.employment?.newEmployees?.previousYear) || 0)) || undefined,
                 )}
               </span>
             </div>
@@ -237,7 +239,9 @@ export default function SalesEmploymentTab({
               </label>
               <span className="text-base text-gray-900">
                 {formatNumber(
-                  salesEmployment.employment?.totalEmployees?.currentYear,
+                  salesEmployment.employment?.totalEmployees?.currentYear ||
+                  ((parseFloat(salesEmployment.employment?.currentEmployees?.currentYear) || 0) +
+                   (parseFloat(salesEmployment.employment?.newEmployees?.currentYear) || 0)) || undefined,
                 )}
               </span>
             </div>

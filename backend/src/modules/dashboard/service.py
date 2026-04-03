@@ -183,9 +183,9 @@ class DashboardService:
         chart_items = []
         for key, data in period_data.items():
             period_label = (
-                f"{data['year']} Q{data['quarter']}"
+                f"{data['year']} {data['quarter']}분기"
                 if data["quarter"]
-                else f"{data['year']} Annual"
+                else f"{data['year']} 연간"
             )
             chart_items.append(
                 {

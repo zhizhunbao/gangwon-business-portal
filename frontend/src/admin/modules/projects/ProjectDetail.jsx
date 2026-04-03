@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Project Detail Component - Admin Portal
  * 项目详情页面
  */
@@ -831,7 +831,7 @@ export default function ProjectDetail() {
                   {t("admin.applications.contactPersonName", "담당자 이름")}
                 </label>
                 <p className="mt-1 text-sm text-gray-900">
-                  {selectedApplication.contactPersonName || "-"}
+                  {selectedApplication.applicantName || "-"}
                 </p>
               </div>
               <div>
@@ -839,7 +839,7 @@ export default function ProjectDetail() {
                   {t("admin.applications.contactPhone", "전화번호")}
                 </label>
                 <p className="mt-1 text-sm text-gray-900">
-                  {selectedApplication.contactPhone || "-"}
+                  {selectedApplication.applicantPhone || "-"}
                 </p>
               </div>
               <div>

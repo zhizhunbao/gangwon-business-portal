@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Performance List Component
  *
  * 成果查询列表页面。
@@ -86,10 +86,12 @@ const PerformanceList = () => {
     4: t("member.performance.quarterLabels.fourth"),
   };
 
+  // 从下一年开始向前推6年（例如：2027, 2026, 2025, 2024, 2023, 2022）
+  // 确保新添加的年度数据能被筛选
   const yearOptions = [
     { value: "", label: t("common.all", "전체") },
-    ...Array.from({ length: 5 }, (_, i) => {
-      const year = new Date().getFullYear() - i;
+    ...Array.from({ length: 6 }, (_, i) => {
+      const year = new Date().getFullYear() + 1 - i;
       return {
         value: year.toString(),
         label: `${year}${t("common.year", "년")}`,
